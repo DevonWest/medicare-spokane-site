@@ -1,33 +1,33 @@
 # Build and deploy the site container to Google Cloud Run.
 #
 # Triggers
-#   - push to `main`         → deploys the production target
-#   - manual workflow_dispatch → choose `beta` (default) or `production` target
+#   - push to main              → deploys beta
+#   - manual workflow_dispatch  → choose beta or production
 #
-# Required GitHub configuration
-#   Variables (Settings → Secrets and variables → Actions → Variables):
-#     GCP_PROJECT_ID              e.g. "medicareinspokane-prod"
-#     GCP_REGION                  e.g. "us-west1"
-#     CLOUD_RUN_SERVICE           production service, e.g. "medicare-spokane-site"
-#     CLOUD_RUN_SERVICE_BETA      beta service,       e.g. "medicare-spokane-site-beta"
-#     ARTIFACT_REGISTRY_REPO      e.g. "web" (Artifact Registry repo in GCP_REGION)
-#     FIREBASE_PROJECT_ID         e.g. "medicareinspokane-prod"
-#     RUNTIME_SERVICE_ACCOUNT     e.g. "cloud-run-runtime@<project>.iam.gserviceaccount.com"
-#                                 (must have roles/datastore.user on the Firestore project)
-#     NEXT_PUBLIC_GTM_ID          e.g. "GTM-XXXXXXX" (optional; empty = GTM disabled)
+# Required GitHub repository Variables:
+#   GCP_PROJECT_ID
+#   GCP_REGION
+#   CLOUD_RUN_SERVICE
+#   CLOUD_RUN_SERVICE_BETA
+#   ARTIFACT_REGISTRY_REPO
+#   FIREBASE_PROJECT_ID
+#   RUNTIME_SERVICE_ACCOUNT
+#   GCP_WORKLOAD_IDENTITY_PROVIDER
+#   GCP_DEPLOY_SERVICE_ACCOUNT
+#   NEXT_PUBLIC_GTM_ID optional
 #
-#   Authentication — pick ONE of:
-#     A) Workload Identity Federation (recommended, keyless):
-#          GCP_WORKLOAD_IDENTITY_PROVIDER  (full resource name)
-#          GCP_DEPLOY_SERVICE_ACCOUNT      (deployer SA email)
-#     B) Service-account JSON key (legacy):
-#          GCP_SERVICE_ACCOUNT_KEY  (entire JSON, stored as a secret)
+# Required Google Cloud setup:
+#   - Artifact Registry repo exists
+#   - Cloud Run beta/prod services exist
+#   - Runtime service account has Firestore access
+#   - Deployer service account can deploy Cloud Run and push images
 
 name: Deploy to Cloud Run
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       target:
@@ -39,41 +39,40 @@ on:
           - beta
           - production
 
-# Only one deploy at a time per (branch, target). Cancel older queued runs of
-# the same target so a beta retry doesn't queue behind a slow earlier attempt,
-# but production deploys never cancel each other.
 concurrency:
-  group: deploy-cloud-run-${{ github.ref }}-${{ github.event.inputs.target || 'production' }}
+  group: deploy-cloud-run-${{ github.ref }}-${{ github.event.inputs.target || 'beta' }}
   cancel-in-progress: false
 
 jobs:
   ci:
     name: Lint, build, test
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - run: npm ci
 
       - run: npm run lint
       - run: npm test
-      - name: Build (sanity check — Docker re-builds for the image)
+
+      - name: Build sanity check
         run: npm run build
         env:
-          NEXT_PUBLIC_SITE_URL: https://www.medicareinspokane.com
+          NEXT_PUBLIC_SITE_URL: https://beta.medicareinspokane.com
+          NEXT_PUBLIC_SITE_ENV: staging
+          NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
 
   deploy:
-    name: Build image & deploy to Cloud Run
+    name: Build image and deploy to Cloud Run
     needs: ci
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    # Required for Workload Identity Federation (id-token: write).
     permissions:
       contents: read
       id-token: write
@@ -84,54 +83,42 @@ jobs:
       AR_REPO: ${{ vars.ARTIFACT_REGISTRY_REPO }}
       RUNTIME_SA: ${{ vars.RUNTIME_SERVICE_ACCOUNT }}
       FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-      # `push` events: fall back to `production` (auto-deploy on merge to main).
-      # `workflow_dispatch`: respect the dispatch input (defaults to `beta`).
-      TARGET: ${{ github.event.inputs.target || 'production' }}
+      TARGET: ${{ github.event.inputs.target || 'beta' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      # ----- Resolve target-specific config -----
       - name: Resolve target config
         id: cfg
         run: |
           if [ "$TARGET" = "production" ]; then
-            echo "service=${{ vars.CLOUD_RUN_SERVICE }}"           >> "$GITHUB_OUTPUT"
-            echo "site_url=https://www.medicareinspokane.com"     >> "$GITHUB_OUTPUT"
-            echo "site_env=production"                              >> "$GITHUB_OUTPUT"
+            echo "service=${{ vars.CLOUD_RUN_SERVICE }}" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+            echo "site_env=production" >> "$GITHUB_OUTPUT"
           else
-            echo "service=${{ vars.CLOUD_RUN_SERVICE_BETA }}"      >> "$GITHUB_OUTPUT"
-            echo "site_url=https://beta.medicareinspokane.com"    >> "$GITHUB_OUTPUT"
-            echo "site_env=staging"                                 >> "$GITHUB_OUTPUT"
+            echo "service=${{ vars.CLOUD_RUN_SERVICE_BETA }}" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+            echo "site_env=staging" >> "$GITHUB_OUTPUT"
           fi
-          # Image tag includes target so beta and prod never share an image.
+
           echo "image=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPO }}/site-${TARGET}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
-      - name: Validate target service variable is set
+      - name: Validate required variables
         run: |
-          if [ -z "${{ steps.cfg.outputs.service }}" ]; then
-            if [ "$TARGET" = "production" ]; then
-              echo "::error::Repo variable CLOUD_RUN_SERVICE is not set."
-            else
-              echo "::error::Repo variable CLOUD_RUN_SERVICE_BETA is not set."
-            fi
-            exit 1
-          fi
+          test -n "${{ env.PROJECT_ID }}" || (echo "::error::GCP_PROJECT_ID is missing" && exit 1)
+          test -n "${{ env.REGION }}" || (echo "::error::GCP_REGION is missing" && exit 1)
+          test -n "${{ env.AR_REPO }}" || (echo "::error::ARTIFACT_REGISTRY_REPO is missing" && exit 1)
+          test -n "${{ env.RUNTIME_SA }}" || (echo "::error::RUNTIME_SERVICE_ACCOUNT is missing" && exit 1)
+          test -n "${{ env.FIREBASE_PROJECT_ID }}" || (echo "::error::FIREBASE_PROJECT_ID is missing" && exit 1)
+          test -n "${{ steps.cfg.outputs.service }}" || (echo "::error::Cloud Run service variable is missing" && exit 1)
+          test -n "${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}" || (echo "::error::GCP_WORKLOAD_IDENTITY_PROVIDER is missing" && exit 1)
+          test -n "${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}" || (echo "::error::GCP_DEPLOY_SERVICE_ACCOUNT is missing" && exit 1)
 
-      # ----- Authenticate to Google Cloud -----
-      # Prefer Workload Identity Federation; fall back to a JSON key secret.
-      - name: Authenticate to Google Cloud (WIF)
-        if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-
-      - name: Authenticate to Google Cloud (JSON key)
-        if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER == '' }}
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -142,9 +129,6 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build container image
-        # NEXT_PUBLIC_* vars are inlined at `next build`, so they MUST be
-        # passed as --build-arg here. Setting them only on Cloud Run will
-        # leave the client bundle with the defaults baked in at build time.
         run: |
           docker build \
             --build-arg NEXT_PUBLIC_SITE_URL='${{ steps.cfg.outputs.site_url }}' \
@@ -162,8 +146,6 @@ jobs:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
           image: ${{ steps.cfg.outputs.image }}
-          # Bind the runtime service account so Application Default Credentials
-          # are available to firebase-admin inside the container.
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
             --allow-unauthenticated
@@ -172,9 +154,6 @@ jobs:
             --memory=512Mi
             --min-instances=0
             --max-instances=10
-          # Runtime env vars (server-side). The NEXT_PUBLIC_* vars are also
-          # set here for completeness / server-side reads, but the client
-          # bundle's values come from the build args above.
           env_vars: |
             NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
