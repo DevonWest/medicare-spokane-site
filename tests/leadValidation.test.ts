@@ -1,13 +1,12 @@
 // Lightweight tests for pure lead helpers. Run with: `npm test`.
 //
-// Uses Node's built-in `node:test` runner so we don't need to add any
-// additional dev dependencies. Imports the TS source via tsx's loader
-// (registered by the npm script).
+// Uses Node's built-in `node:test` runner via `tsx --test` so we don't
+// need to add any additional dev dependencies.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import * as leadValidation from "../lib/leadValidation.ts";
+import * as leadValidation from "../lib/leadValidation";
 
 test("DUPLICATE_WINDOW_MS equals 10 minutes in ms", () => {
   assert.equal(leadValidation.DUPLICATE_WINDOW_MS, 10 * 60 * 1000);
