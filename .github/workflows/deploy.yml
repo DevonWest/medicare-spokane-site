@@ -1,0 +1,138 @@
+# Build and deploy the site container to Google Cloud Run.
+#
+# Triggers
+#   - push to `main` (auto-deploy)
+#   - manual dispatch (for hotfix re-deploys)
+#
+# Required GitHub configuration
+#   Variables (Settings → Secrets and variables → Actions → Variables):
+#     GCP_PROJECT_ID         e.g. "medicareinspokane-prod"
+#     GCP_REGION             e.g. "us-west1"
+#     CLOUD_RUN_SERVICE      e.g. "medicare-spokane-site"
+#     ARTIFACT_REGISTRY_REPO e.g. "web" (Artifact Registry repo in GCP_REGION)
+#     FIREBASE_PROJECT_ID    e.g. "medicareinspokane-prod" (often same as GCP_PROJECT_ID)
+#     RUNTIME_SERVICE_ACCOUNT e.g. "cloud-run-runtime@<project>.iam.gserviceaccount.com"
+#                             (must have roles/datastore.user on the Firestore project)
+#
+#   Authentication — pick ONE of:
+#     A) Workload Identity Federation (recommended, keyless):
+#          GCP_WORKLOAD_IDENTITY_PROVIDER  (full resource name)
+#          GCP_DEPLOY_SERVICE_ACCOUNT      (deployer SA email)
+#     B) Service-account JSON key (legacy):
+#          GCP_SERVICE_ACCOUNT_KEY  (entire JSON, stored as a secret)
+
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only one deploy at a time per branch. Cancel older queued runs.
+concurrency:
+  group: deploy-cloud-run-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: Lint, build, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm test
+      - name: Build (sanity check — Docker re-builds for the image)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://www.medicareinspokane.com
+
+  deploy:
+    name: Build image & deploy to Cloud Run
+    needs: ci
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    # Required for Workload Identity Federation (id-token: write).
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      AR_REPO: ${{ vars.ARTIFACT_REGISTRY_REPO }}
+      RUNTIME_SA: ${{ vars.RUNTIME_SERVICE_ACCOUNT }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPO }}/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ----- Authenticate to Google Cloud -----
+      # Prefer Workload Identity Federation; fall back to a JSON key secret.
+      - name: Authenticate to Google Cloud (WIF)
+        if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Authenticate to Google Cloud (JSON key)
+        if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER == '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build container image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com \
+            -t "$IMAGE" \
+            .
+
+      - name: Push container image
+        run: docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE }}
+          # Bind the runtime service account so Application Default Credentials
+          # are available to firebase-admin inside the container.
+          flags: >-
+            --service-account=${{ env.RUNTIME_SA }}
+            --allow-unauthenticated
+            --port=8080
+            --cpu=1
+            --memory=512Mi
+            --min-instances=0
+            --max-instances=10
+          env_vars: |
+            NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com
+            FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }}
+            NODE_ENV=production
+
+      - name: Show service URL
+        run: |
+          gcloud run services describe "$SERVICE" \
+            --region "$REGION" \
+            --format='value(status.url)'

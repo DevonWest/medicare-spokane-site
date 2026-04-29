@@ -1,8 +1,10 @@
 .git
 .gitignore
+.github
 .next
 node_modules
 README.md
 *.md
 Dockerfile
 .dockerignore
+tests
