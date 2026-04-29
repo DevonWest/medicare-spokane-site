@@ -275,3 +275,51 @@ Run through this before flipping DNS to the Cloud Run URL.
 - [ ] GTM container is published (not just in workspace)
 - [ ] GA4 sees `generate_lead` events from production traffic only
 - [ ] The Google Ads conversion (if applicable) is mapped to the same event
+
+## Phase 6 — Beta deployment runbook
+
+Phase 6 deploys the site to a **separate** Cloud Run service at `beta.medicareinspokane.com` so production QA can happen against real Cloud Run + real Firestore without risking the live root domain.
+
+### One-time setup
+
+1. **Create a second Cloud Run service** (empty placeholder is fine — the workflow will replace it):
+   ```bash
+   gcloud run deploy medicare-spokane-site-beta \
+     --image=us-docker.pkg.dev/cloudrun/container/hello \
+     --region="$GCP_REGION" \
+     --no-allow-unauthenticated   # tighten until you're ready
+   ```
+2. **Add GitHub repo variables** (Settings → Secrets and variables → Actions → Variables):
+   - `CLOUD_RUN_SERVICE_BETA` = `medicare-spokane-site-beta`
+   - `NEXT_PUBLIC_GTM_ID` = `GTM-XXXXXXX` (or leave unset to disable GTM)
+   - All existing prod vars must remain set: `GCP_PROJECT_ID`, `GCP_REGION`, `ARTIFACT_REGISTRY_REPO`, `RUNTIME_SERVICE_ACCOUNT`, `FIREBASE_PROJECT_ID`, `CLOUD_RUN_SERVICE`.
+3. **Map the beta domain** in Cloud Run → Manage Custom Domains:
+   - Domain: `beta.medicareinspokane.com`
+   - Service: `medicare-spokane-site-beta`
+   - Add the CNAME record GCP gives you to your DNS provider.
+
+### Trigger the beta deploy
+
+GitHub → Actions → **Deploy to Cloud Run** → **Run workflow** → choose:
+- Branch: `main` (or your release branch)
+- Target: `beta`
+
+The workflow will:
+- Build the image with `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`, `NEXT_PUBLIC_SITE_ENV=staging`, `NEXT_PUBLIC_GTM_ID=$VAR` baked in.
+- Push to `…/site-beta:<sha>` in Artifact Registry.
+- Deploy to the `medicare-spokane-site-beta` service with the same vars set as runtime env (and `FIREBASE_PROJECT_ID`, `NODE_ENV=production`).
+
+> ⚠️ `NEXT_PUBLIC_*` values are inlined into the client JS bundle at `next build`. Setting them only on Cloud Run is not enough — they must also be passed as `--build-arg` (the workflow does this).
+
+### Post-deploy QA on beta
+
+Run the [Launch QA checklist](#launch-qa-checklist) against `https://beta.medicareinspokane.com`. In particular:
+- `curl -sI https://beta.medicareinspokane.com/robots.txt` shows `Disallow: /` (because `NEXT_PUBLIC_SITE_ENV=staging`).
+- `curl -sI https://beta.medicareinspokane.com/healthz` returns `200`.
+- View source on any page → `<meta name="robots" content="noindex,nofollow,…">` is present.
+- Submit a test lead → check Firestore `website_leads` for the doc, and GTM Preview for a `generate_lead` event tagged `site_env: "staging"` with **no** name/email/phone/zip in the payload.
+- Confirm security headers on `curl -sI https://beta.medicareinspokane.com/` (HSTS, `X-Frame-Options: DENY`, etc.).
+
+### Promote to production
+
+After beta passes QA, re-run the same workflow with **Target: production**. It rebuilds with `NEXT_PUBLIC_SITE_ENV=production` and `NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com` and deploys to the `medicare-spokane-site` service.

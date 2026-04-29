@@ -11,9 +11,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set build-time environment variable for the site URL
+# Set build-time environment variables. These are inlined into the
+# client JS bundle at `next build`, so they MUST be passed as build-args
+# (Cloud Run runtime env vars are too late for any NEXT_PUBLIC_* var).
 ARG NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com
+ARG NEXT_PUBLIC_SITE_ENV=production
+ARG NEXT_PUBLIC_GTM_ID=
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_ENV=$NEXT_PUBLIC_SITE_ENV
+ENV NEXT_PUBLIC_GTM_ID=$NEXT_PUBLIC_GTM_ID
 
 # Build the Next.js app (standalone output)
 ENV NEXT_TELEMETRY_DISABLED=1
