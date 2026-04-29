@@ -2,6 +2,11 @@
 
 // Root-layout-level error boundary. Used when the root layout itself fails.
 // Must define its own <html> and <body> tags.
+//
+// Next.js 16 renamed the recovery callback from `reset` to `unstable_retry`.
+// The signature is intentionally unstable upstream, but it is the only public
+// API for re-rendering the boundary in this version (see
+// node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md).
 
 export default function GlobalError({
   error,

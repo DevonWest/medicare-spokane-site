@@ -25,7 +25,10 @@ export function getSiteEnv(): SiteEnv {
   ) {
     return raw;
   }
-  return "staging";
+  // Anything else is treated as production to fail-safe toward indexing —
+  // a typo in NEXT_PUBLIC_SITE_ENV must not silently de-index the live site.
+  // To explicitly mark a non-prod environment, use one of the values above.
+  return "production";
 }
 
 export function isProduction(): boolean {

@@ -3,6 +3,10 @@
 // Route-level error boundary. Renders inside the root layout, so the Header
 // and Footer remain visible. See app/global-error.tsx for the layout-level
 // fallback.
+//
+// `unstable_retry` is Next.js 16's renamed `reset` callback — the underscore
+// prefix reflects upstream's unstable contract, but it is the documented public
+// API for this version.
 
 import Link from "next/link";
 import { useEffect } from "react";
