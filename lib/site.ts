@@ -1,11 +1,13 @@
 export const siteConfig = {
-  name: "Medicare Spokane",
+  name: "Medicare in Spokane",
+  legalName: "Medicare in Spokane",
+  agencyDescriptor: "a licensed independent insurance agency",
   tagline: "Local Medicare Help in Spokane, WA",
   description:
-    "Medicare Spokane connects Eastern Washington residents with licensed Medicare insurance agents for personalized, no-cost help choosing Medicare Advantage, Supplement, and Part D plans.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.medicarespokane.com",
+    "Medicare in Spokane is a licensed independent insurance agency helping Spokane-area residents understand and compare Medicare Advantage, Medicare Supplement, and Part D options.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.medicareinspokane.com",
   phone: "(509) 555-0100",
-  email: "info@medicarespokane.com",
+  email: "info@medicareinspokane.com",
   address: {
     streetAddress: "123 W Riverside Ave, Suite 100",
     addressLocality: "Spokane",
@@ -14,7 +16,7 @@ export const siteConfig = {
     addressCountry: "US",
   },
   social: {
-    facebook: "https://facebook.com/medicarespokane",
+    facebook: "https://facebook.com/medicareinspokane",
   },
   openGraph: {
     type: "website",

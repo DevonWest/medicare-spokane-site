@@ -8,22 +8,25 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-blue-700 font-bold text-xl tracking-tight">
-              Medicare<span className="text-blue-500">Spokane</span>
+              Medicare<span className="text-blue-500">InSpokane</span>
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-            <Link href="/topics/medicare-advantage" className="hover:text-blue-700 transition-colors">
-              Medicare Advantage
+            <Link href="/medicare-spokane" className="hover:text-blue-700 transition-colors">
+              Medicare Help
             </Link>
-            <Link href="/topics/medicare-supplement" className="hover:text-blue-700 transition-colors">
-              Medigap
+            <Link href="/turning-65-medicare-spokane" className="hover:text-blue-700 transition-colors">
+              Turning 65
             </Link>
-            <Link href="/topics/medicare-part-d" className="hover:text-blue-700 transition-colors">
-              Part D
+            <Link
+              href="/medicare-advantage-vs-supplement-spokane"
+              className="hover:text-blue-700 transition-colors"
+            >
+              Advantage vs. Medigap
             </Link>
-            <Link href="/topics/medicare-enrollment" className="hover:text-blue-700 transition-colors">
-              Enrollment
+            <Link href="/contact" className="hover:text-blue-700 transition-colors">
+              Contact
             </Link>
           </nav>
 

@@ -13,10 +13,11 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <span className="text-white font-bold text-lg">
-              Medicare<span className="text-blue-400">Spokane</span>
+              Medicare<span className="text-blue-400">InSpokane</span>
             </span>
             <p className="mt-3 text-sm text-gray-400 leading-relaxed">
-              Licensed Medicare insurance agents serving Spokane and surrounding Eastern Washington communities.
+              {siteConfig.legalName} is a licensed independent insurance agency serving Spokane and surrounding
+              Eastern Washington communities.
             </p>
             <div className="mt-4 space-y-1 text-sm">
               <p>
@@ -35,6 +36,36 @@ export default function Footer() {
                 {siteConfig.address.postalCode}
               </p>
             </div>
+          </div>
+
+          {/* Main Pages */}
+          <div>
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Medicare Help</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/medicare-spokane" className="hover:text-white transition-colors">
+                  Medicare in Spokane
+                </Link>
+              </li>
+              <li>
+                <Link href="/turning-65-medicare-spokane" className="hover:text-white transition-colors">
+                  Turning 65 &amp; Medicare
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/medicare-advantage-vs-supplement-spokane"
+                  className="hover:text-white transition-colors"
+                >
+                  Advantage vs. Supplement
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors">
+                  Contact
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Topics */}
@@ -64,42 +95,15 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/" className="hover:text-white transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/topics/medicare-enrollment" className="hover:text-white transition-colors">
-                  Get Started
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="https://www.medicare.gov"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white transition-colors"
-                >
-                  Medicare.gov ↗
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
 
         <div className="mt-10 pt-8 border-t border-gray-800 text-xs text-gray-500 flex flex-col sm:flex-row justify-between gap-2">
-          <p>© {currentYear} {siteConfig.name}. All rights reserved.</p>
+          <p>© {currentYear} {siteConfig.legalName}. All rights reserved.</p>
           <p>
-            We are licensed Medicare insurance agents. We do not offer every plan available in your area. Currently we
-            represent a number of organizations which offer products in your region. Please contact Medicare.gov or
-            1-800-MEDICARE (TTY 1-877-486-2048), 24 hours a day/7 days a week, to get information on all of your
-            options.
+            {siteConfig.legalName} is a licensed independent insurance agency. We do not offer every plan available in
+            your area. Any information we provide is limited to the plans we do offer in your area. Please contact
+            Medicare.gov or 1-800-MEDICARE (TTY 1-877-486-2048), 24 hours a day/7 days a week, to get information on
+            all of your options.
           </p>
         </div>
       </div>

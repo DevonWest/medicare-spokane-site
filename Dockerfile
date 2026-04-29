@@ -12,7 +12,7 @@ RUN npm ci
 COPY . .
 
 # Set build-time environment variable for the site URL
-ARG NEXT_PUBLIC_SITE_URL=https://www.medicarespokane.com
+ARG NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 # Build the Next.js app (standalone output)
@@ -40,9 +40,9 @@ RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 8080
 
-ENV PORT=3000
+ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 
 CMD ["node", "server.js"]
