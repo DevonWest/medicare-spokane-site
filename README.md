@@ -278,6 +278,8 @@ Run through this before flipping DNS to the Cloud Run URL.
 
 ## Phase 6 — Beta deployment runbook
 
+> **For the owner doing the actual deploy:** the full beginner-friendly, click-by-click checklist (GitHub vars, GCP APIs, Artifact Registry, Cloud Run service, IAM, DNS, dispatching the workflow, post-deploy QA, and promotion to prod) is in [`docs/deploy-beta-checklist.md`](docs/deploy-beta-checklist.md). The summary below is the short version.
+
 Phase 6 deploys the site to a **separate** Cloud Run service at `beta.medicareinspokane.com` so production QA can happen against real Cloud Run + real Firestore without risking the live root domain.
 
 ### One-time setup
