@@ -33,7 +33,8 @@ export default function ContactPage() {
             Contact Us
           </h1>
           <p className="text-xl text-blue-100 max-w-2xl">
-            Talk to a licensed independent Medicare agent serving Spokane and Eastern Washington.
+            Talk to a licensed independent Medicare agent serving Spokane, Spokane Valley, Liberty Lake, Cheney, Airway
+            Heights, Medical Lake, Mead, Deer Park, and the surrounding Eastern Washington area.
           </p>
         </div>
       </section>

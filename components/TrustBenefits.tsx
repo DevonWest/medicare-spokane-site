@@ -14,7 +14,7 @@ const defaultItems: Benefit[] = [
   {
     icon: "🏠",
     title: "Local Spokane Expertise",
-    body: "We work with Spokane-area residents every day and are familiar with the doctors, hospitals, and provider networks serving Eastern Washington.",
+    body: "We work with Spokane-area residents every day — from Spokane and Spokane Valley to Liberty Lake, Cheney, Airway Heights, Medical Lake, Mead, and Deer Park — and know the doctors, hospitals, and provider networks across Eastern Washington.",
   },
   {
     icon: "💰",
@@ -24,12 +24,12 @@ const defaultItems: Benefit[] = [
   {
     icon: "🛡️",
     title: "Independent & Unbiased",
-    body: "As a licensed independent insurance agency, we represent multiple carriers and walk you through your options so you can make an informed choice.",
+    body: "As a licensed independent insurance agency, we represent multiple carriers and walk you through your options so you can make an informed choice — at your own pace, with no pressure.",
   },
   {
     icon: "📞",
-    title: "Real People, Year-Round",
-    body: "We are here for you long after enrollment — for billing questions, plan changes, or annual reviews during the Annual Enrollment Period.",
+    title: "Patient with Older Adults & Caregivers",
+    body: "We are happy to speak with the Medicare beneficiary, an adult child, or another caregiver. We will go as slowly as you need and stay available year-round for billing questions, plan changes, and Annual Enrollment reviews.",
   },
 ];
 

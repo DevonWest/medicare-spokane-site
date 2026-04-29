@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
+import type { UtmParams } from "@/lib/utm";
 
 const ALLOWED_SOURCES: LeadSource[] = [
   "homepage",
@@ -9,6 +10,26 @@ const ALLOWED_SOURCES: LeadSource[] = [
   "contact",
   "unknown",
 ];
+
+const UTM_KEYS: Array<keyof UtmParams> = ["source", "medium", "campaign", "term", "content"];
+
+function clip(value: unknown, max: number): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const str = String(value);
+  if (!str) return undefined;
+  return str.slice(0, max);
+}
+
+function sanitizeUtm(value: unknown): UtmParams | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  const out: UtmParams = {};
+  for (const key of UTM_KEYS) {
+    const v = clip(raw[key], 200);
+    if (v) out[key] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export async function POST(request: Request) {
   let body: Partial<LeadPayload> & Record<string, unknown>;
@@ -23,12 +44,16 @@ export async function POST(request: Request) {
     : "unknown";
 
   const payload: LeadPayload = {
-    fullName: String(body.fullName ?? "").slice(0, 200),
-    email: String(body.email ?? "").slice(0, 200),
-    phone: String(body.phone ?? "").slice(0, 50),
-    zip: body.zip ? String(body.zip).slice(0, 10) : undefined,
-    message: body.message ? String(body.message).slice(0, 2000) : undefined,
+    fullName: clip(body.fullName, 200) ?? "",
+    email: clip(body.email, 200) ?? "",
+    phone: clip(body.phone, 50) ?? "",
+    zip: clip(body.zip, 10),
+    message: clip(body.message, 2000),
     source,
+    sourcePath: clip(body.sourcePath, 500),
+    referrer: clip(body.referrer, 500),
+    utm: sanitizeUtm(body.utm),
+    clientSubmittedAt: clip(body.clientSubmittedAt, 40),
   };
 
   const result = await submitLead(payload);

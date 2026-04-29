@@ -78,8 +78,9 @@ export default function MedicareSpokanePage() {
               multiple insurance carriers so we can compare options together rather than pushing a single plan.
             </p>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Our goal is to help you understand how Medicare works, what plan types may fit your situation, and what
-              your next step is. Every conversation is at your pace, with no pressure.
+              We help neighbors in Spokane, Spokane Valley, Liberty Lake, Cheney, Airway Heights, Medical Lake, Mead,
+              and Deer Park understand how Medicare works, what plan types may fit their situation, and what their next
+              step is. Every conversation is at your pace, with no pressure.
             </p>
 
             <h3 className="text-lg font-semibold text-gray-900 mt-8 mb-3">What we can help with</h3>

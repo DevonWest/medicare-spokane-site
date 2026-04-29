@@ -9,7 +9,13 @@
  *
  * To swap in Firebase later, replace the body of `submitLead` to write
  * to Firestore (e.g. via `addDoc(collection(db, "leads"), payload)`).
+ *
+ * Captured fields include attribution data (UTM params, referrer, source
+ * page path) and a server-side `submittedAt` timestamp so the future
+ * Firebase document is analytics-ready out of the box.
  */
+
+import type { UtmParams } from "./utm";
 
 export type LeadSource =
   | "homepage"
@@ -19,13 +25,30 @@ export type LeadSource =
   | "contact"
   | "unknown";
 
-export interface LeadPayload {
+export interface LeadAttribution {
+  /** Pathname of the page the form was submitted from (e.g. "/contact"). */
+  sourcePath?: string;
+  /** `document.referrer` at submit time, if available. */
+  referrer?: string;
+  /** Parsed UTM parameters captured from the visitor's session. */
+  utm?: UtmParams;
+  /** ISO timestamp captured client-side when the form was submitted. */
+  clientSubmittedAt?: string;
+}
+
+export interface LeadPayload extends LeadAttribution {
   fullName: string;
   email: string;
   phone: string;
   zip?: string;
   message?: string;
   source: LeadSource;
+}
+
+/** What we actually persist – includes server-stamped fields. */
+export interface PersistedLead extends LeadPayload {
+  /** Server-side ISO timestamp. Authoritative for sorting/reporting. */
+  submittedAt: string;
 }
 
 export interface LeadResult {
@@ -36,7 +59,8 @@ export interface LeadResult {
 
 /**
  * Submit a lead. Replace this implementation with a real backend call
- * (Firebase, an email API, etc.) when ready.
+ * (Firebase, an email API, etc.) when ready. The shape of `PersistedLead`
+ * is intended to map directly to a Firestore document.
  */
 export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
   // Basic validation – mirror what the UI enforces, in case the API is
@@ -45,13 +69,22 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     return { ok: false, error: "Name, email, and phone are required." };
   }
 
-  // Placeholder: log to the server console. Do NOT log full PII in
-  // production – this is just a development stub.
+  const persisted: PersistedLead = {
+    ...payload,
+    submittedAt: new Date().toISOString(),
+  };
+
+  // Placeholder: log a sanitized summary to the server console. Do NOT
+  // log full PII in production – this is just a development stub.
   if (process.env.NODE_ENV !== "production") {
     console.log("[leads] received placeholder lead:", {
-      source: payload.source,
-      hasZip: Boolean(payload.zip),
-      hasMessage: Boolean(payload.message),
+      source: persisted.source,
+      sourcePath: persisted.sourcePath,
+      referrer: persisted.referrer,
+      utm: persisted.utm,
+      hasZip: Boolean(persisted.zip),
+      hasMessage: Boolean(persisted.message),
+      submittedAt: persisted.submittedAt,
     });
   }
 

@@ -18,6 +18,7 @@ export default function CTASection({
           <a
             href={`tel:${siteConfig.phone.replace(/\D/g, "")}`}
             className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors text-lg"
+            aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -36,7 +37,32 @@ export default function CTASection({
             </svg>
             Call {siteConfig.phone}
           </a>
+          <a
+            href={`mailto:${siteConfig.email}`}
+            className="inline-flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-950 text-white font-semibold px-8 py-3 rounded-lg transition-colors text-lg border border-blue-400"
+            aria-label={`Email ${siteConfig.legalName} at ${siteConfig.email}`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            Email Us
+          </a>
         </div>
+        <p className="mt-6 text-sm text-blue-100">
+          Mon – Fri, 9:00 AM – 5:00 PM Pacific. We typically respond the same business day.
+        </p>
       </div>
     </section>
   );

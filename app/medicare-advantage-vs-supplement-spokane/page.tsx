@@ -148,7 +148,8 @@ export default function AdvantageVsSupplementPage() {
             </p>
             <p className="text-gray-700 leading-relaxed">
               Tell us about your situation and we will compare the Medicare Advantage and Medicare Supplement options we
-              represent in your ZIP code, side by side.
+              represent in your ZIP code, side by side. We help residents across Spokane, Spokane Valley, Liberty Lake,
+              Cheney, Airway Heights, Medical Lake, Mead, and Deer Park.
             </p>
           </div>
           <div>

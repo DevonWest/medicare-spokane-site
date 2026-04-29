@@ -82,7 +82,8 @@ export default function TurningSixtyFivePage() {
             Turning 65 &amp; Medicare in Spokane
           </h1>
           <p className="text-xl text-blue-100 max-w-2xl">
-            A simple, step-by-step walk through Medicare for Spokane-area residents approaching age 65, from a licensed
+            A simple, step-by-step walk through Medicare for Spokane-area residents approaching age 65 — including
+            Spokane Valley, Liberty Lake, Cheney, Airway Heights, Medical Lake, Mead, and Deer Park. We are a licensed
             independent insurance agency.
           </p>
         </div>
