@@ -7,37 +7,31 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const mod = await import('../lib/leadValidation.ts');
-console.log('Exports:', Object.keys(mod));
+import * as leadValidation from "../lib/leadValidation.ts";
 
-import {
-  DUPLICATE_WINDOW_MS,
-  cleanString,
-  isDuplicateWithinWindow,
-  normalizeEmail,
-  normalizePhone,
-  validateLead,
-} from "../lib/leadValidation.ts";
+test("DUPLICATE_WINDOW_MS equals 10 minutes in ms", () => {
+  assert.equal(leadValidation.DUPLICATE_WINDOW_MS, 10 * 60 * 1000);
+});
 
 test("normalizeEmail lowercases and trims", () => {
-  assert.equal(normalizeEmail("  Foo@Bar.COM "), "foo@bar.com");
-  assert.equal(normalizeEmail(undefined), "");
+  assert.equal(leadValidation.normalizeEmail("  Foo@Bar.COM "), "foo@bar.com");
+  assert.equal(leadValidation.normalizeEmail(undefined), "");
 });
 
 test("normalizePhone keeps only digits", () => {
-  assert.equal(normalizePhone("(509) 555-0100"), "5095550100");
-  assert.equal(normalizePhone(" +1 509.555.0100 "), "15095550100");
-  assert.equal(normalizePhone(undefined), "");
+  assert.equal(leadValidation.normalizePhone("(509) 555-0100"), "5095550100");
+  assert.equal(leadValidation.normalizePhone(" +1 509.555.0100 "), "15095550100");
+  assert.equal(leadValidation.normalizePhone(undefined), "");
 });
 
 test("cleanString returns undefined for empty/whitespace", () => {
-  assert.equal(cleanString("  "), undefined);
-  assert.equal(cleanString("hi "), "hi");
-  assert.equal(cleanString(null), undefined);
+  assert.equal(leadValidation.cleanString("  "), undefined);
+  assert.equal(leadValidation.cleanString("hi "), "hi");
+  assert.equal(leadValidation.cleanString(null), undefined);
 });
 
 test("validateLead accepts a good payload", () => {
-  const r = validateLead({
+  const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "509-555-0100",
@@ -48,7 +42,7 @@ test("validateLead accepts a good payload", () => {
 });
 
 test("validateLead rejects missing fields", () => {
-  const r = validateLead({ fullName: "", email: "", phone: "" });
+  const r = leadValidation.validateLead({ fullName: "", email: "", phone: "" });
   assert.equal(r.ok, false);
   assert.ok(r.errors.fullName);
   assert.ok(r.errors.email);
@@ -56,7 +50,7 @@ test("validateLead rejects missing fields", () => {
 });
 
 test("validateLead rejects bad email and short phone", () => {
-  const r = validateLead({
+  const r = leadValidation.validateLead({
     fullName: "A",
     email: "not-an-email",
     phone: "12345",
@@ -68,7 +62,7 @@ test("validateLead rejects bad email and short phone", () => {
 });
 
 test("validateLead rejects bad zip and too-long message", () => {
-  const r = validateLead({
+  const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "5095550100",
@@ -81,7 +75,7 @@ test("validateLead rejects bad zip and too-long message", () => {
 });
 
 test("validateLead accepts ZIP+4", () => {
-  const r = validateLead({
+  const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "5095550100",
@@ -92,17 +86,17 @@ test("validateLead accepts ZIP+4", () => {
 
 test("isDuplicateWithinWindow: within window is duplicate", () => {
   const now = 1_000_000_000_000;
-  assert.equal(isDuplicateWithinWindow(now - 60_000, now), true);
-  assert.equal(isDuplicateWithinWindow(now - DUPLICATE_WINDOW_MS + 1, now), true);
+  assert.equal(leadValidation.isDuplicateWithinWindow(now - 60_000, now), true);
+  assert.equal(leadValidation.isDuplicateWithinWindow(now - leadValidation.DUPLICATE_WINDOW_MS + 1, now), true);
 });
 
 test("isDuplicateWithinWindow: outside window is NOT duplicate", () => {
   const now = 1_000_000_000_000;
-  assert.equal(isDuplicateWithinWindow(now - DUPLICATE_WINDOW_MS, now), false);
-  assert.equal(isDuplicateWithinWindow(now - DUPLICATE_WINDOW_MS - 1, now), false);
+  assert.equal(leadValidation.isDuplicateWithinWindow(now - leadValidation.DUPLICATE_WINDOW_MS, now), false);
+  assert.equal(leadValidation.isDuplicateWithinWindow(now - leadValidation.DUPLICATE_WINDOW_MS - 1, now), false);
 });
 
 test("isDuplicateWithinWindow: future timestamps are NOT duplicate", () => {
   const now = 1_000_000_000_000;
-  assert.equal(isDuplicateWithinWindow(now + 1000, now), false);
+  assert.equal(leadValidation.isDuplicateWithinWindow(now + 1000, now), false);
 });
