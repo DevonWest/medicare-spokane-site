@@ -9,57 +9,52 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/medicare-spokane`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.95,
-    },
-    {
-      url: `${baseUrl}/turning-65-medicare-spokane`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.95,
-    },
+    { url: baseUrl, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${baseUrl}/medicare-spokane`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/medicare-advantage`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/medicare-supplements`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/medicare-part-d`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/supplemental-insurance`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/carriers`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/testimonials`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/turning-65-medicare-spokane`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     {
       url: `${baseUrl}/medicare-advantage-vs-supplement-spokane`,
       lastModified: now,
       changeFrequency: "weekly",
-      priority: 0.95,
+      priority: 0.85,
     },
+    { url: `${baseUrl}/medicare-faq`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     {
-      url: `${baseUrl}/contact`,
+      url: `${baseUrl}/medicare-enrollment-resources`,
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.85,
     },
+    { url: `${baseUrl}/request-contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
 
   const cityPages: MetadataRoute.Sitemap = getAllCitySlugs().map((slug) => ({
     url: `${baseUrl}/cities/${slug}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: 0.8,
+    priority: 0.7,
   }));
 
   const zipPages: MetadataRoute.Sitemap = getAllZips().map((zip) => ({
     url: `${baseUrl}/zip/${zip}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: 0.7,
+    priority: 0.6,
   }));
 
   const topicPages: MetadataRoute.Sitemap = getAllTopicSlugs().map((slug) => ({
     url: `${baseUrl}/topics/${slug}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: 0.9,
+    priority: 0.8,
   }));
 
   return [...staticPages, ...topicPages, ...cityPages, ...zipPages];

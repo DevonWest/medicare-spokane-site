@@ -6,8 +6,8 @@ interface CTASectionProps {
 }
 
 export default function CTASection({
-  heading = "Ready to Find the Right Medicare Plan?",
-  subheading = "Speak with a licensed Medicare agent in Spokane — no cost, no obligation.",
+  heading = "Ready to Compare Your Medicare Options?",
+  subheading = "Speak with a licensed insurance professional in Spokane — no cost, no obligation.",
 }: CTASectionProps) {
   return (
     <section className="bg-blue-700 text-white py-16 px-4">

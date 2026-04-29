@@ -77,12 +77,8 @@ export default function ContactPage() {
 
             <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900 leading-relaxed">
               <p className="font-semibold mb-1">Compliance note</p>
-              <p>
-                {siteConfig.legalName} is a licensed independent insurance agency. We do not offer every plan
-                available in your area. Any information we provide is limited to the plans we do offer in your area.
-                Please contact Medicare.gov or 1-800-MEDICARE (TTY 1-877-486-2048), 24 hours a day / 7 days a week, to
-                get information on all of your options.
-              </p>
+              <p>{siteConfig.disclaimer}</p>
+              <p className="mt-2">{siteConfig.nonAffiliation}</p>
             </div>
           </div>
 

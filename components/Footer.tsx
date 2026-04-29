@@ -1,7 +1,23 @@
 import Link from "next/link";
-import { siteConfig } from "@/lib/site";
+import { siteConfig, telHref } from "@/lib/site";
 import { spokaneAreaCities } from "@/lib/cities";
-import { medicareTopics } from "@/lib/topics";
+
+const helpLinks: Array<{ href: string; label: string }> = [
+  { href: "/medicare-advantage", label: "Medicare Advantage" },
+  { href: "/medicare-supplements", label: "Medicare Supplements" },
+  { href: "/medicare-part-d", label: "Medicare Part D" },
+  { href: "/supplemental-insurance", label: "Supplemental Insurance" },
+  { href: "/carriers", label: "Carriers" },
+  { href: "/medicare-faq", label: "Medicare FAQ" },
+  { href: "/medicare-enrollment-resources", label: "Enrollment Resources" },
+];
+
+const aboutLinks: Array<{ href: string; label: string }> = [
+  { href: "/about", label: "Our Team" },
+  { href: "/testimonials", label: "Testimonials" },
+  { href: "/contact", label: "Contact" },
+  { href: "/request-contact", label: "Request a Call" },
+];
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -12,16 +28,19 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <span className="text-white font-bold text-lg">
+            <span className="text-white font-bold text-lg block">
               Medicare<span className="text-blue-400">InSpokane</span>
             </span>
+            <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
+              by {siteConfig.legalName}
+            </p>
             <p className="mt-3 text-sm text-gray-400 leading-relaxed">
-              {siteConfig.legalName} is a licensed independent insurance agency serving Spokane and surrounding
-              Eastern Washington communities.
+              {siteConfig.legalName} is {siteConfig.agencyDescriptor} serving Spokane and the
+              surrounding Eastern Washington communities.
             </p>
             <div className="mt-4 space-y-1 text-sm">
               <p>
-                <a href={`tel:${siteConfig.phone.replace(/\D/g, "")}`} className="hover:text-white transition-colors">
+                <a href={telHref} className="hover:text-white transition-colors">
                   {siteConfig.phone}
                 </a>
               </p>
@@ -35,56 +54,47 @@ export default function Footer() {
                 {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
                 {siteConfig.address.postalCode}
               </p>
+              <p className="text-gray-500 text-xs">{siteConfig.hours}</p>
             </div>
           </div>
 
-          {/* Main Pages */}
+          {/* Medicare Help */}
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Medicare Help</h3>
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+              Medicare Help
+            </h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/medicare-spokane" className="hover:text-white transition-colors">
-                  Medicare in Spokane
-                </Link>
-              </li>
-              <li>
-                <Link href="/turning-65-medicare-spokane" className="hover:text-white transition-colors">
-                  Turning 65 &amp; Medicare
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/medicare-advantage-vs-supplement-spokane"
-                  className="hover:text-white transition-colors"
-                >
-                  Advantage vs. Supplement
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white transition-colors">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Topics */}
-          <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Medicare Topics</h3>
-            <ul className="space-y-2 text-sm">
-              {medicareTopics.map((topic) => (
-                <li key={topic.slug}>
-                  <Link href={`/topics/${topic.slug}`} className="hover:text-white transition-colors">
-                    {topic.title}
+              {helpLinks.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="hover:text-white transition-colors">
+                    {item.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Cities */}
+          {/* About */}
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">Areas We Serve</h3>
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+              About Our Agency
+            </h3>
+            <ul className="space-y-2 text-sm">
+              {aboutLinks.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Areas */}
+          <div>
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+              Areas We Serve
+            </h3>
             <ul className="space-y-2 text-sm">
               {spokaneAreaCities.map((city) => (
                 <li key={city.slug}>
@@ -97,14 +107,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-gray-800 text-xs text-gray-500 flex flex-col sm:flex-row justify-between gap-2">
-          <p>© {currentYear} {siteConfig.legalName}. All rights reserved.</p>
+        <div className="mt-10 pt-8 border-t border-gray-800 text-xs text-gray-400 space-y-3">
           <p>
-            {siteConfig.legalName} is a licensed independent insurance agency. We do not offer every plan available in
-            your area. Any information we provide is limited to the plans we do offer in your area. Please contact
-            Medicare.gov or 1-800-MEDICARE (TTY 1-877-486-2048), 24 hours a day/7 days a week, to get information on
-            all of your options.
+            © {currentYear} {siteConfig.legalName}. All rights reserved. {siteConfig.positioning}
           </p>
+          <p>{siteConfig.disclaimer}</p>
+          <p>{siteConfig.nonAffiliation}</p>
         </div>
       </div>
     </footer>
