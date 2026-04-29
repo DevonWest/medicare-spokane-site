@@ -7,6 +7,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+const mod = await import('../lib/leadValidation.ts');
+console.log('Exports:', Object.keys(mod));
+
 import {
   DUPLICATE_WINDOW_MS,
   cleanString,
