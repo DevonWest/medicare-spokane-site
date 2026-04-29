@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
 import type { UtmParams } from "@/lib/utm";
 
+// firebase-admin requires Node APIs — opt out of the Edge runtime explicitly.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const ALLOWED_SOURCES: LeadSource[] = [
   "homepage",
   "medicare-spokane",
@@ -36,7 +40,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
 
   const source: LeadSource = ALLOWED_SOURCES.includes(body.source as LeadSource)
@@ -56,6 +60,15 @@ export async function POST(request: Request) {
     clientSubmittedAt: clip(body.clientSubmittedAt, 40),
   };
 
-  const result = await submitLead(payload);
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  try {
+    const result = await submitLead(payload);
+    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  } catch (err) {
+    // submitLead is supposed to catch its own errors, but belt-and-suspenders.
+    console.error("[api/leads] unexpected error:", err);
+    return NextResponse.json(
+      { ok: false, error: "We couldn't submit your request. Please try again or call us." },
+      { status: 500 },
+    );
+  }
 }
