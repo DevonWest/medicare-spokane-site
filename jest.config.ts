@@ -10,6 +10,7 @@ const config: Config = {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   testMatch: ['<rootDir>/tests/**/*.test.(ts|tsx)'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   passWithNoTests: true,
 };
 export default config;
