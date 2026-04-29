@@ -13,14 +13,15 @@ const gtmId = getGtmId();
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | ${siteConfig.tagline}`,
-    template: `%s | ${siteConfig.name}`,
+    default: `${siteConfig.shortName} | ${siteConfig.positioning}`,
+    template: `%s | ${siteConfig.shortName}`,
   },
   description: siteConfig.description,
   keywords: [
     "Medicare Spokane",
     "Medicare Spokane WA",
     "Medicare in Spokane",
+    "Health Insurance Options Spokane",
     "Medicare Advantage Spokane",
     "Medicare Supplement Spokane",
     "Medigap Spokane",
@@ -37,20 +38,20 @@ export const metadata: Metadata = {
     "Medicare Deer Park WA",
     "Eastern Washington Medicare",
   ],
-  authors: [{ name: siteConfig.name }],
-  creator: siteConfig.name,
-  publisher: siteConfig.name,
+  authors: [{ name: siteConfig.legalName }],
+  creator: siteConfig.legalName,
+  publisher: siteConfig.legalName,
   openGraph: {
     type: "website",
     locale: siteConfig.openGraph.locale,
     url: siteConfig.url,
     siteName: siteConfig.name,
-    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
     description: siteConfig.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
     description: siteConfig.description,
   },
   robots: indexable

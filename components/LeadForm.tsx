@@ -209,9 +209,10 @@ export default function LeadForm({
       </button>
 
       <p className="mt-4 text-xs text-gray-500 leading-relaxed">
-        By submitting, you agree to be contacted by a licensed insurance agent about Medicare insurance options. We do
-        not offer every plan available in your area. Any information we provide is limited to the plans we do offer in
-        your area. Please contact Medicare.gov or 1-800-MEDICARE to get information on all of your options.
+        By submitting, you agree to be contacted by a licensed insurance professional about Medicare insurance
+        options. We do not offer every plan available in your area. Currently, we represent 8 organizations which
+        offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health
+        Insurance Assistance Program (SHIP) to get information on all of your options.
       </p>
     </form>
   );

@@ -62,7 +62,7 @@ export const medicareTopics: Topic[] = [
     shortDescription:
       "Learn when and how to enroll in Medicare to avoid late enrollment penalties and get the coverage you need.",
     longDescription:
-      "Enrolling in Medicare at the right time is critical to avoid late enrollment penalties and coverage gaps. Your Initial Enrollment Period (IEP) begins 3 months before your 65th birthday and ends 3 months after. There are also Special Enrollment Periods (SEPs) for qualifying life events. Working with a licensed Medicare agent in Spokane can help you navigate enrollment and choose the best plan for your situation.",
+      "Enrolling in Medicare at the right time is critical to avoid late enrollment penalties and coverage gaps. Your Initial Enrollment Period (IEP) begins 3 months before your 65th birthday and ends 3 months after. There are also Special Enrollment Periods (SEPs) for qualifying life events. Working with a licensed Medicare agent in Spokane can help you navigate enrollment and find a plan that fits your needs.",
     keywords: ["Medicare enrollment", "Medicare signup", "when to enroll in Medicare", "Initial Enrollment Period", "Medicare age 65"],
     benefits: [
       "Avoid late enrollment penalties",
