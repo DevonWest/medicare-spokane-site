@@ -1,35 +1,10 @@
-# Dependencies
-node_modules
-.npm
-
-# Build outputs
-.next
-out
-dist
-build
-
-# Local environment files
-.env
-.env.*
-!.env.example
-
-# Version control
 .git
 .gitignore
-
-# CI/CD
 .github
-
-# Docker files (not needed in build context)
+.next
+node_modules
+README.md
+*.md
 Dockerfile
 .dockerignore
-
-# Misc
-.DS_Store
-Thumbs.db
-*.log
-npm-debug.log*
-
-# Testing
-coverage
-.nyc_output
+tests

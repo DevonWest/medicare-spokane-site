@@ -1,49 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase';
+import { NextResponse } from "next/server";
+import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
+import type { UtmParams } from "@/lib/utm";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+// firebase-admin requires Node APIs — opt out of the Edge runtime explicitly.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-interface LeadData {
-  name: string;
-  phone: string;
-  email?: string;
-  zip?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_term?: string;
-  utm_content?: string;
+const ALLOWED_SOURCES: LeadSource[] = [
+  "homepage",
+  "medicare-spokane",
+  "turning-65",
+  "advantage-vs-supplement",
+  "contact",
+  "unknown",
+];
+
+const UTM_KEYS: Array<keyof UtmParams> = ["source", "medium", "campaign", "term", "content"];
+
+function clip(value: unknown, max: number): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const str = String(value);
+  if (!str) return undefined;
+  return str.slice(0, max);
 }
 
-export async function POST(request: NextRequest) {
+function sanitizeUtm(value: unknown): UtmParams | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  const out: UtmParams = {};
+  for (const key of UTM_KEYS) {
+    const v = clip(raw[key], 200);
+    if (v) out[key] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+export async function POST(request: Request) {
+  let body: Partial<LeadPayload> & Record<string, unknown>;
   try {
-    const body: LeadData = await request.json();
-    
-    if (!body.name || !body.phone) {
-      return NextResponse.json(
-        { error: 'Name and phone are required' },
-        { status: 400 }
-      );
-    }
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
+  }
 
-    const firebaseApp = getFirebaseAdmin();
-    const db = firebaseApp.firestore();
-    
-    const lead = {
-      ...body,
-      createdAt: new Date().toISOString(),
-      source: 'web',
-    };
+  const source: LeadSource = ALLOWED_SOURCES.includes(body.source as LeadSource)
+    ? (body.source as LeadSource)
+    : "unknown";
 
-    await db.collection('leads').add(lead);
+  const payload: LeadPayload = {
+    fullName: clip(body.fullName, 200) ?? "",
+    email: clip(body.email, 200) ?? "",
+    phone: clip(body.phone, 50) ?? "",
+    zip: clip(body.zip, 10),
+    message: clip(body.message, 2000),
+    source,
+    sourcePath: clip(body.sourcePath, 500),
+    referrer: clip(body.referrer, 500),
+    utm: sanitizeUtm(body.utm),
+    clientSubmittedAt: clip(body.clientSubmittedAt, 40),
+  };
 
-    return NextResponse.json({ success: true }, { status: 201 });
-  } catch (error) {
-    console.error('Lead submission error:', error);
+  try {
+    const result = await submitLead(payload);
+    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  } catch (err) {
+    // submitLead is supposed to catch its own errors, but belt-and-suspenders.
+    console.error("[api/leads] unexpected error:", err);
     return NextResponse.json(
-      { error: 'Failed to submit lead' },
-      { status: 500 }
+      { ok: false, error: "We couldn't submit your request. Please try again or call us." },
+      { status: 500 },
     );
   }
 }

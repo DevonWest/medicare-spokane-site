@@ -1,28 +1,100 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { UTMTracker } from '@/components/UTMTracker';
+import type { Metadata } from "next";
+import "./globals.css";
+import { GoogleTagManager } from "@next/third-parties/google";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import LocalBusinessSchema from "@/components/LocalBusinessSchema";
+import { siteConfig } from "@/lib/site";
+import { getGtmId, isProduction } from "@/lib/env";
+
+const indexable = isProduction();
+const gtmId = getGtmId();
 
 export const metadata: Metadata = {
-  title: 'Medicare Plans in Spokane, WA | Local Medicare Help',
-  description: 'Find the best Medicare Advantage, Supplement, and Part D plans in Spokane, WA. Get free local help from a licensed Medicare advisor.',
-  metadataBase: new URL('https://medicare-spokane.com'),
-  alternates: { canonical: '/' },
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: `${siteConfig.name} | ${siteConfig.tagline}`,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: [
+    "Medicare Spokane",
+    "Medicare Spokane WA",
+    "Medicare in Spokane",
+    "Medicare Advantage Spokane",
+    "Medicare Supplement Spokane",
+    "Medigap Spokane",
+    "Medicare Part D Spokane",
+    "Medicare agent Spokane",
+    "Medicare broker Spokane",
+    "Turning 65 Spokane",
+    "Medicare Spokane Valley",
+    "Medicare Liberty Lake",
+    "Medicare Cheney WA",
+    "Medicare Airway Heights",
+    "Medicare Medical Lake",
+    "Medicare Mead WA",
+    "Medicare Deer Park WA",
+    "Eastern Washington Medicare",
+  ],
+  authors: [{ name: siteConfig.name }],
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
   openGraph: {
-    title: 'Medicare Plans in Spokane, WA',
-    description: 'Find the best Medicare plans in Spokane. Free local help.',
-    url: 'https://medicare-spokane.com',
-    siteName: 'Medicare Spokane',
-    locale: 'en_US',
-    type: 'website',
+    type: "website",
+    locale: siteConfig.openGraph.locale,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} | ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  robots: indexable
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      }
+    : {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+          noimageindex: true,
+        },
+      },
+  alternates: {
+    canonical: siteConfig.url,
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body>
-        <UTMTracker />
-        {children}
+      <head>
+        <LocalBusinessSchema />
+      </head>
+      {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
+      <body className="flex flex-col min-h-screen bg-white text-gray-900 font-sans antialiased">
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );
