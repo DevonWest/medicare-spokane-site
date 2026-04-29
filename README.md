@@ -82,5 +82,5 @@ lib/
 
 | Variable | Description | Default |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | The canonical URL of the site | `https://www.medicarespokane.com` |
+| `NEXT_PUBLIC_SITE_URL` | The canonical URL of the site | `https://www.medicareinspokane.com` |
 | `PORT` | Port the server listens on (Cloud Run) | `3000` |
