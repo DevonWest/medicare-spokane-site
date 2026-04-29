@@ -157,6 +157,8 @@ lib/
 | `FIREBASE_CLIENT_EMAIL` | Service-account client email (admin SDK) | _required if not using ADC_ |
 | `FIREBASE_PRIVATE_KEY` | Service-account private key. Newlines may be escaped as `\n` — they are unescaped at runtime. **Server-only — never expose to the client.** | _required if not using ADC_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
+| `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
+| `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
 **Production (Cloud Run):** set only `NEXT_PUBLIC_SITE_URL`, `FIREBASE_PROJECT_ID`, and `NODE_ENV=production`. **Do not** set `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` — Cloud Run's runtime service account provides Application Default Credentials automatically (see the deployment section below).
 
@@ -194,3 +196,82 @@ npm test
 ```
 
 Runs lightweight unit tests for the pure validation/dedupe helpers in `lib/leadValidation.ts` (Node's built-in `node:test` via `tsx`).
+
+## Analytics & conversion tracking
+
+Tracking is **opt-in** via `NEXT_PUBLIC_GTM_ID`. When that variable is set, the layout loads Google Tag Manager via `@next/third-parties/google` once for the whole app, and successful lead-form submissions push a privacy-friendly conversion event onto the `dataLayer`:
+
+```js
+{
+  event: "generate_lead",          // GA4 recommended event name
+  lead_source: "homepage",          // which form was used
+  had_message: "no",                 // boolean as string
+  site_env: "production",
+  utm_source, utm_medium, utm_campaign, utm_term, utm_content   // when present
+}
+```
+
+**Privacy guarantees** (enforced in `lib/analytics.ts`):
+
+- Name, email, phone, ZIP, free-text message body, and IP address are **never** sent to GTM/GA4.
+- Only structural metadata (form ID, env, UTM tags) is forwarded.
+- Map `generate_lead` to a Conversion / Google Ads conversion inside GTM — no extra code needed.
+
+## Operational endpoints
+
+| Path | Purpose |
+|---|---|
+| `/healthz` | Liveness probe for Cloud Run / uptime monitors. Returns `{ status: "ok", uptime }` with `Cache-Control: no-store`. Performs no I/O so it cannot fail because of Firestore. |
+| `/robots.txt` | Auto-generated. Disallows everything when `NEXT_PUBLIC_SITE_ENV` ≠ `production`. |
+| `/sitemap.xml` | Auto-generated from `lib/cities`, `lib/zips`, `lib/topics`. |
+
+## Security headers
+
+Set in `next.config.ts` for every path:
+
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `X-Frame-Options: DENY`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()`
+- `Cross-Origin-Opener-Policy: same-origin`
+- `X-Powered-By` is suppressed (`poweredByHeader: false`).
+
+## Launch QA checklist
+
+Run through this before flipping DNS to the Cloud Run URL.
+
+**Build & runtime**
+- [ ] `npm run lint` clean
+- [ ] `npm test` all green
+- [ ] `npm run build` succeeds and reports the expected route count
+- [ ] Container starts locally on `:8080` (`docker run -p 8080:8080 …`)
+- [ ] `GET /healthz` returns 200 with `{"status":"ok"}`
+
+**SEO / indexing**
+- [ ] `NEXT_PUBLIC_SITE_ENV=production` is set in Cloud Run for the live service
+- [ ] Beta / preview revisions have `NEXT_PUBLIC_SITE_ENV=staging` (or similar) and serve `Disallow: /` at `/robots.txt`
+- [ ] `/robots.txt` on prod allows crawling and lists `/sitemap.xml`
+- [ ] `/sitemap.xml` includes every city, ZIP, and topic page
+- [ ] Each page has a unique `<title>` and canonical tag pointing at `https://www.medicareinspokane.com/...`
+
+**Forms & lead capture**
+- [ ] Submitting the homepage form creates a Firestore doc in `website_leads`
+- [ ] Submitting the contact form (with message) creates a doc with `message` populated
+- [ ] Re-submitting the same email/phone within the dedupe window updates the existing doc rather than duplicating
+- [ ] On success, the GTM dataLayer contains a `generate_lead` event with **no** name/email/phone/ZIP fields
+- [ ] GTM Preview mode confirms the event fires and contains only the whitelisted fields
+
+**Security headers**
+- [ ] `curl -I https://www.medicareinspokane.com/` shows all headers from `next.config.ts`
+- [ ] `X-Powered-By` header is absent
+- [ ] HTTPS enforced (HSTS); HTTP redirects to HTTPS at the load balancer / Cloud Run domain
+
+**Error pages**
+- [ ] `/this-route-does-not-exist` renders the styled 404 page
+- [ ] Forcing a render error shows the in-layout error page with a working "Try again" button
+
+**Analytics**
+- [ ] GTM container is published (not just in workspace)
+- [ ] GA4 sees `generate_lead` events from production traffic only
+- [ ] The Google Ads conversion (if applicable) is mapped to the same event

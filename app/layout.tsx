@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GoogleTagManager } from "@next/third-parties/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LocalBusinessSchema from "@/components/LocalBusinessSchema";
 import { siteConfig } from "@/lib/site";
+import { getGtmId, isProduction } from "@/lib/env";
+
+const indexable = isProduction();
+const gtmId = getGtmId();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -48,17 +53,28 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} | ${siteConfig.tagline}`,
     description: siteConfig.description,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  robots: indexable
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      }
+    : {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+          noimageindex: true,
+        },
+      },
   alternates: {
     canonical: siteConfig.url,
   },
@@ -74,6 +90,7 @@ export default function RootLayout({
       <head>
         <LocalBusinessSchema />
       </head>
+      {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
       <body className="flex flex-col min-h-screen bg-white text-gray-900 font-sans antialiased">
         <Header />
         <main className="flex-1">{children}</main>

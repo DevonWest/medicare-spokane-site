@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { LeadSource } from "@/lib/leads";
 import { captureUtmFromLocation } from "@/lib/utm";
+import { trackLeadConversion } from "@/lib/analytics";
 
 interface LeadFormProps {
   source: LeadSource;
@@ -70,6 +71,12 @@ export default function LeadForm({
       }
 
       setStatus("success");
+      // Privacy-friendly conversion tracking — no PII/PHI sent to GTM.
+      trackLeadConversion({
+        source,
+        utm: Object.keys(utm).length ? utm : undefined,
+        hadMessage: showMessage && Boolean(payload.message && payload.message.trim()),
+      });
       event.currentTarget.reset();
     } catch {
       setStatus("error");
