@@ -226,11 +226,17 @@ export default function HomePage() {
             How We Help Spokane-Area Residents
           </h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto text-lg">
-            Whether you are new to Medicare or reviewing your current coverage, we will help compare
-            options so you can find coverage that fits your needs.
+            Whether you are turning 65, new to Medicare, or reviewing your current coverage, we
+            will help compare options so you can find coverage that fits your needs.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
+              {
+                href: "/turning-65-medicare-spokane",
+                title: "Turning 65",
+                body:
+                  "Start with a Spokane-focused Medicare checklist covering enrollment timing, employer coverage questions, and the next steps to review.",
+              },
               {
                 href: "/medicare-advantage",
                 title: "Medicare Advantage",
