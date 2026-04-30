@@ -22,7 +22,7 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
           return (
             <div
               key={member.name}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
+              className="group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-blue-300"
             >
               <div className="aspect-[3/4] overflow-hidden rounded-lg bg-blue-50">
                 {member.image ? (
@@ -47,7 +47,11 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
 
               <div className="p-5 flex flex-col flex-1">
                 <h3 className="text-lg font-bold text-gray-900 leading-snug">{member.name}</h3>
-                <p className="text-sm font-medium text-blue-700 mt-0.5 mb-3">{member.title}</p>
+                <p className="text-sm font-medium text-blue-700 mt-0.5 mb-2">{member.title}</p>
+                <p className="text-xs font-medium text-gray-500 mb-3">
+                  Helping Spokane residents with Medicare
+                  {typeof member.yearsHelping === "number" ? ` for ${member.yearsHelping}+ years` : ""}
+                </p>
                 <p className="text-sm text-gray-600 leading-relaxed flex-1">{member.shortBio}</p>
 
                 {member.specialties && member.specialties.length > 0 && (

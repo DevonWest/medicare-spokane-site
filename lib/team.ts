@@ -7,6 +7,8 @@ export type TeamMember = {
   phone?: string;
   email?: string;
   scheduleUrl?: string;
+  /** Optional number of years helping Spokane-area Medicare clients. */
+  yearsHelping?: number;
   active: boolean;
   sortOrder: number;
 };
