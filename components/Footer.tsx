@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { siteConfig, telHref } from "@/lib/site";
 import { spokaneAreaCities } from "@/lib/cities";
@@ -28,12 +29,23 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <span className="text-white font-bold text-lg block">
-              Medicare<span className="text-blue-400">InSpokane</span>
-            </span>
-            <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
-              by {siteConfig.legalName}
-            </p>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/brand/health-insurance-options-logo.svg"
+                alt={`${siteConfig.legalName} logo`}
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded bg-white p-1"
+              />
+              <div>
+                <span className="text-white font-bold text-lg block">
+                  Medicare<span className="text-blue-400">InSpokane</span>
+                </span>
+                <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
+                  by {siteConfig.legalName}
+                </p>
+              </div>
+            </div>
             <p className="mt-3 text-sm text-gray-400 leading-relaxed">
               {siteConfig.legalName} is {siteConfig.agencyDescriptor} serving Spokane and the
               surrounding Eastern Washington communities.

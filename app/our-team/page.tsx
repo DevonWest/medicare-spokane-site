@@ -92,8 +92,8 @@ export default function OurTeamPage() {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-3">Our Licensed Team</h2>
           <p className="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
-            Every team member is a licensed insurance professional serving Spokane and surrounding
-            Eastern Washington communities.
+            Our Spokane team includes licensed insurance agents and office coordinators who help
+            local clients compare options and stay connected year-round.
           </p>
           <TeamSection members={members} showContactCTA />
         </div>
