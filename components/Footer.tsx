@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getLocalMedicarePath, spokaneAreaCities } from "@/lib/cities";
 import { siteConfig, telHref } from "@/lib/site";
-import { spokaneAreaCities } from "@/lib/cities";
 
 const helpLinks: Array<{ href: string; label: string }> = [
   { href: "/medicare-advantage", label: "Medicare Advantage" },
@@ -28,7 +28,6 @@ export default function Footer() {
     <footer className="bg-gray-900 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] text-gray-300 md:pb-0 print:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
           <div>
             <div className="flex items-center gap-3">
               <Image
@@ -39,15 +38,11 @@ export default function Footer() {
                 className="h-12 w-12 shrink-0 object-contain"
               />
               <div>
-                <span className="text-white font-bold text-lg block">
-                  {siteConfig.legalName}
-                </span>
+                <span className="text-white font-bold text-lg block">{siteConfig.legalName}</span>
                 <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
                   Licensed Independent Insurance Agency
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Medicare in Spokane
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Medicare in Spokane</p>
               </div>
             </div>
             <p className="mt-3 text-sm text-gray-400 leading-relaxed">
@@ -74,7 +69,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Medicare Help */}
           <div>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
               Medicare Help
@@ -90,7 +84,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* About */}
           <div>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
               About Our Agency
@@ -106,7 +99,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Areas */}
           <div>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
               Areas We Serve
@@ -114,7 +106,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               {spokaneAreaCities.map((city) => (
                 <li key={city.slug}>
-                  <Link href={`/cities/${city.slug}`} className="hover:text-white transition-colors">
+                  <Link href={getLocalMedicarePath(city.slug)} className="hover:text-white transition-colors">
                     {city.name}, {city.stateCode}
                   </Link>
                 </li>
