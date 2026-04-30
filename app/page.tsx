@@ -289,10 +289,10 @@ export default function HomePage() {
       {/* Trust block */}
       <TrustBenefits />
 
+      <OfficeLocationTrust />
+
       {/* Testimonials / social proof */}
       <HomeTestimonials />
-
-      <OfficeLocationTrust />
 
       {/* CTA — after trust section */}
       <section className="bg-white py-10 px-4">

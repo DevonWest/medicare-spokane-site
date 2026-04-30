@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LeadForm from "@/components/LeadForm";
-import { siteConfig } from "@/lib/site";
+import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact a Licensed Spokane Medicare Agent",
@@ -43,13 +43,36 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Contact info */}
           <div>
+            <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
+              <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                Spokane Office Location
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900">
+                {siteConfig.address.buildingName}
+              </h2>
+              <p className="mt-3 text-gray-700">
+                Our Spokane office is located in the Providence Medical Building.
+              </p>
+              <address className="mt-4 not-italic text-base leading-relaxed text-gray-800">
+                {siteConfig.address.streetAddress}
+                <br />
+                {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
+                {siteConfig.address.postalCode}
+                <br />
+                Phone:{" "}
+                <a href={telHref} className="font-semibold text-blue-700 hover:underline">
+                  {siteConfig.phone}
+                </a>
+              </address>
+            </div>
+
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Get in Touch</h2>
 
             <div className="space-y-5 text-gray-800">
               <div>
                 <p className="text-sm uppercase tracking-wide text-gray-500 mb-1">Phone</p>
                 <a
-                  href={`tel:${siteConfig.phone.replace(/\D/g, "")}`}
+                  href={telHref}
                   className="text-2xl font-semibold text-blue-700 hover:underline"
                 >
                   {siteConfig.phone}
@@ -67,6 +90,8 @@ export default function ContactPage() {
               <div>
                 <p className="text-sm uppercase tracking-wide text-gray-500 mb-1">Office</p>
                 <address className="not-italic">
+                  {siteConfig.address.buildingName}
+                  <br />
                   {siteConfig.address.streetAddress}
                   <br />
                   {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}

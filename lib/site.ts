@@ -26,7 +26,8 @@ export const siteConfig = {
   email: "info@medicareinspokane.com",
   hours: "Mon – Fri, 9:00 AM – 5:00 PM Pacific",
   address: {
-    streetAddress: "820 S McClellan St, Suite LL-10",
+    buildingName: "Providence Medical Building",
+    streetAddress: "820 South McClellan LL#10",
     addressLocality: "Spokane",
     addressRegion: "WA",
     postalCode: "99204",
