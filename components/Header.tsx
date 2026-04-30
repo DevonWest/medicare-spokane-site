@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { siteConfig, telHref } from "@/lib/site";
 
 const primaryNav: Array<{ href: string; label: string }> = [
@@ -9,14 +13,23 @@ const primaryNav: Array<{ href: string; label: string }> = [
   { href: "/contact", label: "Contact" },
 ];
 
+const mobileMenuId = "primary-mobile-menu";
+
 export default function Header() {
+  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4 h-16">
-          <Link href="/" className="flex items-center shrink-0">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 lg:flex lg:h-16 lg:items-center lg:justify-between lg:gap-4 lg:py-0">
+          <Link href="/" className="flex min-w-0 items-center">
             <div className="leading-tight">
-              <div className="text-xl md:text-2xl font-semibold text-blue-700">
+              <div className="text-lg sm:text-xl md:text-2xl font-semibold text-blue-700">
                 Medicare in Spokane
               </div>
               <div className="text-xs uppercase tracking-wide text-gray-500">
@@ -42,7 +55,7 @@ export default function Header() {
 
           <a
             href={telHref}
-            className="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
+            className="inline-flex h-11 items-center justify-center gap-2 justify-self-end rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
             aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
           >
             <svg
@@ -63,21 +76,75 @@ export default function Header() {
             <span className="hidden sm:inline">{siteConfig.phone}</span>
             <span className="sm:hidden">Call</span>
           </a>
-        </div>
-        {/* Compact mobile / tablet nav */}
-        <nav
-          aria-label="Primary mobile"
-          className="lg:hidden flex flex-wrap gap-x-4 gap-y-1 pb-3 text-sm font-medium text-gray-700"
-        >
-          {primaryNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="hover:text-blue-700 transition-colors"
+
+          <button
+            type="button"
+            className="inline-flex h-11 items-center justify-center gap-2 justify-self-end rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50 lg:hidden"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls={mobileMenuId}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
             >
-              {item.label}
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+            <span>Menu</span>
+          </button>
+        </div>
+
+        <nav
+          id={mobileMenuId}
+          aria-label="Primary mobile"
+          className={`${isMobileMenuOpen ? "block" : "hidden"} border-t border-gray-200 py-4 lg:hidden`}
+        >
+          <div className="space-y-2">
+            {primaryNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex min-h-11 items-center rounded-xl px-4 text-base font-semibold text-gray-900 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <a
+              href={telHref}
+              className="flex min-h-11 items-center rounded-xl px-4 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+              aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Call {siteConfig.phone}
+            </a>
+            <Link
+              href="/request-contact"
+              className="flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Request Help
             </Link>
-          ))}
+          </div>
         </nav>
       </div>
     </header>
