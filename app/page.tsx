@@ -3,8 +3,10 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
+import TeamSection from "@/components/TeamSection";
 import TrustBenefits from "@/components/TrustBenefits";
 import { siteConfig, telHref } from "@/lib/site";
+import { getActiveTeamMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
@@ -47,6 +49,7 @@ const homepageFaqs: FAQItem[] = [
 ];
 
 export default function HomePage() {
+  const previewMembers = getActiveTeamMembers().slice(0, 3);
   return (
     <>
       {/* Hero */}
@@ -157,6 +160,28 @@ export default function HomePage() {
       </section>
 
       <TrustBenefits />
+
+      {/* Team preview */}
+      <section className="py-16 px-4 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">
+            Meet Your Local Medicare Team
+          </h2>
+          <p className="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
+            Our licensed insurance professionals are Spokane locals who offer no-cost Medicare
+            guidance to help you compare options and find coverage that fits your needs.
+          </p>
+          <TeamSection members={previewMembers} />
+          <div className="mt-10 text-center">
+            <Link
+              href="/our-team"
+              className="inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-base"
+            >
+              Meet the Full Team →
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* RX review band */}
       <section className="py-14 px-4 bg-blue-50 border-y border-blue-100">
