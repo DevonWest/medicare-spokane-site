@@ -16,9 +16,9 @@ export type TeamMember = {
 export const teamMembers: TeamMember[] = [
   {
     name: "Lynn Wold",
-    title: "Founder & Licensed Insurance Agent",
+    title: "Licensed Insurance Agent",
     shortBio:
-      "Lynn founded Health Insurance Options LLC to give Spokane-area residents clear, local Medicare guidance. She helps clients compare options with a warm, practical approach focused on coverage that fits their needs.",
+      "Lynn Wold is the founder of Health Insurance Options LLC and has helped Spokane-area residents navigate Medicare for many years. She brings a warm, practical approach to guiding clients through their options and focuses on helping people feel confident in their coverage decisions.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -35,7 +35,7 @@ export const teamMembers: TeamMember[] = [
     name: "Craig Lenhart",
     title: "Licensed Insurance Agent",
     shortBio:
-      "Craig works with Spokane-area Medicare clients who want straightforward answers before they choose coverage. He helps people review plan choices, provider needs, and prescription considerations without pressure.",
+      "Craig Lenhart helps Spokane-area residents find straightforward answers when comparing Medicare plans. He works closely with clients to review coverage options, provider networks, and prescription needs so they can make informed decisions without feeling overwhelmed.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -52,7 +52,7 @@ export const teamMembers: TeamMember[] = [
     name: "Meg Shumaker",
     title: "Licensed Insurance Agent",
     shortBio:
-      "Meg helps local clients understand Medicare coverage in a way that feels approachable and organized. She supports Spokane-area residents as they compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options.",
+      "Meg Shumaker works with local clients to make Medicare feel more approachable and manageable. She helps Spokane-area residents understand their coverage options, including Medicare Advantage, Supplements, Part D, and supplemental insurance.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -69,7 +69,7 @@ export const teamMembers: TeamMember[] = [
     name: "Rose Records",
     title: "Licensed Insurance Agent",
     shortBio:
-      "Rose brings a helpful, client-first style to Medicare conversations for Spokane-area residents. She helps people review their choices and understand how different coverage options may fit their health and budget needs.",
+      "Rose Records brings a helpful, client-first approach to Medicare conversations. She works with Spokane-area residents to review their options and understand how different plans may fit their healthcare and budget needs.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -86,7 +86,7 @@ export const teamMembers: TeamMember[] = [
     name: "Sheryl Manchester",
     title: "Licensed Insurance Agent",
     shortBio:
-      "Sheryl helps Spokane-area clients sort through Medicare questions with clear, friendly guidance. Her focus is helping each person compare options and feel confident about the coverage they choose.",
+      "Sheryl Manchester helps Spokane-area clients sort through Medicare questions with clear, friendly guidance. She focuses on helping each person compare options and feel confident in the coverage they choose.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -103,7 +103,7 @@ export const teamMembers: TeamMember[] = [
     name: "Karen Speerstra",
     title: "Office Coordinator",
     shortBio:
-      "Anna helps keep the Health Insurance Options office organized and responsive for Spokane-area clients. She supports appointment coordination and helps connect callers with the right local team member.",
+      "Karen Speerstra is an experienced office coordinator who helps keep the Health Insurance Options team organized and responsive to client needs. She supports scheduling, communication, and day-to-day operations to help ensure each client has a smooth and positive experience.",
     specialties: [
       "Client Scheduling",
       "Office Support",
@@ -116,14 +116,13 @@ export const teamMembers: TeamMember[] = [
     sortOrder: 6,
   },
   {
-    name: "Karen Christianson",
+    name: "Karen Christensen",
     title: "Office Coordinator",
     shortBio:
-      "Karen supports clients and agents with friendly, detail-oriented office coordination. She helps Spokane-area residents get connected for Medicare reviews and follow-up support.",
+      "Karen Christensen supports both clients and agents through friendly, detail-oriented coordination. She helps Spokane-area residents stay connected throughout the Medicare process, assisting with scheduling, follow-up, and general support.",
     specialties: [
       "Client Scheduling",
       "Office Support",
-      "Supplemental Insurance",
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
