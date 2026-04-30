@@ -110,6 +110,13 @@ export default function HomePage() {
               </Link>
             </div>
 
+            <p className="mt-5 flex items-center gap-3 text-base font-semibold text-blue-50">
+              <span className="tracking-[0.2em] text-amber-300" aria-hidden="true">
+                ★★★★★
+              </span>
+              <span>Trusted by Spokane-area Medicare clients</span>
+            </p>
+
             {/* Trust bullets */}
             <ul className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               {trustBullets.map((bullet) => (
@@ -282,6 +289,9 @@ export default function HomePage() {
       {/* Trust block */}
       <TrustBenefits />
 
+      {/* Testimonials / social proof */}
+      <HomeTestimonials />
+
       <OfficeLocationTrust />
 
       {/* CTA — after trust section */}
@@ -337,9 +347,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Testimonials / social proof */}
-      <HomeTestimonials />
 
       {/* RX review band */}
       <section className="py-16 px-4 bg-blue-50 border-y border-blue-100">
