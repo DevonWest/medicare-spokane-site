@@ -125,7 +125,7 @@ export const teamMembers: TeamMember[] = [
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
-    image: "/team/karen-christianson.jpg",
+    image: "/team/karen-christiansen.jpg",
     active: true,
     sortOrder: 7,
   },
