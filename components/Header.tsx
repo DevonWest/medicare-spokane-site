@@ -2,13 +2,10 @@ import Link from "next/link";
 import { siteConfig, telHref } from "@/lib/site";
 
 const primaryNav: Array<{ href: string; label: string }> = [
+  { href: "/", label: "Home" },
+  { href: "/medicare-spokane", label: "Medicare Help" },
   { href: "/our-team", label: "Our Team" },
-  { href: "/medicare-advantage", label: "Medicare Advantage" },
-  { href: "/medicare-supplements", label: "Medicare Supplements" },
-  { href: "/medicare-part-d", label: "Part D" },
-  { href: "/supplemental-insurance", label: "Supplemental" },
-  { href: "/carriers", label: "Carriers" },
-  { href: "/medicare-faq", label: "FAQ" },
+  { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact" },
 ];
 
