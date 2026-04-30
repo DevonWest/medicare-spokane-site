@@ -1,10 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Health Insurance Options LLC logo</title>
-  <desc id="desc">Health Insurance Options LLC local Spokane Medicare agency brand mark.</desc>
-  <rect width="320" height="320" rx="42" fill="#ffffff"/>
-  <path d="M160 33 58 73v82c0 62 41 113 102 132 61-19 102-70 102-132V73L160 33Z" fill="#e8f2ff" stroke="#1d4ed8" stroke-width="12" stroke-linejoin="round"/>
-  <path d="M101 157h118" stroke="#1d4ed8" stroke-width="18" stroke-linecap="round"/>
-  <path d="M160 98v118" stroke="#1d4ed8" stroke-width="18" stroke-linecap="round"/>
-  <path d="M88 241c18 24 43 42 72 52 29-10 54-28 72-52" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
-  <text x="160" y="285" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#1e3a8a">HIO</text>
+  <desc id="desc">Blue interlocking cross-style mark used by Health Insurance Options LLC.</desc>
+  <defs>
+    <linearGradient id="lightBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4fb8ea"/>
+      <stop offset="100%" stop-color="#1f7fbc"/>
+    </linearGradient>
+    <linearGradient id="darkBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f7fbc"/>
+      <stop offset="100%" stop-color="#0e4f86"/>
+    </linearGradient>
+    <clipPath id="quarterCircle">
+      <rect x="0" y="0" width="100" height="100" rx="44" ry="44"/>
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" fill="#ffffff"/>
+
+  <g transform="translate(64 64)">
+    <path d="M128 64H256V128H128A64 64 0 0 0 64 192V320H0V192C0 121.3 57.3 64 128 64Z" fill="url(#lightBlue)"/>
+    <path d="M128 320H64V256A64 64 0 0 1 128 192H256V256H128V320Z" fill="url(#darkBlue)"/>
+
+    <path d="M320 128V0H256V128A64 64 0 0 1 192 192H64V256H192C262.7 256 320 198.7 320 128Z" fill="url(#darkBlue)"/>
+    <path d="M320 0H192V64H256A64 64 0 0 0 320 0Z" fill="url(#lightBlue)"/>
+
+    <path d="M256 320V384H320V256H192C121.3 256 64 313.3 64 384H128C128 348.7 156.7 320 192 320H256Z" fill="url(#lightBlue)"/>
+    <path d="M64 384H128V448H64V384Z" fill="url(#darkBlue)"/>
+
+    <path d="M320 128H384V192A128 128 0 0 1 256 320V256A64 64 0 0 0 320 192V128Z" fill="url(#darkBlue)"/>
+    <path d="M256 256V320H320A64 64 0 0 0 384 256H256Z" fill="url(#lightBlue)"/>
+  </g>
 </svg>
