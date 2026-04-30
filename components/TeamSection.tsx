@@ -13,6 +13,11 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {members.map((member) => {
+          const supportText = member.retired
+            ? "Retired — contact our office for assistance"
+            : `Helping Spokane residents with Medicare${
+                typeof member.yearsHelping === "number" ? ` for ${member.yearsHelping}+ years` : ""
+              }`;
           const initials = member.name
             .split(" ")
             .map((part) => part[0])
@@ -46,12 +51,18 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
               </div>
 
               <div className="p-5 flex flex-col flex-1">
-                <h3 className="text-lg font-bold text-gray-900 leading-snug">{member.name}</h3>
-                <p className="text-sm font-medium text-blue-700 mt-0.5 mb-2">{member.title}</p>
-                <p className="text-xs font-medium text-gray-500 mb-3">
-                  Helping Spokane residents with Medicare
-                  {typeof member.yearsHelping === "number" ? ` for ${member.yearsHelping}+ years` : ""}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 leading-snug">{member.name}</h3>
+                    <p className="text-sm font-medium text-blue-700 mt-0.5 mb-2">{member.title}</p>
+                  </div>
+                  {member.retired && (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                      Retired
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-medium text-gray-500 mb-3">{supportText}</p>
                 <p className="text-sm text-gray-600 leading-relaxed flex-1">{member.shortBio}</p>
 
                 {member.specialties && member.specialties.length > 0 && (

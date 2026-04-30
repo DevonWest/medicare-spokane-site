@@ -4,7 +4,7 @@ import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
 import TeamSection from "@/components/TeamSection";
 import { siteConfig } from "@/lib/site";
-import { getActiveTeamMembers } from "@/lib/team";
+import { getPublicTeamMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: "Meet Our Spokane Medicare Team | Health Insurance Options",
@@ -23,7 +23,7 @@ const teamSchema = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "Health Insurance Options LLC — Medicare Team",
-  itemListElement: getActiveTeamMembers().map((member, index) => ({
+  itemListElement: getPublicTeamMembers().map((member, index) => ({
     "@type": "ListItem",
     position: index + 1,
     item: {
@@ -43,7 +43,7 @@ const teamSchema = {
 };
 
 export default function OurTeamPage() {
-  const members = getActiveTeamMembers();
+  const members = getPublicTeamMembers();
 
   return (
     <>
@@ -90,10 +90,10 @@ export default function OurTeamPage() {
       {/* Team grid */}
       <section className="py-14 px-4 bg-gray-50 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-3">Our Licensed Team</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-3">Our Team</h2>
           <p className="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
-            Our Spokane team includes licensed insurance agents and office coordinators who help
-            local clients compare options and stay connected year-round.
+            Our Spokane team includes licensed insurance agents, office support, and a retired team
+            member whose clients can still reach out through our office for help.
           </p>
           <TeamSection members={members} showContactCTA />
         </div>
