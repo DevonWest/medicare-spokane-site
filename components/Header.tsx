@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { siteConfig, telHref } from "@/lib/site";
@@ -28,17 +29,17 @@ export default function Header() {
         <div className={headerRowClassName}>
           <Link
             href="/"
-            className="flex min-w-0 items-center"
+            className="col-span-2 flex min-w-0 items-center lg:col-auto"
             aria-label="Medicare in Spokane home page"
           >
-            <div className="leading-tight">
-              <div className="text-lg sm:text-xl md:text-2xl font-semibold text-blue-700">
-                Medicare in Spokane
-              </div>
-              <div className="text-xs uppercase tracking-wide text-gray-500">
-                By Health Insurance Options
-              </div>
-            </div>
+            <Image
+              src="/brand/logo-horizontal.png"
+              alt="Medicare in Spokane by Health Insurance Options"
+              width={1324}
+              height={216}
+              priority
+              className="h-auto w-[240px] object-contain sm:w-[280px] lg:w-[320px] xl:w-[360px]"
+            />
           </Link>
 
           <nav
