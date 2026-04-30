@@ -13,6 +13,8 @@ const ALLOWED_SOURCES: LeadSource[] = [
   "compare-medicare-options",
   "working-past-65-medicare",
   "turning-65-medicare-spokane",
+  "medicare-appointment-checklist",
+  "medicare-plan-review-spokane",
   "advantage-vs-supplement",
   "medicare-advantage",
   "medicare-supplements",
