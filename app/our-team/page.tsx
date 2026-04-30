@@ -125,7 +125,7 @@ export default function OurTeamPage() {
               {
                 title: "Available year-round",
                 body:
-                  "Medicare questions don\u2019t only come up in October. Our team is available Monday through Friday, year-round, for plan changes, billing questions, and Annual Enrollment reviews.",
+                  "Medicare questions don't only come up in October. Our team is available Monday through Friday, year-round, for plan changes, billing questions, and Annual Enrollment reviews.",
               },
               {
                 title: "No-cost, no-obligation",

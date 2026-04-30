@@ -74,6 +74,7 @@ export const teamMembers: TeamMember[] = [
     sortOrder: 3,
   },
   {
+    // TODO: Confirm last name — listed as "Kristy" on the current site; update when known.
     name: "Kristy",
     title: "Licensed Insurance Professional",
     shortBio:
