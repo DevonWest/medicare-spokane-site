@@ -5,6 +5,7 @@ import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import HomeTestimonials from "@/components/HomeTestimonials";
 import LeadForm from "@/components/LeadForm";
+import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
 import TeamSection from "@/components/TeamSection";
 import TrustBenefits from "@/components/TrustBenefits";
@@ -280,6 +281,8 @@ export default function HomePage() {
 
       {/* Trust block */}
       <TrustBenefits />
+
+      <OfficeLocationTrust />
 
       {/* CTA — after trust section */}
       <section className="bg-white py-10 px-4">
