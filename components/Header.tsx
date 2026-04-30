@@ -22,8 +22,8 @@ export default function Header() {
             <Image
               src="/brand/hio-logo.png"
               alt="Health Insurance Options logo"
-              width={1254}
-              height={1254}
+              width={512}
+              height={512}
               className="h-8 w-auto object-contain sm:h-11 lg:h-12"
               priority
             />

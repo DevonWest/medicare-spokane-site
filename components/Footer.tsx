@@ -34,8 +34,8 @@ export default function Footer() {
               <Image
                 src="/brand/hio-logo.png"
                 alt="Health Insurance Options logo"
-                width={1254}
-                height={1254}
+                width={512}
+                height={512}
                 className="h-12 w-auto rounded bg-white p-1 object-contain"
               />
               <div>
