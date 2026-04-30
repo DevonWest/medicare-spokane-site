@@ -16,10 +16,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/medicare-advantage`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-supplements`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-part-d`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    {
+      url: `${baseUrl}/compare-medicare-options`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    { url: `${baseUrl}/rx-drug-review`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${baseUrl}/supplemental-insurance`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/carriers`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/testimonials`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${baseUrl}/turning-65-medicare-spokane`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    {
+      url: `${baseUrl}/turning-65-medicare-spokane`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
     {
       url: `${baseUrl}/medicare-advantage-vs-supplement-spokane`,
       lastModified: now,

@@ -6,14 +6,14 @@ import PageHero from "@/components/PageHero";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Medicare Resources for Spokane Residents",
+  title: "Medicare Resource Library for Spokane Residents",
   description:
-    "Helpful Medicare resources for Spokane-area residents — enrollment guides, plan comparisons, frequently asked questions, and links to official Medicare information.",
+    "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and finding trusted official Medicare resources.",
   alternates: { canonical: `${siteConfig.url}/resources` },
   openGraph: {
-    title: "Medicare Resources for Spokane Residents",
+    title: "Medicare Resource Library for Spokane Residents",
     description:
-      "Helpful Medicare resources for Spokane-area residents — enrollment guides, plan comparisons, and frequently asked questions.",
+      "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and trusted official resources.",
     url: `${siteConfig.url}/resources`,
   },
 };
@@ -22,49 +22,48 @@ interface ResourceLink {
   href: string;
   title: string;
   body: string;
+  ctaLabel?: string;
   external?: boolean;
 }
 
-const internalResources: ResourceLink[] = [
+const resourceSections: Array<{ title: string; intro: string; items: ResourceLink[] }> = [
   {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "A central Spokane landing page for comparing Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options.",
+    title: "Getting Started with Medicare",
+    intro:
+      "Start with Spokane-focused guides for enrollment timing, comparing plan types, and understanding your first Medicare decisions.",
+    items: [
+      {
+        href: "/turning-65-medicare-spokane",
+        title: "Turning 65 in Spokane",
+        body: "Use a local checklist to understand enrollment timing, employer coverage questions, and the next steps before Medicare begins.",
+        ctaLabel: "Read Guide",
+      },
+      {
+        href: "/compare-medicare-options",
+        title: "Compare Medicare Options",
+        body: "Review Medicare Advantage, Medicare Supplement, Part D, and related coverage types from the plans we represent.",
+        ctaLabel: "Read Guide",
+      },
+    ],
   },
   {
-    href: "/medicare-enrollment-resources",
-    title: "Medicare Enrollment Resources",
-    body: "Initial Enrollment Period, Annual Enrollment Period, and Special Enrollment Periods explained in plain language.",
-  },
-  {
-    href: "/medicare-faq",
-    title: "Medicare FAQ",
-    body: "Common Medicare questions we hear from Spokane-area residents — answered without the jargon.",
-  },
-  {
-    href: "/turning-65-medicare-spokane",
-    title: "Turning 65 Medicare Help in Spokane",
-    body: "A Spokane-focused checklist and FAQ page for people approaching Medicare eligibility and planning their next steps.",
-  },
-  {
-    href: "/medicare-advantage-vs-supplement-spokane",
-    title: "Medicare Advantage vs. Medicare Supplement",
-    body: "How Medicare Advantage and Medicare Supplement coverage compare so you can review choices that fit your needs.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "RX Drug Review",
-    body: "Bring your prescription list and review how the Medicare Advantage and Part D plans we represent may cover your medications.",
-  },
-  {
-    href: "/carriers",
-    title: "Carriers We Represent",
-    body: "See the carriers we currently work with for Medicare Advantage, Medicare Supplement, and Part D coverage in Spokane.",
-  },
-  {
-    href: "/testimonials",
-    title: "Client Testimonials",
-    body: "Read what Spokane-area Medicare clients say about working with our local team.",
+    title: "Reviewing or Changing Coverage",
+    intro:
+      "Use these guides when you want help reviewing prescriptions, plan types, and coverage details before you make a change.",
+    items: [
+      {
+        href: "/rx-drug-review",
+        title: "Prescription Drug Review",
+        body: "Bring your medication list and compare how Medicare Advantage and Part D plans we represent may cover your prescriptions.",
+        ctaLabel: "Get Help",
+      },
+      {
+        href: "/medicare-part-d",
+        title: "Medicare Part D",
+        body: "Learn how standalone prescription drug coverage works, what changes year to year, and what to review before enrolling.",
+        ctaLabel: "Read Guide",
+      },
+    ],
   },
 ];
 
@@ -93,8 +92,8 @@ export default function ResourcesPage() {
   return (
     <>
       <PageHero
-        title="Medicare Resources for Spokane Residents"
-        subtitle="Guides, plan comparisons, and trusted links to help you review your Medicare options with confidence."
+        title="Medicare Resource Library"
+        subtitle="Browse local Medicare guides, plan comparisons, and trusted official links to help you review your options with confidence."
         crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
       />
 
@@ -104,24 +103,34 @@ export default function ResourcesPage() {
             Local Medicare Guides
           </h2>
           <p className="text-gray-600 max-w-2xl mb-10">
-            Helping Spokane-area residents — including Spokane Valley, Liberty Lake, and Cheney —
-            navigate Medicare year-round.
+            Helping Spokane-area residents review Medicare with large-text, easy-to-scan guides and
+            clear next steps.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {internalResources.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="bg-slate-50 rounded-2xl border border-slate-200 p-6 hover:shadow-md hover:border-blue-300 transition-all group"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 mb-2 transition-colors">
-                  {r.title}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">{r.body}</p>
-                <span className="text-blue-700 text-sm font-medium group-hover:underline">
-                  Read more →
-                </span>
-              </Link>
+          <div className="space-y-12">
+            {resourceSections.map((section) => (
+              <section key={section.title}>
+                <div className="max-w-3xl">
+                  <h3 className="text-2xl font-bold text-gray-900">{section.title}</h3>
+                  <p className="mt-3 text-lg leading-relaxed text-gray-600">{section.intro}</p>
+                </div>
+                <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {section.items.map((resource) => (
+                    <Link
+                      key={resource.href}
+                      href={resource.href}
+                      className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:border-blue-300 hover:shadow-md"
+                    >
+                      <h4 className="text-xl font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
+                        {resource.title}
+                      </h4>
+                      <p className="mt-3 text-base leading-relaxed text-gray-700">{resource.body}</p>
+                      <span className="mt-5 inline-block text-sm font-medium text-blue-700 group-hover:underline">
+                        {resource.ctaLabel ?? "Read Guide"} →
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         </div>

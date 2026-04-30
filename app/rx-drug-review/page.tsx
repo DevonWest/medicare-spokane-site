@@ -90,6 +90,14 @@ export default function RxDrugReviewPage() {
         <div className="max-w-4xl mx-auto text-gray-800 space-y-8">
           <div className="space-y-5 text-lg leading-relaxed">
             <p>
+              If you are using this visit to{" "}
+              <Link href="/compare-medicare-options" className="text-blue-700 hover:underline">
+                compare Medicare options
+              </Link>
+              , a prescription review can give you a clearer picture of how drug coverage may affect
+              your decision.
+            </p>
+            <p>
               If you are reviewing{" "}
               <Link href="/medicare-part-d" className="text-blue-700 hover:underline">
                 Medicare Part D

@@ -4,17 +4,21 @@ import { getLocalMedicarePath, spokaneAreaCities } from "@/lib/cities";
 import { siteConfig, telHref } from "@/lib/site";
 
 const helpLinks: Array<{ href: string; label: string }> = [
-  { href: "/compare-medicare-options", label: "Compare Medicare Options" },
-  { href: "/turning-65-medicare-spokane", label: "Turning 65" },
   { href: "/medicare-advantage", label: "Medicare Advantage" },
   { href: "/medicare-supplements", label: "Medicare Supplements" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
-  { href: "/rx-drug-review", label: "RX Drug Review" },
   { href: "/supplemental-insurance", label: "Supplemental Insurance" },
   { href: "/carriers", label: "Carriers" },
   { href: "/medicare-faq", label: "Medicare FAQ" },
   { href: "/medicare-enrollment-resources", label: "Enrollment Resources" },
-  { href: "/resources", label: "Resources" },
+];
+
+const resourceLinks: Array<{ href: string; label: string }> = [
+  { href: "/resources", label: "Medicare Resource Library" },
+  { href: "/turning-65-medicare-spokane", label: "Turning 65 in Spokane" },
+  { href: "/compare-medicare-options", label: "Compare Medicare Options" },
+  { href: "/rx-drug-review", label: "Prescription Drug Review" },
+  { href: "/medicare-part-d", label: "Medicare Part D" },
 ];
 
 const aboutLinks: Array<{ href: string; label: string }> = [
@@ -30,7 +34,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-900 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] text-gray-300 md:pb-0 print:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           <div>
             <div className="flex items-center gap-3">
               <Image
@@ -78,6 +82,21 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               {helpLinks.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+              Resources
+            </h3>
+            <ul className="space-y-2 text-sm">
+              {resourceLinks.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="hover:text-white transition-colors">
                     {item.label}

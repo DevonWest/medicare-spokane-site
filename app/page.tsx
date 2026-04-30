@@ -219,59 +219,41 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Topic Cards */}
+      {/* Helpful resource cards */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
-            How We Help Spokane-Area Residents
+            Helpful Medicare Guides
           </h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto text-lg">
-            Whether you are turning 65, new to Medicare, or reviewing your current coverage, we
-            will help compare options so you can find coverage that fits your needs.
+            Start with a few of the most helpful Spokane Medicare guides, then explore the full
+            resource library when you are ready.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {[
               {
                 href: "/turning-65-medicare-spokane",
-                title: "Turning 65",
+                title: "Turning 65 in Spokane",
                 body:
                   "Start with a Spokane-focused Medicare checklist covering enrollment timing, employer coverage questions, and the next steps to review.",
               },
               {
-                href: "/medicare-advantage",
-                title: "Medicare Advantage",
+                href: "/compare-medicare-options",
+                title: "Compare Medicare Options",
                 body:
-                  "Compare Medicare Advantage (Part C) plans available in Spokane County and review network, drug, and benefit differences.",
+                  "Review Medicare Advantage, Medicare Supplement, Part D, and related coverage types from the plans we represent.",
               },
               {
-                href: "/medicare-supplements",
-                title: "Medicare Supplements (Medigap)",
+                href: "/rx-drug-review",
+                title: "Prescription Drug Review",
                 body:
-                  "Review Medicare Supplement options that work alongside Original Medicare to help with out-of-pocket costs.",
+                  "Bring your medication list and compare how Medicare Advantage and Part D plans we represent may cover your prescriptions.",
               },
               {
                 href: "/medicare-part-d",
                 title: "Medicare Part D",
                 body:
                   "Walk through your prescription list and compare standalone Part D plans we represent, including preferred pharmacies.",
-              },
-              {
-                href: "/supplemental-insurance",
-                title: "Supplemental Insurance",
-                body:
-                  "Dental, vision, and hospital indemnity coverage that can complement your Medicare plan.",
-              },
-              {
-                href: "/carriers",
-                title: "Carriers We Represent",
-                body:
-                  "See the carriers we currently work with. Carrier and plan availability may vary by county, product type, and enrollment period.",
-              },
-              {
-                href: "/medicare-enrollment-resources",
-                title: "Enrollment Resources",
-                body:
-                  "Initial Enrollment, Annual Enrollment, and Special Enrollment Periods explained in plain language.",
               },
             ].map((card) => (
               <Link
@@ -288,6 +270,14 @@ export default function HomePage() {
                 </span>
               </Link>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/resources"
+              className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-6 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              View All Medicare Resources
+            </Link>
           </div>
         </div>
       </section>
