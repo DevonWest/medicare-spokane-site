@@ -108,7 +108,7 @@ export default function LeadForm({
       aria-describedby="lead-form-reassurance"
     >
       <div className="mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">{heading}</h3>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{heading}</h2>
         <p className="text-gray-600 text-sm">{subheading}</p>
         <p id="lead-form-reassurance" className="text-gray-600 text-sm mt-2">
           We typically respond the same business day. There is no cost and no obligation.

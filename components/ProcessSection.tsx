@@ -71,7 +71,7 @@ export default function ProcessSection() {
           <a
             href={telHref}
             className="inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-base"
-            aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
+            aria-label={`Call ${siteConfig.phone}`}
           >
             Call {siteConfig.phone}
           </a>

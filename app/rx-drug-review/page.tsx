@@ -5,12 +5,12 @@ import FAQ, { type FAQItem } from "@/components/FAQ";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Prescription Drug Plan Review Spokane | Medicare in Spokane",
+  title: "Prescription Drug Plan Review Spokane",
   description:
     "Get local help reviewing prescription drug coverage for Medicare Advantage and Part D plans in Spokane. Bring your medication list and compare options with a licensed insurance agent.",
   alternates: { canonical: `${siteConfig.url}/rx-drug-review` },
   openGraph: {
-    title: "Prescription Drug Plan Review Spokane | Medicare in Spokane",
+    title: "Prescription Drug Plan Review Spokane",
     description:
       "Get local help reviewing prescription drug coverage for Medicare Advantage and Part D plans in Spokane.",
     url: `${siteConfig.url}/rx-drug-review`,

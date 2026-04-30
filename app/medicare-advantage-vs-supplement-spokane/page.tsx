@@ -129,7 +129,7 @@ export default function AdvantageVsSupplementPage() {
           </div>
           <p className="mt-4 text-xs text-gray-500">
             This is a general comparison for educational purposes. Specific plan benefits, premiums, and networks vary
-            by carrier and ZIP code. We do not offer every plan available in your area.
+            by carrier and ZIP code. We can help you compare the plans we represent in your area.
           </p>
         </div>
       </section>

@@ -133,7 +133,7 @@ export default function OurTeamPage() {
                   "Our consultations are always free. We are paid by the insurance carriers we represent — your premium is the same whether you enroll through us or on your own.",
               },
               {
-                title: "Independent and unbiased",
+                title: "Independent guidance",
                 body:
                   "We are not affiliated with any government Medicare program. We represent multiple carriers so we can help you compare options rather than push a single plan.",
               },

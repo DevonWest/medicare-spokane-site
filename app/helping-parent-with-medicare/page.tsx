@@ -7,12 +7,12 @@ import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Helping a Parent with Medicare Spokane | Medicare in Spokane",
+  title: "Helping a Parent with Medicare Spokane",
   description:
     "Helping a parent or loved one with Medicare in Spokane? Get local guidance reviewing Medicare Advantage, Medicare Supplement, Part D, prescriptions, doctors, and plan options.",
   alternates: { canonical: `${siteConfig.url}/helping-parent-with-medicare` },
   openGraph: {
-    title: "Helping a Parent with Medicare Spokane | Medicare in Spokane",
+    title: "Helping a Parent with Medicare Spokane",
     description:
       "Helping a parent or loved one with Medicare in Spokane? Get local guidance reviewing Medicare Advantage, Medicare Supplement, Part D, prescriptions, doctors, and plan options.",
     url: `${siteConfig.url}/helping-parent-with-medicare`,

@@ -18,7 +18,7 @@ export default function CTASection({
           <a
             href={`tel:${siteConfig.phone.replace(/\D/g, "")}`}
             className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors text-lg"
-            aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
+            aria-label={`Call ${siteConfig.phone}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +40,7 @@ export default function CTASection({
           <a
             href={`mailto:${siteConfig.email}`}
             className="inline-flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-950 text-white font-semibold px-8 py-3 rounded-lg transition-colors text-lg border border-blue-400"
-            aria-label={`Email ${siteConfig.legalName} at ${siteConfig.email}`}
+            aria-label={`Email Us at ${siteConfig.email}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

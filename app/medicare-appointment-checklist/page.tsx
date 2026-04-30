@@ -6,12 +6,12 @@ import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Medicare Appointment Checklist Spokane | Medicare in Spokane",
+  title: "Medicare Appointment Checklist Spokane",
   description:
     "Prepare for your Medicare appointment in Spokane. See what to bring, including prescription lists, doctors, pharmacies, current coverage, and questions for a licensed local insurance agent.",
   alternates: { canonical: `${siteConfig.url}/medicare-appointment-checklist` },
   openGraph: {
-    title: "Medicare Appointment Checklist Spokane | Medicare in Spokane",
+    title: "Medicare Appointment Checklist Spokane",
     description:
       "Prepare for your Medicare appointment in Spokane. See what to bring, including prescription lists, doctors, pharmacies, current coverage, and questions for a licensed local insurance agent.",
     url: `${siteConfig.url}/medicare-appointment-checklist`,

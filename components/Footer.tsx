@@ -71,12 +71,12 @@ export default function Footer() {
                   {siteConfig.email}
                 </a>
               </p>
-              <p className="text-xs text-gray-500">{siteConfig.address.streetAddress}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-400">{siteConfig.address.streetAddress}</p>
+              <p className="text-xs text-gray-400">
                 {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
                 {siteConfig.address.postalCode}
               </p>
-              <p className="text-xs text-gray-500">{siteConfig.hours}</p>
+              <p className="text-xs text-gray-400">{siteConfig.hours}</p>
             </div>
           </div>
 
