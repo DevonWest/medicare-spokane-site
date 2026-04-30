@@ -13,15 +13,24 @@ const primaryNav: Array<{ href: string; label: string }> = [
 ];
 
 const mobileMenuId = "primary-mobile-menu";
+const headerRowClassName =
+  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 lg:flex lg:h-16 lg:items-center lg:justify-between lg:gap-4 lg:py-0";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuClassName = isMobileMenuOpen
+    ? "block border-t border-gray-200 py-4 lg:hidden"
+    : "hidden border-t border-gray-200 py-4 lg:hidden";
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 lg:flex lg:h-16 lg:items-center lg:justify-between lg:gap-4 lg:py-0">
-          <Link href="/" className="flex min-w-0 items-center">
+        <div className={headerRowClassName}>
+          <Link
+            href="/"
+            className="flex min-w-0 items-center"
+            aria-label="Medicare in Spokane home page"
+          >
             <div className="leading-tight">
               <div className="text-lg sm:text-xl md:text-2xl font-semibold text-blue-700">
                 Medicare in Spokane
@@ -110,9 +119,9 @@ export default function Header() {
         <nav
           id={mobileMenuId}
           aria-label="Primary mobile"
-          className={`${isMobileMenuOpen ? "block" : "hidden"} border-t border-gray-200 py-4 lg:hidden`}
+          className={mobileMenuClassName}
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             {primaryNav.map((item) => (
               <Link
                 key={item.href}
