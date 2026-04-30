@@ -32,7 +32,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               {/* TODO: Swap to a dark-background logo asset if footer/theme styling removes the light logo backdrop. */}
               <Image
-                src="/brand/hio-logo.png"
+                src="/brand/hio-logo-new.svg"
                 alt="Health Insurance Options logo"
                 width={48}
                 height={48}

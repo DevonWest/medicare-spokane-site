@@ -1,0 +1,26 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="1" width="218" height="218" rx="2" fill="#F4F4F4" stroke="#CFCFCF"/>
+  <defs>
+    <linearGradient id="g1" x1="72" y1="60" x2="118" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#59B9E8"/>
+      <stop offset="1" stop-color="#1785BE"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="102" y1="62" x2="152" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5CC0EC"/>
+      <stop offset="1" stop-color="#0F6FA8"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="72" y1="102" x2="118" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3EA8DB"/>
+      <stop offset="1" stop-color="#167AB2"/>
+    </linearGradient>
+    <linearGradient id="g4" x1="102" y1="104" x2="152" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2C9CD0"/>
+      <stop offset="1" stop-color="#0C5F95"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M70 84C70 73.5 78.5 65 89 65H118V84C118 94.5 109.5 103 99 103H70V84Z" fill="url(#g1)"/>
+  <path d="M102 53H132V72C132 82.5 123.5 91 113 91H102V53Z" fill="url(#g2)"/>
+  <path d="M70 116C70 105.5 78.5 97 89 97H102V135H70V116Z" fill="url(#g3)"/>
+  <path d="M102 97H132C142.5 97 151 105.5 151 116V135H121C110.5 135 102 126.5 102 116V97Z" fill="url(#g4)"/>
+</svg>
