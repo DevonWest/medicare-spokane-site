@@ -27,6 +27,11 @@ interface ResourceLink {
 
 const internalResources: ResourceLink[] = [
   {
+    href: "/compare-medicare-options",
+    title: "Compare Medicare Options",
+    body: "A central Spokane landing page for comparing Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options.",
+  },
+  {
     href: "/medicare-enrollment-resources",
     title: "Medicare Enrollment Resources",
     body: "Initial Enrollment Period, Annual Enrollment Period, and Special Enrollment Periods explained in plain language.",

@@ -4,6 +4,7 @@ import { getLocalMedicarePath, spokaneAreaCities } from "@/lib/cities";
 import { siteConfig, telHref } from "@/lib/site";
 
 const helpLinks: Array<{ href: string; label: string }> = [
+  { href: "/compare-medicare-options", label: "Compare Medicare Options" },
   { href: "/medicare-advantage", label: "Medicare Advantage" },
   { href: "/medicare-supplements", label: "Medicare Supplements" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
@@ -12,6 +13,7 @@ const helpLinks: Array<{ href: string; label: string }> = [
   { href: "/carriers", label: "Carriers" },
   { href: "/medicare-faq", label: "Medicare FAQ" },
   { href: "/medicare-enrollment-resources", label: "Enrollment Resources" },
+  { href: "/resources", label: "Resources" },
 ];
 
 const aboutLinks: Array<{ href: string; label: string }> = [
