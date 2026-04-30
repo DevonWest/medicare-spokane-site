@@ -44,6 +44,12 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         body: "Review Medicare Advantage, Medicare Supplement, Part D, and related coverage types from the plans we represent.",
         ctaLabel: "Read Guide",
       },
+      {
+        href: "/medicare-appointment-checklist",
+        title: "What to Bring to Your Medicare Appointment",
+        body: "Use this simple checklist to organize prescriptions, doctors, pharmacies, and questions before your visit.",
+        ctaLabel: "Read Guide",
+      },
     ],
   },
   {
@@ -51,6 +57,12 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
     intro:
       "Use these guides when you want help reviewing prescriptions, plan types, and coverage details before you make a change.",
     items: [
+      {
+        href: "/medicare-plan-review-spokane",
+        title: "Annual Medicare Plan Review",
+        body: "Review plan changes, prescriptions, doctors, pharmacies, and out-of-pocket costs before the next plan year.",
+        ctaLabel: "Get Help",
+      },
       {
         href: "/rx-drug-review",
         title: "Prescription Drug Review",
@@ -62,6 +74,59 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         title: "Medicare Part D",
         body: "Learn how standalone prescription drug coverage works, what changes year to year, and what to review before enrolling.",
         ctaLabel: "Read Guide",
+      },
+    ],
+  },
+  {
+    title: "Family / Caregiver Help",
+    intro:
+      "Support for adult children, spouses, and caregivers helping a loved one review Medicare options with more clarity.",
+    items: [
+      {
+        href: "/helping-parent-with-medicare",
+        title: "Helping a Parent with Medicare",
+        body: "Review plan options, prescriptions, doctors, and next steps when you are helping a parent or loved one.",
+        ctaLabel: "Get Help",
+      },
+    ],
+  },
+  {
+    title: "Working and Medicare",
+    intro:
+      "Guidance for Spokane-area residents who are still working and want to understand employer coverage and Medicare timing.",
+    items: [
+      {
+        href: "/working-past-65-medicare",
+        title: "Working Past 65 and Medicare",
+        body: "Understand Medicare timing, employer coverage questions, Part B, Part D, and HSA-related concerns.",
+        ctaLabel: "Read Guide",
+      },
+    ],
+  },
+  {
+    title: "More Spokane Medicare Resources",
+    intro:
+      "Additional guides and supporting pages for common Medicare questions, plan comparisons, and local agency information.",
+    items: [
+      {
+        href: "/medicare-enrollment-resources",
+        title: "Medicare Enrollment Resources",
+        body: "Initial Enrollment Period, Annual Enrollment Period, and Special Enrollment Periods explained in plain language.",
+      },
+      {
+        href: "/medicare-faq",
+        title: "Medicare FAQ",
+        body: "Common Medicare questions we hear from Spokane-area residents — answered without the jargon.",
+      },
+      {
+        href: "/medicare-advantage-vs-supplement-spokane",
+        title: "Medicare Advantage vs. Medicare Supplement",
+        body: "Review how Medicare Advantage and Medicare Supplement coverage compare before choosing a direction.",
+      },
+      {
+        href: "/carriers",
+        title: "Carriers We Represent",
+        body: "See the carriers we currently work with for Medicare Advantage, Medicare Supplement, and Part D coverage in Spokane.",
       },
     ],
   },
@@ -97,12 +162,10 @@ export default function ResourcesPage() {
         crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
       />
 
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-            Local Medicare Guides
-          </h2>
-          <p className="text-gray-600 max-w-2xl mb-10">
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">Local Medicare Guides</h2>
+          <p className="mb-10 max-w-2xl text-gray-600">
             Helping Spokane-area residents review Medicare with large-text, easy-to-scan guides and
             clear next steps.
           </p>
@@ -136,39 +199,37 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+      <section className="border-y border-slate-100 bg-slate-50 px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">
             Official Medicare &amp; Government Resources
           </h2>
-          <p className="text-gray-600 max-w-2xl mb-10">
+          <p className="mb-10 max-w-2xl text-gray-600">
             Independent guidance starts with reliable information. These official resources can help
             you compare options and understand your rights.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {officialResources.map((r) => (
               <a
                 key={r.href}
                 href={r.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all group"
+                className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-md"
               >
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 mb-2 transition-colors">
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
                   {r.title}
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">{r.body}</p>
-                <span className="text-blue-700 text-sm font-medium group-hover:underline">
-                  Visit site ↗
-                </span>
+                <p className="mb-4 text-sm leading-relaxed text-gray-600">{r.body}</p>
+                <span className="text-sm font-medium text-blue-700 group-hover:underline">Visit site ↗</span>
               </a>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-10 px-4 bg-white">
-        <div className="max-w-3xl mx-auto">
+      <section className="bg-white px-4 py-10">
+        <div className="mx-auto max-w-3xl">
           <Disclaimer />
         </div>
       </section>

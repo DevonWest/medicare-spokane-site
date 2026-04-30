@@ -17,7 +17,11 @@ const resourceLinks: Array<{ href: string; label: string }> = [
   { href: "/resources", label: "Medicare Resource Library" },
   { href: "/turning-65-medicare-spokane", label: "Turning 65 in Spokane" },
   { href: "/compare-medicare-options", label: "Compare Medicare Options" },
+  { href: "/medicare-appointment-checklist", label: "Medicare Appointment Checklist" },
   { href: "/rx-drug-review", label: "Prescription Drug Review" },
+  { href: "/medicare-plan-review-spokane", label: "Annual Medicare Plan Review" },
+  { href: "/helping-parent-with-medicare", label: "Helping a Parent with Medicare" },
+  { href: "/working-past-65-medicare", label: "Working Past 65 & Medicare" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
 ];
 
@@ -33,8 +37,8 @@ export default function Footer() {
 
   return (
     <footer className="bg-gray-900 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] text-gray-300 md:pb-0 print:pb-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div>
             <div className="flex items-center gap-3">
               <Image
@@ -45,45 +49,45 @@ export default function Footer() {
                 className="h-12 w-12 shrink-0 object-contain"
               />
               <div>
-                <span className="text-white font-bold text-lg block">{siteConfig.legalName}</span>
-                <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
+                <span className="block text-lg font-bold text-white">{siteConfig.legalName}</span>
+                <p className="mt-1 text-xs uppercase tracking-wider text-gray-400">
                   Licensed Independent Insurance Agency
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Medicare in Spokane</p>
+                <p className="mt-1 text-xs text-gray-400">Medicare in Spokane</p>
               </div>
             </div>
-            <p className="mt-3 text-sm text-gray-400 leading-relaxed">
+            <p className="mt-3 text-sm leading-relaxed text-gray-400">
               {siteConfig.legalName} is {siteConfig.agencyDescriptor} serving Spokane and the
               surrounding Eastern Washington communities.
             </p>
             <div className="mt-4 space-y-1 text-sm">
               <p>
-                <a href={telHref} className="hover:text-white transition-colors">
+                <a href={telHref} className="transition-colors hover:text-white">
                   {siteConfig.phone}
                 </a>
               </p>
               <p>
-                <a href={`mailto:${siteConfig.email}`} className="hover:text-white transition-colors">
+                <a href={`mailto:${siteConfig.email}`} className="transition-colors hover:text-white">
                   {siteConfig.email}
                 </a>
               </p>
-              <p className="text-gray-500 text-xs">{siteConfig.address.streetAddress}</p>
-              <p className="text-gray-500 text-xs">
+              <p className="text-xs text-gray-500">{siteConfig.address.streetAddress}</p>
+              <p className="text-xs text-gray-500">
                 {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
                 {siteConfig.address.postalCode}
               </p>
-              <p className="text-gray-500 text-xs">{siteConfig.hours}</p>
+              <p className="text-xs text-gray-500">{siteConfig.hours}</p>
             </div>
           </div>
 
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Medicare Help
             </h3>
             <ul className="space-y-2 text-sm">
               {helpLinks.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="hover:text-white transition-colors">
+                  <Link href={item.href} className="transition-colors hover:text-white">
                     {item.label}
                   </Link>
                 </li>
@@ -92,13 +96,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Resources
             </h3>
             <ul className="space-y-2 text-sm">
               {resourceLinks.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="hover:text-white transition-colors">
+                  <Link href={item.href} className="transition-colors hover:text-white">
                     {item.label}
                   </Link>
                 </li>
@@ -107,13 +111,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               About Our Agency
             </h3>
             <ul className="space-y-2 text-sm">
               {aboutLinks.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="hover:text-white transition-colors">
+                  <Link href={item.href} className="transition-colors hover:text-white">
                     {item.label}
                   </Link>
                 </li>
@@ -122,13 +126,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
               Areas We Serve
             </h3>
             <ul className="space-y-2 text-sm">
               {spokaneAreaCities.map((city) => (
                 <li key={city.slug}>
-                  <Link href={getLocalMedicarePath(city.slug)} className="hover:text-white transition-colors">
+                  <Link href={getLocalMedicarePath(city.slug)} className="transition-colors hover:text-white">
                     {city.name}, {city.stateCode}
                   </Link>
                 </li>
@@ -137,7 +141,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-8 border-t border-gray-800 text-xs text-gray-400 space-y-3">
+        <div className="mt-10 space-y-3 border-t border-gray-800 pt-8 text-xs text-gray-400">
           <p>
             © {currentYear} {siteConfig.legalName}. All rights reserved. {siteConfig.positioning}
           </p>

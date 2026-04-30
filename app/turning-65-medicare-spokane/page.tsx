@@ -262,6 +262,55 @@ export default function TurningSixtyFivePage() {
         </div>
       </section>
 
+      <section className="bg-white px-4 py-12">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:p-8">
+          <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Family &amp; caregiver resource</p>
+          <div className="mt-3 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <h2 className="text-2xl font-bold text-gray-900">Helping a parent or spouse with Medicare?</h2>
+              <p className="mt-3 text-lg leading-relaxed text-gray-700">
+                If your family is helping a loved one organize Medicare information, review prescriptions and
+                doctors, or understand plan changes, we have a dedicated Spokane resource for that conversation.
+              </p>
+            </div>
+            <Link
+              href="/helping-parent-with-medicare"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
+            >
+              View Family Resource
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-slate-50 p-8 shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Related resource</p>
+          <div className="mt-3 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Still working at 65 or covered by a spouse&apos;s plan?</h2>
+              <p className="mt-4 text-lg leading-relaxed text-gray-700">
+                Medicare timing can look different when employer coverage is still involved. Review the questions to ask
+                about Part B, Part D, creditable coverage, and HSA contributions before you decide when to enroll.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/working-past-65-medicare"
+                className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+              >
+                Explore Working Past 65 Guidance
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-50"
+              >
+                Contact a Local Agent
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <FAQ items={faqs} heading="Turning 65 Medicare FAQ" />
 
       <section className="bg-white px-4 py-12">
