@@ -7,6 +7,7 @@ import { getAllZips } from "@/lib/zips";
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteConfig.url;
   const now = new Date();
+  const getLocalPagePriority = (path: string) => (path === "/medicare-spokane" ? 0.9 : 0.8);
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
@@ -41,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}${path}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: path === "/medicare-spokane" ? 0.9 : 0.8,
+    priority: getLocalPagePriority(path),
   }));
 
   const zipPages: MetadataRoute.Sitemap = getAllZips().map((zip) => ({

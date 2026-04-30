@@ -34,12 +34,19 @@ const internalResources = [
   },
 ] as const;
 
-function joinCommunities(values: string[]) {
+function joinList(values: string[], fallback: string) {
   if (values.length <= 1) {
-    return values[0] ?? "Spokane";
+    return values[0] ?? fallback;
   }
 
   return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
+}
+
+function getPrimaryNearbyCommunities(values: string[], fallback: string) {
+  const primary = values[0] ?? fallback;
+  const secondary = values[1] ?? primary;
+
+  return { primary, secondary };
 }
 
 export function getLocalMedicareMetadata(citySlug: string): Metadata {
@@ -51,7 +58,8 @@ export function getLocalMedicareMetadata(citySlug: string): Metadata {
 
   const canonicalPath = getLocalMedicarePath(city.slug);
   const title = `Medicare Help in ${city.name}, ${city.stateCode}`;
-  const description = `Compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options in ${city.name}, ${city.stateCode} with no-cost help from a Spokane-based licensed independent insurance agency serving ${city.nearbyCommunities[0]} and ${city.nearbyCommunities[1]}.`;
+  const { primary, secondary } = getPrimaryNearbyCommunities(city.nearbyCommunities, city.name);
+  const description = `Compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options in ${city.name}, ${city.stateCode} with no-cost help from a Spokane-based licensed independent insurance agency serving ${primary} and ${secondary}.`;
 
   return {
     title,
@@ -86,7 +94,11 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
   }
 
   const canonicalPath = getLocalMedicarePath(city.slug);
-  const nearbyCommunities = joinCommunities(city.nearbyCommunities);
+  const nearbyCommunities = joinList(city.nearbyCommunities, city.name);
+  const { primary, secondary } = getPrimaryNearbyCommunities(city.nearbyCommunities, city.name);
+  const zipCodes = joinList(city.zipCodes, city.zipCodes[0] ?? city.name);
+  const zipLabel = city.zipCodes.length > 1 ? "ZIP codes" : "ZIP code";
+  const zipLabelLower = city.zipCodes.length > 1 ? "zip codes" : "zip code";
   const faqItems = [
     {
       question: `Can I get help comparing Medicare plans in ${city.name}?`,
@@ -94,7 +106,7 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
     },
     {
       question: "Do Medicare plan options vary by ZIP code?",
-      answer: `Yes. Plan availability can vary by ZIP code, county, and carrier service area. In ${city.name}, we review the ZIP codes ${city.zipCodes.join(", ")} in ${city.county} so you can see which plans are actually available where you live.`,
+        answer: `Yes. Plan availability can vary by ZIP code, county, and carrier service area. In ${city.name}, we review the ${zipLabelLower} ${zipCodes} in ${city.county} so you can see which plans are actually available where you live.`,
     },
     {
       question: `Can you help review my prescriptions if I live in ${city.name}?`,
@@ -190,8 +202,8 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
                 <span className="font-semibold text-gray-900">County:</span> {city.county}
               </li>
               <li>
-                <span className="font-semibold text-gray-900">Common ZIP codes:</span>{" "}
-                {city.zipCodes.join(", ")}
+                <span className="font-semibold text-gray-900">Common {zipLabel}:</span>{" "}
+                {zipCodes}
               </li>
               <li>
                 <span className="font-semibold text-gray-900">Nearby communities:</span>{" "}
@@ -223,7 +235,7 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
             {[
               {
                 title: "Provider networks",
-                body: `If you use doctors in ${city.name} but also visit specialists in ${city.nearbyCommunities[0]} or ${city.nearbyCommunities[1]}, confirm that the plans you compare line up with those providers and referral rules.`,
+                body: `If you use doctors in ${city.name} but also visit specialists in ${primary} or ${secondary}, confirm that the plans you compare line up with those providers and referral rules.`,
               },
               {
                 title: "Prescription coverage",
@@ -231,7 +243,7 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
               },
               {
                 title: "Pharmacies",
-                body: `Check whether the pharmacies you use in ${city.name}, ${city.nearbyCommunities[0]}, or ${city.nearbyCommunities[1]} are in-network and preferred for lower copays.`,
+                body: `Check whether the pharmacies you use in ${city.name}, ${primary}, or ${secondary} are in-network and preferred for lower copays.`,
               },
               {
                 title: "Out-of-pocket costs",

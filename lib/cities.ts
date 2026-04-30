@@ -1,8 +1,3 @@
-export type MedicareFAQ = {
-  question: string;
-  answer: string;
-};
-
 export type City = {
   name: string;
   slug: string;
@@ -35,7 +30,7 @@ export const spokaneAreaCities: City[] = [
       "Because many Spokane residents receive care across the South Hill, Downtown, North Spokane, and Spokane Valley — and may also visit providers in Cheney, Airway Heights, Liberty Lake, Medical Lake, Mead, or Deer Park — it helps to compare plans with your full Spokane-area routine in mind.",
     faqLocalContext:
       "We regularly help Spokane residents who want to review options before turning 65, after leaving employer coverage, or during Annual Enrollment.",
-    nearbyCommunities: ["Spokane Valley", "Cheney", "Airway Heights", "Liberty Lake"],
+    nearbyCommunities: ["Cheney", "Airway Heights", "Mead", "Liberty Lake"],
     zipCodes: ["99201", "99202", "99203", "99204", "99205", "99206", "99207", "99208"],
   },
   {
@@ -56,25 +51,6 @@ export const spokaneAreaCities: City[] = [
       "We regularly help Spokane Valley residents compare plans when they want convenient access to care across the Valley, Spokane, and Liberty Lake while reviewing the plans we represent.",
     nearbyCommunities: ["Spokane", "Liberty Lake", "Veradale", "Millwood"],
     zipCodes: ["99016", "99037", "99206", "99212", "99216"],
-  },
-  {
-    name: "Liberty Lake",
-    slug: "liberty-lake",
-    county: "Spokane County",
-    state: "Washington",
-    stateCode: "WA",
-    description:
-      "One of Washington's newest cities, Liberty Lake offers suburban living with easy access to Spokane-area Medicare insurance options.",
-    heroSummary:
-      "Medicare guidance for Liberty Lake residents who want to compare plans without losing sight of pharmacy access, ZIP-based availability, and east-county provider networks.",
-    localIntro:
-      "Health Insurance Options LLC helps residents in Liberty Lake compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options with no-pressure guidance from a Spokane-based licensed independent insurance agency.",
-    serviceAreaContext:
-      "People in Liberty Lake often use providers, pharmacies, and specialists across Liberty Lake, Spokane Valley, Spokane, and nearby Idaho-border communities, so it is smart to compare plans around the places you actually go for care.",
-    faqLocalContext:
-      "We regularly help Liberty Lake residents compare plans when they want provider and pharmacy access that works across the eastern Spokane County corridor.",
-    nearbyCommunities: ["Spokane Valley", "Spokane", "Post Falls", "Otis Orchards"],
-    zipCodes: ["99019"],
   },
   {
     name: "Cheney",
@@ -113,6 +89,25 @@ export const spokaneAreaCities: City[] = [
       "We regularly help Airway Heights residents compare plans that fit care needs in Airway Heights, Spokane, and nearby west-county communities.",
     nearbyCommunities: ["Spokane", "Cheney", "Medical Lake", "Fairchild area"],
     zipCodes: ["99001"],
+  },
+  {
+    name: "Liberty Lake",
+    slug: "liberty-lake",
+    county: "Spokane County",
+    state: "Washington",
+    stateCode: "WA",
+    description:
+      "One of Washington's newest cities, Liberty Lake offers suburban living with easy access to Spokane-area Medicare insurance options.",
+    heroSummary:
+      "Medicare guidance for Liberty Lake residents who want to compare plans without losing sight of pharmacy access, ZIP-based availability, and east-county provider networks.",
+    localIntro:
+      "Health Insurance Options LLC helps residents in Liberty Lake compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options with no-pressure guidance from a Spokane-based licensed independent insurance agency.",
+    serviceAreaContext:
+      "People in Liberty Lake often use providers, pharmacies, and specialists across Liberty Lake, Spokane Valley, Spokane, and nearby Idaho-border communities, so it is smart to compare plans around the places you actually go for care.",
+    faqLocalContext:
+      "We regularly help Liberty Lake residents compare plans when they want provider and pharmacy access that works across the eastern Spokane County corridor.",
+    nearbyCommunities: ["Spokane Valley", "Spokane", "Post Falls", "Otis Orchards"],
+    zipCodes: ["99019"],
   },
   {
     name: "Medical Lake",
