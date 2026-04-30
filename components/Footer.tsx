@@ -5,6 +5,7 @@ import { siteConfig, telHref } from "@/lib/site";
 
 const helpLinks: Array<{ href: string; label: string }> = [
   { href: "/compare-medicare-options", label: "Compare Medicare Options" },
+  { href: "/working-past-65-medicare", label: "Working Past 65 & Medicare" },
   { href: "/medicare-advantage", label: "Medicare Advantage" },
   { href: "/medicare-supplements", label: "Medicare Supplements" },
   { href: "/medicare-part-d", label: "Medicare Part D" },

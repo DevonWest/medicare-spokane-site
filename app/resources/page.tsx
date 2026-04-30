@@ -47,6 +47,11 @@ const internalResources: ResourceLink[] = [
     body: "A simple checklist for what to do as you approach your Medicare Initial Enrollment Period.",
   },
   {
+    href: "/working-past-65-medicare",
+    title: "Working Past 65 & Medicare",
+    body: "Understand Medicare timing, employer coverage questions, Part B, Part D, and HSA-related concerns when you are still working at 65.",
+  },
+  {
     href: "/medicare-advantage-vs-supplement-spokane",
     title: "Medicare Advantage vs. Medicare Supplement",
     body: "How Medicare Advantage and Medicare Supplement coverage compare so you can review choices that fit your needs.",
