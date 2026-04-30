@@ -36,7 +36,7 @@ export default function Footer() {
                 alt="Health Insurance Options logo"
                 width={48}
                 height={48}
-                className="h-12 w-auto rounded bg-white p-1 object-contain"
+                className="rounded bg-white p-1"
               />
               <div>
                 <span className="text-white font-bold text-lg block">
