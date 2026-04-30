@@ -44,7 +44,7 @@ const internalResources: ResourceLink[] = [
   {
     href: "/turning-65-medicare-spokane",
     title: "Turning 65 Medicare Help in Spokane",
-    body: "A Spokane-focused checklist and FAQ page for people approaching Medicare eligibility and planning next steps.",
+    body: "A Spokane-focused checklist and FAQ page for people approaching Medicare eligibility and planning their next steps.",
   },
   {
     href: "/medicare-advantage-vs-supplement-spokane",

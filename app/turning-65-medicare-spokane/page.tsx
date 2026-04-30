@@ -194,7 +194,7 @@ export default function TurningSixtyFivePage() {
               These are some of the first questions Spokane residents usually ask as Medicare approaches.
             </p>
           </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {commonQuestions.map((item) => (
               <article key={item.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
