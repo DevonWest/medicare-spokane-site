@@ -30,7 +30,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3">
-              {/* TODO: Swap to a dark-background logo asset if the brand provides an alternate version. */}
+              {/* TODO: Swap to a dark-background logo asset if footer/theme styling removes the light logo backdrop. */}
               <Image
                 src="/brand/hio-logo.png"
                 alt="Health Insurance Options logo"
