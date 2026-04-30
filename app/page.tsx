@@ -105,10 +105,10 @@ export default function HomePage() {
               <Link
                 href="/request-contact"
                 className="inline-flex items-center justify-center bg-blue-900 hover:bg-blue-950 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-lg border border-blue-400"
-                >
-                  Request Help
-                </Link>
-              </div>
+              >
+                Request Help
+              </Link>
+            </div>
 
             <p className="mt-5 flex items-center gap-3 text-base font-semibold text-blue-50">
               <span className="tracking-[0.2em] text-amber-300" aria-hidden="true">

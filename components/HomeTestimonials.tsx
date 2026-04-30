@@ -70,8 +70,8 @@ export default function HomeTestimonials() {
     [],
   );
   const [page, setPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocusWithin, setIsFocusWithin] = useState(false);
   const itemsPerView = useItemsPerView();
   const prefersReducedMotion = usePrefersReducedMotion();
   const touchStartX = useRef<number | null>(null);
@@ -85,7 +85,9 @@ export default function HomeTestimonials() {
     return starts;
   }, [featuredFirstTestimonials.length, itemsPerView]);
   const pageCount = pageStartIndices.length;
-  const startIndex = pageStartIndices[page] ?? 0;
+  const currentPage = Math.min(page, Math.max(pageCount - 1, 0));
+  const startIndex = pageStartIndices[currentPage] ?? 0;
+  const isPaused = isHovered || isFocusWithin;
 
   const goToPage = useCallback(
     (nextPage: number) => {
@@ -97,14 +99,6 @@ export default function HomeTestimonials() {
     },
     [pageCount],
   );
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setPage((currentPage) => Math.min(currentPage, Math.max(pageCount - 1, 0)));
-  }, [pageCount]);
 
   useEffect(() => {
     if (prefersReducedMotion || isPaused || pageCount <= 1) {
@@ -125,7 +119,7 @@ export default function HomeTestimonials() {
       return;
     }
 
-    setIsPaused(false);
+    setIsFocusWithin(false);
   };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -145,7 +139,7 @@ export default function HomeTestimonials() {
       return;
     }
 
-    goToPage(deltaX > 0 ? page + 1 : page - 1);
+    goToPage(deltaX > 0 ? currentPage + 1 : currentPage - 1);
   };
 
   return (
@@ -165,9 +159,9 @@ export default function HomeTestimonials() {
 
         <div
           className="relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onFocusCapture={() => setIsPaused(true)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onFocusCapture={() => setIsFocusWithin(true)}
           onBlurCapture={handleBlurCapture}
         >
           <div
@@ -216,7 +210,7 @@ export default function HomeTestimonials() {
               <div className="pointer-events-none absolute inset-y-0 left-0 right-0 hidden items-center justify-between md:flex">
                 <button
                   type="button"
-                  onClick={() => goToPage(page - 1)}
+                  onClick={() => goToPage(currentPage - 1)}
                   className="pointer-events-auto -ml-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   aria-label="Show previous testimonials"
                 >
@@ -224,7 +218,7 @@ export default function HomeTestimonials() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => goToPage(page + 1)}
+                  onClick={() => goToPage(currentPage + 1)}
                   className="pointer-events-auto -mr-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   aria-label="Show next testimonials"
                 >
@@ -235,7 +229,7 @@ export default function HomeTestimonials() {
               <div className="mt-8 flex items-center justify-center gap-4 md:hidden">
                 <button
                   type="button"
-                  onClick={() => goToPage(page - 1)}
+                  onClick={() => goToPage(currentPage - 1)}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   aria-label="Show previous testimonials"
                 >
@@ -243,7 +237,7 @@ export default function HomeTestimonials() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => goToPage(page + 1)}
+                  onClick={() => goToPage(currentPage + 1)}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                   aria-label="Show next testimonials"
                 >
@@ -254,7 +248,7 @@ export default function HomeTestimonials() {
           ) : null}
         </div>
 
-        {isMounted && pageCount > 1 ? (
+        {pageCount > 1 ? (
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Testimonial carousel navigation">
             {Array.from({ length: pageCount }, (_, pageIndex) => (
               <button
@@ -262,10 +256,10 @@ export default function HomeTestimonials() {
                 type="button"
                 onClick={() => goToPage(pageIndex)}
                 className={`h-3 w-3 rounded-full transition ${
-                  pageIndex === page ? "bg-blue-700" : "bg-blue-200 hover:bg-blue-300"
+                  pageIndex === currentPage ? "bg-blue-700" : "bg-blue-200 hover:bg-blue-300"
                 }`}
                 aria-label={`Show testimonial set ${pageIndex + 1}`}
-                aria-pressed={pageIndex === page}
+                aria-pressed={pageIndex === currentPage}
               />
             ))}
           </div>
