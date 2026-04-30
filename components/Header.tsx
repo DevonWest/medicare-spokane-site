@@ -38,8 +38,8 @@ export default function Header() {
               width={1324}
               height={216}
               priority
-              sizes="(min-width: 1280px) 360px, (min-width: 1024px) 320px, (min-width: 640px) 280px, 240px"
-              className="h-auto w-[240px] object-contain sm:w-[280px] lg:w-[320px] xl:w-[360px]"
+              sizes="(min-width: 1280px) 336px, (min-width: 1024px) 320px, (min-width: 640px) 250px, 230px"
+              className="h-auto w-[230px] object-contain sm:w-[250px] lg:w-[320px] xl:w-[336px]"
             />
           </Link>
 
