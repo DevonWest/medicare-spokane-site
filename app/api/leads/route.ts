@@ -10,6 +10,7 @@ const ALLOWED_SOURCES: LeadSource[] = [
   "homepage",
   "medicare-spokane",
   "turning-65",
+  "turning-65-medicare-spokane",
   "advantage-vs-supplement",
   "medicare-advantage",
   "medicare-supplements",
