@@ -24,18 +24,17 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
               key={member.name}
               className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
             >
-              <div className="relative w-full aspect-square bg-blue-50">
+              <div className="aspect-[3/4] overflow-hidden rounded-lg bg-blue-50">
                 {member.image ? (
                   <Image
                     src={member.image}
                     alt={`Photo of ${member.name}, ${member.title}`}
-                    fill
-                    className="object-cover object-top"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    unoptimized
+                    width={600}
+                    height={800}
+                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-blue-800">
+                  <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-blue-800">
                     <span className="text-4xl font-bold tracking-tight" aria-hidden="true">
                       {initials}
                     </span>
