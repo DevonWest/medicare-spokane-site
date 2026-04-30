@@ -2,7 +2,7 @@ import Link from "next/link";
 import { siteConfig, telHref } from "@/lib/site";
 
 const primaryNav: Array<{ href: string; label: string }> = [
-  { href: "/about", label: "Our Team" },
+  { href: "/our-team", label: "Our Team" },
   { href: "/medicare-advantage", label: "Medicare Advantage" },
   { href: "/medicare-supplements", label: "Medicare Supplements" },
   { href: "/medicare-part-d", label: "Part D" },

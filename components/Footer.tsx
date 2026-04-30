@@ -13,7 +13,7 @@ const helpLinks: Array<{ href: string; label: string }> = [
 ];
 
 const aboutLinks: Array<{ href: string; label: string }> = [
-  { href: "/about", label: "Our Team" },
+  { href: "/our-team", label: "Our Team" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/contact", label: "Contact" },
   { href: "/request-contact", label: "Request a Call" },
