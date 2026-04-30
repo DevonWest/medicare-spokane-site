@@ -47,6 +47,11 @@ const internalResources: ResourceLink[] = [
     body: "How Medicare Advantage and Medicare Supplement coverage compare so you can review choices that fit your needs.",
   },
   {
+    href: "/rx-drug-review",
+    title: "RX Drug Review",
+    body: "Bring your prescription list and review how the Medicare Advantage and Part D plans we represent may cover your medications.",
+  },
+  {
     href: "/carriers",
     title: "Carriers We Represent",
     body: "See the carriers we currently work with for Medicare Advantage, Medicare Supplement, and Part D coverage in Spokane.",
