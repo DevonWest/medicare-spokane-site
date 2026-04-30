@@ -30,19 +30,23 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3">
+              {/* TODO: Swap to a dark-background logo asset if footer/theme styling removes the light logo backdrop. */}
               <Image
-                src="/brand/health-insurance-options-logo.svg"
-                alt={`${siteConfig.legalName} logo`}
+                src="/brand/hio-logo.png"
+                alt="Health Insurance Options logo"
                 width={48}
                 height={48}
-                className="h-12 w-12 rounded bg-white p-1"
+                className="h-12 w-auto rounded bg-white p-1 object-contain"
               />
               <div>
                 <span className="text-white font-bold text-lg block">
-                  Medicare<span className="text-blue-400">InSpokane</span>
+                  {siteConfig.legalName}
                 </span>
                 <p className="text-xs uppercase tracking-wider text-gray-400 mt-1">
-                  by {siteConfig.legalName}
+                  Licensed Independent Insurance Agency
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Medicare in Spokane
                 </p>
               </div>
             </div>
