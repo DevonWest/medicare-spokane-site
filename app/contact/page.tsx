@@ -3,6 +3,9 @@ import Link from "next/link";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
+const directionsHref =
+  "https://www.google.com/maps/search/?api=1&query=Providence%20Medical%20Building%20820%20South%20McClellan%20Spokane%20WA%2099204";
+
 export const metadata: Metadata = {
   title: "Contact a Licensed Spokane Medicare Agent",
   description:
@@ -41,66 +44,115 @@ export default function ContactPage() {
 
       <section className="py-12 px-4 bg-white">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Contact info */}
-          <div>
-            <div className="mb-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm sm:p-8">
               <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-                Spokane Office Location
+                Visit Our Spokane Office
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">
-                {siteConfig.address.buildingName}
+              <h2 className="mt-3 text-3xl font-bold text-gray-900">
+                Meet with a licensed local insurance agent in person.
               </h2>
-              <p className="mt-3 text-gray-700">
-                Our Spokane office is located in the Providence Medical Building.
+              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-700">
+                Our office is located inside the Providence Medical Building in Spokane. You can
+                meet with a licensed insurance agent in person or request help by phone.
               </p>
-              <address className="mt-4 not-italic text-base leading-relaxed text-gray-800">
-                {siteConfig.address.streetAddress}
-                <br />
-                {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
-                {siteConfig.address.postalCode}
-                <br />
-                Phone:{" "}
-                <a href={telHref} className="font-semibold text-blue-700 hover:underline">
-                  {siteConfig.phone}
-                </a>
-              </address>
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Get in Touch</h2>
-
-            <div className="space-y-5 text-gray-800">
-              <div>
-                <p className="text-sm uppercase tracking-wide text-gray-500 mb-1">Phone</p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
                   href={telHref}
-                  className="text-2xl font-semibold text-blue-700 hover:underline"
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
                 >
-                  {siteConfig.phone}
+                  Call 509-353-0476
                 </a>
-                <p className="text-sm text-gray-500 mt-1">Mon – Fri, 9:00 AM – 5:00 PM Pacific</p>
-              </div>
-
-              <div>
-                <p className="text-sm uppercase tracking-wide text-gray-500 mb-1">Email</p>
-                <a href={`mailto:${siteConfig.email}`} className="text-blue-700 hover:underline">
-                  {siteConfig.email}
+                <a
+                  href={directionsHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-5 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                >
+                  Get Directions
                 </a>
-              </div>
-
-              <div>
-                <p className="text-sm uppercase tracking-wide text-gray-500 mb-1">Office</p>
-                <address className="not-italic">
-                  {siteConfig.address.buildingName}
-                  <br />
-                  {siteConfig.address.streetAddress}
-                  <br />
-                  {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
-                  {siteConfig.address.postalCode}
-                </address>
+                <Link
+                  href="#contact-form"
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-3 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-50"
+                >
+                  Request Help Online
+                </Link>
               </div>
             </div>
 
-            <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900 leading-relaxed">
+            <div className="grid gap-6">
+              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+                <h3 className="text-2xl font-bold text-gray-900">{siteConfig.address.buildingName}</h3>
+                <address className="mt-5 not-italic text-base leading-8 text-gray-800">
+                  <p>{siteConfig.address.streetAddress}</p>
+                  <p>
+                    {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
+                    {siteConfig.address.postalCode}
+                  </p>
+                  <p>
+                    Phone:{" "}
+                    <a href={telHref} className="font-semibold text-blue-700 hover:underline">
+                      {siteConfig.phone}
+                    </a>
+                  </p>
+                  <p>
+                    Email:{" "}
+                    <a
+                      href={`mailto:${siteConfig.email}`}
+                      className="font-semibold text-blue-700 hover:underline"
+                    >
+                      {siteConfig.email}
+                    </a>
+                  </p>
+                  <p>Hours: {siteConfig.hours}</p>
+                </address>
+              </div>
+
+              <div className="rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm sm:p-8">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-6 w-6"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 21s6-5.686 6-11a6 6 0 10-12 0c0 5.314 6 11 6 11z"
+                    />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-2xl font-bold text-gray-900">Office map & directions</h3>
+                <p className="mt-3 text-base leading-relaxed text-gray-700">
+                  Located inside the Providence Medical Building. Use Google Maps for turn-by-turn
+                  directions to our Spokane office.
+                </p>
+                <div className="mt-5 rounded-2xl border border-dashed border-blue-200 bg-white p-5 text-gray-700">
+                  <p className="font-semibold text-gray-900">{siteConfig.address.buildingName}</p>
+                  <p className="mt-2">
+                    {siteConfig.address.streetAddress}
+                    <br />
+                    {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
+                    {siteConfig.address.postalCode}
+                  </p>
+                </div>
+                <a
+                  href={directionsHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+                >
+                  Get Directions
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">
               <p className="font-semibold mb-1">Compliance note</p>
               <p>{siteConfig.disclaimer}</p>
               <p className="mt-2">{siteConfig.nonAffiliation}</p>
@@ -108,7 +160,7 @@ export default function ContactPage() {
           </div>
 
           {/* Form */}
-          <div>
+          <div id="contact-form">
             <LeadForm
               source="contact"
               heading="Send Us a Message"
