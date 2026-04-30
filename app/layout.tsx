@@ -4,6 +4,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LocalBusinessSchema from "@/components/LocalBusinessSchema";
+import MobileStickyCTA from "@/components/MobileStickyCTA";
 import { siteConfig } from "@/lib/site";
 import { getGtmId, isProduction } from "@/lib/env";
 
@@ -92,10 +93,11 @@ export default function RootLayout({
         <LocalBusinessSchema />
       </head>
       {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
-      <body className="flex flex-col min-h-screen bg-white text-gray-900 font-sans antialiased">
+      <body className="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <MobileStickyCTA />
       </body>
     </html>
   );
