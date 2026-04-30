@@ -61,7 +61,7 @@ export default function ContactPage() {
                   href={telHref}
                   className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
                 >
-                  Call 509-353-0476
+                  Call {siteConfig.phone}
                 </a>
                 <a
                   href={directionsHref}
@@ -73,6 +73,7 @@ export default function ContactPage() {
                 </a>
                 <Link
                   href="#contact-form"
+                  aria-label="Jump to the contact form"
                   className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-3 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-50"
                 >
                   Request Help Online
