@@ -35,6 +35,7 @@ export type LeadSource =
   | "medicare-spokane"
   | "turning-65"
   | "turning-65-medicare-spokane"
+  | "medicare-plan-review-spokane"
   | "compare-medicare-options"
   | "advantage-vs-supplement"
   | "medicare-advantage"
