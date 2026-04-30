@@ -21,7 +21,7 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-3 shrink-0">
             <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 shrink-0">
               <Image
-                src="/brand/hio-logo.png"
+                src="/brand/hio-logo-new.svg"
                 alt="Health Insurance Options logo"
                 width={36}
                 height={36}
