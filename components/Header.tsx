@@ -19,14 +19,16 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 h-16">
           <Link href="/" className="flex items-center gap-3 shrink-0">
-            <Image
-              src="/brand/hio-logo.png"
-              alt="Health Insurance Options logo"
-              width={72}
-              height={72}
-              className="w-auto h-12 sm:h-16 object-contain shrink-0"
-              priority
-            />
+            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 shrink-0">
+              <Image
+                src="/brand/hio-logo.png"
+                alt="Health Insurance Options logo"
+                width={36}
+                height={36}
+                className="w-9 h-9 object-contain"
+                priority
+              />
+            </div>
             <span className="text-blue-700 font-bold text-lg sm:text-xl tracking-tight leading-tight">
               Medicare in Spokane
               <span className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider">
