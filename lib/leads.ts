@@ -38,6 +38,7 @@ export type LeadSource =
   | "medicare-appointment-checklist"
   | "medicare-plan-review-spokane"
   | "compare-medicare-options"
+  | "helping-parent-with-medicare"
   | "working-past-65-medicare"
   | "advantage-vs-supplement"
   | "medicare-advantage"

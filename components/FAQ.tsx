@@ -23,6 +23,7 @@ export default function FAQ({ heading = "Frequently Asked Questions", items, inc
       },
     })),
   };
+  const schemaJson = JSON.stringify(schema).replace(/</g, "\\u003c");
 
   return (
     <section className="py-16 px-4 bg-gray-50">
@@ -55,7 +56,7 @@ export default function FAQ({ heading = "Frequently Asked Questions", items, inc
       {includeSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }}
+          dangerouslySetInnerHTML={{ __html: schemaJson }}
         />
       )}
     </section>

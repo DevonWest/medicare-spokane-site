@@ -52,6 +52,11 @@ const internalResources: ResourceLink[] = [
     body: "Understand Medicare timing, employer coverage questions, Part B, Part D, and HSA-related concerns when you are still working at 65.",
   },
   {
+    href: "/helping-parent-with-medicare",
+    title: "Helping a Parent with Medicare",
+    body: "A Spokane guide for adult children, spouses, caregivers, and families helping a loved one review Medicare options.",
+  },
+  {
     href: "/medicare-advantage-vs-supplement-spokane",
     title: "Medicare Advantage vs. Medicare Supplement",
     body: "How Medicare Advantage and Medicare Supplement coverage compare so you can review choices that fit your needs.",
