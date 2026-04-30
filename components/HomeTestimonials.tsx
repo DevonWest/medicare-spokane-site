@@ -8,6 +8,7 @@ import { testimonials } from "@/lib/testimonials";
 const AUTO_ROTATE_MS = 6000;
 const MOBILE_BREAKPOINT = 768;
 const DESKTOP_BREAKPOINT = 1024;
+const MIN_TESTIMONIAL_CARD_HEIGHT = "19rem";
 const SWIPE_THRESHOLD = 50;
 
 function getItemsPerView(width: number) {
@@ -77,9 +78,14 @@ export default function HomeTestimonials() {
   const touchStartX = useRef<number | null>(null);
   const pageStartIndices = useMemo(() => {
     const starts: number[] = [];
+    const maxStartIndex = Math.max(featuredFirstTestimonials.length - itemsPerView, 0);
 
-    for (let index = 0; index < featuredFirstTestimonials.length; index += itemsPerView) {
-      starts.push(Math.min(index, Math.max(featuredFirstTestimonials.length - itemsPerView, 0)));
+    for (let index = 0; index <= maxStartIndex; index += itemsPerView) {
+      starts.push(index);
+    }
+
+    if (starts[starts.length - 1] !== maxStartIndex) {
+      starts.push(maxStartIndex);
     }
 
     return starts;
@@ -181,7 +187,10 @@ export default function HomeTestimonials() {
                     key={testimonial.name}
                     className="basis-[calc(100%/var(--cards-per-view))] shrink-0 px-3"
                   >
-                    <figure className="h-full min-h-[19rem] rounded-3xl border border-gray-200 bg-white p-7 shadow-sm">
+                    <figure
+                      className="h-full rounded-3xl border border-gray-200 bg-white p-7 shadow-sm"
+                      style={{ minHeight: MIN_TESTIMONIAL_CARD_HEIGHT }}
+                    >
                       <div className="mb-4 text-xl tracking-[0.2em] text-amber-500" aria-label="5 out of 5 stars">
                         ★★★★★
                       </div>
