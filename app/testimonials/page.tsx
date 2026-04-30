@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const featuredFirstTestimonials = [...testimonials].sort(
-  (left, right) => Number(Boolean(right.featured)) - Number(Boolean(left.featured)),
+  (left, right) => (right.featured ? 1 : 0) - (left.featured ? 1 : 0),
 );
 
 export default function TestimonialsPage() {
@@ -35,7 +35,7 @@ export default function TestimonialsPage() {
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           {featuredFirstTestimonials.map((testimonial) => (
             <figure
-              key={`${testimonial.name}-${testimonial.text}`}
+              key={testimonial.name}
               className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm"
             >
               <div className="mb-4 text-xl tracking-[0.2em] text-amber-500" aria-label="5 out of 5 stars">

@@ -65,7 +65,7 @@ export default function HomeTestimonials() {
   const featuredFirstTestimonials = useMemo(
     () =>
       [...testimonials].sort(
-        (left, right) => Number(Boolean(right.featured)) - Number(Boolean(left.featured)),
+        (left, right) => (right.featured ? 1 : 0) - (left.featured ? 1 : 0),
       ),
     [],
   );
@@ -178,7 +178,7 @@ export default function HomeTestimonials() {
               >
                 {featuredFirstTestimonials.map((testimonial) => (
                   <div
-                    key={`${testimonial.name}-${testimonial.text}`}
+                    key={testimonial.name}
                     className="basis-[calc(100%/var(--cards-per-view))] shrink-0 px-3"
                   >
                     <figure className="h-full min-h-[19rem] rounded-3xl border border-gray-200 bg-white p-7 shadow-sm">
@@ -249,7 +249,11 @@ export default function HomeTestimonials() {
         </div>
 
         {pageCount > 1 ? (
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Testimonial carousel navigation">
+          <div
+            className="mt-8 flex flex-wrap items-center justify-center gap-2"
+            aria-label="Testimonial carousel navigation"
+            role="tablist"
+          >
             {Array.from({ length: pageCount }, (_, pageIndex) => (
               <button
                 key={pageIndex}
@@ -259,7 +263,8 @@ export default function HomeTestimonials() {
                   pageIndex === currentPage ? "bg-blue-700" : "bg-blue-200 hover:bg-blue-300"
                 }`}
                 aria-label={`Show testimonial set ${pageIndex + 1}`}
-                aria-pressed={pageIndex === currentPage}
+                role="tab"
+                aria-selected={pageIndex === currentPage}
               />
             ))}
           </div>
