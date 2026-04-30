@@ -1,18 +1,18 @@
 import { MetadataRoute } from "next";
+import { getAllLocalMedicarePaths } from "@/lib/cities";
 import { siteConfig } from "@/lib/site";
-import { getAllCitySlugs } from "@/lib/cities";
-import { getAllZips } from "@/lib/zips";
 import { getAllTopicSlugs } from "@/lib/topics";
+import { getAllZips } from "@/lib/zips";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteConfig.url;
   const now = new Date();
+  const getLocalPagePriority = (path: string) => (path === "/medicare-spokane" ? 0.9 : 0.8);
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
     { url: `${baseUrl}/our-team`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
-    { url: `${baseUrl}/medicare-spokane`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-advantage`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-supplements`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-part-d`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
@@ -38,11 +38,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
 
-  const cityPages: MetadataRoute.Sitemap = getAllCitySlugs().map((slug) => ({
-    url: `${baseUrl}/cities/${slug}`,
+  const localPages: MetadataRoute.Sitemap = getAllLocalMedicarePaths().map((path) => ({
+    url: `${baseUrl}${path}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: 0.7,
+    priority: getLocalPagePriority(path),
   }));
 
   const zipPages: MetadataRoute.Sitemap = getAllZips().map((zip) => ({
@@ -59,5 +59,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...topicPages, ...cityPages, ...zipPages];
+  return [...staticPages, ...topicPages, ...localPages, ...zipPages];
 }

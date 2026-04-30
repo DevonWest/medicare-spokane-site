@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getLocalMedicarePath } from "@/lib/cities";
 import { getZipArea, getAllZips, spokaneZipAreas } from "@/lib/zips";
 import { medicareTopics } from "@/lib/topics";
 import { siteConfig } from "@/lib/site";
@@ -62,7 +63,7 @@ export default async function ZipPage({ params }: Props) {
           <nav className="text-blue-200 text-sm mb-4">
             <Link href="/" className="hover:text-white">Home</Link>
             <span className="mx-2">/</span>
-            <Link href={`/cities/${area.citySlug}`} className="hover:text-white">
+            <Link href={getLocalMedicarePath(area.citySlug)} className="hover:text-white">
               {area.city}
             </Link>
             <span className="mx-2">/</span>
@@ -113,7 +114,7 @@ export default async function ZipPage({ params }: Props) {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <p className="text-gray-700">
             ZIP code {area.zip} is part of{" "}
-            <Link href={`/cities/${area.citySlug}`} className="text-blue-700 font-medium hover:underline">
+            <Link href={getLocalMedicarePath(area.citySlug)} className="text-blue-700 font-medium hover:underline">
               {area.city}, {area.stateCode}
             </Link>
             .
