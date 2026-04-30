@@ -81,7 +81,7 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
                 <div className="mt-5 flex flex-col gap-2">
                   <Link
                     href="/request-contact"
-                    className="inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                    className="inline-flex min-h-11 items-center justify-center bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-3 rounded-lg transition-colors"
                   >
                     Request a Call
                   </Link>
@@ -90,7 +90,7 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
                       href={member.scheduleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center bg-white border border-blue-300 hover:border-blue-500 text-blue-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                      className="inline-flex min-h-11 items-center justify-center bg-white border border-blue-300 hover:border-blue-500 text-blue-700 text-sm font-medium px-4 py-3 rounded-lg transition-colors"
                     >
                       Schedule with {member.name.split(" ")[0]}
                     </a>

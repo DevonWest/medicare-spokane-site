@@ -6,12 +6,12 @@ import { siteConfig } from "@/lib/site";
 import { testimonials } from "@/lib/testimonials";
 
 export const metadata: Metadata = {
-  title: "Client Testimonials – Medicare in Spokane",
+  title: "Client Testimonials",
   description:
     "Read what Spokane-area Medicare clients say about working with Health Insurance Options LLC and our local team of licensed insurance professionals.",
   alternates: { canonical: `${siteConfig.url}/testimonials` },
   openGraph: {
-    title: "Client Testimonials – Medicare in Spokane",
+    title: "Client Testimonials",
     description:
       "Spokane-area Medicare clients on working with Health Insurance Options LLC.",
     url: `${siteConfig.url}/testimonials`,

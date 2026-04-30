@@ -117,8 +117,8 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
       answer: `Yes. Our Spokane office is located inside the Providence Medical Building. Many clients from ${city.name} meet with us there, and we also offer phone consultations and remote help when that is more convenient.`,
     },
     {
-      question: "Do you offer every plan available?",
-      answer: `No. ${siteConfig.disclaimer}`,
+      question: "Can you help me compare the plans you represent?",
+      answer: `Yes. We can help you compare the plans we represent for ${city.name}. ${siteConfig.disclaimer}`,
     },
   ];
 

@@ -8,12 +8,12 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Medicare Resource Library for Spokane Residents",
   description:
-    "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and finding trusted official Medicare resources.",
+    "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and finding trusted Medicare and government resources.",
   alternates: { canonical: `${siteConfig.url}/resources` },
   openGraph: {
     title: "Medicare Resource Library for Spokane Residents",
     description:
-      "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and trusted official resources.",
+      "Browse Spokane Medicare guides for turning 65, comparing options, reviewing prescriptions, and trusted Medicare and government resources.",
     url: `${siteConfig.url}/resources`,
   },
 };
@@ -142,7 +142,7 @@ const officialResources: ResourceLink[] = [
   {
     href: "https://www.insurance.wa.gov/statewide-health-insurance-benefits-advisors-shiba",
     title: "Washington SHIBA (SHIP)",
-    body: "Washington State's Statewide Health Insurance Benefits Advisors — free, unbiased Medicare counseling.",
+    body: "Washington State's Statewide Health Insurance Benefits Advisors — free Medicare counseling through the state's SHIP program.",
     external: true,
   },
   {
@@ -156,11 +156,11 @@ const officialResources: ResourceLink[] = [
 export default function ResourcesPage() {
   return (
     <>
-      <PageHero
-        title="Medicare Resource Library"
-        subtitle="Browse local Medicare guides, plan comparisons, and trusted official links to help you review your options with confidence."
-        crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
-      />
+        <PageHero
+          title="Medicare Resource Library"
+          subtitle="Browse local Medicare guides, plan comparisons, and trusted Medicare and government links to help you review your options with confidence."
+          crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
+        />
 
       <section className="bg-white px-4 py-16">
         <div className="mx-auto max-w-6xl">
@@ -202,7 +202,7 @@ export default function ResourcesPage() {
       <section className="border-y border-slate-100 bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">
-            Official Medicare &amp; Government Resources
+            Medicare &amp; Government Resources
           </h2>
           <p className="mb-10 max-w-2xl text-gray-600">
             Independent guidance starts with reliable information. These official resources can help

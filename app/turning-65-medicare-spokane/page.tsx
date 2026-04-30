@@ -6,12 +6,12 @@ import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Turning 65 Medicare Help Spokane | Medicare in Spokane",
+  title: "Turning 65 Medicare Help Spokane",
   description:
     "Turning 65 in Spokane? Get local help understanding Medicare enrollment, Medicare Advantage, Medicare Supplement, and Part D options from a licensed insurance agent.",
   alternates: { canonical: `${siteConfig.url}/turning-65-medicare-spokane` },
   openGraph: {
-    title: "Turning 65 Medicare Help Spokane | Medicare in Spokane",
+    title: "Turning 65 Medicare Help Spokane",
     description:
       "Turning 65 in Spokane? Get local help understanding Medicare enrollment, Medicare Advantage, Medicare Supplement, and Part D options from a licensed insurance agent.",
     url: `${siteConfig.url}/turning-65-medicare-spokane`,

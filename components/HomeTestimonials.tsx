@@ -264,19 +264,23 @@ export default function HomeTestimonials() {
             role="tablist"
           >
             {Array.from({ length: pageCount }, (_, pageIndex) => (
-              <button
-                key={pageIndex}
-                type="button"
-                onClick={() => goToPage(pageIndex)}
-                className={`h-3 w-3 rounded-full transition ${
-                  pageIndex === currentPage ? "bg-blue-700" : "bg-blue-200 hover:bg-blue-300"
-                }`}
-                aria-label={`Show testimonial set ${pageIndex + 1}`}
-                role="tab"
-                aria-selected={pageIndex === currentPage}
-              />
-            ))}
-          </div>
+               <button
+                 key={pageIndex}
+                 type="button"
+                 onClick={() => goToPage(pageIndex)}
+                 className="inline-flex h-6 w-6 items-center justify-center rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                 aria-label={`Show testimonial set ${pageIndex + 1}`}
+                 role="tab"
+                 aria-selected={pageIndex === currentPage}
+               >
+                 <span
+                   className={`h-3 w-3 rounded-full transition ${
+                     pageIndex === currentPage ? "bg-blue-700" : "bg-blue-200 hover:bg-blue-300"
+                   }`}
+                 />
+               </button>
+             ))}
+           </div>
         ) : null}
 
         <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-gray-600">

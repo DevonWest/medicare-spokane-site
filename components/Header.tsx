@@ -61,7 +61,7 @@ export default function Header() {
           <a
             href={telHref}
             className="inline-flex h-11 items-center justify-center gap-2 justify-self-end rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
-            aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
+            aria-label={`Call ${siteConfig.phone}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -137,7 +137,7 @@ export default function Header() {
             <a
               href={telHref}
               className="flex min-h-11 items-center rounded-xl px-4 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-              aria-label={`Call ${siteConfig.legalName} at ${siteConfig.phone}`}
+              aria-label={`Call ${siteConfig.phone}`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Call {siteConfig.phone}

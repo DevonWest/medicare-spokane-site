@@ -31,9 +31,9 @@ const homepageFaqs: FAQItem[] = [
       "No. Our consultations are no-cost and no-obligation. Health Insurance Options LLC is paid by the insurance carriers we represent, so your monthly premium is the same whether you enroll on your own or work with us.",
   },
   {
-    question: "Do you offer every Medicare plan available in Spokane?",
+    question: "Can you help me compare the plans you represent in Spokane?",
     answer:
-      "No. We do not offer every plan available in your area. Currently, we represent 8 organizations which offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health Insurance Assistance Program (SHIP) to get information on all of your options.",
+      "Yes. We can help you compare the plans we represent in Spokane. We do not offer every plan available in your area. Currently, we represent 8 organizations which offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health Insurance Assistance Program (SHIP) to get information on all of your options.",
   },
   {
     question: "Can you help me review my prescription drugs when comparing plans?",
@@ -83,7 +83,7 @@ export default function HomePage() {
               <a
                 href={telHref}
                 className="inline-flex items-center justify-center gap-2 bg-white text-blue-800 font-bold px-7 py-3 rounded-lg hover:bg-blue-50 transition-colors text-lg shadow-md"
-                aria-label={`Call now at ${siteConfig.phone}`}
+                aria-label={`Call Now (${siteConfig.phone})`}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

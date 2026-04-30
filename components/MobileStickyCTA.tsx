@@ -30,7 +30,7 @@ export default function MobileStickyCTA() {
         <Link
           href="/contact"
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 bg-white px-4 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-          aria-label="Request Medicare help"
+          aria-label="Request Help with Medicare"
         >
           Request Help
         </Link>
