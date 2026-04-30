@@ -354,18 +354,18 @@ export default function HomePage() {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
             Bring Your Prescription List
           </h2>
-          <p className="text-gray-700 leading-relaxed mb-6 text-lg">
-            One of the most useful things we do during a no-cost consultation is review your current
-            prescriptions. We will help you compare how the Medicare Advantage and Part D plans we
-            represent would cover your medications — including tier placement, preferred pharmacies,
-            and estimated annual costs — so you can choose with confidence.
-          </p>
-          <Link
-            href="/request-contact"
-            className="inline-block bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-          >
-            Request a Drug Review
-          </Link>
+           <p className="text-gray-700 leading-relaxed mb-6 text-lg">
+             One of the most useful things we do during a no-cost consultation is review your current
+             prescriptions. We will help you compare how the Medicare Advantage and Part D plans we
+             represent would cover your medications — including tier placement, preferred pharmacies,
+             and estimated annual costs — so you can choose with confidence.
+           </p>
+           <Link
+             href="/rx-drug-review"
+             className="inline-block bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+           >
+             Request a Drug Review
+           </Link>
         </div>
       </section>
 

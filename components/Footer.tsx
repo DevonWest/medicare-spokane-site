@@ -7,6 +7,7 @@ const helpLinks: Array<{ href: string; label: string }> = [
   { href: "/medicare-advantage", label: "Medicare Advantage" },
   { href: "/medicare-supplements", label: "Medicare Supplements" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
+  { href: "/rx-drug-review", label: "RX Drug Review" },
   { href: "/supplemental-insurance", label: "Supplemental Insurance" },
   { href: "/carriers", label: "Carriers" },
   { href: "/medicare-faq", label: "Medicare FAQ" },
