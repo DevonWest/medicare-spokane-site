@@ -3,7 +3,7 @@ export type TeamMember = {
   title: string;
   shortBio: string;
   specialties?: string[];
-  image: string;
+  image?: string;
   phone?: string;
   email?: string;
   scheduleUrl?: string;
@@ -13,71 +13,114 @@ export type TeamMember = {
 
 export const teamMembers: TeamMember[] = [
   {
-    name: "Devon West",
-    title: "Owner & Licensed Insurance Professional",
+    name: "Lynn Wold",
+    title: "Founder & Licensed Insurance Agent",
     shortBio:
-      "Devon is the owner of Health Insurance Options LLC and has more than a decade of experience helping Spokane-area residents compare Medicare options. A Spokane local, he offers no-cost consultations and is available year-round — not just during enrollment season.",
+      "Lynn founded Health Insurance Options LLC to give Spokane-area residents clear, local Medicare guidance. She helps clients compare options with a warm, practical approach focused on coverage that fits their needs.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
       "Medicare Part D",
-      "Turning 65 Guidance",
+      "Local Medicare Guidance",
     ],
-    image: "/team/devon-west.jpg",
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     active: true,
     sortOrder: 1,
   },
   {
-    name: "Denise West",
-    title: "Licensed Insurance Professional",
+    name: "Craig Lenhart",
+    title: "Licensed Insurance Agent",
     shortBio:
-      "Denise is a licensed insurance professional with years of experience helping Spokane-area residents navigate Medicare at every stage — from turning 65 to reviewing existing coverage. She is known for her patient, no-pressure approach to even the most complex plan decisions.",
+      "Craig works with Spokane-area Medicare clients who want straightforward answers before they choose coverage. He helps people review plan choices, provider needs, and prescription considerations without pressure.",
     specialties: [
-      "New to Medicare",
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
-      "Retirement Transitions",
+      "Medicare Part D",
+      "Plan Reviews",
     ],
-    image: "/team/denise-west.jpg",
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     active: true,
     sortOrder: 2,
   },
   {
-    name: "Cathy Franklin",
-    title: "Licensed Insurance Professional",
+    name: "Meg Shumaker",
+    title: "Licensed Insurance Agent",
     shortBio:
-      "Cathy is a Spokane native and licensed insurance professional with deep expertise in Medicare Supplement and Part D prescription drug coverage. She regularly sits down with clients and their medication lists to find coverage that fits their pharmacy preferences and budget.",
+      "Meg helps local clients understand Medicare coverage in a way that feels approachable and organized. She supports Spokane-area residents as they compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options.",
     specialties: [
+      "Medicare Advantage",
       "Medicare Supplement (Medigap)",
       "Medicare Part D",
-      "Prescription Drug Review",
       "Supplemental Insurance",
     ],
-    image: "/team/cathy-franklin.jpg",
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     active: true,
     sortOrder: 3,
   },
   {
-    name: "Kristy",
-    title: "Licensed Insurance Professional",
+    name: "Rose Records",
+    title: "Licensed Insurance Agent",
     shortBio:
-      "Kristy is a licensed insurance professional with Health Insurance Options LLC who helps Spokane-area residents compare Medicare Advantage and supplemental coverage options. She takes a client-first approach, making sure every person understands their choices before enrolling.",
+      "Rose brings a helpful, client-first style to Medicare conversations for Spokane-area residents. She helps people review their choices and understand how different coverage options may fit their health and budget needs.",
     specialties: [
       "Medicare Advantage",
-      "Supplemental Insurance",
-      "Annual Plan Reviews",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Client Support",
     ],
-    image: "/team/kristy.jpg",
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     active: true,
     sortOrder: 4,
+  },
+  {
+    name: "Sheryl Manchester",
+    title: "Licensed Insurance Agent",
+    shortBio:
+      "Sheryl helps Spokane-area clients sort through Medicare questions with clear, friendly guidance. Her focus is helping each person compare options and feel confident about the coverage they choose.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Coverage Reviews",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    active: true,
+    sortOrder: 5,
+  },
+  {
+    name: "Anna Parker",
+    title: "Office Coordinator",
+    shortBio:
+      "Anna helps keep the Health Insurance Options office organized and responsive for Spokane-area clients. She supports appointment coordination and helps connect callers with the right local team member.",
+    specialties: [
+      "Client Scheduling",
+      "Office Support",
+      "Local Client Service",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    active: true,
+    sortOrder: 6,
+  },
+  {
+    name: "Karen Christensen",
+    title: "Office Coordinator",
+    shortBio:
+      "Karen supports clients and agents with friendly, detail-oriented office coordination. She helps Spokane-area residents get connected for Medicare reviews and follow-up support.",
+    specialties: [
+      "Client Scheduling",
+      "Office Support",
+      "Supplemental Insurance",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    active: true,
+    sortOrder: 7,
   },
 ];
 
