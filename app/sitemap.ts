@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/carriers`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/testimonials`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/turning-65-medicare-spokane`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/helping-parent-with-medicare`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     {
       url: `${baseUrl}/medicare-advantage-vs-supplement-spokane`,
       lastModified: now,

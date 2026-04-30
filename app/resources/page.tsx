@@ -47,6 +47,11 @@ const internalResources: ResourceLink[] = [
     body: "A simple checklist for what to do as you approach your Medicare Initial Enrollment Period.",
   },
   {
+    href: "/helping-parent-with-medicare",
+    title: "Helping a Parent with Medicare",
+    body: "A Spokane guide for adult children, spouses, caregivers, and families helping a loved one review Medicare options.",
+  },
+  {
     href: "/medicare-advantage-vs-supplement-spokane",
     title: "Medicare Advantage vs. Medicare Supplement",
     body: "How Medicare Advantage and Medicare Supplement coverage compare so you can review choices that fit your needs.",
