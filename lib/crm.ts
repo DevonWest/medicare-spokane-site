@@ -1,23 +1,9 @@
 import "server-only";
 
-import { cleanString, normalizeEmail } from "./leadValidation";
-import type { UtmParams } from "./utm";
+import { buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, type CrmLeadInput } from "./crmPayload";
 
 const CRM_CONTACT_PATHS = ["contacts", "api/contacts", "developer-api/contacts", "api/developer/contacts"] as const;
 const CRM_TIMEOUT_MS = 10_000;
-
-export interface CrmLeadInput {
-  fullName: string;
-  email: string;
-  phone: string;
-  zip?: string;
-  message?: string;
-  source: string;
-  sourcePath?: string;
-  referrer?: string;
-  utm?: UtmParams;
-  clientSubmittedAt?: string;
-}
 
 export interface CrmContactResult {
   ok: boolean;
@@ -32,33 +18,9 @@ interface CrmConfig {
   apiKey: string;
 }
 
-interface CrmRequestVariant {
-  label: "flat" | "wrapped";
-  body: Record<string, unknown>;
-}
-
 function env(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
-}
-
-function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value
-      .filter((item): item is Exclude<typeof item, undefined> => item !== undefined)
-      .map((item) => stripUndefined(item)) as T;
-  }
-
-  if (value && Object.prototype.toString.call(value) === "[object Object]") {
-    const out: Record<string, unknown> = {};
-    for (const [key, nestedValue] of Object.entries(value)) {
-      if (nestedValue === undefined) continue;
-      out[key] = stripUndefined(nestedValue);
-    }
-    return out as T;
-  }
-
-  return value;
 }
 
 function getCrmConfig(): CrmConfig | null {
@@ -73,50 +35,6 @@ function getCrmConfig(): CrmConfig | null {
   };
 }
 
-export function joinCrmUrl(baseUrl: string, path: string): string {
-  return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
-}
-
-export function splitFullName(fullName: string): { firstName: string; lastName?: string } {
-  const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) return { firstName: "" };
-  if (parts.length === 1) return { firstName: parts[0] };
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
-  };
-}
-
-export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unknown> {
-  const { firstName, lastName } = splitFullName(lead.fullName);
-
-  return stripUndefined({
-    fullName: cleanString(lead.fullName) ?? "",
-    firstName: cleanString(firstName) ?? "",
-    lastName: cleanString(lastName),
-    email: normalizeEmail(lead.email),
-    phone: cleanString(lead.phone) ?? "",
-    zip: cleanString(lead.zip),
-    message: cleanString(lead.message),
-    source: lead.source,
-    sourcePath: cleanString(lead.sourcePath),
-    referrer: cleanString(lead.referrer),
-    utm: lead.utm,
-    clientSubmittedAt: cleanString(lead.clientSubmittedAt),
-    siteSource: "medicareinspokane.com",
-  });
-}
-
-export function buildCrmRequestVariants(lead: CrmLeadInput): CrmRequestVariant[] {
-  const payload = buildCrmContactPayload(lead);
-  return [
-    { label: "flat", body: payload },
-    { label: "wrapped", body: { contact: payload } },
-  ];
-}
-
 function tryParseJson(value: string): unknown {
   try {
     return JSON.parse(value) as unknown;
@@ -128,19 +46,6 @@ function tryParseJson(value: string): unknown {
 function readString(record: Record<string, unknown>, key: string): string | undefined {
   const value = record[key];
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-export function extractCrmContactId(value: unknown): string | undefined {
-  if (!value || typeof value !== "object") return undefined;
-
-  const record = value as Record<string, unknown>;
-
-  return (
-    readString(record, "id") ??
-    readString(record, "contactId") ??
-    extractCrmContactId(record.contact) ??
-    extractCrmContactId(record.data)
-  );
 }
 
 function extractCrmError(value: unknown, fallbackText: string): string | undefined {

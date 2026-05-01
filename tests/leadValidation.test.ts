@@ -6,7 +6,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildCrmContactPayload, buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, splitFullName } from "../lib/crm";
+import {
+  buildCrmContactPayload,
+  buildCrmRequestVariants,
+  extractCrmContactId,
+  joinCrmUrl,
+  splitFullName,
+} from "../lib/crmPayload";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
