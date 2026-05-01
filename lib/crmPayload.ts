@@ -39,20 +39,6 @@ export function joinCrmUrl(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
-export function splitFullName(fullName: string): { firstName: string; lastName?: string } {
-  const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) {
-    throw new Error(`Full name is required to build the CRM submission payload. Received: '${fullName}'`);
-  }
-  if (parts.length === 1) return { firstName: parts[0] };
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
-  };
-}
-
 export function buildCrmFormSubmissionPayload(lead: CrmLeadInput): Record<string, unknown> {
   return stripUndefined({
     fullName: cleanString(lead.fullName) ?? "",

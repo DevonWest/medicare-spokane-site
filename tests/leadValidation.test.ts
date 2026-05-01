@@ -10,7 +10,6 @@ import {
   buildCrmFormSubmissionPayload,
   extractCrmContactId,
   joinCrmUrl,
-  splitFullName,
 } from "../lib/crmPayload";
 import { CRM_PUBLIC_FORM_SUBMISSION_PATH } from "../lib/crmPaths";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
@@ -287,12 +286,6 @@ test("buildLeadFirestoreDocument strips undefined fields and normalizes optional
   assert.deepEqual(doc.utm, { source: "google", campaign: "spring" });
   assert.equal(doc.email, "jane@example.com");
   assert.equal(doc.phoneNorm, "5095550100");
-});
-
-test("splitFullName splits first and last names conservatively", () => {
-  assert.deepEqual(splitFullName("Jane Doe"), { firstName: "Jane", lastName: "Doe" });
-  assert.deepEqual(splitFullName("Jane Mary Doe"), { firstName: "Jane", lastName: "Mary Doe" });
-  assert.deepEqual(splitFullName("Prince"), { firstName: "Prince" });
 });
 
 test("buildCrmFormSubmissionPayload normalizes and trims lead fields", () => {
