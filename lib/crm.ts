@@ -1,6 +1,7 @@
 import "server-only";
 
 import { buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, type CrmLeadInput } from "./crmPayload";
+import { env, readRecordString } from "./runtimeValues";
 
 const CRM_CONTACT_PATHS = ["contacts", "api/contacts", "developer-api/contacts", "api/developer/contacts"] as const;
 const CRM_TIMEOUT_MS = 10_000;
@@ -17,11 +18,6 @@ export interface CrmContactResult {
 interface CrmConfig {
   baseUrl: string;
   apiKey: string;
-}
-
-function env(name: string): string | undefined {
-  const value = process.env[name]?.trim();
-  return value ? value : undefined;
 }
 
 function getCrmConfig(): CrmConfig | null {
@@ -45,8 +41,7 @@ function tryParseJson(value: string): unknown {
 }
 
 function readString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key];
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  return readRecordString(record, key);
 }
 
 function extractCrmError(value: unknown, fallbackText: string): string | undefined {

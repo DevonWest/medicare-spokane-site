@@ -1,3 +1,4 @@
+import { readRecordString } from "./runtimeValues";
 import { SITE_SOURCE } from "./leadConstants";
 import { cleanString, normalizeEmail } from "./leadValidation";
 import type { UtmParams } from "./utm";
@@ -40,8 +41,7 @@ function stripUndefined<T>(value: T): T {
 }
 
 function readString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key];
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  return readRecordString(record, key);
 }
 
 export function joinCrmUrl(baseUrl: string, path: string): string {
@@ -52,7 +52,7 @@ export function splitFullName(fullName: string): { firstName: string; lastName?:
   const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
 
   if (parts.length === 0) {
-    throw new Error("Full name is required to build the CRM contact payload.");
+    throw new Error(`Full name is required to build the CRM contact payload. Received: '${fullName}'`);
   }
   if (parts.length === 1) return { firstName: parts[0] };
 
