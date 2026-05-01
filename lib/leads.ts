@@ -30,6 +30,7 @@ import {
   validateLead,
 } from "./leadValidation";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
+import { getSafeErrorDetails } from "./leadLogging";
 import type { UtmParams } from "./utm";
 
 export type LeadSource =
@@ -99,15 +100,6 @@ const SITE_SOURCE = "medicareinspokane.com";
 
 /** Generic error message we're willing to show users. */
 const GENERIC_ERROR = "We couldn't submit your request. Please call us at 509-353-0476.";
-
-function getSafeErrorDetails(error: unknown): Record<string, string | undefined> {
-  if (!(error instanceof Error)) return { errorType: typeof error };
-  const code = typeof (error as { code?: unknown }).code === "string" ? String((error as { code?: unknown }).code) : undefined;
-  return {
-    errorType: error.name || "Error",
-    ...(code ? { errorCode: code } : {}),
-  };
-}
 
 function getLeadLogContext(payload: LeadPayload): Record<string, unknown> {
   const firebase = getFirebaseAdminEnvSummary();

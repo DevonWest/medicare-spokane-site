@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
 import { getFirebaseAdminEnvSummary } from "@/lib/firebase-admin";
+import { getSafeErrorDetails } from "@/lib/leadLogging";
 import type { LeadRequestPayload } from "@/lib/leadPayload";
 import { cleanString, validateLeadRequest } from "@/lib/leadValidation";
 import type { UtmParams } from "@/lib/utm";
@@ -54,15 +55,6 @@ function sanitizeUtm(value: unknown): UtmParams | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-function getSafeErrorDetails(error: unknown): Record<string, string | undefined> {
-  if (!(error instanceof Error)) return { errorType: typeof error };
-  const code = typeof (error as { code?: unknown }).code === "string" ? String((error as { code?: unknown }).code) : undefined;
-  return {
-    errorType: error.name || "Error",
-    ...(code ? { errorCode: code } : {}),
-  };
-}
-
 function getRequestLogContext(payload: Partial<LeadPayload>, source: LeadSource): Record<string, unknown> {
   const firebase = getFirebaseAdminEnvSummary();
 
@@ -84,10 +76,11 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
+    const firebase = getFirebaseAdminEnvSummary();
     console.warn("[api/leads] Invalid JSON payload.", {
       contentType: request.headers.get("content-type") ?? null,
-      firebaseAdminConfigured: getFirebaseAdminEnvSummary().configured,
-      hasFirebaseProjectId: getFirebaseAdminEnvSummary().hasFirebaseProjectId,
+      firebaseAdminConfigured: firebase.configured,
+      hasFirebaseProjectId: firebase.hasFirebaseProjectId,
     });
     return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
