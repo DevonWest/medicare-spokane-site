@@ -30,6 +30,7 @@ import {
   validateLead,
 } from "./leadValidation";
 import { createCrmContact, type CrmContactResult } from "./crm";
+import { CRM_SYNC_STATUS } from "./leadConstants";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import { buildLeadFirestoreDocument } from "./leadFirestore";
 import { getSafeErrorDetails } from "./leadLogging";
@@ -157,7 +158,7 @@ async function updateCrmStatus(
 
   try {
     await ref.update({
-      crmSyncStatus: result.ok ? "synced" : "failed",
+      crmSyncStatus: result.ok ? CRM_SYNC_STATUS.synced : CRM_SYNC_STATUS.failed,
       crmSyncAttempts: attempts,
       crmContactId: result.ok ? result.contactId ?? null : null,
       crmLastAttemptAt: FieldValue.serverTimestamp(),
@@ -169,7 +170,7 @@ async function updateCrmStatus(
   } catch (err) {
     logLeadError("[leads] Failed to update CRM sync status in Firestore.", payload, err, {
       leadId: ref.id,
-      crmSyncStatus: result.ok ? "synced" : "failed",
+      crmSyncStatus: result.ok ? CRM_SYNC_STATUS.synced : CRM_SYNC_STATUS.failed,
     });
   }
 }
@@ -257,7 +258,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
         const crmSyncStatus = getCrmSyncStatus(existing.crmSyncStatus);
         const crmSyncAttempts = getCrmSyncAttempts(existing.crmSyncAttempts);
 
-        if (crmSyncStatus !== "synced") {
+        if (crmSyncStatus !== CRM_SYNC_STATUS.synced) {
           console.info("[leads] duplicate lead found but CRM is not synced — retrying CRM sync", {
             id: doc.id,
             source: payload.source,

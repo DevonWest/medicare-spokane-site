@@ -92,11 +92,12 @@ export async function createCrmContact(lead: CrmLeadInput): Promise<CrmContactRe
           signal: AbortSignal.timeout(CRM_TIMEOUT_MS),
         });
       } catch (error) {
-        return {
+        lastFailure = {
           ok: false,
           path,
           error: error instanceof Error ? error.message : "CRM request failed.",
         };
+        continue;
       }
 
       const responseText = await response.text();

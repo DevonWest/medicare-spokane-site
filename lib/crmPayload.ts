@@ -1,3 +1,4 @@
+import { SITE_SOURCE } from "./leadConstants";
 import { cleanString, normalizeEmail } from "./leadValidation";
 import type { UtmParams } from "./utm";
 
@@ -75,7 +76,7 @@ export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unkno
     referrer: cleanString(lead.referrer),
     utm: lead.utm,
     clientSubmittedAt: cleanString(lead.clientSubmittedAt),
-    siteSource: "medicareinspokane.com",
+    siteSource: SITE_SOURCE,
   });
 }
 
