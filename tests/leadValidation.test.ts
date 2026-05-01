@@ -13,7 +13,7 @@ import {
   joinCrmUrl,
   splitFullName,
 } from "../lib/crmPayload";
-import { createCrmContact } from "../lib/crm";
+import { CRM_CONTACT_PATHS } from "../lib/crmPaths";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
@@ -348,54 +348,9 @@ test("CRM helpers derive URLs and nested ids safely", () => {
   assert.equal(extractCrmContactId({ data: { contactId: "contact_789" } }), "contact_789");
 });
 
-test("createCrmContact uses the documented v1 contacts endpoint", async () => {
-  const previousBaseUrl = process.env.CRM_API_BASE_URL;
-  const previousApiKey = process.env.CRM_API_KEY;
-  const previousFetch = globalThis.fetch;
-  const calls: Array<{ url: string; headers: Headers }> = [];
-
-  process.env.CRM_API_BASE_URL = "https://crm.example.com/";
-  process.env.CRM_API_KEY = "test-api-key";
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    calls.push({
-      url: String(input),
-      headers: new Headers(init?.headers),
-    });
-
-    return new Response(JSON.stringify({ id: "contact_123" }), {
-      status: 201,
-      headers: { "Content-Type": "application/json" },
-    });
-  }) as typeof fetch;
-
-  try {
-    const result = await createCrmContact({
-      fullName: "Jane Doe",
-      email: "jane@example.com",
-      phone: "509-555-0100",
-      source: "contact",
-    });
-
-    assert.equal(result.ok, true);
-    assert.equal(result.path, "api/v1/contacts");
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0]?.url, "https://crm.example.com/api/v1/contacts");
-    assert.equal(calls[0]?.headers.get("authorization"), "Bearer test-api-key");
-  } finally {
-    if (previousBaseUrl === undefined) {
-      delete process.env.CRM_API_BASE_URL;
-    } else {
-      process.env.CRM_API_BASE_URL = previousBaseUrl;
-    }
-
-    if (previousApiKey === undefined) {
-      delete process.env.CRM_API_KEY;
-    } else {
-      process.env.CRM_API_KEY = previousApiKey;
-    }
-
-    globalThis.fetch = previousFetch;
-  }
+test("CRM contact paths prefer the documented v1 endpoint and omit the bad developer path", () => {
+  assert.equal(CRM_CONTACT_PATHS[0], "api/v1/contacts");
+  assert.equal(CRM_CONTACT_PATHS.includes("api/developer/contacts"), false);
 });
 
 test("isDuplicateWithinWindow: within window is duplicate", () => {

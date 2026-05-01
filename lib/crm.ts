@@ -1,9 +1,8 @@
 import "server-only";
 
 import { buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, type CrmLeadInput } from "./crmPayload";
+import { CRM_CONTACT_PATHS } from "./crmPaths";
 import { env, readRecordString } from "./runtimeValues";
-
-const CRM_CONTACT_PATHS = ["api/v1/contacts", "contacts", "api/contacts", "developer-api/contacts"] as const;
 const CRM_TIMEOUT_MS = 10_000;
 const MAX_ERROR_MESSAGE_LENGTH = 500;
 
