@@ -185,6 +185,9 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
       try {
         snap = await col.where(check.field, "==", check.value).where("submittedAt", ">=", cutoff).limit(1).get();
       } catch (err) {
+        if (shouldUseDevFallback()) {
+          return getDevFallbackResult(payload, "firestore-duplicate-check-failed", err);
+        }
         logLeadError("[leads] Firestore duplicate check failed.", payload, err, { dedupeField: check.field });
         return { ok: false, error: GENERIC_ERROR, errorType: "server" };
       }

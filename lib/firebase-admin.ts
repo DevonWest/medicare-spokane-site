@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cert, getApps, initializeApp, applicationDefault, type App } from "firebase-admin/app";
-import { initializeFirestore, type Firestore } from "firebase-admin/firestore";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 /**
  * Lazy, server-only Firebase Admin initializer.
@@ -98,7 +98,8 @@ export function getFirestoreAdmin(): Firestore {
   if (cachedDb) return cachedDb;
   // Will throw a clear message from the SDK if creds are missing.
   const app = buildApp();
-  cachedDb = initializeFirestore(app, { ignoreUndefinedProperties: true });
+  cachedDb = getFirestore(app);
+  cachedDb.settings({ ignoreUndefinedProperties: true });
   return cachedDb;
 }
 
