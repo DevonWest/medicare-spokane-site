@@ -20,6 +20,7 @@
 import "server-only";
 
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import type { Firestore } from "firebase-admin/firestore";
 import {
   DUPLICATE_WINDOW_MS,
   cleanString,
@@ -28,7 +29,7 @@ import {
   normalizePhone,
   validateLead,
 } from "./leadValidation";
-import { getFirestoreAdmin, isFirebaseAdminConfigured } from "./firebase-admin";
+import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import type { UtmParams } from "./utm";
 
 export type LeadSource =
@@ -97,7 +98,55 @@ const COLLECTION = process.env.LEADS_COLLECTION?.trim() || "website_leads";
 const SITE_SOURCE = "medicareinspokane.com";
 
 /** Generic error message we're willing to show users. */
-const GENERIC_ERROR = "We couldn't submit your request. Please try again or call us.";
+const GENERIC_ERROR = "We couldn't submit your request. Please call us at 509-353-0476.";
+
+function getSafeErrorDetails(error: unknown): Record<string, string | undefined> {
+  if (!(error instanceof Error)) return { errorType: typeof error };
+  const code = typeof (error as { code?: unknown }).code === "string" ? String((error as { code?: unknown }).code) : undefined;
+  return {
+    errorType: error.name || "Error",
+    ...(code ? { errorCode: code } : {}),
+  };
+}
+
+function getLeadLogContext(payload: LeadPayload): Record<string, unknown> {
+  const firebase = getFirebaseAdminEnvSummary();
+
+  return {
+    source: payload.source,
+    sourcePath: cleanString(payload.sourcePath) ?? null,
+    hasZip: Boolean(cleanString(payload.zip)),
+    hasMessage: Boolean(cleanString(payload.message)),
+    hasReferrer: Boolean(cleanString(payload.referrer)),
+    utmKeys: payload.utm ? Object.keys(payload.utm) : [],
+    hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
+    firebaseAdminConfigured: firebase.configured,
+    hasFirebaseProjectId: firebase.hasFirebaseProjectId,
+    firestoreCollection: COLLECTION,
+    runtimeEnvironment: process.env.NODE_ENV ?? "development",
+  };
+}
+
+function logLeadWarning(message: string, payload: LeadPayload, extra?: Record<string, unknown>) {
+  console.warn(message, { ...getLeadLogContext(payload), ...extra });
+}
+
+function logLeadError(message: string, payload: LeadPayload, error: unknown, extra?: Record<string, unknown>) {
+  console.error(message, { ...getLeadLogContext(payload), ...getSafeErrorDetails(error), ...extra });
+}
+
+function shouldUseDevFallback(): boolean {
+  return process.env.NODE_ENV !== "production";
+}
+
+function getDevFallbackResult(payload: LeadPayload, reason: string, error?: unknown): LeadResult {
+  console.warn("[leads] Firestore unavailable; using non-production placeholder.", {
+    ...getLeadLogContext(payload),
+    reason,
+    ...(error ? getSafeErrorDetails(error) : {}),
+  });
+  return { ok: true, id: `placeholder-${Date.now()}` };
+}
 
 /**
  * Submit a lead. Validates strictly, dedupes recent submissions, and
@@ -107,19 +156,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
   // 1) Validate.
   const validation = validateLead(payload);
   if (!validation.ok) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[leads] validation failed:", {
-        errors: validation.errors,
-        source: payload.source,
-        sourcePath: payload.sourcePath,
-        emailDomain: normalizeEmail(payload.email).split("@")[1],
-        phoneDigits: normalizePhone(payload.phone).length,
-        hasMessage: Boolean(cleanString(payload.message)),
-        hasReferrer: Boolean(cleanString(payload.referrer)),
-        utmKeys: payload.utm ? Object.keys(payload.utm) : [],
-        hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
-      });
-    }
+    logLeadWarning("[leads] validation failed.", payload, { errors: validation.errors });
     return { ok: false, error: getLeadValidationErrorMessage(validation.errors), errorType: "validation" };
   }
 
@@ -129,28 +166,16 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
   const zipClean = cleanString(payload.zip);
   const messageClean = cleanString(payload.message);
 
-  // 2) Get Firestore (or fail soft in dev when creds are absent).
-  if (!isFirebaseAdminConfigured()) {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[leads] Firebase admin not configured — logging placeholder:", {
-        source: payload.source,
-        sourcePath: payload.sourcePath,
-        utm: payload.utm,
-        emailDomain: emailNorm.split("@")[1],
-      });
-      return { ok: true, id: `placeholder-${Date.now()}` };
-    }
-    // In production we treat missing creds as a hard server error but
-    // never leak that to the client.
-    console.error("[leads] Firebase admin credentials missing in production.");
-    return { ok: false, error: GENERIC_ERROR, errorType: "server" };
-  }
-
-  let db;
+  let db: Firestore;
   try {
     db = getFirestoreAdmin();
   } catch (err) {
-    console.error("[leads] failed to init Firestore admin:", err);
+    if (shouldUseDevFallback()) {
+      return getDevFallbackResult(payload, "firestore-admin-init-failed", err);
+    }
+    logLeadError("[leads] Failed to initialize Firestore admin.", payload, err, {
+      firebaseAdminConfigured: getFirebaseAdminEnvSummary().configured,
+    });
     return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 
@@ -182,6 +207,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
         console.info("[leads] duplicate within window — returning existing id", {
           id: doc.id,
           source: payload.source,
+          sourcePath: cleanString(payload.sourcePath) ?? null,
         });
         return { ok: true, id: doc.id, duplicate: true };
       }
@@ -218,11 +244,15 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     console.info("[leads] new lead written", {
       id: ref.id,
       source: payload.source,
-      sourcePath: payload.sourcePath,
+      sourcePath: cleanString(payload.sourcePath) ?? null,
+      hasZip: Boolean(zipClean),
     });
     return { ok: true, id: ref.id };
   } catch (err) {
-    console.error("[leads] Firestore write failed:", err);
+    if (shouldUseDevFallback()) {
+      return getDevFallbackResult(payload, "firestore-write-failed", err);
+    }
+    logLeadError("[leads] Firestore query/write failed.", payload, err);
     return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 }
