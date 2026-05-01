@@ -40,17 +40,13 @@ function tryParseJson(value: string): unknown {
   }
 }
 
-function readString(record: Record<string, unknown>, key: string): string | undefined {
-  return readRecordString(record, key);
-}
-
 function extractCrmError(value: unknown, fallbackText: string): string | undefined {
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
     return (
-      readString(record, "error") ??
-      readString(record, "message") ??
-      readString(record, "detail") ??
+      readRecordString(record, "error") ??
+      readRecordString(record, "message") ??
+      readRecordString(record, "detail") ??
       extractCrmError(record.error, fallbackText) ??
       extractCrmError(record.details, fallbackText)
     );

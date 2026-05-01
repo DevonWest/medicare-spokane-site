@@ -40,10 +40,6 @@ function stripUndefined<T>(value: T): T {
   return value;
 }
 
-function readString(record: Record<string, unknown>, key: string): string | undefined {
-  return readRecordString(record, key);
-}
-
 export function joinCrmUrl(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
@@ -96,8 +92,8 @@ export function extractCrmContactId(value: unknown): string | undefined {
   const record = value as Record<string, unknown>;
 
   return (
-    readString(record, "id") ??
-    readString(record, "contactId") ??
+    readRecordString(record, "id") ??
+    readRecordString(record, "contactId") ??
     extractCrmContactId(record.contact) ??
     extractCrmContactId(record.data)
   );
