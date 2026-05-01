@@ -2,6 +2,7 @@ import "server-only";
 
 import { cert, getApps, initializeApp, applicationDefault, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { env } from "./runtimeValues";
 
 /**
  * Lazy, server-only Firebase Admin initializer.
@@ -20,11 +21,6 @@ import { getFirestore, type Firestore } from "firebase-admin/firestore";
 const APP_NAME = "medicareinspokane-admin";
 
 let cachedDb: Firestore | null = null;
-
-function env(name: string): string | undefined {
-  const value = process.env[name]?.trim();
-  return value ? value : undefined;
-}
 
 function resolveProjectId(): string | undefined {
   return env("FIREBASE_PROJECT_ID") ?? env("GOOGLE_CLOUD_PROJECT") ?? env("GCLOUD_PROJECT") ?? env("GCP_PROJECT");

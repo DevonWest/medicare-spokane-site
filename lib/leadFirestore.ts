@@ -1,8 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { cleanString, normalizeEmail, normalizePhone } from "./leadValidation";
+import { CRM_SYNC_STATUS, SITE_SOURCE } from "./leadConstants";
 import type { UtmParams } from "./utm";
-
-const SITE_SOURCE = "medicareinspokane.com";
 
 export interface LeadFirestoreDocumentInput {
   fullName: string;
@@ -64,6 +63,14 @@ export function buildLeadFirestoreDocument(payload: LeadFirestoreDocumentInput, 
     submittedAtIso: new Date(nowMs).toISOString(),
     createdAt: FieldValue.serverTimestamp(),
     status: "new",
+    crmSyncStatus: CRM_SYNC_STATUS.pending,
+    crmSyncAttempts: 0,
+    crmContactId: null,
+    crmLastAttemptAt: null,
+    crmLastAttemptAtIso: null,
+    crmLastError: null,
+    crmLastResponseStatus: null,
+    crmEndpointPath: null,
     siteSource: SITE_SOURCE,
   });
 }

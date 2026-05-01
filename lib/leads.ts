@@ -19,8 +19,8 @@
 
 import "server-only";
 
-import { Timestamp } from "firebase-admin/firestore";
-import type { Firestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import type { DocumentReference, Firestore } from "firebase-admin/firestore";
 import {
   DUPLICATE_WINDOW_MS,
   cleanString,
@@ -29,6 +29,8 @@ import {
   normalizePhone,
   validateLead,
 } from "./leadValidation";
+import { createCrmContact, type CrmContactResult } from "./crm";
+import { CRM_SYNC_STATUS } from "./leadConstants";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import { buildLeadFirestoreDocument } from "./leadFirestore";
 import { getSafeErrorDetails } from "./leadLogging";
@@ -138,6 +140,64 @@ function getDevFallbackResult(payload: LeadPayload, reason: string, error?: unkn
   return { ok: true, id: `placeholder-${Date.now()}` };
 }
 
+function extractCrmSyncStatus(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function extractCrmSyncAttempts(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+async function updateCrmStatus(
+  ref: DocumentReference,
+  payload: LeadPayload,
+  result: CrmContactResult,
+  attempts: number,
+) {
+  const nowIso = new Date().toISOString();
+
+  try {
+    await ref.update({
+      crmSyncStatus: result.ok ? CRM_SYNC_STATUS.synced : CRM_SYNC_STATUS.failed,
+      crmSyncAttempts: attempts,
+      crmContactId: result.ok ? result.contactId ?? null : null,
+      crmLastAttemptAt: FieldValue.serverTimestamp(),
+      crmLastAttemptAtIso: nowIso,
+      crmLastError: result.ok ? null : result.error ?? null,
+      crmLastResponseStatus: result.status ?? null,
+      crmEndpointPath: result.path ?? null,
+    });
+  } catch (err) {
+    logLeadError("[leads] Failed to update CRM sync status in Firestore.", payload, err, {
+      leadId: ref.id,
+      crmSyncStatus: result.ok ? CRM_SYNC_STATUS.synced : CRM_SYNC_STATUS.failed,
+    });
+  }
+}
+
+async function syncLeadToCrm(ref: DocumentReference, payload: LeadPayload, priorAttempts = 0): Promise<LeadResult> {
+  const crmResult = await createCrmContact(payload);
+  await updateCrmStatus(ref, payload, crmResult, priorAttempts + 1);
+
+  if (!crmResult.ok) {
+    logLeadError("[leads] CRM contact creation failed.", payload, crmResult.error, {
+      leadId: ref.id,
+      crmResponseStatus: crmResult.status ?? null,
+      crmEndpointPath: crmResult.path ?? null,
+    });
+    return { ok: false, id: ref.id, error: GENERIC_ERROR, errorType: "server" };
+  }
+
+  console.info("[leads] CRM contact created", {
+    id: ref.id,
+    crmContactId: crmResult.contactId ?? null,
+    source: payload.source,
+    sourcePath: cleanString(payload.sourcePath) ?? null,
+  });
+
+  return { ok: true, id: ref.id };
+}
+
 /**
  * Submit a lead. Validates strictly, dedupes recent submissions, and
  * writes to Firestore via the admin SDK.
@@ -194,6 +254,21 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
 
       const doc = snap.docs[0];
       if (doc) {
+        const existing = doc.data();
+        const crmSyncStatus = extractCrmSyncStatus(existing.crmSyncStatus);
+        const crmSyncAttempts = extractCrmSyncAttempts(existing.crmSyncAttempts);
+
+        if (crmSyncStatus !== CRM_SYNC_STATUS.synced) {
+          console.info("[leads] duplicate lead found but CRM is not synced — retrying CRM sync", {
+            id: doc.id,
+            source: payload.source,
+            sourcePath: cleanString(payload.sourcePath) ?? null,
+            crmSyncStatus: crmSyncStatus ?? "unknown",
+          });
+          const retryResult = await syncLeadToCrm(doc.ref, payload, crmSyncAttempts);
+          return retryResult.ok ? { ...retryResult, duplicate: true } : retryResult;
+        }
+
         console.info("[leads] duplicate within window — returning existing id", {
           id: doc.id,
           source: payload.source,
@@ -213,7 +288,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
       sourcePath: cleanString(payload.sourcePath) ?? null,
       hasZip: Boolean(cleanString(payload.zip)),
     });
-    return { ok: true, id: ref.id };
+    return await syncLeadToCrm(ref, payload);
   } catch (err) {
     if (shouldUseDevFallback()) {
       return getDevFallbackResult(payload, "firestore-write-failed", err);
