@@ -46,6 +46,18 @@ test("validateLead rejects missing fields", () => {
   assert.ok(r.errors.fullName);
   assert.ok(r.errors.email);
   assert.ok(r.errors.phone);
+  assert.equal(r.errors.zip, undefined);
+});
+
+test("validateLead allows a blank ZIP", () => {
+  const r = leadValidation.validateLead({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "5095550100",
+    zip: "",
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.errors.zip, undefined);
 });
 
 test("validateLead rejects bad email and short phone", () => {
