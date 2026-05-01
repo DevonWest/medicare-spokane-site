@@ -13,6 +13,7 @@ import {
   joinCrmUrl,
   splitFullName,
 } from "../lib/crmPayload";
+import { CRM_CONTACT_PATHS } from "../lib/crmPaths";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
@@ -345,6 +346,11 @@ test("CRM helpers derive URLs and nested ids safely", () => {
   assert.equal(extractCrmContactId({ id: "contact_123" }), "contact_123");
   assert.equal(extractCrmContactId({ contact: { id: "contact_456" } }), "contact_456");
   assert.equal(extractCrmContactId({ data: { contactId: "contact_789" } }), "contact_789");
+});
+
+test("CRM contact paths prefer the documented v1 endpoint and omit the bad developer path", () => {
+  assert.equal(CRM_CONTACT_PATHS[0], "api/v1/contacts");
+  assert.equal(CRM_CONTACT_PATHS.includes("api/developer/contacts"), false);
 });
 
 test("isDuplicateWithinWindow: within window is duplicate", () => {
