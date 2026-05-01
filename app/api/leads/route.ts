@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     fullName: clip(body.fullName, 200) ?? "",
     email: clip(body.email, 200) ?? "",
     phone: clip(body.phone, 50) ?? "",
-    zip: clip(body.zip, 10) ?? "",
+    zip: clip(body.zip, 10),
     message: clip(body.message, 2000),
     source,
     sourcePath: clip(body.sourcePath, 500),
