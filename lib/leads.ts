@@ -23,6 +23,7 @@ import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import {
   DUPLICATE_WINDOW_MS,
   cleanString,
+  getLeadValidationErrorMessage,
   normalizeEmail,
   normalizePhone,
   validateLead,
@@ -69,7 +70,7 @@ export interface LeadPayload extends LeadAttribution {
   fullName: string;
   email: string;
   phone: string;
-  zip?: string;
+  zip: string;
   message?: string;
   source: LeadSource;
 }
@@ -86,6 +87,7 @@ export interface LeadResult {
   duplicate?: boolean;
   /** User-facing error message (no internal details). */
   error?: string;
+  errorType?: "validation" | "server";
 }
 
 /** Firestore collection name. Override with `LEADS_COLLECTION` env var. */
@@ -105,9 +107,20 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
   // 1) Validate.
   const validation = validateLead(payload);
   if (!validation.ok) {
-    // Log internally; surface a single generic message.
-    console.warn("[leads] validation failed:", validation.errors);
-    return { ok: false, error: "Please double-check your name, email, and phone number." };
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[leads] validation failed:", {
+        errors: validation.errors,
+        source: payload.source,
+        sourcePath: payload.sourcePath,
+        emailDomain: normalizeEmail(payload.email).split("@")[1],
+        phoneDigits: normalizePhone(payload.phone).length,
+        hasMessage: Boolean(cleanString(payload.message)),
+        hasReferrer: Boolean(cleanString(payload.referrer)),
+        utmKeys: payload.utm ? Object.keys(payload.utm) : [],
+        hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
+      });
+    }
+    return { ok: false, error: getLeadValidationErrorMessage(validation.errors), errorType: "validation" };
   }
 
   const emailNorm = normalizeEmail(payload.email);
@@ -130,7 +143,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     // In production we treat missing creds as a hard server error but
     // never leak that to the client.
     console.error("[leads] Firebase admin credentials missing in production.");
-    return { ok: false, error: GENERIC_ERROR };
+    return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 
   let db;
@@ -138,7 +151,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     db = getFirestoreAdmin();
   } catch (err) {
     console.error("[leads] failed to init Firestore admin:", err);
-    return { ok: false, error: GENERIC_ERROR };
+    return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 
   const nowMs = Date.now();
@@ -210,6 +223,6 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     return { ok: true, id: ref.id };
   } catch (err) {
     console.error("[leads] Firestore write failed:", err);
-    return { ok: false, error: GENERIC_ERROR };
+    return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 }

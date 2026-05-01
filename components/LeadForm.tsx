@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { validateLead } from "@/lib/leadValidation";
+import { buildLeadFormFields, buildLeadRequestPayload } from "@/lib/leadPayload";
+import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
 import type { LeadSource } from "@/lib/leads";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { trackLeadConversion } from "@/lib/analytics";
@@ -47,19 +48,13 @@ export default function LeadForm({
     setFieldErrors({});
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
-      fullName: String(formData.get("fullName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      zip: String(formData.get("zip") ?? ""),
-      message: showMessage ? String(formData.get("message") ?? "") : undefined,
-      source,
-    };
+    const fields = buildLeadFormFields(formData, showMessage);
 
-    const validation = validateLead(payload);
+    const validation = validateLead(fields);
     if (!validation.ok) {
       setStatus("error");
       setFieldErrors(validation.errors);
+      setErrorMessage(validation.error ?? "Please review your submission and try again.");
       return;
     }
 
@@ -67,21 +62,26 @@ export default function LeadForm({
 
     // Capture attribution data at submit time.
     const utm = captureUtmFromLocation();
-    const attribution = {
-      sourcePath: typeof window !== "undefined" ? window.location.pathname : undefined,
+    const requestPayload = buildLeadRequestPayload({
+      fields,
+      source,
+      sourcePath: typeof window !== "undefined" ? window.location.pathname : "/",
       referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
       utm: Object.keys(utm).length ? utm : undefined,
       clientSubmittedAt: new Date().toISOString(),
-    };
+    });
+    const requestValidation = validateLeadRequest(requestPayload);
+    if (!requestValidation.ok) {
+      setStatus("error");
+      setErrorMessage(requestValidation.error ?? "Please review your submission and try again.");
+      return;
+    }
 
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...payload,
-          ...attribution,
-        }),
+        body: JSON.stringify(requestPayload),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
 
@@ -101,7 +101,7 @@ export default function LeadForm({
       trackLeadConversion({
         source,
         utm: Object.keys(utm).length ? utm : undefined,
-        hadMessage: showMessage && Boolean(payload.message && payload.message.trim()),
+        hadMessage: showMessage && Boolean(fields.message && fields.message.trim()),
       });
       event.currentTarget.reset();
     } catch {
@@ -216,15 +216,17 @@ export default function LeadForm({
 
         <div className="sm:col-span-2">
           <label htmlFor="lead-zip" className="block text-sm font-medium text-gray-700 mb-1">
-            ZIP code
+            ZIP code <span className="text-red-600" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <p id="lead-zip-helper" className="mb-1 text-sm text-gray-600">
-            Needed because Medicare plan availability varies by ZIP code.
+            Required because Medicare plan availability varies by ZIP code.
           </p>
           <input
             id="lead-zip"
             name="zip"
             type="text"
+            required
             inputMode="numeric"
             pattern="[0-9]{5}(-[0-9]{4})?"
             maxLength={10}

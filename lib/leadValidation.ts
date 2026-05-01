@@ -31,6 +31,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** US-style 5-digit ZIP. (We only serve Eastern WA but keep it permissive.) */
 const ZIP_RE = /^\d{5}(-\d{4})?$/;
+const VALIDATION_ERROR_ORDER = ["fullName", "email", "phone", "zip", "message", "sourcePath", "clientSubmittedAt"];
 
 export interface LeadValidationInput {
   fullName?: string;
@@ -40,10 +41,25 @@ export interface LeadValidationInput {
   message?: string;
 }
 
+export interface LeadRequestValidationInput extends LeadValidationInput {
+  sourcePath?: string;
+  clientSubmittedAt?: string;
+}
+
 export interface LeadValidationResult {
   ok: boolean;
   /** Field-level errors, suitable for internal logging only. */
   errors: Record<string, string>;
+  /** First safe validation error suitable for users. */
+  error?: string;
+}
+
+export function getLeadValidationErrorMessage(errors: Record<string, string>): string {
+  for (const field of VALIDATION_ERROR_ORDER) {
+    const error = errors[field];
+    if (error) return error;
+  }
+  return "Please review your submission and try again.";
 }
 
 /**
@@ -53,14 +69,14 @@ export interface LeadValidationResult {
  *  - `fullName` is required, 2..200 chars after trim.
  *  - `email` is required and must look like an email.
  *  - `phone` is required and must contain at least 7 digits (strip non-digits first).
- *  - `zip`, if present, must be a US ZIP (5 or ZIP+4).
+ *  - `zip` is required and must be a US ZIP (5 or ZIP+4).
  *  - `message`, if present, max 2000 chars.
  */
 export function validateLead(input: LeadValidationInput): LeadValidationResult {
   const errors: Record<string, string> = {};
 
   const name = cleanString(input.fullName);
-  if (!name || name.length < 2) errors.fullName = "Name is required.";
+  if (!name || name.length < 2) errors.fullName = "Full name is required.";
   else if (name.length > 200) errors.fullName = "Name is too long.";
 
   const email = normalizeEmail(input.email);
@@ -72,12 +88,34 @@ export function validateLead(input: LeadValidationInput): LeadValidationResult {
   else if (phoneDigits.length < 7 || phoneDigits.length > 15) errors.phone = "Phone is invalid.";
 
   const zip = cleanString(input.zip);
-  if (zip && !ZIP_RE.test(zip)) errors.zip = "ZIP is invalid.";
+  if (!zip) errors.zip = "ZIP code is required.";
+  else if (!ZIP_RE.test(zip)) errors.zip = "ZIP code is invalid.";
 
   const message = cleanString(input.message);
   if (message && message.length > 2000) errors.message = "Message is too long.";
 
-  return { ok: Object.keys(errors).length === 0, errors };
+  return { ok: Object.keys(errors).length === 0, errors, error: getLeadValidationErrorMessage(errors) };
+}
+
+export function validateLeadRequest(input: LeadRequestValidationInput): LeadValidationResult {
+  const base = validateLead(input);
+  const errors = { ...base.errors };
+
+  const sourcePath = cleanString(input.sourcePath);
+  if (!sourcePath || !sourcePath.startsWith("/")) {
+    errors.sourcePath = "Please refresh the page and try again.";
+  }
+
+  const clientSubmittedAt = cleanString(input.clientSubmittedAt);
+  if (!clientSubmittedAt || Number.isNaN(Date.parse(clientSubmittedAt))) {
+    errors.clientSubmittedAt = "Please refresh the page and try again.";
+  }
+
+  return {
+    ok: Object.keys(errors).length === 0,
+    errors,
+    error: getLeadValidationErrorMessage(errors),
+  };
 }
 
 /**
