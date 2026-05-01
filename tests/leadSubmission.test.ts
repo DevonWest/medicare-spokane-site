@@ -160,6 +160,31 @@ test("submitLeadWithDeps returns ok true and records synced CRM state after Fire
   assert.equal(fakeFirestore.updates[0]?.crmSyncFailedAt, null);
 });
 
+test("submitLeadWithDeps returns ok true when CRM submission throws after Firestore save", async () => {
+  const { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
+  const fakeFirestore = createFakeFirestore();
+
+  const result = await submitLeadWithDeps(makeLeadPayload(), {
+    submitCrmLeadForm: async () => {
+      throw new Error("CRM timeout");
+    },
+    getFirestoreAdmin: () => fakeFirestore.db as never,
+    now: () => Date.parse("2026-05-01T20:00:00.000Z"),
+    useDevFallback: () => false,
+  });
+
+  assert.deepEqual(result, {
+    ok: true,
+    id: "lead_123",
+    crmSyncStatus: CRM_SYNC_STATUS.failed,
+  });
+  assert.equal(fakeFirestore.addedDocs.length, 1);
+  assert.equal(fakeFirestore.updates.length, 1);
+  assert.equal(fakeFirestore.updates[0]?.crmSyncStatus, CRM_SYNC_STATUS.failed);
+  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_PUBLIC_FORM_SUBMISSION_PATH);
+  assert.equal(fakeFirestore.updates[0]?.crmSyncErrorSafe, "CRM request failed after the lead was saved.");
+});
+
 test("POST returns 200 with ok true when CRM sync fails after Firestore save", async () => {
   const { CRM_SYNC_STATUS, handleLeadPost } = await loadLeadModules();
   const response = await handleLeadPost(makeLeadRequest(makeLeadPayload()), {
@@ -191,6 +216,24 @@ test("POST returns 400 when request validation fails", async () => {
 
   assert.equal(response.status, 400);
   assert.equal((await response.json()).ok, false);
+});
+
+test("POST returns 200 with ok true when email notification fails after Firestore save", async () => {
+  const { handleLeadPost } = await loadLeadModules();
+  const response = await handleLeadPost(makeLeadRequest(makeLeadPayload()), {
+    submitLead: async () => ({
+      ok: true,
+      id: "lead_123",
+      emailStatus: "failed",
+    }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    id: "lead_123",
+    emailStatus: "failed",
+  });
 });
 
 test("POST returns 500 when Firestore save fails", async () => {

@@ -32,6 +32,7 @@ import {
   validateLead,
 } from "./leadValidation";
 import { submitCrmLeadForm, type CrmSubmissionResult } from "./crm";
+import { CRM_PUBLIC_FORM_SUBMISSION_PATH } from "./crmPaths";
 import { CRM_SYNC_STATUS } from "./leadConstants";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import { buildLeadFirestoreDocument } from "./leadFirestore";
@@ -93,6 +94,7 @@ export interface LeadResult {
   /** True when an existing recent lead was matched instead of creating a new one. */
   duplicate?: boolean;
   crmSyncStatus?: "synced" | "failed";
+  emailStatus?: "sent" | "failed";
   /** User-facing error message (no internal details). */
   error?: string;
   errorType?: "validation" | "server";
@@ -197,7 +199,20 @@ async function syncLeadToCrm(
   submitCrmLeadFormImpl: typeof submitCrmLeadForm,
   priorAttempts = 0,
 ): Promise<LeadResult> {
-  const crmResult = await submitCrmLeadFormImpl(payload);
+  let crmResult: CrmSubmissionResult;
+  try {
+    crmResult = await submitCrmLeadFormImpl(payload);
+  } catch (err) {
+    logLeadError("[leads] CRM form submission threw after Firestore save.", payload, err, {
+      leadId: ref.id,
+      crmSyncAttempts: priorAttempts + 1,
+    });
+    crmResult = {
+      ok: false,
+      path: CRM_PUBLIC_FORM_SUBMISSION_PATH,
+      error: "CRM request failed after the lead was saved.",
+    };
+  }
   await updateCrmStatus(ref, payload, crmResult, priorAttempts + 1);
 
   if (!crmResult.ok) {
