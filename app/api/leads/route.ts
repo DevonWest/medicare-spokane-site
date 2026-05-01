@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
+import type { LeadRequestPayload } from "@/lib/leadPayload";
+import { cleanString, validateLeadRequest } from "@/lib/leadValidation";
 import type { UtmParams } from "@/lib/utm";
 
 // firebase-admin requires Node APIs — opt out of the Edge runtime explicitly.
@@ -52,7 +54,7 @@ function sanitizeUtm(value: unknown): UtmParams | undefined {
 }
 
 export async function POST(request: Request) {
-  let body: Partial<LeadPayload> & Record<string, unknown>;
+  let body: Partial<LeadRequestPayload> & Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
     fullName: clip(body.fullName, 200) ?? "",
     email: clip(body.email, 200) ?? "",
     phone: clip(body.phone, 50) ?? "",
-    zip: clip(body.zip, 10),
+    zip: clip(body.zip, 10) ?? "",
     message: clip(body.message, 2000),
     source,
     sourcePath: clip(body.sourcePath, 500),
@@ -76,9 +78,27 @@ export async function POST(request: Request) {
     clientSubmittedAt: clip(body.clientSubmittedAt, 40),
   };
 
+  const validation = validateLeadRequest(payload);
+  if (!validation.ok) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[api/leads] validation failed:", {
+        errors: validation.errors,
+        source,
+        sourcePath: cleanString(payload.sourcePath),
+        emailDomain: cleanString(payload.email)?.split("@")[1],
+        phoneDigits: payload.phone.replace(/\D+/g, "").length,
+        hasMessage: Boolean(cleanString(payload.message)),
+        hasReferrer: Boolean(cleanString(payload.referrer)),
+        utmKeys: payload.utm ? Object.keys(payload.utm) : [],
+        hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
+      });
+    }
+    return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
+  }
+
   try {
     const result = await submitLead(payload);
-    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+    return NextResponse.json(result, { status: result.ok ? 200 : result.errorType === "validation" ? 400 : 500 });
   } catch (err) {
     // submitLead is supposed to catch its own errors, but belt-and-suspenders.
     console.error("[api/leads] unexpected error:", err);
