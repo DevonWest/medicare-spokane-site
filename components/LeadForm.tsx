@@ -87,7 +87,9 @@ export default function LeadForm({
       let data: unknown = null;
       try {
         data = await res.json();
-      } catch {}
+      } catch (error) {
+        console.warn("[LeadForm] Failed to parse lead API response.", error);
+      }
 
       if (!res.ok || !isLeadSuccessResponse(data)) {
         setStatus("error");

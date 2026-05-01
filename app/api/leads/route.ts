@@ -109,10 +109,7 @@ export async function POST(request: Request) {
       ...getRequestLogContext(payload, source),
       errors: validation.errors,
     });
-    return NextResponse.json<LeadErrorResponse>(
-      { ok: false, error: validation.error ?? "Please review your submission and try again." },
-      { status: 400 },
-    );
+    return NextResponse.json<LeadErrorResponse>({ ok: false, error: validation.error! }, { status: 400 });
   }
 
   try {
