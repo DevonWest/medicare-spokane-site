@@ -10,6 +10,7 @@ export function getSafeErrorDetails(error: unknown): Record<string, string | und
   const code = typeof errorWithCode.code === "string" ? errorWithCode.code : undefined;
 
   return {
+    errorType: error.name,
     errorName: error.name,
     ...(code ? { errorCode: code } : {}),
     errorMessage: clip(error.message, 1_000),
