@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+import { buildCrmContactPayload, buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, splitFullName } from "../lib/crm";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
@@ -280,6 +281,64 @@ test("buildLeadFirestoreDocument strips undefined fields and normalizes optional
   assert.deepEqual(doc.utm, { source: "google", campaign: "spring" });
   assert.equal(doc.email, "jane@example.com");
   assert.equal(doc.phoneNorm, "5095550100");
+});
+
+test("splitFullName splits first and last names conservatively", () => {
+  assert.deepEqual(splitFullName("Jane Doe"), { firstName: "Jane", lastName: "Doe" });
+  assert.deepEqual(splitFullName("Jane Mary Doe"), { firstName: "Jane", lastName: "Mary Doe" });
+  assert.deepEqual(splitFullName("Prince"), { firstName: "Prince" });
+});
+
+test("buildCrmContactPayload normalizes and trims lead fields", () => {
+  const payload = buildCrmContactPayload({
+    fullName: " Jane Doe ",
+    email: " Jane@Example.com ",
+    phone: " (509) 555-0100 ",
+    zip: " 99206 ",
+    message: " Please call me. ",
+    source: "contact",
+    sourcePath: "/contact",
+    referrer: " https://example.com/ ",
+    utm: { source: "google", medium: "cpc" },
+    clientSubmittedAt: "2026-05-01T03:18:00.000Z",
+  });
+
+  assert.deepEqual(payload, {
+    fullName: "Jane Doe",
+    firstName: "Jane",
+    lastName: "Doe",
+    email: "jane@example.com",
+    phone: "(509) 555-0100",
+    zip: "99206",
+    message: "Please call me.",
+    source: "contact",
+    sourcePath: "/contact",
+    referrer: "https://example.com/",
+    utm: { source: "google", medium: "cpc" },
+    clientSubmittedAt: "2026-05-01T03:18:00.000Z",
+    siteSource: "medicareinspokane.com",
+  });
+});
+
+test("buildCrmRequestVariants includes flat and wrapped payload shapes", () => {
+  const variants = buildCrmRequestVariants({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "509-555-0100",
+    source: "contact",
+  });
+
+  assert.equal(variants.length, 2);
+  assert.equal(variants[0]?.label, "flat");
+  assert.equal(variants[1]?.label, "wrapped");
+  assert.deepEqual(variants[1]?.body, { contact: variants[0]?.body });
+});
+
+test("CRM helpers derive URLs and nested ids safely", () => {
+  assert.equal(joinCrmUrl("https://crm.example.com/", "/contacts"), "https://crm.example.com/contacts");
+  assert.equal(extractCrmContactId({ id: "contact_123" }), "contact_123");
+  assert.equal(extractCrmContactId({ contact: { id: "contact_456" } }), "contact_456");
+  assert.equal(extractCrmContactId({ data: { contactId: "contact_789" } }), "contact_789");
 });
 
 test("isDuplicateWithinWindow: within window is duplicate", () => {

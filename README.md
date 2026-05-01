@@ -158,6 +158,8 @@ lib/
 | `FIREBASE_CLIENT_EMAIL` | Service-account client email (admin SDK) | _required if not using ADC_ |
 | `FIREBASE_PRIVATE_KEY` | Service-account private key. Newlines may be escaped as `\n` — they are unescaped at runtime. **Server-only — never expose to the client.** | _required if not using ADC_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
+| `CRM_API_BASE_URL` | Base URL for the CRM Developer API contact endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
+| `CRM_API_KEY` | API key for the CRM Developer API. **Server-only — never expose to the client or prefix it with `NEXT_PUBLIC_`.** | _required for CRM sync_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -168,7 +170,7 @@ When running on Google Cloud Run, the simplest setup is to grant the Cloud Run s
 
 ## Lead Capture (Firestore)
 
-`POST /api/leads` writes a sanitized document to the `website_leads` collection. Stored fields:
+`POST /api/leads` writes a sanitized document to the `website_leads` collection as a backup, then creates a contact in the CRM from the server-side route. Stored fields:
 
 - `fullName`, `email`, `phone`, `zip`, `message`
 - `emailNorm`, `phoneNorm` — normalized identities used for dedupe
@@ -176,10 +178,11 @@ When running on Google Cloud Run, the simplest setup is to grant the Cloud Run s
 - Attribution: `sourcePath`, `referrer`, `utm`, `clientSubmittedAt`
 - Server stamps: `submittedAt` (Firestore Timestamp), `submittedAtIso`, `createdAt` (`serverTimestamp`)
 - Workflow: `status: "new"`, `siteSource: "medicareinspokane.com"`
+- CRM sync tracking: `crmSyncStatus`, `crmSyncAttempts`, `crmContactId`, `crmLastAttemptAt`, `crmLastAttemptAtIso`, `crmLastError`, `crmLastResponseStatus`, `crmEndpointPath`
 
-If the same normalized email **or** phone submits again within 10 minutes, the existing document id is returned with `duplicate: true` instead of creating a new doc.
+If the same normalized email **or** phone submits again within 10 minutes, the existing document id is returned with `duplicate: true` instead of creating a new doc. If that recent lead has not synced to the CRM yet, the server retries the CRM sync against the existing Firestore backup before responding.
 
-The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, which is marked `server-only` so a client component pulling it in fails the build. Credentials are never exposed to the browser.
+The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and the CRM client lives in the server-only `lib/crm.ts`. Both are only called from the Node.js route handler, so the Firestore credentials and CRM API key are never exposed to the browser.
 
 ### Suggested Firestore index
 
