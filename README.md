@@ -158,8 +158,8 @@ lib/
 | `FIREBASE_CLIENT_EMAIL` | Service-account client email (admin SDK) | _required if not using ADC_ |
 | `FIREBASE_PRIVATE_KEY` | Service-account private key. Newlines may be escaped as `\n` — they are unescaped at runtime. **Server-only — never expose to the client.** | _required if not using ADC_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
-| `CRM_API_BASE_URL` | Base URL for the CRM Developer API contact endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
-| `CRM_API_KEY` | API key for the CRM Developer API. **Server-only — never expose to the client or prefix it with `NEXT_PUBLIC_`.** | _required for CRM sync_ |
+| `CRM_API_BASE_URL` | Base URL for the CRM public form submission endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
+| `CRM_API_KEY` | Optional legacy CRM credential. The public form submission endpoint does not require it, so this may be blank. | _optional_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -170,7 +170,7 @@ When running on Google Cloud Run, the simplest setup is to grant the Cloud Run s
 
 ## Lead Capture (Firestore)
 
-`POST /api/leads` writes a sanitized document to the `website_leads` collection as a backup, then creates a contact in the CRM from the server-side route. Stored fields:
+`POST /api/leads` validates the request, writes a sanitized document to the `website_leads` collection as a backup, then submits the full form payload to the CRM public form endpoint from the server-side route. Stored fields:
 
 - `fullName`, `email`, `phone`, `zip`, `message`
 - `emailNorm`, `phoneNorm` — normalized identities used for dedupe

@@ -1,1 +1,1 @@
-export const CRM_CONTACT_PATHS = ["api/v1/contacts"] as const;
+export const CRM_PUBLIC_FORM_SUBMISSION_PATH = "api/public/forms/medicare-in-spokane-contact/submit";

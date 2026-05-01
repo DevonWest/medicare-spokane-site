@@ -16,11 +16,6 @@ export interface CrmLeadInput {
   clientSubmittedAt?: string;
 }
 
-interface CrmRequestVariant {
-  label: "flat" | "wrapped";
-  body: Record<string, unknown>;
-}
-
 function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
     return value
@@ -48,7 +43,7 @@ export function splitFullName(fullName: string): { firstName: string; lastName?:
   const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
 
   if (parts.length === 0) {
-    throw new Error(`Full name is required to build the CRM contact payload. Received: '${fullName}'`);
+    throw new Error(`Full name is required to build the CRM submission payload. Received: '${fullName}'`);
   }
   if (parts.length === 1) return { firstName: parts[0] };
 
@@ -58,13 +53,9 @@ export function splitFullName(fullName: string): { firstName: string; lastName?:
   };
 }
 
-export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unknown> {
-  const { firstName, lastName } = splitFullName(lead.fullName);
-
+export function buildCrmFormSubmissionPayload(lead: CrmLeadInput): Record<string, unknown> {
   return stripUndefined({
     fullName: cleanString(lead.fullName) ?? "",
-    firstName: cleanString(firstName) ?? "",
-    lastName: cleanString(lastName),
     email: normalizeEmail(lead.email),
     phone: cleanString(lead.phone) ?? "",
     zip: cleanString(lead.zip),
@@ -76,14 +67,6 @@ export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unkno
     clientSubmittedAt: cleanString(lead.clientSubmittedAt),
     siteSource: SITE_SOURCE,
   });
-}
-
-export function buildCrmRequestVariants(lead: CrmLeadInput): CrmRequestVariant[] {
-  const payload = buildCrmContactPayload(lead);
-  return [
-    { label: "flat", body: payload },
-    { label: "wrapped", body: { contact: payload } },
-  ];
 }
 
 export function extractCrmContactId(value: unknown): string | undefined {
