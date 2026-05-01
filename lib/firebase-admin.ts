@@ -21,15 +21,53 @@ const APP_NAME = "medicareinspokane-admin";
 
 let cachedDb: Firestore | null = null;
 
+function env(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
+function resolveProjectId(): string | undefined {
+  return env("FIREBASE_PROJECT_ID") ?? env("GOOGLE_CLOUD_PROJECT") ?? env("GCLOUD_PROJECT") ?? env("GCP_PROJECT");
+}
+
+export interface FirebaseAdminEnvSummary {
+  configured: boolean;
+  hasFirebaseProjectId: boolean;
+  hasGoogleApplicationCredentials: boolean;
+  hasExplicitServiceAccount: boolean;
+  isCloudRun: boolean;
+}
+
+export function getFirebaseAdminEnvSummary(): FirebaseAdminEnvSummary {
+  const hasFirebaseProjectId = Boolean(env("FIREBASE_PROJECT_ID"));
+  const hasClientEmail = Boolean(env("FIREBASE_CLIENT_EMAIL"));
+  const hasPrivateKey = Boolean(process.env.FIREBASE_PRIVATE_KEY?.trim());
+  const hasExplicitServiceAccount = hasFirebaseProjectId && hasClientEmail && hasPrivateKey;
+  const hasGoogleApplicationCredentials = Boolean(env("GOOGLE_APPLICATION_CREDENTIALS"));
+  const isCloudRun = Boolean(env("K_SERVICE") || env("K_REVISION") || env("K_CONFIGURATION"));
+
+  return {
+    configured:
+      hasExplicitServiceAccount ||
+      hasGoogleApplicationCredentials ||
+      Boolean(resolveProjectId()) ||
+      isCloudRun,
+    hasFirebaseProjectId,
+    hasGoogleApplicationCredentials,
+    hasExplicitServiceAccount,
+    isCloudRun,
+  };
+}
+
 function buildApp(): App {
   // Reuse the named app across hot reloads / route invocations.
   const existing = getApps().find((a) => a.name === APP_NAME);
   if (existing) return existing;
 
-  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const projectId = resolveProjectId();
+  const clientEmail = env("FIREBASE_CLIENT_EMAIL");
   // Private keys in env vars often have escaped newlines — undo that.
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+  const privateKey = env("FIREBASE_PRIVATE_KEY")?.replace(/\\n/g, "\n");
 
   if (projectId && clientEmail && privateKey) {
     return initializeApp(
@@ -45,7 +83,7 @@ function buildApp(): App {
   return initializeApp(
     {
       credential: applicationDefault(),
-      projectId: projectId || process.env.GOOGLE_CLOUD_PROJECT,
+      ...(projectId ? { projectId } : {}),
     },
     APP_NAME,
   );
@@ -69,11 +107,5 @@ export function getFirestoreAdmin(): Firestore {
  * we *think* admin credentials are wired up. Does not perform a live call.
  */
 export function isFirebaseAdminConfigured(): boolean {
-  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    return true;
-  }
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CLOUD_PROJECT) {
-    return true;
-  }
-  return false;
+  return getFirebaseAdminEnvSummary().configured;
 }

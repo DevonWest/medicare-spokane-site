@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
+import { getFirebaseAdminEnvSummary } from "@/lib/firebase-admin";
+import { getSafeErrorDetails } from "@/lib/leadLogging";
 import type { LeadRequestPayload } from "@/lib/leadPayload";
 import { cleanString, validateLeadRequest } from "@/lib/leadValidation";
 import type { UtmParams } from "@/lib/utm";
@@ -53,11 +55,33 @@ function sanitizeUtm(value: unknown): UtmParams | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
+function getRequestLogContext(payload: Partial<LeadPayload>, source: LeadSource): Record<string, unknown> {
+  const firebase = getFirebaseAdminEnvSummary();
+
+  return {
+    source,
+    sourcePath: cleanString(payload.sourcePath) ?? null,
+    hasZip: Boolean(cleanString(payload.zip)),
+    hasMessage: Boolean(cleanString(payload.message)),
+    hasReferrer: Boolean(cleanString(payload.referrer)),
+    utmKeys: payload.utm ? Object.keys(payload.utm) : [],
+    hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
+    firebaseAdminConfigured: firebase.configured,
+    hasFirebaseProjectId: firebase.hasFirebaseProjectId,
+  };
+}
+
 export async function POST(request: Request) {
   let body: Partial<LeadRequestPayload> & Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
+    const firebase = getFirebaseAdminEnvSummary();
+    console.warn("[api/leads] Invalid JSON payload.", {
+      contentType: request.headers.get("content-type") ?? null,
+      firebaseAdminConfigured: firebase.configured,
+      hasFirebaseProjectId: firebase.hasFirebaseProjectId,
+    });
     return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
 
@@ -80,19 +104,10 @@ export async function POST(request: Request) {
 
   const validation = validateLeadRequest(payload);
   if (!validation.ok) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[api/leads] validation failed:", {
-        errors: validation.errors,
-        source,
-        sourcePath: cleanString(payload.sourcePath),
-        emailDomain: cleanString(payload.email)?.split("@")[1],
-        phoneDigits: payload.phone.replace(/\D+/g, "").length,
-        hasMessage: Boolean(cleanString(payload.message)),
-        hasReferrer: Boolean(cleanString(payload.referrer)),
-        utmKeys: payload.utm ? Object.keys(payload.utm) : [],
-        hasClientSubmittedAt: Boolean(cleanString(payload.clientSubmittedAt)),
-      });
-    }
+    console.warn("[api/leads] Validation failed.", {
+      ...getRequestLogContext(payload, source),
+      errors: validation.errors,
+    });
     return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
   }
 
@@ -101,9 +116,12 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { status: result.ok ? 200 : result.errorType === "validation" ? 400 : 500 });
   } catch (err) {
     // submitLead is supposed to catch its own errors, but belt-and-suspenders.
-    console.error("[api/leads] unexpected error:", err);
+    console.error("[api/leads] Unexpected route error.", {
+      ...getRequestLogContext(payload, source),
+      ...getSafeErrorDetails(err),
+    });
     return NextResponse.json(
-      { ok: false, error: "We couldn't submit your request. Please try again or call us." },
+      { ok: false, error: "We couldn't submit your request. Please call us at 509-353-0476." },
       { status: 500 },
     );
   }

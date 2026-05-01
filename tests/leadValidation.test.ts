@@ -30,7 +30,17 @@ test("cleanString returns undefined for empty/whitespace", () => {
   assert.equal(leadValidation.cleanString(null), undefined);
 });
 
-test("validateLead accepts a good payload", () => {
+test("validateLead accepts a valid payload without ZIP", () => {
+  const r = leadValidation.validateLead({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "509-555-0100",
+  });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.errors, {});
+});
+
+test("validateLead accepts a valid payload with ZIP", () => {
   const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
@@ -74,15 +84,15 @@ test("validateLead rejects missing phone", () => {
   assert.ok(r.errors.phone);
 });
 
-test("validateLead rejects missing ZIP", () => {
+test("validateLead accepts a blank ZIP", () => {
   const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "5095550100",
     zip: "",
   });
-  assert.equal(r.ok, false);
-  assert.equal(r.errors.zip, "ZIP code is required.");
+  assert.equal(r.ok, true);
+  assert.equal(r.errors.zip, undefined);
 });
 
 test("validateLead rejects bad email and short phone", () => {
@@ -98,42 +108,59 @@ test("validateLead rejects bad email and short phone", () => {
   assert.ok(r.errors.phone);
 });
 
-test("validateLead rejects bad zip and too-long message", () => {
+test("validateLead rejects an invalid ZIP only when provided", () => {
   const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "5095550100",
     zip: "abc",
-    message: "x".repeat(2001),
   });
   assert.equal(r.ok, false);
-  assert.ok(r.errors.zip);
-  assert.ok(r.errors.message);
+  assert.equal(r.errors.zip, "ZIP code must be 5 digits.");
 });
 
-test("validateLead accepts ZIP+4", () => {
+test("validateLead rejects too-long message", () => {
   const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "5095550100",
-    zip: "99206-1234",
+    message: "x".repeat(2001),
   });
-  assert.equal(r.ok, true);
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.message);
+});
+
+test("normalizePhone normalizes common phone formats", () => {
+  assert.equal(leadValidation.normalizePhone("5095550100"), "5095550100");
+  assert.equal(leadValidation.normalizePhone("509-555-0100"), "5095550100");
+  assert.equal(leadValidation.normalizePhone("(509) 555-0100"), "5095550100");
+  assert.equal(leadValidation.normalizePhone("+1 509.555.0100"), "15095550100");
 });
 
 test("validateLead accepts common phone formats", () => {
-  for (const phone of ["5095550100", "509-555-0100", "(509) 555-0100"]) {
+  for (const phone of ["5095550100", "509-555-0100", "(509) 555-0100", "+1 509.555.0100"]) {
     const r = leadValidation.validateLead({
       fullName: "Jane Doe",
       email: "jane@example.com",
       phone,
-      zip: "99206",
     });
     assert.equal(r.ok, true, phone);
   }
 });
 
-test("validateLeadRequest accepts a complete lead payload", () => {
+test("validateLeadRequest accepts a complete lead payload without ZIP", () => {
+  const r = leadValidation.validateLeadRequest({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "509-555-0100",
+    message: "Please call me.",
+    sourcePath: "/contact",
+    clientSubmittedAt: "2026-05-01T03:18:00.000Z",
+  });
+  assert.equal(r.ok, true);
+});
+
+test("validateLeadRequest accepts a complete lead payload with ZIP", () => {
   const r = leadValidation.validateLeadRequest({
     fullName: "Jane Doe",
     email: "jane@example.com",

@@ -216,20 +216,18 @@ export default function LeadForm({
 
         <div className="sm:col-span-2">
           <label htmlFor="lead-zip" className="block text-sm font-medium text-gray-700 mb-1">
-            ZIP code <span className="text-red-600" aria-hidden="true">*</span>
-            <span className="sr-only">(required)</span>
+            ZIP code
           </label>
           <p id="lead-zip-helper" className="mb-1 text-sm text-gray-600">
-            Required because Medicare plan availability varies by ZIP code.
+            Optional, but helpful because Medicare plan availability varies by ZIP code.
           </p>
           <input
             id="lead-zip"
             name="zip"
             type="text"
-            required
             inputMode="numeric"
-            pattern="[0-9]{5}(-[0-9]{4})?"
-            maxLength={10}
+            pattern="[0-9]{5}"
+            maxLength={5}
             autoComplete="postal-code"
             aria-invalid={fieldErrors.zip ? "true" : "false"}
             aria-describedby={fieldErrors.zip ? "lead-zip-helper lead-zip-error" : "lead-zip-helper"}

@@ -29,8 +29,8 @@ export function cleanString(raw: string | undefined | null): string | undefined 
 /** Loose but defensible email regex (must contain `@` and a dot in the domain). */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** US-style 5-digit ZIP. (We only serve Eastern WA but keep it permissive.) */
-const ZIP_RE = /^\d{5}(-\d{4})?$/;
+/** US-style 5-digit ZIP. */
+const ZIP_RE = /^\d{5}$/;
 const VALIDATION_ERROR_ORDER = ["fullName", "email", "phone", "zip", "message", "sourcePath", "clientSubmittedAt"];
 
 export interface LeadValidationInput {
@@ -69,7 +69,7 @@ export function getLeadValidationErrorMessage(errors: Record<string, string>): s
  *  - `fullName` is required, 2..200 chars after trim.
  *  - `email` is required and must look like an email.
  *  - `phone` is required and must contain at least 7 digits (strip non-digits first).
- *  - `zip` is required and must be a US ZIP (5 or ZIP+4).
+ *  - `zip`, if provided, must be a 5-digit US ZIP.
  *  - `message`, if present, max 2000 chars.
  */
 export function validateLead(input: LeadValidationInput): LeadValidationResult {
@@ -88,8 +88,7 @@ export function validateLead(input: LeadValidationInput): LeadValidationResult {
   else if (phoneDigits.length < 7 || phoneDigits.length > 15) errors.phone = "Phone is invalid.";
 
   const zip = cleanString(input.zip);
-  if (!zip) errors.zip = "ZIP code is required.";
-  else if (!ZIP_RE.test(zip)) errors.zip = "ZIP code is invalid.";
+  if (zip && !ZIP_RE.test(zip)) errors.zip = "ZIP code must be 5 digits.";
 
   const message = cleanString(input.message);
   if (message && message.length > 2000) errors.message = "Message is too long.";
