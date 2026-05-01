@@ -67,7 +67,7 @@ function buildApp(): App {
   const projectId = resolveProjectId();
   const clientEmail = env("FIREBASE_CLIENT_EMAIL");
   // Private keys in env vars often have escaped newlines — undo that.
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+  const privateKey = env("FIREBASE_PRIVATE_KEY")?.replace(/\\n/g, "\n");
 
   if (projectId && clientEmail && privateKey) {
     return initializeApp(
