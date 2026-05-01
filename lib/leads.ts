@@ -19,7 +19,7 @@
 
 import "server-only";
 
-import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import {
   DUPLICATE_WINDOW_MS,
@@ -30,6 +30,7 @@ import {
   validateLead,
 } from "./leadValidation";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
+import { buildLeadFirestoreDocument } from "./leadFirestore";
 import { getSafeErrorDetails } from "./leadLogging";
 import type { UtmParams } from "./utm";
 
@@ -95,9 +96,6 @@ export interface LeadResult {
 /** Firestore collection name. Override with `LEADS_COLLECTION` env var. */
 const COLLECTION = process.env.LEADS_COLLECTION?.trim() || "website_leads";
 
-/** Canonical site identifier stored on every doc — handy when this DB serves multiple sites. */
-const SITE_SOURCE = "medicareinspokane.com";
-
 /** Generic error message we're willing to show users. */
 const GENERIC_ERROR = "We couldn't submit your request. Please call us at 509-353-0476.";
 
@@ -125,64 +123,6 @@ function logLeadWarning(message: string, payload: LeadPayload, extra?: Record<st
 
 function logLeadError(message: string, payload: LeadPayload, error: unknown, extra?: Record<string, unknown>) {
   console.error(message, { ...getLeadLogContext(payload), ...getSafeErrorDetails(error), ...extra });
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Object.prototype.toString.call(value) === "[object Object]";
-}
-
-function stripUndefinedDeep<T>(value: T): T {
-  if (value === undefined) return undefined as T;
-  if (Array.isArray(value)) {
-    return value
-      .filter((item): item is Exclude<typeof item, undefined> => item !== undefined)
-      .map((item) => stripUndefinedDeep(item)) as T;
-  }
-  if (isPlainObject(value)) {
-    const out: Record<string, unknown> = {};
-    for (const [key, nestedValue] of Object.entries(value)) {
-      if (nestedValue === undefined) continue;
-      out[key] = stripUndefinedDeep(nestedValue);
-    }
-    return out as T;
-  }
-  return value;
-}
-
-export function buildLeadFirestoreDocument(payload: LeadPayload, nowMs: number): Record<string, unknown> {
-  const emailNorm = normalizeEmail(payload.email);
-  const phoneNorm = normalizePhone(payload.phone);
-  const nameClean = cleanString(payload.fullName) ?? "";
-  const zipClean = cleanString(payload.zip);
-  const messageClean = cleanString(payload.message);
-  const utm = stripUndefinedDeep(payload.utm);
-  const submittedAtIso = new Date(nowMs).toISOString();
-
-  return stripUndefinedDeep({
-    // Identity
-    fullName: nameClean,
-    email: emailNorm,
-    phone: payload.phone.trim(),
-    // Normalized fields used for dedupe / future search.
-    emailNorm,
-    phoneNorm,
-    // Optional fields
-    zip: zipClean ?? null,
-    message: messageClean ?? null,
-    // Attribution
-    source: payload.source,
-    sourcePath: cleanString(payload.sourcePath) ?? null,
-    referrer: cleanString(payload.referrer) ?? null,
-    utm: utm && Object.keys(utm).length ? utm : null,
-    clientSubmittedAt: cleanString(payload.clientSubmittedAt) ?? null,
-    // Server-stamped
-    submittedAt: Timestamp.fromMillis(nowMs),
-    submittedAtIso,
-    createdAt: FieldValue.serverTimestamp(),
-    // Workflow
-    status: "new",
-    siteSource: SITE_SOURCE,
-  });
 }
 
 function shouldUseDevFallback(): boolean {
