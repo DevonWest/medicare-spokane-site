@@ -164,7 +164,7 @@ export const teamMembers: TeamMember[] = [
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
-    // TODO: Add /public/team/devon-west.jpg when approved for the site.
+    image: "/team/devon-west.jpg",
     active: true,
     sortOrder: 8,
   },
@@ -184,7 +184,7 @@ export const teamMembers: TeamMember[] = [
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
-    // TODO: Add /public/team/denise-chan.jpg when approved for the site.
+    image: "/team/denise-chan.jpg",
     active: true,
     sortOrder: 9,
   },
@@ -204,7 +204,7 @@ export const teamMembers: TeamMember[] = [
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
-    // TODO: Add /public/team/kristi-wright.jpg when approved for the site.
+    image: "/team/kristi-wright.jpg",
     active: true,
     sortOrder: 10,
   },
@@ -224,7 +224,7 @@ export const teamMembers: TeamMember[] = [
     ],
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
-    // TODO: Add /public/team/cathy-franklin.jpg when approved for the site.
+    image: "/team/cathy-franklin.jpg",
     active: true,
     sortOrder: 11,
   },
