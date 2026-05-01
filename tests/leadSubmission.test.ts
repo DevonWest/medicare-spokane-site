@@ -17,14 +17,15 @@ function mockServerOnlyModule() {
 async function loadLeadModules() {
   mockServerOnlyModule();
 
-  const [{ handleLeadPost }, { CRM_CONTACT_PATHS }, { CRM_SYNC_STATUS }, { submitLeadWithDeps }] = await Promise.all([
-    import("../app/api/leads/route"),
-    import("../lib/crmPaths"),
-    import("../lib/leadConstants"),
-    import("../lib/leads"),
-  ]);
+  const [{ handleLeadPost }, { CRM_PUBLIC_FORM_SUBMISSION_PATH }, { CRM_SYNC_STATUS }, { submitLeadWithDeps }] =
+    await Promise.all([
+      import("../app/api/leads/route"),
+      import("../lib/crmPaths"),
+      import("../lib/leadConstants"),
+      import("../lib/leads"),
+    ]);
 
-  return { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, handleLeadPost, submitLeadWithDeps };
+  return { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, handleLeadPost, submitLeadWithDeps };
 }
 
 function makeLeadPayload() {
@@ -96,14 +97,14 @@ function createFakeFirestore(options: { addError?: Error } = {}) {
 }
 
 test("submitLeadWithDeps returns ok true and records failed CRM sync after Firestore save", async () => {
-  const { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
+  const { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
   const fakeFirestore = createFakeFirestore();
 
   const result = await submitLeadWithDeps(makeLeadPayload(), {
-    createCrmContact: async () => ({
+    submitCrmLeadForm: async () => ({
       ok: false,
       error: "Upstream CRM unavailable.",
-      path: CRM_CONTACT_PATHS[0],
+      path: CRM_PUBLIC_FORM_SUBMISSION_PATH,
       status: 503,
     }),
     getFirestoreAdmin: () => fakeFirestore.db as never,
@@ -121,21 +122,21 @@ test("submitLeadWithDeps returns ok true and records failed CRM sync after Fires
   assert.equal(fakeFirestore.updates[0]?.crmSyncStatus, CRM_SYNC_STATUS.failed);
   assert.equal(fakeFirestore.updates[0]?.crmSyncErrorSafe, "Upstream CRM unavailable.");
   assert.equal(fakeFirestore.updates[0]?.crmResponseStatus, 503);
-  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_CONTACT_PATHS[0]);
+  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_PUBLIC_FORM_SUBMISSION_PATH);
   assert.equal(fakeFirestore.updates[0]?.crmContactId, null);
   assert.equal(fakeFirestore.updates[0]?.crmSyncedAt, null);
   assert.ok("crmSyncFailedAt" in (fakeFirestore.updates[0] ?? {}));
 });
 
 test("submitLeadWithDeps returns ok true and records synced CRM state after Firestore save", async () => {
-  const { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
+  const { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
   const fakeFirestore = createFakeFirestore();
 
   const result = await submitLeadWithDeps(makeLeadPayload(), {
-    createCrmContact: async () => ({
+    submitCrmLeadForm: async () => ({
       ok: true,
       contactId: "crm_456",
-      path: CRM_CONTACT_PATHS[0],
+      path: CRM_PUBLIC_FORM_SUBMISSION_PATH,
       status: 201,
     }),
     getFirestoreAdmin: () => fakeFirestore.db as never,
@@ -154,7 +155,7 @@ test("submitLeadWithDeps returns ok true and records synced CRM state after Fire
   assert.equal(fakeFirestore.updates[0]?.crmContactId, "crm_456");
   assert.equal(fakeFirestore.updates[0]?.crmSyncErrorSafe, null);
   assert.equal(fakeFirestore.updates[0]?.crmResponseStatus, 201);
-  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_CONTACT_PATHS[0]);
+  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_PUBLIC_FORM_SUBMISSION_PATH);
   assert.ok("crmSyncedAt" in (fakeFirestore.updates[0] ?? {}));
   assert.equal(fakeFirestore.updates[0]?.crmSyncFailedAt, null);
 });

@@ -16,11 +16,6 @@ export interface CrmLeadInput {
   clientSubmittedAt?: string;
 }
 
-interface CrmRequestVariant {
-  label: "flat" | "wrapped";
-  body: Record<string, unknown>;
-}
-
 function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
     return value
@@ -44,27 +39,10 @@ export function joinCrmUrl(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
-export function splitFullName(fullName: string): { firstName: string; lastName?: string } {
-  const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) {
-    throw new Error(`Full name is required to build the CRM contact payload. Received: '${fullName}'`);
-  }
-  if (parts.length === 1) return { firstName: parts[0] };
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
-  };
-}
-
-export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unknown> {
-  const { firstName, lastName } = splitFullName(lead.fullName);
-
+/** Build the CRM public form payload, keeping the visitor name in `fullName`. */
+export function buildCrmFormSubmissionPayload(lead: CrmLeadInput): Record<string, unknown> {
   return stripUndefined({
     fullName: cleanString(lead.fullName) ?? "",
-    firstName: cleanString(firstName) ?? "",
-    lastName: cleanString(lastName),
     email: normalizeEmail(lead.email),
     phone: cleanString(lead.phone) ?? "",
     zip: cleanString(lead.zip),
@@ -76,14 +54,6 @@ export function buildCrmContactPayload(lead: CrmLeadInput): Record<string, unkno
     clientSubmittedAt: cleanString(lead.clientSubmittedAt),
     siteSource: SITE_SOURCE,
   });
-}
-
-export function buildCrmRequestVariants(lead: CrmLeadInput): CrmRequestVariant[] {
-  const payload = buildCrmContactPayload(lead);
-  return [
-    { label: "flat", body: payload },
-    { label: "wrapped", body: { contact: payload } },
-  ];
 }
 
 export function extractCrmContactId(value: unknown): string | undefined {

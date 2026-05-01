@@ -12,6 +12,8 @@
  *      `duplicate: true` instead of writing a new doc.
  *   3. Otherwise, create a new doc with `status: "new"` and the canonical
  *      `source: "medicareinspokane.com"` plus all attribution fields.
+ *   4. Submit the full lead payload to the CRM public form endpoint after
+ *      the Firestore backup is saved.
  *
  * Errors are logged on the server with context but never surfaced to the
  * end user beyond a generic message.
@@ -29,7 +31,7 @@ import {
   normalizePhone,
   validateLead,
 } from "./leadValidation";
-import { createCrmContact, type CrmContactResult } from "./crm";
+import { submitCrmLeadForm, type CrmSubmissionResult } from "./crm";
 import { CRM_SYNC_STATUS } from "./leadConstants";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import { buildLeadFirestoreDocument } from "./leadFirestore";
@@ -97,7 +99,7 @@ export interface LeadResult {
 }
 
 interface SubmitLeadDependencies {
-  createCrmContact?: typeof createCrmContact;
+  submitCrmLeadForm?: typeof submitCrmLeadForm;
   getFirestoreAdmin?: () => Firestore;
   now?: () => number;
   useDevFallback?: () => boolean;
@@ -159,7 +161,7 @@ function extractCrmSyncAttempts(value: unknown): number {
 async function updateCrmStatus(
   ref: DocumentReference,
   payload: LeadPayload,
-  result: CrmContactResult,
+  result: CrmSubmissionResult,
   attempts: number,
 ) {
   const nowIso = new Date().toISOString();
@@ -192,14 +194,14 @@ async function updateCrmStatus(
 async function syncLeadToCrm(
   ref: DocumentReference,
   payload: LeadPayload,
-  createCrmContactImpl: typeof createCrmContact,
+  submitCrmLeadFormImpl: typeof submitCrmLeadForm,
   priorAttempts = 0,
 ): Promise<LeadResult> {
-  const crmResult = await createCrmContactImpl(payload);
+  const crmResult = await submitCrmLeadFormImpl(payload);
   await updateCrmStatus(ref, payload, crmResult, priorAttempts + 1);
 
   if (!crmResult.ok) {
-    console.error("[leads] CRM contact creation failed.", {
+    console.error("[leads] CRM form submission failed.", {
       ...getLeadLogContext(payload),
       leadId: ref.id,
       crmSyncStatus: CRM_SYNC_STATUS.failed,
@@ -211,7 +213,7 @@ async function syncLeadToCrm(
     return { ok: true, id: ref.id, crmSyncStatus: CRM_SYNC_STATUS.failed };
   }
 
-  console.info("[leads] CRM contact created", {
+  console.info("[leads] CRM form submitted", {
     id: ref.id,
     crmContactId: crmResult.contactId ?? null,
     crmSyncStatus: CRM_SYNC_STATUS.synced,
@@ -251,7 +253,7 @@ export async function submitLeadWithDeps(payload: LeadPayload, deps: SubmitLeadD
   }
 
   const nowMs = (deps.now ?? Date.now)();
-  const createCrmContactImpl = deps.createCrmContact ?? createCrmContact;
+  const submitCrmLeadFormImpl = deps.submitCrmLeadForm ?? submitCrmLeadForm;
 
   try {
     // 3) Dedupe — look for any lead in the last 10 minutes whose normalized
@@ -290,7 +292,10 @@ export async function submitLeadWithDeps(payload: LeadPayload, deps: SubmitLeadD
             sourcePath: cleanString(payload.sourcePath) ?? null,
             crmSyncStatus: crmSyncStatus ?? "unknown",
           });
-          return { ...(await syncLeadToCrm(doc.ref, payload, createCrmContactImpl, crmSyncAttempts)), duplicate: true };
+          return {
+            ...(await syncLeadToCrm(doc.ref, payload, submitCrmLeadFormImpl, crmSyncAttempts)),
+            duplicate: true,
+          };
         }
 
         console.info("[leads] duplicate within window — returning existing id", {
@@ -312,7 +317,7 @@ export async function submitLeadWithDeps(payload: LeadPayload, deps: SubmitLeadD
       sourcePath: cleanString(payload.sourcePath) ?? null,
       hasZip: Boolean(cleanString(payload.zip)),
     });
-    return await syncLeadToCrm(ref, payload, createCrmContactImpl);
+    return await syncLeadToCrm(ref, payload, submitCrmLeadFormImpl);
   } catch (err) {
     if ((deps.useDevFallback ?? shouldUseDevFallback)()) {
       return getDevFallbackResult(payload, "firestore-write-failed", err);
