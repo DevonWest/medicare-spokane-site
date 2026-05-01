@@ -71,7 +71,14 @@ function getRequestLogContext(payload: Partial<LeadPayload>, source: LeadSource)
   };
 }
 
-export async function POST(request: Request) {
+function getLeadResponseStatus(result: Awaited<ReturnType<typeof submitLead>>): number {
+  return result.ok ? 200 : result.errorType === "validation" ? 400 : 500;
+}
+
+export async function handleLeadPost(
+  request: Request,
+  deps: { submitLead?: typeof submitLead } = {},
+) {
   let body: Partial<LeadRequestPayload> & Record<string, unknown>;
   try {
     body = await request.json();
@@ -112,8 +119,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await submitLead(payload);
-    return NextResponse.json(result, { status: result.ok ? 200 : result.errorType === "validation" ? 400 : 500 });
+    const result = await (deps.submitLead ?? submitLead)(payload);
+    return NextResponse.json(result, { status: getLeadResponseStatus(result) });
   } catch (err) {
     // submitLead is supposed to catch its own errors, but belt-and-suspenders.
     console.error("[api/leads] Unexpected route error.", {
@@ -125,4 +132,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+export async function POST(request: Request) {
+  return handleLeadPost(request);
 }
