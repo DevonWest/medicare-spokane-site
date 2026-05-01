@@ -148,6 +148,86 @@ export const teamMembers: TeamMember[] = [
     active: true,
     sortOrder: 7,
   },
+  {
+    name: "Devon West",
+    title: "Owner & Licensed Insurance Agent",
+    shortBio:
+      "Devon created Medicare Saving Solutions to help people on Medicare make confident, informed decisions about their health plan options. He focuses on educating people who are turning 65, helping clients compare options from the plans represented, and continuing to serve as a resource year after year.",
+    longBio:
+      "Devon started Medicare Saving Solutions with the goal of helping seniors avoid overpaying for Medicare Supplement or Medicare Advantage coverage when more suitable options may be available. He believes in straightforward education, clear explanations, and ongoing service so clients feel supported beyond the initial enrollment decision.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Turning 65",
+      "Plan Reviews",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    // TODO: Add /public/team/devon-west.jpg when approved for the site.
+    active: true,
+    sortOrder: 8,
+  },
+  {
+    name: "Denise Chan",
+    title: "Co-Owner & Licensed Insurance Agent",
+    shortBio:
+      "Denise Chan is a dedicated insurance agent focused on Medicare health insurance. Her background in customer service helps her guide clients with patience, care, and attention to detail.",
+    longBio:
+      "Before focusing on Medicare insurance, Denise developed strong customer service skills through 12 years of experience at Bank of America. She is known for her commitment to client support and for helping people feel cared for throughout the Medicare decision process. Denise enjoys family life with Devon, their children, and their two huskies.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Client Support",
+      "Plan Reviews",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    // TODO: Add /public/team/denise-chan.jpg when approved for the site.
+    active: true,
+    sortOrder: 9,
+  },
+  {
+    name: "Kristi Wright",
+    title: "Licensed Insurance Agent",
+    shortBio:
+      "Kristi Wright helps clients understand Medicare options in a way that feels approachable and organized. She is known for being knowledgeable, friendly, and patient while helping people compare coverage choices.",
+    longBio:
+      "Kristi works with individuals and families who need help reviewing Medicare options, prescription coverage, and plan changes. Clients frequently mention that she explains complex information clearly, answers questions patiently, and helps make the Medicare process feel less overwhelming.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Prescription Reviews",
+      "Plan Reviews",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    // TODO: Add /public/team/kristi-wright.jpg when approved for the site.
+    active: true,
+    sortOrder: 10,
+  },
+  {
+    name: "Cathy Franklin",
+    title: "Licensed Insurance Agent",
+    shortBio:
+      "Cathy Franklin helps clients review Medicare options with patience, clarity, and care. She is known for answering questions thoroughly and helping people feel more confident about their coverage decisions.",
+    longBio:
+      "Cathy works with Medicare clients who need help understanding their options, reviewing supplemental coverage, and comparing health and prescription plan choices. Her approach is friendly, supportive, and focused on making sure clients understand what they are choosing.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Supplemental Coverage",
+      "Client Support",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    // TODO: Add /public/team/cathy-franklin.jpg when approved for the site.
+    active: true,
+    sortOrder: 11,
+  },
 ];
 
 /** Returns only active members sorted by sortOrder. */
