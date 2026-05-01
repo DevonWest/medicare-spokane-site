@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { validateLead } from "@/lib/leadValidation";
 import type { LeadSource } from "@/lib/leads";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { trackLeadConversion } from "@/lib/analytics";
@@ -14,6 +15,7 @@ interface LeadFormProps {
 }
 
 type Status = "idle" | "submitting" | "success" | "error";
+type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "zip" | "message", string>>;
 
 export default function LeadForm({
   source,
@@ -24,6 +26,15 @@ export default function LeadForm({
 }: LeadFormProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  function getFieldClassName(hasError: boolean) {
+    return `w-full rounded-lg px-3 py-2 text-gray-900 outline-none ${
+      hasError
+        ? "border border-red-600 focus:border-red-700 focus:ring-2 focus:ring-red-200"
+        : "border border-gray-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+    }`;
+  }
 
   // Capture UTMs once on mount so they survive client-side navigation.
   useEffect(() => {
@@ -32,10 +43,27 @@ export default function LeadForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("submitting");
     setErrorMessage("");
+    setFieldErrors({});
 
     const formData = new FormData(event.currentTarget);
+    const payload = {
+      fullName: String(formData.get("fullName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      zip: String(formData.get("zip") ?? ""),
+      message: showMessage ? String(formData.get("message") ?? "") : undefined,
+      source,
+    };
+
+    const validation = validateLead(payload);
+    if (!validation.ok) {
+      setStatus("error");
+      setFieldErrors(validation.errors);
+      return;
+    }
+
+    setStatus("submitting");
 
     // Capture attribution data at submit time.
     const utm = captureUtmFromLocation();
@@ -46,31 +74,29 @@ export default function LeadForm({
       clientSubmittedAt: new Date().toISOString(),
     };
 
-    const payload = {
-      fullName: String(formData.get("fullName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      zip: String(formData.get("zip") ?? ""),
-      message: showMessage ? String(formData.get("message") ?? "") : undefined,
-      source,
-      ...attribution,
-    };
-
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          ...attribution,
+        }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string };
 
       if (!res.ok || !data.ok) {
         setStatus("error");
-        setErrorMessage(data.error || "Something went wrong. Please call us instead.");
+        setErrorMessage(
+          typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : "Something went wrong. Please call us instead.",
+        );
         return;
       }
 
       setStatus("success");
+      setFieldErrors({});
       // Privacy-friendly conversion tracking — no PII/PHI sent to GTM.
       trackLeadConversion({
         source,
@@ -113,6 +139,12 @@ export default function LeadForm({
         <p id="lead-form-reassurance" className="text-gray-600 text-sm mt-2">
           We typically respond the same business day. There is no cost and no obligation.
         </p>
+        <p className="text-sm text-gray-700 mt-2">
+          <span className="text-red-600" aria-hidden="true">
+            *
+          </span>{" "}
+          Required fields
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -127,8 +159,15 @@ export default function LeadForm({
             type="text"
             required
             autoComplete="name"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none"
+            aria-invalid={fieldErrors.fullName ? "true" : "false"}
+            aria-describedby={fieldErrors.fullName ? "lead-fullName-error" : undefined}
+            className={getFieldClassName(Boolean(fieldErrors.fullName))}
           />
+          {fieldErrors.fullName && (
+            <p id="lead-fullName-error" className="mt-2 text-sm text-red-700" role="alert">
+              {fieldErrors.fullName}
+            </p>
+          )}
         </div>
 
         <div>
@@ -142,8 +181,15 @@ export default function LeadForm({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none"
+            aria-invalid={fieldErrors.email ? "true" : "false"}
+            aria-describedby={fieldErrors.email ? "lead-email-error" : undefined}
+            className={getFieldClassName(Boolean(fieldErrors.email))}
           />
+          {fieldErrors.email && (
+            <p id="lead-email-error" className="mt-2 text-sm text-red-700" role="alert">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
 
         <div>
@@ -157,25 +203,41 @@ export default function LeadForm({
             type="tel"
             required
             autoComplete="tel"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none"
+            aria-invalid={fieldErrors.phone ? "true" : "false"}
+            aria-describedby={fieldErrors.phone ? "lead-phone-error" : undefined}
+            className={getFieldClassName(Boolean(fieldErrors.phone))}
           />
+          {fieldErrors.phone && (
+            <p id="lead-phone-error" className="mt-2 text-sm text-red-700" role="alert">
+              {fieldErrors.phone}
+            </p>
+          )}
         </div>
 
         <div className="sm:col-span-2">
           <label htmlFor="lead-zip" className="block text-sm font-medium text-gray-700 mb-1">
-            ZIP code{" "}
-            <span className="font-normal text-gray-500">(helps us check plans in your area)</span>
+            ZIP code
           </label>
+          <p id="lead-zip-helper" className="mb-1 text-sm text-gray-600">
+            Needed because Medicare plan availability varies by ZIP code.
+          </p>
           <input
             id="lead-zip"
             name="zip"
             type="text"
             inputMode="numeric"
-            pattern="[0-9]{5}"
-            maxLength={5}
+            pattern="[0-9]{5}(-[0-9]{4})?"
+            maxLength={10}
             autoComplete="postal-code"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none"
+            aria-invalid={fieldErrors.zip ? "true" : "false"}
+            aria-describedby={fieldErrors.zip ? "lead-zip-helper lead-zip-error" : "lead-zip-helper"}
+            className={getFieldClassName(Boolean(fieldErrors.zip))}
           />
+          {fieldErrors.zip && (
+            <p id="lead-zip-error" className="mt-2 text-sm text-red-700" role="alert">
+              {fieldErrors.zip}
+            </p>
+          )}
         </div>
 
         {showMessage && (
@@ -188,8 +250,15 @@ export default function LeadForm({
               id="lead-message"
               name="message"
               rows={4}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none"
+              aria-invalid={fieldErrors.message ? "true" : "false"}
+              aria-describedby={fieldErrors.message ? "lead-message-error" : undefined}
+              className={getFieldClassName(Boolean(fieldErrors.message))}
             />
+            {fieldErrors.message && (
+              <p id="lead-message-error" className="mt-2 text-sm text-red-700" role="alert">
+                {fieldErrors.message}
+              </p>
+            )}
           </div>
         )}
       </div>
