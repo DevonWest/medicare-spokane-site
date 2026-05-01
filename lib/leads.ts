@@ -83,15 +83,21 @@ export interface PersistedLead extends LeadPayload {
   submittedAt: string;
 }
 
-export interface LeadResult {
-  ok: boolean;
-  id?: string;
+export interface LeadSuccessResult {
+  ok: true;
+  id: string;
   /** True when an existing recent lead was matched instead of creating a new one. */
   duplicate?: boolean;
-  /** User-facing error message (no internal details). */
-  error?: string;
-  errorType?: "validation" | "server";
 }
+
+export interface LeadErrorResult {
+  ok: false;
+  /** User-facing error message (no internal details). */
+  error: string;
+  errorType: "validation" | "server";
+}
+
+export type LeadResult = LeadSuccessResult | LeadErrorResult;
 
 /** Firestore collection name. Override with `LEADS_COLLECTION` env var. */
 const COLLECTION = process.env.LEADS_COLLECTION?.trim() || "website_leads";

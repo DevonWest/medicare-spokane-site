@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { buildLeadFormFields, buildLeadRequestPayload } from "@/lib/leadPayload";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
 import type { LeadSource } from "@/lib/leads";
+import { isLeadErrorResponse, isLeadSuccessResponse } from "@/lib/leadResponse";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { trackLeadConversion } from "@/lib/analytics";
 
@@ -83,30 +84,37 @@ export default function LeadForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestPayload),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      let data: unknown = null;
+      try {
+        data = await res.json();
+      } catch {}
 
-      if (!res.ok || !data.ok) {
+      if (!res.ok || !isLeadSuccessResponse(data)) {
         setStatus("error");
         setErrorMessage(
-          typeof data.error === "string" && data.error.trim()
-            ? data.error
-            : "Something went wrong. Please call us instead.",
+          isLeadErrorResponse(data) ? data.error : "Something went wrong. Please call us instead.",
         );
         return;
       }
+    } catch {
+      setStatus("error");
+      setErrorMessage("Network error. Please call us instead.");
+      return;
+    }
 
-      setStatus("success");
-      setFieldErrors({});
+    setStatus("success");
+    setFieldErrors({});
+    event.currentTarget.reset();
+
+    try {
       // Privacy-friendly conversion tracking — no PII/PHI sent to GTM.
       trackLeadConversion({
         source,
         utm: Object.keys(utm).length ? utm : undefined,
         hadMessage: showMessage && Boolean(fields.message && fields.message.trim()),
       });
-      event.currentTarget.reset();
-    } catch {
-      setStatus("error");
-      setErrorMessage("Network error. Please call us instead.");
+    } catch (error) {
+      console.warn("[LeadForm] Lead submitted but conversion tracking failed.", error);
     }
   }
 

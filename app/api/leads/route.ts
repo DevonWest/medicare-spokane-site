@@ -3,6 +3,7 @@ import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
 import { getFirebaseAdminEnvSummary } from "@/lib/firebase-admin";
 import { getSafeErrorDetails } from "@/lib/leadLogging";
 import type { LeadRequestPayload } from "@/lib/leadPayload";
+import type { LeadErrorResponse, LeadSuccessResponse } from "@/lib/leadResponse";
 import { cleanString, validateLeadRequest } from "@/lib/leadValidation";
 import type { UtmParams } from "@/lib/utm";
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       firebaseAdminConfigured: firebase.configured,
       hasFirebaseProjectId: firebase.hasFirebaseProjectId,
     });
-    return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
+    return NextResponse.json<LeadErrorResponse>({ ok: false, error: "Invalid request." }, { status: 400 });
   }
 
   const source: LeadSource = ALLOWED_SOURCES.includes(body.source as LeadSource)
@@ -108,19 +109,29 @@ export async function POST(request: Request) {
       ...getRequestLogContext(payload, source),
       errors: validation.errors,
     });
-    return NextResponse.json({ ok: false, error: validation.error }, { status: 400 });
+    return NextResponse.json<LeadErrorResponse>(
+      { ok: false, error: validation.error ?? "Please review your submission and try again." },
+      { status: 400 },
+    );
   }
 
   try {
     const result = await submitLead(payload);
-    return NextResponse.json(result, { status: result.ok ? 200 : result.errorType === "validation" ? 400 : 500 });
+    if (result.ok) {
+      return NextResponse.json<LeadSuccessResponse>({ ok: true, id: result.id }, { status: 200 });
+    }
+
+    return NextResponse.json<LeadErrorResponse>(
+      { ok: false, error: result.error },
+      { status: result.errorType === "validation" ? 400 : 500 },
+    );
   } catch (err) {
     // submitLead is supposed to catch its own errors, but belt-and-suspenders.
     console.error("[api/leads] Unexpected route error.", {
       ...getRequestLogContext(payload, source),
       ...getSafeErrorDetails(err),
     });
-    return NextResponse.json(
+    return NextResponse.json<LeadErrorResponse>(
       { ok: false, error: "We couldn't submit your request. Please call us at 509-353-0476." },
       { status: 500 },
     );

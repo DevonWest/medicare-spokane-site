@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
+import { isLeadErrorResponse, isLeadSuccessResponse } from "../lib/leadResponse";
 import * as leadValidation from "../lib/leadValidation";
 
 function assertNoUndefinedDeep(value: unknown, path = "root") {
@@ -250,6 +251,18 @@ test("frontend payload shape matches backend expected shape", () => {
     "zip",
   ]);
   assert.equal(leadValidation.validateLeadRequest(payload).ok, true);
+});
+
+test("lead success response requires ok=true and id", () => {
+  assert.equal(isLeadSuccessResponse({ ok: true, id: "lead_123" }), true);
+  assert.equal(isLeadSuccessResponse({ ok: true }), false);
+  assert.equal(isLeadSuccessResponse({ ok: true, id: "" }), false);
+});
+
+test("lead error response requires ok=false and error", () => {
+  assert.equal(isLeadErrorResponse({ ok: false, error: "Invalid request." }), true);
+  assert.equal(isLeadErrorResponse({ ok: false }), false);
+  assert.equal(isLeadErrorResponse({ ok: false, error: "" }), false);
 });
 
 test("buildLeadFirestoreDocument strips undefined fields and normalizes optional values", () => {
