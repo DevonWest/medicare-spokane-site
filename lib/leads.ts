@@ -19,7 +19,7 @@
 
 import "server-only";
 
-import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import {
   DUPLICATE_WINDOW_MS,
@@ -30,6 +30,7 @@ import {
   validateLead,
 } from "./leadValidation";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
+import { buildLeadFirestoreDocument } from "./leadFirestore";
 import { getSafeErrorDetails } from "./leadLogging";
 import type { UtmParams } from "./utm";
 
@@ -72,7 +73,7 @@ export interface LeadPayload extends LeadAttribution {
   fullName: string;
   email: string;
   phone: string;
-  zip: string;
+  zip?: string;
   message?: string;
   source: LeadSource;
 }
@@ -94,9 +95,6 @@ export interface LeadResult {
 
 /** Firestore collection name. Override with `LEADS_COLLECTION` env var. */
 const COLLECTION = process.env.LEADS_COLLECTION?.trim() || "website_leads";
-
-/** Canonical site identifier stored on every doc — handy when this DB serves multiple sites. */
-const SITE_SOURCE = "medicareinspokane.com";
 
 /** Generic error message we're willing to show users. */
 const GENERIC_ERROR = "We couldn't submit your request. Please call us at 509-353-0476.";
@@ -154,9 +152,6 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
 
   const emailNorm = normalizeEmail(payload.email);
   const phoneNorm = normalizePhone(payload.phone);
-  const nameClean = cleanString(payload.fullName) ?? "";
-  const zipClean = cleanString(payload.zip);
-  const messageClean = cleanString(payload.message);
 
   let db: Firestore;
   try {
@@ -172,7 +167,6 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
   }
 
   const nowMs = Date.now();
-  const submittedAtIso = new Date(nowMs).toISOString();
 
   try {
     // 3) Dedupe — look for any lead in the last 10 minutes whose normalized
@@ -181,19 +175,23 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     const cutoff = Timestamp.fromMillis(nowMs - DUPLICATE_WINDOW_MS);
     const col = db.collection(COLLECTION);
 
-    const dedupeQueries = [];
-    if (emailNorm) {
-      dedupeQueries.push(
-        col.where("emailNorm", "==", emailNorm).where("submittedAt", ">=", cutoff).limit(1).get(),
-      );
-    }
-    if (phoneNorm) {
-      dedupeQueries.push(
-        col.where("phoneNorm", "==", phoneNorm).where("submittedAt", ">=", cutoff).limit(1).get(),
-      );
-    }
-    const dedupeResults = await Promise.all(dedupeQueries);
-    for (const snap of dedupeResults) {
+    const dedupeChecks = [
+      emailNorm ? { field: "emailNorm", value: emailNorm } : null,
+      phoneNorm ? { field: "phoneNorm", value: phoneNorm } : null,
+    ].filter((check): check is { field: "emailNorm" | "phoneNorm"; value: string } => Boolean(check));
+
+    for (const check of dedupeChecks) {
+      let snap;
+      try {
+        snap = await col.where(check.field, "==", check.value).where("submittedAt", ">=", cutoff).limit(1).get();
+      } catch (err) {
+        if (shouldUseDevFallback()) {
+          return getDevFallbackResult(payload, "firestore-duplicate-check-failed", err);
+        }
+        logLeadError("[leads] Firestore duplicate check failed.", payload, err, { dedupeField: check.field });
+        return { ok: false, error: GENERIC_ERROR, errorType: "server" };
+      }
+
       const doc = snap.docs[0];
       if (doc) {
         console.info("[leads] duplicate within window — returning existing id", {
@@ -206,38 +204,14 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     }
 
     // 4) Build the doc. Strip undefined fields so Firestore doesn't reject them.
-    const doc: Record<string, unknown> = {
-      // Identity
-      fullName: nameClean,
-      email: emailNorm,
-      phone: payload.phone.trim(),
-      // Normalized fields used for dedupe / future search.
-      emailNorm,
-      phoneNorm,
-      // Optional fields
-      zip: zipClean ?? null,
-      message: messageClean ?? null,
-      // Attribution
-      source: payload.source,
-      sourcePath: cleanString(payload.sourcePath) ?? null,
-      referrer: cleanString(payload.referrer) ?? null,
-      utm: payload.utm ?? null,
-      clientSubmittedAt: cleanString(payload.clientSubmittedAt) ?? null,
-      // Server-stamped
-      submittedAt: Timestamp.fromMillis(nowMs),
-      submittedAtIso: submittedAtIso,
-      createdAt: FieldValue.serverTimestamp(),
-      // Workflow
-      status: "new",
-      siteSource: SITE_SOURCE,
-    };
+    const doc = buildLeadFirestoreDocument(payload, nowMs);
 
     const ref = await col.add(doc);
     console.info("[leads] new lead written", {
       id: ref.id,
       source: payload.source,
       sourcePath: cleanString(payload.sourcePath) ?? null,
-      hasZip: Boolean(zipClean),
+      hasZip: Boolean(cleanString(payload.zip)),
     });
     return { ok: true, id: ref.id };
   } catch (err) {

@@ -5,7 +5,7 @@ export interface LeadFormFields {
   fullName: string;
   email: string;
   phone: string;
-  zip: string;
+  zip?: string;
   message?: string;
 }
 
@@ -18,11 +18,13 @@ export interface LeadRequestPayload extends LeadFormFields {
 }
 
 export function buildLeadFormFields(formData: FormData, showMessage: boolean): LeadFormFields {
+  const zip = String(formData.get("zip") ?? "");
+
   return {
     fullName: String(formData.get("fullName") ?? ""),
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
-    zip: String(formData.get("zip") ?? ""),
+    zip: zip.trim() ? zip : undefined,
     message: showMessage ? String(formData.get("message") ?? "") : undefined,
   };
 }

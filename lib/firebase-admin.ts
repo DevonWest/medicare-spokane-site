@@ -99,6 +99,7 @@ export function getFirestoreAdmin(): Firestore {
   // Will throw a clear message from the SDK if creds are missing.
   const app = buildApp();
   cachedDb = getFirestore(app);
+  cachedDb.settings({ ignoreUndefinedProperties: true });
   return cachedDb;
 }
 

@@ -6,8 +6,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
+
+function assertNoUndefinedDeep(value: unknown, path = "root") {
+  assert.notEqual(value, undefined, `Unexpected undefined at ${path}`);
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertNoUndefinedDeep(item, `${path}[${index}]`));
+    return;
+  }
+
+  if (value && Object.prototype.toString.call(value) === "[object Object]") {
+    for (const [key, nested] of Object.entries(value)) {
+      assertNoUndefinedDeep(nested, `${path}.${key}`);
+    }
+  }
+}
 
 test("DUPLICATE_WINDOW_MS equals 10 minutes in ms", () => {
   assert.equal(leadValidation.DUPLICATE_WINDOW_MS, 10 * 60 * 1000);
@@ -38,6 +54,17 @@ test("validateLead accepts a valid payload without ZIP", () => {
   });
   assert.equal(r.ok, true);
   assert.deepEqual(r.errors, {});
+});
+
+test("validateLead accepts a valid payload without message", () => {
+  const r = leadValidation.validateLead({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "509-555-0100",
+    zip: "99206",
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.errors.message, undefined);
 });
 
 test("validateLead accepts a valid payload with ZIP", () => {
@@ -160,6 +187,25 @@ test("validateLeadRequest accepts a complete lead payload without ZIP", () => {
   assert.equal(r.ok, true);
 });
 
+test("validateLeadRequest accepts a complete lead payload without referrer", () => {
+  const payload = buildLeadRequestPayload({
+    fields: {
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      phone: "509-555-0100",
+      zip: undefined,
+      message: undefined,
+    },
+    source: "contact",
+    sourcePath: "/contact",
+    clientSubmittedAt: "2026-05-01T03:18:00.000Z",
+  });
+
+  assert.equal("referrer" in payload, true);
+  assert.equal(payload.referrer, undefined);
+  assert.equal(leadValidation.validateLeadRequest(payload).ok, true);
+});
+
 test("validateLeadRequest accepts a complete lead payload with ZIP", () => {
   const r = leadValidation.validateLeadRequest({
     fullName: "Jane Doe",
@@ -204,6 +250,36 @@ test("frontend payload shape matches backend expected shape", () => {
     "zip",
   ]);
   assert.equal(leadValidation.validateLeadRequest(payload).ok, true);
+});
+
+test("buildLeadFirestoreDocument strips undefined fields and normalizes optional values", () => {
+  const payload = {
+    fullName: "Jane Doe",
+    email: " Jane@Example.com ",
+    phone: "(509) 555-0100",
+    source: "contact" as const,
+    zip: undefined,
+    message: undefined,
+    sourcePath: "/contact",
+    referrer: undefined,
+    utm: { source: "google", medium: undefined, campaign: "spring" } as {
+      source?: string;
+      medium?: string;
+      campaign?: string;
+    },
+    clientSubmittedAt: undefined,
+  };
+
+  const doc = buildLeadFirestoreDocument(payload, Date.parse("2026-05-01T03:18:00.000Z"));
+
+  assertNoUndefinedDeep(doc);
+  assert.equal(doc.zip, null);
+  assert.equal(doc.message, null);
+  assert.equal(doc.referrer, null);
+  assert.equal(doc.clientSubmittedAt, null);
+  assert.deepEqual(doc.utm, { source: "google", campaign: "spring" });
+  assert.equal(doc.email, "jane@example.com");
+  assert.equal(doc.phoneNorm, "5095550100");
 });
 
 test("isDuplicateWithinWindow: within window is duplicate", () => {
