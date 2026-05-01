@@ -90,9 +90,17 @@ export interface LeadResult {
   id?: string;
   /** True when an existing recent lead was matched instead of creating a new one. */
   duplicate?: boolean;
+  crmSyncStatus?: "synced" | "failed";
   /** User-facing error message (no internal details). */
   error?: string;
   errorType?: "validation" | "server";
+}
+
+interface SubmitLeadDependencies {
+  createCrmContact?: typeof createCrmContact;
+  getFirestoreAdmin?: () => Firestore;
+  now?: () => number;
+  useDevFallback?: () => boolean;
 }
 
 /** Firestore collection name. Override with `LEADS_COLLECTION` env var. */
@@ -161,6 +169,12 @@ async function updateCrmStatus(
       crmSyncStatus: result.ok ? CRM_SYNC_STATUS.synced : CRM_SYNC_STATUS.failed,
       crmSyncAttempts: attempts,
       crmContactId: result.ok ? result.contactId ?? null : null,
+      crmSyncedAt: result.ok ? FieldValue.serverTimestamp() : null,
+      crmSyncedAtIso: result.ok ? nowIso : null,
+      crmSyncFailedAt: result.ok ? null : FieldValue.serverTimestamp(),
+      crmSyncFailedAtIso: result.ok ? null : nowIso,
+      crmSyncErrorSafe: result.ok ? null : result.error ?? null,
+      crmResponseStatus: result.status ?? null,
       crmLastAttemptAt: FieldValue.serverTimestamp(),
       crmLastAttemptAtIso: nowIso,
       crmLastError: result.ok ? null : result.error ?? null,
@@ -175,34 +189,44 @@ async function updateCrmStatus(
   }
 }
 
-async function syncLeadToCrm(ref: DocumentReference, payload: LeadPayload, priorAttempts = 0): Promise<LeadResult> {
-  const crmResult = await createCrmContact(payload);
+async function syncLeadToCrm(
+  ref: DocumentReference,
+  payload: LeadPayload,
+  createCrmContactImpl: typeof createCrmContact,
+  priorAttempts = 0,
+): Promise<LeadResult> {
+  const crmResult = await createCrmContactImpl(payload);
   await updateCrmStatus(ref, payload, crmResult, priorAttempts + 1);
 
   if (!crmResult.ok) {
-    logLeadError("[leads] CRM contact creation failed.", payload, crmResult.error, {
+    console.error("[leads] CRM contact creation failed.", {
+      ...getLeadLogContext(payload),
       leadId: ref.id,
+      crmSyncStatus: CRM_SYNC_STATUS.failed,
+      crmSyncAttempts: priorAttempts + 1,
       crmResponseStatus: crmResult.status ?? null,
       crmEndpointPath: crmResult.path ?? null,
+      crmSyncErrorSafe: crmResult.error ?? null,
     });
-    return { ok: false, id: ref.id, error: GENERIC_ERROR, errorType: "server" };
+    return { ok: true, id: ref.id, crmSyncStatus: CRM_SYNC_STATUS.failed };
   }
 
   console.info("[leads] CRM contact created", {
     id: ref.id,
     crmContactId: crmResult.contactId ?? null,
+    crmSyncStatus: CRM_SYNC_STATUS.synced,
     source: payload.source,
     sourcePath: cleanString(payload.sourcePath) ?? null,
   });
 
-  return { ok: true, id: ref.id };
+  return { ok: true, id: ref.id, crmSyncStatus: CRM_SYNC_STATUS.synced };
 }
 
 /**
  * Submit a lead. Validates strictly, dedupes recent submissions, and
  * writes to Firestore via the admin SDK.
  */
-export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
+export async function submitLeadWithDeps(payload: LeadPayload, deps: SubmitLeadDependencies = {}): Promise<LeadResult> {
   // 1) Validate.
   const validation = validateLead(payload);
   if (!validation.ok) {
@@ -215,9 +239,9 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
 
   let db: Firestore;
   try {
-    db = getFirestoreAdmin();
+    db = (deps.getFirestoreAdmin ?? getFirestoreAdmin)();
   } catch (err) {
-    if (shouldUseDevFallback()) {
+    if ((deps.useDevFallback ?? shouldUseDevFallback)()) {
       return getDevFallbackResult(payload, "firestore-admin-init-failed", err);
     }
     logLeadError("[leads] Failed to initialize Firestore admin.", payload, err, {
@@ -226,7 +250,8 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
     return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
 
-  const nowMs = Date.now();
+  const nowMs = (deps.now ?? Date.now)();
+  const createCrmContactImpl = deps.createCrmContact ?? createCrmContact;
 
   try {
     // 3) Dedupe — look for any lead in the last 10 minutes whose normalized
@@ -245,7 +270,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
       try {
         snap = await col.where(check.field, "==", check.value).where("submittedAt", ">=", cutoff).limit(1).get();
       } catch (err) {
-        if (shouldUseDevFallback()) {
+        if ((deps.useDevFallback ?? shouldUseDevFallback)()) {
           return getDevFallbackResult(payload, "firestore-duplicate-check-failed", err);
         }
         logLeadError("[leads] Firestore duplicate check failed.", payload, err, { dedupeField: check.field });
@@ -265,8 +290,7 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
             sourcePath: cleanString(payload.sourcePath) ?? null,
             crmSyncStatus: crmSyncStatus ?? "unknown",
           });
-          const retryResult = await syncLeadToCrm(doc.ref, payload, crmSyncAttempts);
-          return retryResult.ok ? { ...retryResult, duplicate: true } : retryResult;
+          return { ...(await syncLeadToCrm(doc.ref, payload, createCrmContactImpl, crmSyncAttempts)), duplicate: true };
         }
 
         console.info("[leads] duplicate within window — returning existing id", {
@@ -288,12 +312,16 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
       sourcePath: cleanString(payload.sourcePath) ?? null,
       hasZip: Boolean(cleanString(payload.zip)),
     });
-    return await syncLeadToCrm(ref, payload);
+    return await syncLeadToCrm(ref, payload, createCrmContactImpl);
   } catch (err) {
-    if (shouldUseDevFallback()) {
+    if ((deps.useDevFallback ?? shouldUseDevFallback)()) {
       return getDevFallbackResult(payload, "firestore-write-failed", err);
     }
     logLeadError("[leads] Firestore query/write failed.", payload, err);
     return { ok: false, error: GENERIC_ERROR, errorType: "server" };
   }
+}
+
+export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
+  return submitLeadWithDeps(payload);
 }

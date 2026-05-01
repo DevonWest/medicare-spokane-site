@@ -76,7 +76,6 @@ export async function createCrmContact(lead: CrmLeadInput): Promise<CrmContactRe
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            "x-api-key": config.apiKey,
             Authorization: `Bearer ${config.apiKey}`,
           },
           body: JSON.stringify(variant.body),
