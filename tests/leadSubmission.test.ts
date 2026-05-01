@@ -1,12 +1,33 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { test } from "node:test";
 
-import { handleLeadPost } from "../app/api/leads/route";
-import { CRM_CONTACT_PATHS } from "../lib/crmPaths";
-import { CRM_SYNC_STATUS } from "../lib/leadConstants";
-import { submitLeadWithDeps, type LeadPayload } from "../lib/leads";
+const require = createRequire(import.meta.url);
 
-function makeLeadPayload(): LeadPayload {
+function mockServerOnlyModule() {
+  const serverOnlyPath = require.resolve("server-only");
+  require.cache[serverOnlyPath] = {
+    exports: {},
+    filename: serverOnlyPath,
+    id: serverOnlyPath,
+    loaded: true,
+  } as never;
+}
+
+async function loadLeadModules() {
+  mockServerOnlyModule();
+
+  const [{ handleLeadPost }, { CRM_CONTACT_PATHS }, { CRM_SYNC_STATUS }, { submitLeadWithDeps }] = await Promise.all([
+    import("../app/api/leads/route"),
+    import("../lib/crmPaths"),
+    import("../lib/leadConstants"),
+    import("../lib/leads"),
+  ]);
+
+  return { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, handleLeadPost, submitLeadWithDeps };
+}
+
+function makeLeadPayload() {
   return {
     fullName: "Jane Doe",
     email: "jane@example.com",
@@ -75,6 +96,7 @@ function createFakeFirestore(options: { addError?: Error } = {}) {
 }
 
 test("submitLeadWithDeps returns ok true and records failed CRM sync after Firestore save", async () => {
+  const { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
   const fakeFirestore = createFakeFirestore();
 
   const result = await submitLeadWithDeps(makeLeadPayload(), {
@@ -106,6 +128,7 @@ test("submitLeadWithDeps returns ok true and records failed CRM sync after Fires
 });
 
 test("submitLeadWithDeps returns ok true and records synced CRM state after Firestore save", async () => {
+  const { CRM_CONTACT_PATHS, CRM_SYNC_STATUS, submitLeadWithDeps } = await loadLeadModules();
   const fakeFirestore = createFakeFirestore();
 
   const result = await submitLeadWithDeps(makeLeadPayload(), {
@@ -137,6 +160,7 @@ test("submitLeadWithDeps returns ok true and records synced CRM state after Fire
 });
 
 test("POST returns 200 with ok true when CRM sync fails after Firestore save", async () => {
+  const { CRM_SYNC_STATUS, handleLeadPost } = await loadLeadModules();
   const response = await handleLeadPost(makeLeadRequest(makeLeadPayload()), {
     submitLead: async () => ({
       ok: true,
@@ -154,6 +178,7 @@ test("POST returns 200 with ok true when CRM sync fails after Firestore save", a
 });
 
 test("POST returns 400 when request validation fails", async () => {
+  const { handleLeadPost } = await loadLeadModules();
   const response = await handleLeadPost(
     makeLeadRequest({
       fullName: "Jane Doe",
@@ -168,6 +193,7 @@ test("POST returns 400 when request validation fails", async () => {
 });
 
 test("POST returns 500 when Firestore save fails", async () => {
+  const { handleLeadPost } = await loadLeadModules();
   const response = await handleLeadPost(makeLeadRequest(makeLeadPayload()), {
     submitLead: async () => ({
       ok: false,
