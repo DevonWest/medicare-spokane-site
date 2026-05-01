@@ -51,7 +51,9 @@ export function joinCrmUrl(baseUrl: string, path: string): string {
 export function splitFullName(fullName: string): { firstName: string; lastName?: string } {
   const parts = (cleanString(fullName) ?? "").split(/\s+/).filter(Boolean);
 
-  if (parts.length === 0) return { firstName: "" };
+  if (parts.length === 0) {
+    throw new Error("Full name is required to build the CRM contact payload.");
+  }
   if (parts.length === 1) return { firstName: parts[0] };
 
   return {

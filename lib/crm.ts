@@ -4,6 +4,7 @@ import { buildCrmRequestVariants, extractCrmContactId, joinCrmUrl, type CrmLeadI
 
 const CRM_CONTACT_PATHS = ["contacts", "api/contacts", "developer-api/contacts", "api/developer/contacts"] as const;
 const CRM_TIMEOUT_MS = 10_000;
+const MAX_ERROR_MESSAGE_LENGTH = 500;
 
 export interface CrmContactResult {
   ok: boolean;
@@ -61,7 +62,7 @@ function extractCrmError(value: unknown, fallbackText: string): string | undefin
   }
 
   const trimmed = fallbackText.trim();
-  return trimmed ? trimmed.slice(0, 500) : undefined;
+  return trimmed ? trimmed.slice(0, MAX_ERROR_MESSAGE_LENGTH) : undefined;
 }
 
 export async function createCrmContact(lead: CrmLeadInput): Promise<CrmContactResult> {
@@ -123,6 +124,8 @@ export async function createCrmContact(lead: CrmLeadInput): Promise<CrmContactRe
         break;
       }
 
+      // Some CRM implementations expect the contact fields to be nested under
+      // `contact`, so retry once with the wrapped variant on validation errors.
       if ((response.status === 400 || response.status === 422) && variantIndex === 0) {
         continue;
       }

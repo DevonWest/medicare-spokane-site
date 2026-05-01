@@ -140,11 +140,11 @@ function getDevFallbackResult(payload: LeadPayload, reason: string, error?: unkn
   return { ok: true, id: `placeholder-${Date.now()}` };
 }
 
-function getCrmSyncStatus(value: unknown): string | undefined {
+function extractCrmSyncStatus(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-function getCrmSyncAttempts(value: unknown): number {
+function extractCrmSyncAttempts(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
@@ -255,8 +255,8 @@ export async function submitLead(payload: LeadPayload): Promise<LeadResult> {
       const doc = snap.docs[0];
       if (doc) {
         const existing = doc.data();
-        const crmSyncStatus = getCrmSyncStatus(existing.crmSyncStatus);
-        const crmSyncAttempts = getCrmSyncAttempts(existing.crmSyncAttempts);
+        const crmSyncStatus = extractCrmSyncStatus(existing.crmSyncStatus);
+        const crmSyncAttempts = extractCrmSyncAttempts(existing.crmSyncAttempts);
 
         if (crmSyncStatus !== CRM_SYNC_STATUS.synced) {
           console.info("[leads] duplicate lead found but CRM is not synced — retrying CRM sync", {
