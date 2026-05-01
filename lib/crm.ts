@@ -52,6 +52,12 @@ function extractCrmError(value: unknown, fallbackText: string): string | undefin
   return trimmed ? trimmed.slice(0, MAX_ERROR_MESSAGE_LENGTH) : undefined;
 }
 
+/**
+ * Submit a website lead to the CRM's public form endpoint.
+ *
+ * Returns the HTTP status and endpoint path for Firestore sync tracking, plus
+ * any contact id the CRM chooses to expose in its response body.
+ */
 export async function submitCrmLeadForm(lead: CrmLeadInput): Promise<CrmSubmissionResult> {
   const config = getCrmConfig();
   if (!config) {

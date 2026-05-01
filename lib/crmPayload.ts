@@ -39,6 +39,7 @@ export function joinCrmUrl(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+/** Build the CRM public form payload, keeping the visitor name in `fullName`. */
 export function buildCrmFormSubmissionPayload(lead: CrmLeadInput): Record<string, unknown> {
   return stripUndefined({
     fullName: cleanString(lead.fullName) ?? "",
