@@ -109,7 +109,10 @@ export async function POST(request: Request) {
       ...getRequestLogContext(payload, source),
       errors: validation.errors,
     });
-    return NextResponse.json<LeadErrorResponse>({ ok: false, error: validation.error! }, { status: 400 });
+    if (!validation.error) {
+      throw new Error("[api/leads] Missing validation error for failed lead request validation.");
+    }
+    return NextResponse.json<LeadErrorResponse>({ ok: false, error: validation.error }, { status: 400 });
   }
 
   try {
