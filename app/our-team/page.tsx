@@ -3,6 +3,7 @@ import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
 import TeamSection from "@/components/TeamSection";
+import { TeamTrustIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 import { getPublicTeamMembers } from "@/lib/team";
 
@@ -57,6 +58,7 @@ export default function OurTeamPage() {
         title="Meet Your Local Medicare Team in Spokane"
         subtitle="Licensed insurance professionals helping Spokane-area residents compare Medicare options — at no cost."
         crumbs={[{ href: "/", label: "Home" }, { label: "Our Team" }]}
+        illustration={<TeamTrustIllustration />}
       />
 
       {/* Intro */}

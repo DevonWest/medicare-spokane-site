@@ -3,6 +3,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import { CompareOptionsIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -116,7 +117,8 @@ export default function CompareMedicareOptionsPage() {
             <span className="mx-2">/</span>
             <span>Compare Medicare Options</span>
           </nav>
-          <div className="max-w-4xl">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="max-w-4xl">
             <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-5xl">
               Compare Medicare Options in Spokane
             </h1>
@@ -141,6 +143,12 @@ export default function CompareMedicareOptionsPage() {
             <p className="mt-5 text-base font-semibold text-blue-50">
               No-cost consultation. No pressure. Local Spokane guidance.
             </p>
+            </div>
+            <div className="hidden lg:flex lg:justify-center">
+              <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-sm">
+                <CompareOptionsIllustration />
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
+import { TestimonialsIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 import { testimonials } from "@/lib/testimonials";
 
@@ -29,6 +30,7 @@ export default function TestimonialsPage() {
         title="What Spokane Clients Say"
         subtitle="Real feedback from Spokane-area residents we&apos;ve helped navigate Medicare."
         crumbs={[{ href: "/", label: "Home" }, { label: "Testimonials" }]}
+        illustration={<TestimonialsIllustration />}
       />
 
       <section className="py-14 px-4 bg-white">
