@@ -32,7 +32,7 @@ export default function LeadForm({
   const successRef = useRef<HTMLDivElement>(null);
 
   function getFieldClassName(hasError: boolean) {
-    return `w-full rounded-lg px-3 py-2 text-gray-900 outline-none ${
+    return `min-h-11 w-full scroll-mb-[calc(var(--mobile-sticky-cta-offset)+1rem)] rounded-lg px-3 py-2.5 text-base leading-5 text-gray-900 outline-none ${
       hasError
         ? "border border-red-600 focus:border-red-700 focus:ring-2 focus:ring-red-200"
         : "border border-gray-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -109,12 +109,12 @@ export default function LeadForm({
   }
 
   return (
-    <div className={className}>
+    <div className={`scroll-mt-[calc(var(--mobile-header-offset)+0.75rem)] ${className}`.trim()}>
       {status === "success" && (
         <div
           ref={successRef}
           tabIndex={-1}
-          className="mb-6 rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-blue-50 p-6 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+          className="mb-5 rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-blue-50 p-5 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-300 sm:mb-6 sm:p-6"
           role="status"
           aria-live="polite"
         >
@@ -126,36 +126,36 @@ export default function LeadForm({
           <p className="mt-3 text-base font-medium text-slate-900">Need help right away? Call 509-353-0476.</p>
           <a
             href="tel:5093530476"
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="mt-5 inline-flex min-h-11 scroll-mb-[calc(var(--mobile-sticky-cta-offset)+1rem)] items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Call 509-353-0476
           </a>
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8"
-        noValidate
-        aria-describedby="lead-form-reassurance"
-      >
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{heading}</h2>
-          <p className="text-gray-600 text-sm">{subheading}</p>
-          <p id="lead-form-reassurance" className="text-gray-600 text-sm mt-2">
-            We typically respond the same business day. There is no cost and no obligation.
-          </p>
-          <p className="text-sm text-gray-700 mt-2">
-            <span className="text-red-600" aria-hidden="true">
-              *
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8"
+          noValidate
+          aria-describedby="lead-form-reassurance"
+        >
+          <div className="mb-5">
+            <h2 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">{heading}</h2>
+            <p className="text-sm leading-6 text-gray-600">{subheading}</p>
+            <p id="lead-form-reassurance" className="mt-2 text-sm leading-6 text-gray-600">
+              We typically respond the same business day. There is no cost and no obligation.
+            </p>
+            <p className="mt-1.5 text-sm text-gray-700">
+              <span className="text-red-600" aria-hidden="true">
+                *
             </span>{" "}
             Required fields
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <label htmlFor="lead-fullName" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
+            <div className="sm:col-span-2">
+              <label htmlFor="lead-fullName" className="mb-1 block text-sm font-medium text-gray-700">
               Your full name <span className="text-red-600" aria-hidden="true">*</span>
               <span className="sr-only">(required)</span>
             </label>
@@ -177,7 +177,7 @@ export default function LeadForm({
           </div>
 
           <div>
-            <label htmlFor="lead-email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="lead-email" className="mb-1 block text-sm font-medium text-gray-700">
               Email <span className="text-red-600" aria-hidden="true">*</span>
               <span className="sr-only">(required)</span>
             </label>
@@ -199,7 +199,7 @@ export default function LeadForm({
           </div>
 
           <div>
-            <label htmlFor="lead-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="lead-phone" className="mb-1 block text-sm font-medium text-gray-700">
               Best phone number <span className="text-red-600" aria-hidden="true">*</span>
               <span className="sr-only">(required)</span>
             </label>
@@ -221,12 +221,12 @@ export default function LeadForm({
           </div>
 
           <div className="sm:col-span-2">
-            <label htmlFor="lead-zip" className="block text-sm font-medium text-gray-700 mb-1">
-              ZIP code
-            </label>
-            <p id="lead-zip-helper" className="mb-1 text-sm text-gray-600">
-              Optional, but helpful because Medicare plan availability varies by ZIP code.
-            </p>
+              <label htmlFor="lead-zip" className="mb-1 block text-sm font-medium text-gray-700">
+                ZIP code
+              </label>
+              <p id="lead-zip-helper" className="mb-1 text-sm leading-5 text-gray-600">
+                Optional, but helpful because Medicare plan availability varies by ZIP code.
+              </p>
             <input
               id="lead-zip"
               name="zip"
@@ -248,7 +248,7 @@ export default function LeadForm({
 
           {showMessage && (
             <div className="sm:col-span-2">
-              <label htmlFor="lead-message" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="lead-message" className="mb-1 block text-sm font-medium text-gray-700">
                 How can we help?{" "}
                 <span className="font-normal text-gray-500">(turning 65, comparing plans, helping a parent, etc.)</span>
               </label>
@@ -275,17 +275,17 @@ export default function LeadForm({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={status === "submitting"}
-          className="mt-6 w-full bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          {status === "submitting" ? "Sending..." : "Request My Free Medicare Review"}
-        </button>
+          <button
+            type="submit"
+            disabled={status === "submitting"}
+            className="mt-5 min-h-11 w-full scroll-mb-[calc(var(--mobile-sticky-cta-offset)+1rem)] rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800 disabled:bg-blue-400"
+          >
+            {status === "submitting" ? "Sending..." : "Request My Free Medicare Review"}
+          </button>
 
-        <p className="mt-4 text-xs text-gray-500 leading-relaxed">
-          By submitting, you agree to be contacted by a licensed insurance professional about Medicare insurance
-          options. We do not offer every plan available in your area. Currently, we represent 8 organizations which
+          <p className="mt-4 text-[11px] leading-5 text-gray-500">
+            By submitting, you agree to be contacted by a licensed insurance professional about Medicare insurance
+            options. We do not offer every plan available in your area. Currently, we represent 8 organizations which
           offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health
           Insurance Assistance Program (SHIP) to get information on all of your options.
         </p>
