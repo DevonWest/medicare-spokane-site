@@ -54,6 +54,38 @@ test("proxy permanently redirects apex host to canonical www host with path and 
   );
 });
 
+test("proxy uses forwarded apex host when deciding the canonical redirect", () => {
+  const response = proxy(
+    new NextRequest("https://medicare-spokane-site-12345-uc.a.run.app/contact?x=1", {
+      headers: {
+        "x-forwarded-host": "medicareinspokane.com",
+      },
+    }),
+  );
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/contact?x=1");
+});
+
+test("proxy does not redirect canonical www host before rendering", () => {
+  const response = proxy(new NextRequest("https://www.medicareinspokane.com/contact?x=1"));
+
+  assert.notEqual(response.status, 301);
+  assert.equal(response.headers.get("location"), null);
+});
+
+test("proxy keeps Cloud Run hosts on legacy redirects instead of forcing www", () => {
+  const response = proxy(
+    new NextRequest("https://medicare-spokane-site-12345-uc.a.run.app/request-a-quote?source=google"),
+  );
+
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://medicare-spokane-site-12345-uc.a.run.app/contact?source=google",
+  );
+});
+
 test("site metadata, sitemap, and robots use the canonical www production URL", () => {
   assert.equal(siteConfig.url, "https://www.medicareinspokane.com");
   assert.equal(homeMetadata.alternates?.canonical, "https://www.medicareinspokane.com");
