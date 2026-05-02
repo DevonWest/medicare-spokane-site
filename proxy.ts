@@ -10,7 +10,13 @@ function getRequestHostCandidate(hostHeader: string | null): string | null {
     return null;
   }
 
-  const candidate = hostHeader.split(",")[0]?.trim().toLowerCase();
+  const firstValue = hostHeader.split(",")[0];
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const candidate = firstValue.trim().toLowerCase();
 
   return candidate || null;
 }
