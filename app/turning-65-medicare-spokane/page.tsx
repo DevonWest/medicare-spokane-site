@@ -99,9 +99,9 @@ const internalLinks = [
 export default function TurningSixtyFivePage() {
   return (
     <>
-      <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">
+      <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 landscape-mobile:py-5 text-white">
         <div className="mx-auto max-w-6xl">
-          <nav aria-label="Breadcrumb" className="mb-4 text-sm text-blue-200">
+          <nav aria-label="Breadcrumb" className="mb-4 landscape-mobile:mb-2 text-sm text-blue-200">
             <Link href="/" className="hover:text-white">
               Home
             </Link>
@@ -113,31 +113,31 @@ export default function TurningSixtyFivePage() {
             <span>Turning 65 Medicare</span>
           </nav>
           <div className="max-w-4xl">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
+            <p className="mb-3 landscape-mobile:mb-1 text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
               Local Medicare Help for Spokane-Area Residents
             </p>
-            <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-5xl">
+            <h1 className="mb-4 landscape-mobile:mb-2 text-4xl landscape-mobile:text-2xl landscape-mobile:leading-snug font-extrabold leading-tight md:text-5xl">
               Turning 65 in Spokane? Get Help Understanding Medicare
             </h1>
-            <p className="max-w-3xl text-xl text-blue-100">
+            <p className="max-w-3xl text-xl landscape-mobile:text-base text-blue-100">
               Medicare can feel overwhelming at first. Our local licensed agents help Spokane-area residents
               understand enrollment timing, compare options from the plans we represent, and avoid common mistakes.
             </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <div className="mt-8 landscape-mobile:mt-4 flex flex-col gap-4 landscape-mobile:gap-3 sm:flex-row landscape-mobile:flex-row">
               <a
                 href={telHref}
-                className="inline-flex items-center justify-center rounded-lg bg-white px-7 py-3 text-lg font-semibold text-blue-800 transition-colors hover:bg-blue-50"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-7 landscape-mobile:px-5 py-3 landscape-mobile:py-2 text-lg landscape-mobile:text-base font-semibold text-blue-800 transition-colors hover:bg-blue-50"
               >
                 Call 509-353-0476
               </a>
               <Link
                 href="#turning-65-help-form"
-                className="inline-flex items-center justify-center rounded-lg border border-blue-300 bg-blue-900 px-7 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-950"
+                className="inline-flex items-center justify-center rounded-lg border border-blue-300 bg-blue-900 px-7 landscape-mobile:px-5 py-3 landscape-mobile:py-2 text-lg landscape-mobile:text-base font-semibold text-white transition-colors hover:bg-blue-950"
               >
                 Request Turning 65 Help
               </Link>
             </div>
-            <p className="mt-5 text-base font-semibold text-blue-50">
+            <p className="mt-5 landscape-mobile:mt-2 text-base landscape-mobile:text-sm font-semibold text-blue-50">
               No-cost consultation. No pressure. Local Spokane guidance.
             </p>
           </div>

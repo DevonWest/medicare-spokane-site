@@ -15,11 +15,11 @@ interface PageHeroProps {
 
 export default function PageHero({ title, subtitle, crumbs, illustration }: PageHeroProps) {
   return (
-    <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 px-4">
+    <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 landscape-mobile:py-5 px-4">
       <div className={`mx-auto ${illustration ? "max-w-6xl" : "max-w-5xl"}`}>
         <div className={illustration ? "grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center" : undefined}>
           <div>
-            <nav aria-label="Breadcrumb" className="text-blue-200 text-sm mb-4">
+            <nav aria-label="Breadcrumb" className="text-blue-200 text-sm mb-4 landscape-mobile:mb-2">
               {crumbs.map((c, i) => (
                 <span key={`${i}-${c.href ?? c.label}`}>
                   {c.href ? (
@@ -33,8 +33,8 @@ export default function PageHero({ title, subtitle, crumbs, illustration }: Page
                 </span>
               ))}
             </nav>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">{title}</h1>
-            {subtitle ? <p className="text-xl text-blue-100 max-w-3xl">{subtitle}</p> : null}
+            <h1 className="text-4xl landscape-mobile:text-2xl landscape-mobile:leading-snug md:text-5xl font-extrabold leading-tight mb-4 landscape-mobile:mb-2">{title}</h1>
+            {subtitle ? <p className="text-xl landscape-mobile:text-base text-blue-100 max-w-3xl">{subtitle}</p> : null}
           </div>
           {illustration ? (
             <div className="hidden lg:flex lg:justify-center">

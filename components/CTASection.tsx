@@ -10,14 +10,14 @@ export default function CTASection({
   subheading = "Speak with a licensed insurance professional in Spokane — no cost, no obligation.",
 }: CTASectionProps) {
   return (
-    <section className="bg-blue-700 text-white py-16 px-4">
+    <section className="bg-blue-700 text-white py-16 landscape-mobile:py-8 px-4">
       <div className="max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl font-bold mb-4">{heading}</h2>
-        <p className="text-blue-100 text-lg mb-8">{subheading}</p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <h2 className="text-3xl landscape-mobile:text-2xl font-bold mb-4 landscape-mobile:mb-2">{heading}</h2>
+        <p className="text-blue-100 text-lg landscape-mobile:text-base mb-8 landscape-mobile:mb-4">{subheading}</p>
+        <div className="flex flex-col sm:flex-row landscape-mobile:flex-row gap-4 landscape-mobile:gap-3 justify-center">
           <a
             href={`tel:${siteConfig.phone.replace(/\D/g, "")}`}
-            className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors text-lg"
+            className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 landscape-mobile:px-5 py-3 landscape-mobile:py-2 rounded-lg hover:bg-blue-50 transition-colors text-lg landscape-mobile:text-base"
             aria-label={`Call ${siteConfig.phone}`}
           >
             <svg
@@ -39,7 +39,7 @@ export default function CTASection({
           </a>
           <a
             href={`mailto:${siteConfig.email}`}
-            className="inline-flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-950 text-white font-semibold px-8 py-3 rounded-lg transition-colors text-lg border border-blue-400"
+            className="inline-flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-950 text-white font-semibold px-8 landscape-mobile:px-5 py-3 landscape-mobile:py-2 rounded-lg transition-colors text-lg landscape-mobile:text-base border border-blue-400"
             aria-label={`Email Us at ${siteConfig.email}`}
           >
             <svg
@@ -60,7 +60,7 @@ export default function CTASection({
             Email Us
           </a>
         </div>
-        <p className="mt-6 text-sm text-blue-100">
+        <p className="mt-6 landscape-mobile:mt-3 text-sm text-blue-100">
           Mon – Fri, 9:00 AM – 5:00 PM Pacific. We typically respond the same business day.
         </p>
       </div>
