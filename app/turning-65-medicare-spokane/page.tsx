@@ -167,7 +167,7 @@ export default function TurningSixtyFivePage() {
           </div>
 
           <div className="rounded-3xl border border-blue-100 bg-slate-50 p-6 shadow-sm sm:p-8">
-            <div className="hidden md:block mx-auto mb-6 max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+            <div className="mx-auto mb-6 hidden max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm md:block">
               <Turning65Illustration className="text-sky-700" />
             </div>
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Local Spokane help</p>

@@ -112,7 +112,7 @@ export default function RxDrugReviewPage() {
                 medication list may affect your expected costs before you enroll.
               </p>
             </div>
-            <div className="hidden md:block mx-auto w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm">
+            <div className="mx-auto hidden w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm md:block">
               <PartDIllustration />
             </div>
           </div>

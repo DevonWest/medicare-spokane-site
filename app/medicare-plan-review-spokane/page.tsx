@@ -203,7 +203,7 @@ export default function MedicarePlanReviewSpokanePage() {
                 </Link>{" "}
                 for a broader overview.
               </p>
-              <div className="hidden md:block mt-6 max-w-sm rounded-3xl border border-white bg-white/90 p-5 shadow-sm">
+              <div className="mt-6 hidden max-w-sm rounded-3xl border border-white bg-white/90 p-5 shadow-sm md:block">
                 <AnnualPlanReviewIllustration />
               </div>
             </div>

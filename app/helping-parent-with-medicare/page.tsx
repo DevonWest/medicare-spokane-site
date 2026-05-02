@@ -164,7 +164,7 @@ export default function HelpingParentWithMedicarePage() {
                 stress.
               </p>
             </div>
-            <div className="hidden md:block mx-auto w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm">
+            <div className="mx-auto hidden w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm md:block">
               <HelpingParentIllustration className="text-sky-700" />
             </div>
           </div>
