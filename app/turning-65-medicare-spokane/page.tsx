@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import { Turning65Illustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -166,6 +167,9 @@ export default function TurningSixtyFivePage() {
           </div>
 
           <div className="rounded-3xl border border-blue-100 bg-slate-50 p-6 shadow-sm sm:p-8">
+            <div className="mx-auto mb-6 max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+              <Turning65Illustration className="text-sky-700" />
+            </div>
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Local Spokane help</p>
             <h2 className="mt-3 text-3xl font-bold text-gray-900">Talk with a Spokane-based licensed agent.</h2>
             <div className="mt-4 space-y-4 text-lg leading-relaxed text-gray-700">

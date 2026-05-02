@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import { PrescriptionReviewIllustration } from "@/components/Illustrations";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -88,27 +89,32 @@ export default function RxDrugReviewPage() {
 
       <section className="py-14 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-gray-800 space-y-8">
-          <div className="space-y-5 text-lg leading-relaxed">
-            <p>
-              If you are using this visit to{" "}
-              <Link href="/compare-medicare-options" className="text-blue-700 hover:underline">
-                compare Medicare options
-              </Link>
-              , a prescription review can give you a clearer picture of how drug coverage may affect
-              your decision.
-            </p>
-            <p>
-              If you are reviewing{" "}
-              <Link href="/medicare-part-d" className="text-blue-700 hover:underline">
-                Medicare Part D
-              </Link>{" "}
-              or{" "}
-              <Link href="/medicare-advantage" className="text-blue-700 hover:underline">
-                Medicare Advantage
-              </Link>{" "}
-              coverage, a prescription review can help you understand how your pharmacy choice and
-              medication list may affect your expected costs before you enroll.
-            </p>
+          <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-5 text-lg leading-relaxed">
+              <p>
+                If you are using this visit to{" "}
+                <Link href="/compare-medicare-options" className="text-blue-700 hover:underline">
+                  compare Medicare options
+                </Link>
+                , a prescription review can give you a clearer picture of how drug coverage may affect
+                your decision.
+              </p>
+              <p>
+                If you are reviewing{" "}
+                <Link href="/medicare-part-d" className="text-blue-700 hover:underline">
+                  Medicare Part D
+                </Link>{" "}
+                or{" "}
+                <Link href="/medicare-advantage" className="text-blue-700 hover:underline">
+                  Medicare Advantage
+                </Link>{" "}
+                coverage, a prescription review can help you understand how your pharmacy choice and
+                medication list may affect your expected costs before you enroll.
+              </p>
+            </div>
+            <div className="mx-auto w-full max-w-sm rounded-3xl border border-sky-100 bg-sky-50 p-5 shadow-sm">
+              <PrescriptionReviewIllustration className="text-sky-700" />
+            </div>
           </div>
 
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
