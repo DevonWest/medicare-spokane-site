@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
+import { metadata as homeMetadata } from "../app/page";
+import robots from "../app/robots";
 import sitemap from "../app/sitemap";
 import { getLegacyRedirectDestination, legacyRedirects } from "../lib/legacyRedirects";
 import { siteConfig } from "../lib/site";
@@ -38,6 +40,30 @@ test("proxy returns 301 redirects for legacy URLs", () => {
 
   assert.equal(response.status, 301);
   assert.equal(response.headers.get("location"), "https://example.com/contact?source=google");
+});
+
+test("proxy permanently redirects apex host to canonical www host with path and query intact", () => {
+  const response = proxy(
+    new NextRequest("https://medicareinspokane.com/rx-drug-review?x=1&ref=google"),
+  );
+
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.medicareinspokane.com/rx-drug-review?x=1&ref=google",
+  );
+});
+
+test("site metadata, sitemap, and robots use the canonical www production URL", () => {
+  assert.equal(siteConfig.url, "https://www.medicareinspokane.com");
+  assert.equal(homeMetadata.alternates?.canonical, "https://www.medicareinspokane.com");
+  assert.equal(homeMetadata.openGraph?.url, "https://www.medicareinspokane.com");
+  assert.equal(robots().sitemap, "https://www.medicareinspokane.com/sitemap.xml");
+
+  const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
+
+  assert.ok(sitemapUrls.has("https://www.medicareinspokane.com"));
+  assert.ok(sitemapUrls.has("https://www.medicareinspokane.com/contact"));
 });
 
 test("sitemap only includes canonical request, team, and prescription URLs", () => {

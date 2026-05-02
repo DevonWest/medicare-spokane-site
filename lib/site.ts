@@ -1,11 +1,11 @@
 /**
  * Source-of-truth business / brand configuration.
  *
- * Reflects the live site at https://medicareinspokane.com — Health Insurance
- * Options LLC, doing business as "Medicare in Spokane by Health Insurance
- * Options". Compliance language here is intentionally limited to what CMS
- * marketing rules allow for a licensed independent insurance agency that does
- * not represent every plan in the area.
+ * Reflects the live site at https://www.medicareinspokane.com — Health
+ * Insurance Options LLC, doing business as "Medicare in Spokane by Health
+ * Insurance Options". Compliance language here is intentionally limited to
+ * what CMS marketing rules allow for a licensed independent insurance agency
+ * that does not represent every plan in the area.
  */
 export const siteConfig = {
   /** Public-facing brand / site name. */
