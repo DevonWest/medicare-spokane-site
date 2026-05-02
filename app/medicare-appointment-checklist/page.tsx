@@ -187,7 +187,7 @@ export default function MedicareAppointmentChecklistPage() {
           </div>
 
           <aside className="rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm sm:p-8">
-            <div className="mx-auto mb-6 max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+            <div className="hidden md:block mx-auto mb-6 max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
               <AppointmentChecklistIllustration className="text-sky-700" />
             </div>
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Local Spokane support</p>

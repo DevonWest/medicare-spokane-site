@@ -11,21 +11,18 @@ interface IllustrationSvgProps extends IllustrationProps {
 }
 
 const palette = {
-  ink: "#1f2937",
+  ink: "#334155",
   muted: "#64748b",
-  line: "#cbd5e1",
-  blue: "#2563eb",
-  blueDark: "#1d4ed8",
-  sky: "#0ea5e9",
-  skyLight: "#e0f2fe",
-  teal: "#0f766e",
-  tealLight: "#ccfbf1",
-  green: "#10b981",
-  greenLight: "#d1fae5",
-  amber: "#fbbf24",
-  amberLight: "#fef3c7",
-  warm: "#f5efe6",
-  warmDark: "#d6bfa8",
+  line: "#d6dee7",
+  navy: "#36506b",
+  blue: "#7ca7c9",
+  blueLight: "#dceaf5",
+  beige: "#f5ede3",
+  beigeDark: "#d7c1aa",
+  cream: "#fcfaf7",
+  green: "#7ea386",
+  greenLight: "#dfeade",
+  warmGray: "#ece7e0",
   white: "#ffffff",
 };
 
@@ -51,18 +48,51 @@ function IllustrationSvg({
   );
 }
 
-function SceneFrame() {
+function SoftScene() {
   return (
     <>
-      <rect x="18" y="16" width="324" height="208" rx="28" fill={palette.skyLight} />
-      <circle cx="58" cy="56" r="18" fill={palette.greenLight} />
-      <circle cx="304" cy="48" r="14" fill={palette.amberLight} />
-      <path d="M52 198h256" stroke={palette.line} strokeWidth="6" strokeLinecap="round" />
+      <rect x="18" y="16" width="324" height="208" rx="30" fill={palette.cream} />
+      <rect x="32" y="30" width="296" height="180" rx="24" fill={palette.white} stroke={palette.warmGray} strokeWidth="1.5" />
+      <path d="M56 190h248" stroke={palette.line} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="70" cy="62" r="12" fill={palette.beige} />
+      <circle cx="292" cy="58" r="10" fill={palette.greenLight} />
     </>
   );
 }
 
-function Card({
+function PersonFigure({
+  x,
+  y,
+  shirt = palette.blue,
+  hair = palette.beigeDark,
+  scale = 1,
+}: {
+  x: number;
+  y: number;
+  shirt?: string;
+  hair?: string;
+  scale?: number;
+}) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <circle cx="0" cy="0" r="16" fill={palette.beige} stroke={palette.ink} strokeWidth="2.5" />
+      <path d="M-12-5c2-10 20-10 24 0" stroke={hair} strokeWidth="6" strokeLinecap="round" />
+      <path d="M-18 42c3-16 15-24 18-24s15 8 18 24" fill={shirt} stroke={palette.ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M-6 6c2 2 10 2 12 0" stroke={palette.muted} strokeWidth="2" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function Desk({ x, y, width = 162 }: { x: number; y: number; width?: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height="18" rx="9" fill={palette.beige} stroke={palette.beigeDark} strokeWidth="2" />
+      <path d={`M${x + 18} ${y + 18}v28M${x + width - 18} ${y + 18}v28`} stroke={palette.beigeDark} strokeWidth="3" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function DocumentCard({
   x,
   y,
   width,
@@ -77,14 +107,18 @@ function Card({
   accent?: string;
   fill?: string;
 }) {
+  const bottomWidth = Math.max(width - 30, 12);
+  const middleWidth = Math.max(width - 40, 12);
+  const topWidth = Math.min(width - 24, 56);
+
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} rx="18" fill={fill} stroke={palette.line} strokeWidth="2" />
-      <rect x={x + 14} y={y + 14} width={Math.min(width - 28, 58)} height="10" rx="5" fill={accent} opacity="0.95" />
+      <rect x={x} y={y} width={width} height={height} rx="16" fill={fill} stroke={palette.line} strokeWidth="2" />
+      <rect x={x + 12} y={y + 12} width={topWidth} height="10" rx="5" fill={accent} />
       <path
-        d={`M${x + 14} ${y + 42}h${Math.max(width - 28, 12)} M${x + 14} ${y + 58}h${Math.max(width - 42, 10)} M${x + 14} ${y + 74}h${Math.max(width - 54, 8)}`}
+        d={`M${x + 12} ${y + 38}h${bottomWidth} M${x + 12} ${y + 54}h${middleWidth} M${x + 12} ${y + 70}h${Math.max(width - 54, 10)}`}
         stroke={palette.muted}
-        strokeWidth="4"
+        strokeWidth="3.5"
         strokeLinecap="round"
       />
     </g>
@@ -92,62 +126,96 @@ function Card({
 }
 
 function CheckMark({ x, y, color = palette.green }: { x: number; y: number; color?: string }) {
-  return <path d={`M${x} ${y}l6 6 12-14`} stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />;
+  return <path d={`M${x} ${y}l6 6 12-14`} stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />;
 }
 
-function ShieldCheck({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
+function PillBottle({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <path d="M0 6 16 0l16 6v11c0 10-8 17-16 21C8 34 0 27 0 17Z" fill={palette.greenLight} stroke={palette.green} strokeWidth="2.5" />
-      <path d="M9 17l5 5 9-11" stroke={palette.teal} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="0" y="10" width="42" height="62" rx="12" fill={palette.greenLight} stroke={palette.green} strokeWidth="2" />
+      <rect x="8" y="0" width="26" height="18" rx="9" fill={palette.green} />
+      <rect x="9" y="28" width="24" height="18" rx="7" fill={palette.white} />
+      <path d="M15 37h12" stroke={palette.green} strokeWidth="3" strokeLinecap="round" />
     </g>
   );
 }
 
-function MapPin({ x, y, scale = 1, fill = palette.amberLight }: { x: number; y: number; scale?: number; fill?: string }) {
+function CalendarCard({ x, y, label, number }: { x: number; y: number; label?: string; number: string }) {
+  return (
+    <g>
+      <rect x={x} y={y} width="112" height="98" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
+      <rect x={x} y={y} width="112" height="28" rx="18" fill={palette.blueLight} />
+      <path d={`M${x + 24} ${y - 8}v20M${x + 88} ${y - 8}v20`} stroke={palette.navy} strokeWidth="4" strokeLinecap="round" />
+      {label ? (
+        <text x={x + 56} y={y + 18} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy}>
+          {label}
+        </text>
+      ) : null}
+      <text x={x + 56} y={y + 68} textAnchor="middle" fontSize="38" fontWeight="700" fill={palette.navy}>
+        {number}
+      </text>
+    </g>
+  );
+}
+
+function PhoneCard({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width="62" height="84" rx="16" fill={palette.white} stroke={palette.line} strokeWidth="2" />
+      <rect x={x + 18} y={y + 10} width="26" height="6" rx="3" fill={palette.line} />
+      <path
+        d={`M${x + 22} ${y + 34}c4-8 10-10 14-10 5 0 10 2 14 10M${x + 20} ${y + 44}c6 6 10 11 22 17M${x + 40} ${y + 70}c6-2 10-5 14-11`}
+        stroke={palette.navy}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+function MapPin({ x, y, scale = 1 }: { x: number; y: number; scale?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <path d="M14 30S28 19.4 28 9.6A14 14 0 0 0 0 9.6C0 19.4 14 30 14 30Z" fill={fill} stroke={palette.blue} strokeWidth="2.5" />
-      <circle cx="14" cy="10" r="5" fill={palette.white} stroke={palette.blue} strokeWidth="2" />
+      <path d="M18 38S36 24.4 36 12A18 18 0 1 0 0 12c0 12.4 18 26 18 26Z" fill={palette.blueLight} stroke={palette.navy} strokeWidth="2.5" />
+      <circle cx="18" cy="12" r="6" fill={palette.white} stroke={palette.navy} strokeWidth="2" />
     </g>
   );
 }
 
-function StarRow({ x, y }: { x: number; y: number }) {
+function BadgeCard({ x, y, width = 82, label = "PLAN" }: { x: number; y: number; width?: number; label?: string }) {
   return (
-    <g fill={palette.amber}>
-      {[0, 1, 2, 3, 4].map((index) => (
-        <path
-          key={index}
-          transform={`translate(${x + index * 18} ${y})`}
-          d="M8 0l2.2 4.7L15 5.4l-3.5 3.3.9 4.9L8 11.1 3.6 13.6l.9-4.9L1 5.4l4.8-.7Z"
-        />
-      ))}
+    <g>
+      <rect x={x} y={y} width={width} height="54" rx="14" fill={palette.white} stroke={palette.line} strokeWidth="2" />
+      <rect x={x + 10} y={y + 10} width="34" height="8" rx="4" fill={palette.blue} />
+      <text x={x + 10} y={y + 36} fontSize="10" fontWeight="700" fill={palette.navy}>
+        {label}
+      </text>
     </g>
   );
 }
 
-function SpeechBubble({ x, y, width = 66, height = 42, fill = palette.white }: { x: number; y: number; width?: number; height?: number; fill?: string }) {
+function FolderPocket({ x, y }: { x: number; y: number }) {
   return (
     <g>
       <path
-        d={`M${x + 14} ${y}h${width - 28}a14 14 0 0 1 14 14v${height - 18}a14 14 0 0 1-14 14H${x + 30}l-12 10 2-10h-6a14 14 0 0 1-14-14V${y + 14 - y}a14 14 0 0 1 14-14Z`}
-        fill={fill}
-        stroke={palette.line}
+        d={`M${x} ${y + 18}h74l14 14h104a16 16 0 0 1 16 16v64a16 16 0 0 1-16 16H${x + 12}a16 16 0 0 1-16-16V${y + 34}a16 16 0 0 1 16-16Z`}
+        fill={palette.beige}
+        stroke={palette.beigeDark}
         strokeWidth="2"
+        strokeLinejoin="round"
       />
-      <path d={`M${x + 16} ${y + 18}h${width - 32} M${x + 16} ${y + 30}h${width - 42}`} stroke={palette.muted} strokeWidth="3.5" strokeLinecap="round" />
+      <rect x={x + 24} y={y} width="104" height="88" rx="16" fill={palette.white} stroke={palette.line} strokeWidth="2" />
     </g>
   );
 }
 
-function Avatar({ x, y, tone = palette.blue, accent = palette.tealLight, scale = 1 }: { x: number; y: number; tone?: string; accent?: string; scale?: number }) {
+function CostTag({ x, y, label }: { x: number; y: number; label: string }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <circle cx="20" cy="18" r="14" fill={tone} opacity="0.18" />
-      <circle cx="20" cy="14" r="10" fill={tone} opacity="0.9" />
-      <path d="M0 46c4-14 14-22 20-22s16 8 20 22" stroke={tone} strokeWidth="8" strokeLinecap="round" />
-      <rect x="7" y="30" width="26" height="14" rx="7" fill={accent} opacity="0.85" />
+    <g>
+      <rect x={x} y={y} width="54" height="34" rx="12" fill={palette.white} stroke={palette.line} strokeWidth="2" />
+      <text x={x + 27} y={y + 21} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy}>
+        {label}
+      </text>
     </g>
   );
 }
@@ -155,18 +223,15 @@ function Avatar({ x, y, tone = palette.blue, accent = palette.tealLight, scale =
 export function HomepageHeroIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Avatar x={42} y={74} tone={palette.blue} accent={palette.amberLight} />
-      <Avatar x={240} y={86} tone={palette.teal} accent={palette.greenLight} />
-      <Avatar x={288} y={92} tone={palette.blueDark} accent={palette.skyLight} scale={0.86} />
-      <rect x="118" y="88" width="122" height="84" rx="20" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="132" y="76" width="80" height="22" rx="11" fill={palette.blue} />
-      <path d="M138 118h72M138 136h58M138 154h42" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <CheckMark x={204} y={121} />
-      <CheckMark x={204} y={139} />
-      <rect x="228" y="108" width="52" height="48" rx="14" fill={palette.amberLight} stroke={palette.warmDark} strokeWidth="2" />
-      <path d="M242 122h24M242 136h16" stroke={palette.ink} strokeWidth="4" strokeLinecap="round" />
-      <path d="M98 186h164" stroke={palette.blue} strokeWidth="4" strokeDasharray="8 8" strokeLinecap="round" opacity="0.35" />
+      <SoftScene />
+      <PersonFigure x={98} y={108} shirt={palette.blueLight} hair={palette.beigeDark} />
+      <PersonFigure x={244} y={108} shirt={palette.greenLight} hair={palette.muted} />
+      <Desk x={106} y={150} width={150} />
+      <DocumentCard x={144} y={110} width={82} height={54} accent={palette.green} fill={palette.cream} />
+      <CheckMark x={190} y={147} />
+      <BadgeCard x={68} y={128} width={58} label="NOTES" />
+      <CostTag x={246} y={132} label="PLAN" />
+      <path d="M116 136l26 6M218 136l24 5" stroke={palette.ink} strokeWidth="3" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }
@@ -174,19 +239,13 @@ export function HomepageHeroIllustration({ className, title }: IllustrationProps
 export function MedicareHelpIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={42} y={54} width={114} height={128} accent={palette.blue} />
-      <CheckMark x={60} y={119} />
-      <CheckMark x={60} y={136} />
-      <CheckMark x={60} y={153} />
-      <rect x="188" y="72" width="66" height="90" rx="16" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="206" y="88" width="30" height="12" rx="6" fill={palette.teal} />
-      <circle cx="278" cy="102" r="24" fill={palette.amberLight} stroke={palette.amber} strokeWidth="2" />
-      <circle cx="278" cy="102" r="10" fill={palette.white} stroke={palette.blue} strokeWidth="2.5" />
-      <path d="M286 111l12 12" stroke={palette.blue} strokeWidth="5" strokeLinecap="round" />
-      <rect x="200" y="126" width="106" height="42" rx="14" fill={palette.tealLight} stroke={palette.teal} strokeWidth="2" />
-      <path d="M214 146h38M214 160h26" stroke={palette.ink} strokeWidth="3.5" strokeLinecap="round" />
-      <CheckMark x={268} y={150} color={palette.teal} />
+      <SoftScene />
+      <DocumentCard x={62} y={68} width={112} height={112} accent={palette.navy} fill={palette.cream} />
+      <CheckMark x={82} y={120} />
+      <CheckMark x={82} y={138} />
+      <CheckMark x={82} y={156} />
+      <PhoneCard x={214} y={74} />
+      <BadgeCard x={212} y={168} width={88} label="GUIDE" />
     </IllustrationSvg>
   );
 }
@@ -194,13 +253,11 @@ export function MedicareHelpIllustration({ className, title }: IllustrationProps
 export function TeamTrustIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Avatar x={52} y={88} tone={palette.blue} accent={palette.skyLight} />
-      <Avatar x={134} y={74} tone={palette.teal} accent={palette.greenLight} scale={1.05} />
-      <Avatar x={220} y={88} tone={palette.blueDark} accent={palette.amberLight} />
-      <ShieldCheck x={248} y={42} scale={1.15} />
-      <MapPin x={36} y={40} scale={1.05} />
-      <path d="M82 170c32-26 86-26 122 0" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" opacity="0.35" />
+      <SoftScene />
+      <PersonFigure x={84} y={112} shirt={palette.blueLight} hair={palette.beigeDark} />
+      <PersonFigure x={180} y={100} shirt={palette.cream} hair={palette.muted} scale={1.05} />
+      <PersonFigure x={276} y={112} shirt={palette.greenLight} hair={palette.beigeDark} />
+      <BadgeCard x={140} y={150} width={80} label="LOCAL" />
     </IllustrationSvg>
   );
 }
@@ -208,16 +265,13 @@ export function TeamTrustIllustration({ className, title }: IllustrationProps) {
 export function ContactOfficeIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <rect x="44" y="70" width="132" height="102" rx="20" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="62" y="52" width="96" height="28" rx="14" fill={palette.blue} />
-      <MapPin x={74} y={92} scale={0.92} fill={palette.greenLight} />
-      <path d="M118 108h36M118 124h28" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <rect x="204" y="92" width="106" height="72" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <path d="M224 116c10-16 22-15 30 0" stroke={palette.teal} strokeWidth="5" strokeLinecap="round" />
-      <path d="M258 116h28M258 132h18" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="292" cy="76" r="16" fill={palette.greenLight} />
-      <CheckMark x={286} y={76} color={palette.teal} />
+      <SoftScene />
+      <rect x="54" y="88" width="122" height="86" rx="18" fill={palette.cream} stroke={palette.beigeDark} strokeWidth="2" />
+      <rect x="72" y="70" width="86" height="24" rx="12" fill={palette.blueLight} />
+      <path d="M88 174v-30h54v30M100 144v-18h30v18" stroke={palette.navy} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <MapPin x={210} y={72} />
+      <PhoneCard x={264} y={86} />
+      <BadgeCard x={194} y={162} width={92} label="VISIT" />
     </IllustrationSvg>
   );
 }
@@ -225,14 +279,11 @@ export function ContactOfficeIllustration({ className, title }: IllustrationProp
 export function LocalSpokaneIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <path d="M44 160h38l16-26 20 18 22-34 22 30 16-20 20 32h40" stroke={palette.blue} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
-      <path d="M48 178c36-8 72-8 108 0s72 8 108 0" stroke={palette.teal} strokeWidth="6" strokeLinecap="round" opacity="0.5" />
-      <MapPin x={140} y={52} scale={1.05} fill={palette.amberLight} />
-      <rect x="214" y="86" width="88" height="68" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="230" y="100" width="42" height="10" rx="5" fill={palette.blue} />
-      <path d="M230 122h56M230 138h34" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <CheckMark x={266} y={140} color={palette.teal} />
+      <SoftScene />
+      <MapPin x={84} y={74} scale={1.05} />
+      <BadgeCard x={142} y={84} width={92} label="OFFICE" />
+      <PhoneCard x={254} y={74} />
+      <path d="M70 174h214" stroke={palette.beigeDark} strokeWidth="4" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }
@@ -240,12 +291,11 @@ export function LocalSpokaneIllustration({ className, title }: IllustrationProps
 export function TestimonialsIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <SpeechBubble x={48} y={78} width={92} height={52} fill={palette.white} />
-      <SpeechBubble x={134} y={56} width={102} height={58} fill={palette.tealLight} />
-      <SpeechBubble x={228} y={88} width={84} height={50} fill={palette.white} />
-      <StarRow x={102} y={152} />
-      <ShieldCheck x={260} y={138} scale={0.95} />
+      <SoftScene />
+      <DocumentCard x={58} y={92} width={88} height={64} accent={palette.blue} fill={palette.cream} />
+      <DocumentCard x={136} y={74} width={88} height={82} accent={palette.green} fill={palette.white} />
+      <DocumentCard x={214} y={92} width={88} height={64} accent={palette.blue} fill={palette.cream} />
+      <path d="M114 180h132" stroke={palette.beigeDark} strokeWidth="4" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }
@@ -253,17 +303,14 @@ export function TestimonialsIllustration({ className, title }: IllustrationProps
 export function MedicareAdvantageIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={54} y={54} width={116} height={128} accent={palette.blue} />
-      <circle cx="240" cy="88" r="20" fill={palette.tealLight} />
-      <path d="M230 92c6-10 16-16 28-16" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
-      <path d="M228 102c10 4 24 4 34-2" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
-      <rect x="204" y="118" width="40" height="46" rx="12" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="212" y="108" width="24" height="12" rx="6" fill={palette.green} />
-      <path d="M216 136h16" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
-      <rect x="252" y="120" width="58" height="44" rx="14" fill={palette.amberLight} stroke={palette.amber} strokeWidth="2" />
-      <CheckMark x={266} y={144} />
-      <CheckMark x={266} y={158} />
+      <SoftScene />
+      <BadgeCard x={52} y={96} label="HMO" />
+      <BadgeCard x={140} y={78} label="PPO" />
+      <BadgeCard x={228} y={96} label="MAPD" />
+      <path d="M134 124h10M222 124h10" stroke={palette.beigeDark} strokeWidth="3" strokeLinecap="round" />
+      <CheckMark x={78} y={136} />
+      <CheckMark x={166} y={118} />
+      <CheckMark x={254} y={136} />
     </IllustrationSvg>
   );
 }
@@ -271,13 +318,12 @@ export function MedicareAdvantageIllustration({ className, title }: Illustration
 export function MedicareSupplementIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <rect x="66" y="56" width="108" height="122" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="84" y="44" width="72" height="22" rx="11" fill={palette.blue} />
-      <path d="M88 94h62M88 112h56M88 130h38" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="232" cy="116" r="52" fill={palette.greenLight} />
-      <ShieldCheck x={216} y={82} scale={1.4} />
-      <path d="M194 172h76" stroke={palette.teal} strokeWidth="5" strokeLinecap="round" opacity="0.5" />
+      <SoftScene />
+      <DocumentCard x={74} y={74} width={90} height={106} accent={palette.navy} fill={palette.cream} />
+      <BadgeCard x={192} y={90} width={96} label="PLAN G" />
+      <BadgeCard x={192} y={150} width={96} label="PLAN N" />
+      <CheckMark x={226} y={116} />
+      <CheckMark x={226} y={176} />
     </IllustrationSvg>
   );
 }
@@ -285,18 +331,13 @@ export function MedicareSupplementIllustration({ className, title }: Illustratio
 export function PartDIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={44} y={54} width={112} height={126} accent={palette.blue} />
-      <CheckMark x={62} y={119} />
-      <CheckMark x={62} y={136} />
-      <rect x="194" y="70" width="52" height="88" rx="14" fill={palette.teal} />
-      <rect x="202" y="58" width="36" height="18" rx="9" fill={palette.teal} opacity="0.92" stroke={palette.white} strokeWidth="2" />
-      <rect x="206" y="96" width="28" height="24" rx="8" fill={palette.white} opacity="0.95" />
-      <path d="M212 108h16" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
-      <rect x="252" y="118" width="58" height="46" rx="14" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <path d="M264 136h24M264 150h18" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <path d="M286 84h20" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
-      <path d="M296 74v20" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
+      <SoftScene />
+      <DocumentCard x={56} y={72} width={108} height={110} accent={palette.green} fill={palette.cream} />
+      <CheckMark x={76} y={122} />
+      <CheckMark x={76} y={140} />
+      <PillBottle x={198} y={82} />
+      <BadgeCard x={248} y={118} width={76} label="RX" />
+      <CostTag x={236} y={170} label="CARD" />
     </IllustrationSvg>
   );
 }
@@ -304,18 +345,13 @@ export function PartDIllustration({ className, title }: IllustrationProps) {
 export function SupplementalInsuranceIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={122} y={78} width={116} height={100} accent={palette.blue} />
-      <circle cx="92" cy="92" r="24" fill={palette.amberLight} />
-      <path d="M80 92h24" stroke={palette.amber} strokeWidth="4" strokeLinecap="round" />
-      <path d="M84 80c5-4 11-4 16 0" stroke={palette.amber} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="270" cy="92" r="24" fill={palette.skyLight} />
-      <circle cx="270" cy="92" r="10" fill={palette.white} stroke={palette.blue} strokeWidth="3" />
-      <path d="M256 150a16 16 0 0 1 28 0" stroke={palette.teal} strokeWidth="6" strokeLinecap="round" />
-      <rect x="64" y="138" width="44" height="38" rx="12" fill={palette.greenLight} stroke={palette.green} strokeWidth="2" />
-      <path d="M76 156h20" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
-      <path d="M286 148h22" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
-      <path d="M297 137v22" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
+      <SoftScene />
+      <BadgeCard x={58} y={102} width={86} label="DENTAL" />
+      <BadgeCard x={146} y={82} width={86} label="VISION" />
+      <BadgeCard x={234} y={102} width={86} label="EXTRA" />
+      <CheckMark x={84} y={142} />
+      <CheckMark x={172} y={122} />
+      <CheckMark x={260} y={142} />
     </IllustrationSvg>
   );
 }
@@ -323,14 +359,12 @@ export function SupplementalInsuranceIllustration({ className, title }: Illustra
 export function CarrierOptionsIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={44} y={72} width={74} height={96} accent={palette.blue} />
-      <Card x={142} y={58} width={76} height={110} accent={palette.teal} />
-      <Card x={244} y={72} width={74} height={96} accent={palette.green} />
-      <path d="M122 114h18" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
-      <path d="M132 106l10 8-10 8" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M222 114h18" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" />
-      <path d="M230 106l10 8-10 8" stroke={palette.blue} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <SoftScene />
+      <BadgeCard x={54} y={96} width={78} label="A" />
+      <BadgeCard x={141} y={82} width={78} label="B" />
+      <BadgeCard x={228} y={96} width={78} label="C" />
+      <path d="M132 122h9M219 122h9" stroke={palette.beigeDark} strokeWidth="3" strokeLinecap="round" />
+      <path d="M166 160h30M154 176h54" stroke={palette.muted} strokeWidth="3.5" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }
@@ -338,16 +372,12 @@ export function CarrierOptionsIllustration({ className, title }: IllustrationPro
 export function Turning65Illustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <rect x="46" y="52" width="120" height="104" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="46" y="52" width="120" height="30" rx="18" fill={palette.blue} />
-      <path d="M70 42v22M142 42v22" stroke={palette.blueDark} strokeWidth="6" strokeLinecap="round" />
-      <text x="106" y="128" textAnchor="middle" fontSize="44" fontWeight="700" fill={palette.blueDark}>
-        65
-      </text>
-      <Card x={190} y={72} width={96} height={104} accent={palette.green} />
-      <CheckMark x={206} y={120} />
-      <CheckMark x={206} y={138} />
+      <SoftScene />
+      <CalendarCard x={50} y={68} label="BIRTHDAY" number="65" />
+      <DocumentCard x={194} y={82} width={94} height={92} accent={palette.green} fill={palette.cream} />
+      <CheckMark x={212} y={122} />
+      <CheckMark x={212} y={140} />
+      <CheckMark x={212} y={158} />
     </IllustrationSvg>
   );
 }
@@ -355,17 +385,11 @@ export function Turning65Illustration({ className, title }: IllustrationProps) {
 export function WorkingPast65Illustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <rect x="48" y="80" width="58" height="74" rx="14" fill={palette.amberLight} stroke={palette.warmDark} strokeWidth="2" />
-      <path d="M62 80v-12c0-8 6-14 15-14h0c9 0 15 6 15 14v12" stroke={palette.ink} strokeWidth="4" strokeLinecap="round" />
-      <rect x="132" y="52" width="96" height="86" rx="18" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="132" y="52" width="96" height="24" rx="12" fill={palette.blue} />
-      <path d="M150 96h52M150 112h36" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <text x="182" y="140" textAnchor="middle" fontSize="28" fontWeight="700" fill={palette.blueDark}>
-        65
-      </text>
-      <Card x={246} y={96} width={66} height={68} accent={palette.teal} />
-      <CheckMark x={258} y={142} color={palette.teal} />
+      <SoftScene />
+      <CalendarCard x={54} y={78} label="WORK" number="65" />
+      <BadgeCard x={192} y={86} width={104} label="HR NOTE" />
+      <DocumentCard x={204} y={142} width={92} height={48} accent={palette.green} fill={palette.white} />
+      <CheckMark x={222} y={174} />
     </IllustrationSvg>
   );
 }
@@ -373,14 +397,13 @@ export function WorkingPast65Illustration({ className, title }: IllustrationProp
 export function HelpingParentIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Avatar x={46} y={88} tone={palette.blue} accent={palette.skyLight} />
-      <Avatar x={246} y={96} tone={palette.teal} accent={palette.greenLight} scale={0.92} />
-      <rect x="118" y="98" width="124" height="68" rx="16" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <path d="M136 120h70M136 138h48" stroke={palette.muted} strokeWidth="4" strokeLinecap="round" />
-      <path d="M102 132l26 12M232 132l-24 12" stroke={palette.teal} strokeWidth="5" strokeLinecap="round" />
-      <circle cx="180" cy="64" r="17" fill={palette.greenLight} />
-      <CheckMark x={174} y={65} color={palette.teal} />
+      <SoftScene />
+      <PersonFigure x={94} y={108} shirt={palette.blueLight} hair={palette.beigeDark} />
+      <PersonFigure x={246} y={112} shirt={palette.greenLight} hair={palette.muted} />
+      <Desk x={106} y={152} width={148} />
+      <DocumentCard x={144} y={112} width={76} height={50} accent={palette.blue} fill={palette.cream} />
+      <CheckMark x={184} y={145} />
+      <path d="M116 136l26 7M220 136l-22 7" stroke={palette.ink} strokeWidth="3" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }
@@ -388,17 +411,13 @@ export function HelpingParentIllustration({ className, title }: IllustrationProp
 export function AppointmentChecklistIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <path d="M56 84h82l16 16h108v70a18 18 0 0 1-18 18H76a18 18 0 0 1-18-18Z" fill={palette.amberLight} stroke={palette.warmDark} strokeWidth="2" strokeLinejoin="round" />
-      <Card x={88} y={62} width={126} height={102} accent={palette.blue} />
-      <CheckMark x={106} y={111} />
-      <CheckMark x={106} y={128} />
-      <CheckMark x={106} y={145} />
-      <rect x="220" y="108" width="62" height="38" rx="10" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <rect x="230" y="118" width="18" height="12" rx="4" fill={palette.teal} />
-      <path d="M254 120h18M254 130h12" stroke={palette.muted} strokeWidth="3.5" strokeLinecap="round" />
-      <circle cx="258" cy="72" r="16" fill={palette.greenLight} />
-      <path d="M251 72h14M258 65v14" stroke={palette.teal} strokeWidth="4" strokeLinecap="round" />
+      <SoftScene />
+      <FolderPocket x={54} y={72} />
+      <CheckMark x={92} y={112} />
+      <CheckMark x={92} y={130} />
+      <CheckMark x={92} y={148} />
+      <PillBottle x={236} y={102} scale={0.86} />
+      <BadgeCard x={226} y={164} width={82} label="CARD" />
     </IllustrationSvg>
   );
 }
@@ -406,12 +425,15 @@ export function AppointmentChecklistIllustration({ className, title }: Illustrat
 export function AnnualPlanReviewIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={42} y={70} width={74} height={96} accent={palette.blue} />
-      <Card x={142} y={56} width={76} height={110} accent={palette.teal} />
-      <Card x={244} y={70} width={74} height={96} accent={palette.green} />
-      <circle cx="182" cy="44" r="20" fill={palette.amberLight} />
-      <CheckMark x={175} y={45} color={palette.amber} />
+      <SoftScene />
+      <DocumentCard x={132} y={70} width={96} height={118} accent={palette.navy} fill={palette.cream} />
+      <CheckMark x={150} y={118} />
+      <CheckMark x={150} y={136} />
+      <CheckMark x={150} y={154} />
+      <CostTag x={64} y={110} label="RX" />
+      <CostTag x={238} y={110} label="DOC" />
+      <CostTag x={64} y={152} label="COST" />
+      <CostTag x={238} y={152} label="PHARM" />
     </IllustrationSvg>
   );
 }
@@ -419,17 +441,13 @@ export function AnnualPlanReviewIllustration({ className, title }: IllustrationP
 export function CompareOptionsIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Card x={42} y={68} width={78} height={100} accent={palette.blue} />
-      <Card x={142} y={54} width={78} height={114} accent={palette.teal} />
-      <Card x={242} y={68} width={78} height={100} accent={palette.green} />
-      <CheckMark x={66} y={148} />
-      <path d="M170 138h18" stroke={palette.amber} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="198" cy="148" r="9" fill={palette.amberLight} stroke={palette.amber} strokeWidth="2" />
-      <text x="198" y="152" textAnchor="middle" fontSize="14" fontWeight="700" fill={palette.amber}>
-        ?
-      </text>
-      <CheckMark x={268} y={148} />
+      <SoftScene />
+      <BadgeCard x={52} y={98} width={82} label="OPTION 1" />
+      <BadgeCard x={140} y={82} width={82} label="OPTION 2" />
+      <BadgeCard x={228} y={98} width={82} label="OPTION 3" />
+      <CheckMark x={76} y={140} />
+      <CheckMark x={164} y={124} />
+      <CheckMark x={252} y={140} />
     </IllustrationSvg>
   );
 }
@@ -437,17 +455,11 @@ export function CompareOptionsIllustration({ className, title }: IllustrationPro
 export function MedicareConfusionIllustration({ className, title }: IllustrationProps) {
   return (
     <IllustrationSvg className={className} title={title}>
-      <SceneFrame />
-      <Avatar x={56} y={90} tone={palette.blue} accent={palette.skyLight} />
-      <Avatar x={246} y={90} tone={palette.teal} accent={palette.greenLight} />
-      <Card x={128} y={84} width={104} height={84} accent={palette.blue} />
-      <circle cx="90" cy="66" r="14" fill={palette.greenLight} />
-      <text x="90" y="71" textAnchor="middle" fontSize="22" fontWeight="700" fill={palette.teal}>
-        ?
-      </text>
-      <circle cx="270" cy="62" r="14" fill={palette.amberLight} />
-      <CheckMark x={264} y={63} color={palette.amber} />
-      <path d="M120 178h120" stroke={palette.blue} strokeWidth="4" strokeDasharray="8 8" strokeLinecap="round" opacity="0.35" />
+      <SoftScene />
+      <PersonFigure x={92} y={110} shirt={palette.blueLight} hair={palette.beigeDark} />
+      <DocumentCard x={138} y={86} width={84} height={78} accent={palette.green} fill={palette.cream} />
+      <CheckMark x={176} y={128} />
+      <PhoneCard x={236} y={86} />
     </IllustrationSvg>
   );
 }

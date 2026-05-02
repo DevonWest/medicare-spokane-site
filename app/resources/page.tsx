@@ -3,7 +3,6 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
-import { MedicareHelpIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -161,7 +160,6 @@ export default function ResourcesPage() {
           title="Medicare Resource Library"
           subtitle="Browse local Medicare guides, plan comparisons, and trusted Medicare and government links to help you review your options with confidence."
           crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
-          illustration={<MedicareHelpIllustration />}
         />
 
       <section className="bg-white px-4 py-16">

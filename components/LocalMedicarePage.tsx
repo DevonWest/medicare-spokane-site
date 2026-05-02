@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import FAQ from "@/components/FAQ";
 import Disclaimer from "@/components/Disclaimer";
-import { LocalSpokaneIllustration } from "@/components/Illustrations";
 import { getCityBySlug, getLocalMedicarePath } from "@/lib/cities";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -197,9 +196,6 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
             <p className="text-lg leading-relaxed text-gray-700">{city.serviceAreaContext}</p>
           </div>
           <div className="rounded-3xl border border-blue-100 bg-blue-50 p-8 shadow-sm">
-            <div className="mx-auto mb-6 hidden max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm lg:block">
-              <LocalSpokaneIllustration />
-            </div>
             <h2 className="mb-5 text-2xl font-bold text-gray-900">Local details we review</h2>
             <ul className="space-y-4 text-sm leading-relaxed text-gray-700">
               <li>
