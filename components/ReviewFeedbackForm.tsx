@@ -33,6 +33,10 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
     successRef.current?.focus();
   }, [status]);
 
+  function getFormValue(formData: FormData, key: string): string {
+    return String(formData.get(key) ?? "");
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("idle");
@@ -41,10 +45,10 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
 
     const formData = new FormData(event.currentTarget);
     const payload = {
-      fullName: String(formData.get("fullName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      message: String(formData.get("message") ?? ""),
+      fullName: getFormValue(formData, "fullName"),
+      email: getFormValue(formData, "email"),
+      phone: getFormValue(formData, "phone"),
+      message: getFormValue(formData, "message"),
       agentSlug,
       rating,
       sourcePath: typeof window !== "undefined" ? window.location.pathname : "/review/feedback",

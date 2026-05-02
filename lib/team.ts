@@ -11,21 +11,10 @@ export type TeamMember = {
   /** Optional number of years helping Spokane-area Medicare clients. */
   yearsHelping?: number;
   retired?: boolean;
+  reviewable?: boolean;
   active: boolean;
   sortOrder: number;
 };
-
-const REVIEWABLE_TEAM_MEMBER_NAMES = new Set([
-  "Lynn Wold",
-  "Craig Lenhart",
-  "Meg Shumaker",
-  "Rose Records",
-  "Sheryl Manchester",
-  "Devon West",
-  "Denise Chan",
-  "Kristi Wright",
-  "Cathy Franklin",
-]);
 
 function normalizeTeamMemberSlug(value: string): string {
   return value
@@ -53,6 +42,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/lynn-wold.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 1,
   },
   {
@@ -72,6 +62,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/craig-lenhart.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 2,
   },
   {
@@ -91,6 +82,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/meg-shumaker.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 3,
   },
   {
@@ -110,6 +102,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/rose-records.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 4,
   },
   {
@@ -129,6 +122,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/sheryl-manchester.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 5,
   },
   {
@@ -186,6 +180,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/devon-west.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 8,
   },
   {
@@ -206,6 +201,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/denise-chan.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 9,
   },
   {
@@ -226,6 +222,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/kristi-wright.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 10,
   },
   {
@@ -246,6 +243,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/cathy-franklin.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 11,
   },
 ];
@@ -267,7 +265,7 @@ export function getTeamMemberSlug(member: Pick<TeamMember, "name"> | string): st
 }
 
 export function isReviewableTeamMember(member: TeamMember): boolean {
-  return member.active && !member.retired && REVIEWABLE_TEAM_MEMBER_NAMES.has(member.name);
+  return member.active && !member.retired && member.reviewable === true;
 }
 
 export function getActiveReviewableTeamMembers(): TeamMember[] {

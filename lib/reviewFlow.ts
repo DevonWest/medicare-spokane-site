@@ -74,7 +74,7 @@ export function validateReviewFeedbackInput(input: ReviewFeedbackInput): ReviewF
 
   const phoneDigits = normalizePhone(sanitizeReviewString(input.phone));
   if (phoneDigits && (phoneDigits.length < 7 || phoneDigits.length > 15)) {
-    errors.phone = "Phone is invalid.";
+    errors.phone = "Phone must be between 7 and 15 digits.";
   }
 
   if (!isInternalFeedbackRating(input.rating ?? NaN)) {

@@ -98,13 +98,14 @@ export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowM
   const agentName = reviewableMember?.name ?? null;
   const email = normalizeEmail(payload.email);
   const phone = sanitizeReviewString(payload.phone);
+  const phoneNorm = phone ? normalizePhone(phone) : null;
 
   return stripUndefinedDeep({
     fullName: sanitizeReviewString(payload.fullName) ?? "",
     email,
     emailNorm: email,
     phone: phone ?? null,
-    phoneNorm: phone ? normalizePhone(phone) : null,
+    phoneNorm,
     agentSlug,
     agentName,
     rating: payload.rating,
