@@ -15,6 +15,26 @@ export type TeamMember = {
   sortOrder: number;
 };
 
+const REVIEWABLE_TEAM_MEMBER_NAMES = new Set([
+  "Lynn Wold",
+  "Craig Lenhart",
+  "Meg Shumaker",
+  "Rose Records",
+  "Sheryl Manchester",
+  "Devon West",
+  "Denise Chan",
+  "Kristi Wright",
+  "Cathy Franklin",
+]);
+
+function normalizeTeamMemberSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export const teamMembers: TeamMember[] = [
   {
     name: "Lynn Wold",
@@ -240,4 +260,21 @@ export function getActiveTeamMembers(): TeamMember[] {
 /** Returns all public team members, including retired members, sorted by sortOrder. */
 export function getPublicTeamMembers(): TeamMember[] {
   return [...teamMembers].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function getTeamMemberSlug(member: Pick<TeamMember, "name"> | string): string {
+  return normalizeTeamMemberSlug(typeof member === "string" ? member : member.name);
+}
+
+export function isReviewableTeamMember(member: TeamMember): boolean {
+  return member.active && !member.retired && REVIEWABLE_TEAM_MEMBER_NAMES.has(member.name);
+}
+
+export function getActiveReviewableTeamMembers(): TeamMember[] {
+  return getActiveTeamMembers().filter(isReviewableTeamMember);
+}
+
+export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
+  const normalizedSlug = normalizeTeamMemberSlug(slug);
+  return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
 }
