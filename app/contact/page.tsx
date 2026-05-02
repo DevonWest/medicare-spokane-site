@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LeadForm from "@/components/LeadForm";
+import { ContactOfficeIllustration } from "@/components/Illustrations";
 import { siteConfig, telHref } from "@/lib/site";
 
 const directionsHref =
@@ -46,17 +47,19 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="space-y-6">
             <div className="rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-                Visit Our Spokane Office
-              </p>
-              <h2 className="mt-3 text-3xl font-bold text-gray-900">
-                Meet with a licensed local insurance agent in person.
-              </h2>
-              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-700">
-                Our office is located inside the Providence Medical Building in Spokane. You can
-                meet with a licensed insurance agent in person or request help by phone.
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                    Visit Our Spokane Office
+                  </p>
+                  <h2 className="mt-3 text-3xl font-bold text-gray-900">
+                    Meet with a licensed local insurance agent in person.
+                  </h2>
+                  <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-700">
+                    Our office is located inside the Providence Medical Building in Spokane. You can
+                    meet with a licensed insurance agent in person or request help by phone.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
                   href={telHref}
                   className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
@@ -78,6 +81,13 @@ export default function ContactPage() {
                 >
                   Request Help Online
                 </Link>
+                  </div>
+                </div>
+                <div className="hidden lg:block">
+                  <div className="mx-auto max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+                    <ContactOfficeIllustration />
+                  </div>
+                </div>
               </div>
             </div>
 

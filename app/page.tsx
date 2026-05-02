@@ -4,7 +4,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import HomeTestimonials from "@/components/HomeTestimonials";
-import { MedicareConfusionIllustration } from "@/components/Illustrations";
+import { HomepageHeroIllustration, MedicareConfusionIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
@@ -146,6 +146,10 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-8 hidden max-w-sm rounded-3xl border border-white/10 bg-white/10 p-4 shadow-lg backdrop-blur-sm lg:block">
+              <HomepageHeroIllustration />
+            </div>
 
             {/* Team preview row */}
             <div className="mt-8 flex items-center gap-4">

@@ -4,6 +4,7 @@ import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
+import { SupplementalInsuranceIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function SupplementalInsurancePage() {
         title="Supplemental Insurance"
         subtitle="Dental, vision, and hospital indemnity coverage that can complement your Medicare plan."
         crumbs={[{ href: "/", label: "Home" }, { label: "Supplemental Insurance" }]}
+        illustration={<SupplementalInsuranceIllustration />}
       />
 
       <section className="py-14 px-4 bg-white">
