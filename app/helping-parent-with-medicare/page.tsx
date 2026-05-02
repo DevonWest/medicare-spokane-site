@@ -3,6 +3,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import { HelpingParentIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -155,12 +156,17 @@ export default function HelpingParentWithMedicarePage() {
 
       <section className="bg-white px-4 py-16">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Who this page is for</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Support for Spokane-area families trying to make Medicare decisions with more clarity and less
-              stress.
-            </p>
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_0.8fr]">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl font-bold text-gray-900">Who this page is for</h2>
+              <p className="mt-3 text-lg text-gray-600">
+                Support for Spokane-area families trying to make Medicare decisions with more clarity and less
+                stress.
+              </p>
+            </div>
+            <div className="mx-auto w-full max-w-sm rounded-3xl border border-sky-100 bg-sky-50 p-5 shadow-sm">
+              <HelpingParentIllustration className="text-sky-700" />
+            </div>
           </div>
           <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             {audiences.map((item) => (

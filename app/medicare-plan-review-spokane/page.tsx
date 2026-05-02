@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import { PlanReviewIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -202,6 +203,9 @@ export default function MedicarePlanReviewSpokanePage() {
                 </Link>{" "}
                 for a broader overview.
               </p>
+              <div className="mt-6 max-w-sm rounded-3xl border border-white bg-white/90 p-5 shadow-sm">
+                <PlanReviewIllustration className="text-sky-700" />
+              </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {reviewChecklist.map((item) => (

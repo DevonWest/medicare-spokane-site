@@ -4,6 +4,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import HomeTestimonials from "@/components/HomeTestimonials";
+import { MedicareConfusionIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
@@ -222,13 +223,20 @@ export default function HomePage() {
       {/* Helpful resource cards */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
-            Helpful Medicare Guides
-          </h2>
-          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto text-lg">
-            Start with a few of the most helpful Spokane Medicare guides, then explore the full
-            resource library when you are ready.
-          </p>
+          <div className="mx-auto mb-12 grid max-w-5xl items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Helpful Medicare Guides
+              </h2>
+              <p className="text-gray-600 max-w-2xl text-lg lg:max-w-none">
+                Start with a few of the most helpful Spokane Medicare guides, then explore the full
+                resource library when you are ready.
+              </p>
+            </div>
+            <div className="mx-auto max-w-xs rounded-3xl border border-sky-100 bg-sky-50/80 p-4 shadow-sm">
+              <MedicareConfusionIllustration className="text-sky-700" />
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {[
               {
