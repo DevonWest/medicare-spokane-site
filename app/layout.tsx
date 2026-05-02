@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { GoogleTagManager } from "@next/third-parties/google";
 import Header from "@/components/Header";
@@ -82,6 +82,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -95,7 +100,7 @@ export default function RootLayout({
       {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
       <body className="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-[calc(var(--mobile-sticky-cta-offset)-1rem)] md:pb-0">{children}</main>
         <Footer />
         <MobileStickyCTA />
       </body>

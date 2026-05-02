@@ -10,9 +10,35 @@
 :root {
   --background: #ffffff;
   --foreground: #111827;
+  --mobile-header-offset: 4.75rem;
+  --mobile-sticky-cta-offset: calc(env(safe-area-inset-bottom) + 5rem);
+}
+
+html {
+  scroll-padding-top: var(--mobile-header-offset);
+  scroll-padding-bottom: var(--mobile-sticky-cta-offset);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-text-size-adjust: 100%;
+}
+
+.mobile-sticky-cta {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mobile-sticky-cta-offset: 0px;
+  }
+}
+
+@media (max-width: 767px) {
+  body:has(input:focus, textarea:focus, select:focus) .mobile-sticky-cta {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(100% + env(safe-area-inset-bottom)));
+  }
 }

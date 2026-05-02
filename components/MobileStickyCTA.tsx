@@ -3,11 +3,11 @@ import { telHref } from "@/lib/site";
 
 export default function MobileStickyCTA() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm md:hidden print:hidden">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+    <div className="mobile-sticky-cta fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm md:hidden print:hidden">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2.5 px-3 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] pt-2.5">
         <a
           href={telHref}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-700 px-3 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-blue-800"
           aria-label="Call Health Insurance Options"
         >
           <svg
@@ -29,7 +29,7 @@ export default function MobileStickyCTA() {
         </a>
         <Link
           href="/contact"
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 bg-white px-4 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 bg-white px-3 py-3 text-[15px] font-semibold text-blue-700 transition-colors hover:bg-blue-50"
           aria-label="Request Help with Medicare"
         >
           Request Help

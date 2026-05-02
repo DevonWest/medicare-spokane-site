@@ -67,23 +67,23 @@ export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-20 md:py-24 px-4">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-14 text-white sm:py-16 md:py-24">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-12">
           <div>
-            <p className="inline-block bg-blue-900/40 border border-blue-400/50 text-blue-100 text-xs font-semibold uppercase tracking-wider rounded-full px-3 py-1 mb-5">
+            <p className="mb-4 inline-block rounded-full border border-blue-400/50 bg-blue-900/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-100">
               Licensed Independent Insurance Agency · Spokane, WA
             </p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-5">
+            <h1 className="mb-4 text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl lg:text-6xl">
               Medicare Help for Spokane Residents
             </h1>
-            <p className="text-lg md:text-xl text-blue-50 mb-8 leading-relaxed">
+            <p className="mb-6 text-lg leading-relaxed text-blue-50 md:text-xl">
               Work with local licensed agents who guide you through your Medicare options with
               clarity and confidence.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <a
                 href={telHref}
-                className="inline-flex items-center justify-center gap-2 bg-white text-blue-800 font-bold px-7 py-3 rounded-lg hover:bg-blue-50 transition-colors text-lg shadow-md"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-bold text-blue-800 shadow-md transition-colors hover:bg-blue-50 sm:px-7 sm:text-lg"
                 aria-label={`Call Now (${siteConfig.phone})`}
               >
                 <svg
@@ -105,13 +105,13 @@ export default function HomePage() {
               </a>
               <Link
                 href="/contact"
-                className="inline-flex items-center justify-center bg-blue-900 hover:bg-blue-950 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-lg border border-blue-400"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-400 bg-blue-900 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-950 sm:px-7 sm:text-lg"
               >
                 Request Help
               </Link>
             </div>
 
-            <p className="mt-5 flex items-center gap-3 text-base font-semibold text-blue-50">
+            <p className="mt-4 flex items-center gap-3 text-sm font-semibold text-blue-50 sm:text-base">
               <span className="tracking-[0.2em] text-amber-300" aria-hidden="true">
                 ★★★★★
               </span>
@@ -119,7 +119,7 @@ export default function HomePage() {
             </p>
 
             {/* Trust bullets */}
-            <ul className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <ul className="mt-5 grid grid-cols-1 gap-2.5 text-sm sm:mt-6 sm:grid-cols-3 sm:gap-3">
               {trustBullets.map((bullet) => (
                 <li
                   key={bullet}
@@ -147,17 +147,17 @@ export default function HomePage() {
               ))}
             </ul>
 
-            <div className="mt-8 hidden max-w-sm rounded-3xl border border-white/10 bg-white/10 p-4 shadow-lg backdrop-blur-sm lg:block">
+            <div className="mt-6 hidden max-w-sm rounded-3xl border border-white/10 bg-white/10 p-4 shadow-lg backdrop-blur-sm lg:block">
               <HomepageHeroIllustration />
             </div>
 
             {/* Team preview row */}
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex -space-x-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex shrink-0 -space-x-3">
                 {heroFaces.map((m) => (
                   <div
                     key={m.name}
-                    className="h-12 w-12 rounded-full ring-2 ring-white overflow-hidden bg-blue-100"
+                    className="h-10 w-10 overflow-hidden rounded-full bg-blue-100 ring-2 ring-white sm:h-12 sm:w-12"
                   >
                     {m.image ? (
                       <Image
@@ -179,11 +179,11 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <div className="text-sm text-blue-50">
+              <div className="min-w-0 flex-1 text-sm leading-6 text-blue-50">
                 <p className="font-semibold text-white">Meet your local team</p>
                 <Link
                   href="/our-team"
-                  className="underline-offset-2 hover:underline text-blue-100"
+                  className="inline break-words text-blue-100 underline-offset-2 hover:underline"
                 >
                   Helping Spokane-area residents navigate Medicare year-round →
                 </Link>
