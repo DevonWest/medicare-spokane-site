@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { telHref } from "@/lib/site";
 import {
   getReviewRatingLabel,
@@ -19,6 +20,7 @@ interface ReviewFeedbackFormProps {
 }
 
 export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: ReviewFeedbackFormProps) {
+  const pathname = usePathname();
   const successRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -52,7 +54,7 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
       message: getFormValue(formData, "message"),
       agentSlug,
       rating,
-      sourcePath: typeof window !== "undefined" ? window.location.pathname : REVIEW_FEEDBACK_SOURCE_PATH,
+      sourcePath: pathname || REVIEW_FEEDBACK_SOURCE_PATH,
     };
 
     const validation = validateReviewFeedbackInput(payload);
@@ -72,7 +74,7 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          name: payload.fullName,
+          fullName: payload.fullName,
           email: payload.email,
           phone: payload.phone || undefined,
           agentSlug: payload.agentSlug,

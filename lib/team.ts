@@ -1,3 +1,5 @@
+import { sanitizeReviewSlug } from "./reviewFlow";
+
 export type TeamMember = {
   name: string;
   title: string;
@@ -15,14 +17,6 @@ export type TeamMember = {
   active: boolean;
   sortOrder: number;
 };
-
-function normalizeTeamMemberSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export const teamMembers: TeamMember[] = [
   {
@@ -261,7 +255,7 @@ export function getPublicTeamMembers(): TeamMember[] {
 }
 
 export function getTeamMemberSlug(member: Pick<TeamMember, "name"> | string): string {
-  return normalizeTeamMemberSlug(typeof member === "string" ? member : member.name);
+  return sanitizeReviewSlug(typeof member === "string" ? member : member.name) ?? "";
 }
 
 export function isReviewableTeamMember(member: TeamMember): boolean {
@@ -273,6 +267,6 @@ export function getActiveReviewableTeamMembers(): TeamMember[] {
 }
 
 export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
-  const normalizedSlug = normalizeTeamMemberSlug(slug);
+  const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
   return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
 }

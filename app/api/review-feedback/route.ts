@@ -34,7 +34,7 @@ export async function handleReviewFeedbackPost(
   }
 
   const payload = {
-    fullName: sanitizeReviewString(clip(body.name ?? body.fullName, 200)) ?? "",
+    fullName: sanitizeReviewString(clip(body.fullName, 200)) ?? "",
     email: sanitizeReviewString(clip(body.email, 200)) ?? "",
     phone: sanitizeReviewString(clip(body.phone, 50)),
     agentSlug: sanitizeReviewSlug(clip(body.agentSlug, 100)),

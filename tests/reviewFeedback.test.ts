@@ -36,7 +36,7 @@ function makeRequest(body: Record<string, unknown>): Request {
 
 function makeValidPayload() {
   return {
-    name: "Jane Doe",
+    fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "509-555-0100",
     agentSlug: "kristi-wright",
