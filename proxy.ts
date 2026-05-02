@@ -5,37 +5,32 @@ import { getLegacyRedirectDestination } from "@/lib/legacyRedirects";
 const apexHostname = "medicareinspokane.com";
 const canonicalHostname = "www.medicareinspokane.com";
 
-function normalizeHostname(hostname: string | null): string | null {
-  if (!hostname) {
+function getRequestHostCandidate(hostHeader: string | null): string | null {
+  if (!hostHeader) {
     return null;
   }
 
-  const candidate = hostname.split(",")[0]?.trim();
+  const candidate = hostHeader.split(",")[0]?.trim().toLowerCase();
 
-  if (!candidate) {
-    return null;
-  }
-
-  try {
-    return new URL(`http://${candidate}`).hostname.toLowerCase();
-  } catch {
-    return candidate.replace(/:\d+$/, "").toLowerCase();
-  }
+  return candidate || null;
 }
 
-function getRequestHostname(request: NextRequest): string {
+function getRequestHost(request: NextRequest): string {
   return (
-    normalizeHostname(request.headers.get("x-forwarded-host")) ??
-    normalizeHostname(request.headers.get("host")) ??
-    request.nextUrl.hostname
+    getRequestHostCandidate(request.headers.get("x-forwarded-host")) ??
+    getRequestHostCandidate(request.headers.get("host")) ??
+    request.nextUrl.host.toLowerCase()
   );
 }
 
 export function proxy(request: NextRequest) {
-  if (getRequestHostname(request) === apexHostname) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.protocol = "https";
+  const requestHost = getRequestHost(request);
+
+  if (requestHost === apexHostname || requestHost === `${apexHostname}:8080`) {
+    const redirectUrl = new URL(request.url);
+    redirectUrl.protocol = "https:";
     redirectUrl.hostname = canonicalHostname;
+    redirectUrl.port = "";
 
     return NextResponse.redirect(redirectUrl, 301);
   }
