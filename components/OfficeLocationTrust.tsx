@@ -61,7 +61,7 @@ export default function OfficeLocationTrust() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/request-contact"
+                  href="/contact"
                   className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
                 >
                   Schedule an In-Person Meeting
