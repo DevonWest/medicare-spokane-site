@@ -74,7 +74,7 @@ function PersonFigure({
   scale?: number;
 }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+    <g transform={`translate(${x} ${y}) scale(${scale})`} aria-hidden="true">
       <circle cx="0" cy="0" r="16" fill={palette.beige} stroke={palette.ink} strokeWidth="2.5" />
       <path d="M-12-5c2-10 20-10 24 0" stroke={hair} strokeWidth="6" strokeLinecap="round" />
       <path d="M-18 42c3-16 15-24 18-24s15 8 18 24" fill={shirt} stroke={palette.ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -147,11 +147,11 @@ function CalendarCard({ x, y, label, number }: { x: number; y: number; label?: s
       <rect x={x} y={y} width="112" height="28" rx="18" fill={palette.blueLight} />
       <path d={`M${x + 24} ${y - 8}v20M${x + 88} ${y - 8}v20`} stroke={palette.navy} strokeWidth="4" strokeLinecap="round" />
       {label ? (
-        <text x={x + 56} y={y + 18} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy}>
+        <text x={x + 56} y={y + 18} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy} aria-hidden="true">
           {label}
         </text>
       ) : null}
-      <text x={x + 56} y={y + 68} textAnchor="middle" fontSize="38" fontWeight="700" fill={palette.navy}>
+      <text x={x + 56} y={y + 68} textAnchor="middle" fontSize="38" fontWeight="700" fill={palette.navy} aria-hidden="true">
         {number}
       </text>
     </g>
@@ -187,7 +187,7 @@ function BadgeCard({ x, y, width = 82, label = "PLAN" }: { x: number; y: number;
     <g>
       <rect x={x} y={y} width={width} height="54" rx="14" fill={palette.white} stroke={palette.line} strokeWidth="2" />
       <rect x={x + 10} y={y + 10} width="34" height="8" rx="4" fill={palette.blue} />
-      <text x={x + 10} y={y + 36} fontSize="10" fontWeight="700" fill={palette.navy}>
+      <text x={x + 10} y={y + 36} fontSize="10" fontWeight="700" fill={palette.navy} aria-hidden="true">
         {label}
       </text>
     </g>
@@ -213,7 +213,7 @@ function CostTag({ x, y, label }: { x: number; y: number; label: string }) {
   return (
     <g>
       <rect x={x} y={y} width="54" height="34" rx="12" fill={palette.white} stroke={palette.line} strokeWidth="2" />
-      <text x={x + 27} y={y + 21} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy}>
+      <text x={x + 27} y={y + 21} textAnchor="middle" fontSize="11" fontWeight="700" fill={palette.navy} aria-hidden="true">
         {label}
       </text>
     </g>
