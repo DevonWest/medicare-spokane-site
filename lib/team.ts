@@ -1,3 +1,5 @@
+import { sanitizeReviewSlug } from "./reviewFlow";
+
 export type TeamMember = {
   name: string;
   title: string;
@@ -11,6 +13,7 @@ export type TeamMember = {
   /** Optional number of years helping Spokane-area Medicare clients. */
   yearsHelping?: number;
   retired?: boolean;
+  reviewable?: boolean;
   active: boolean;
   sortOrder: number;
 };
@@ -33,6 +36,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/lynn-wold.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 1,
   },
   {
@@ -52,6 +56,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/craig-lenhart.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 2,
   },
   {
@@ -71,6 +76,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/meg-shumaker.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 3,
   },
   {
@@ -90,6 +96,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/rose-records.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 4,
   },
   {
@@ -109,6 +116,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/sheryl-manchester.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 5,
   },
   {
@@ -166,6 +174,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/devon-west.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 8,
   },
   {
@@ -186,6 +195,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/denise-chan.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 9,
   },
   {
@@ -206,6 +216,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/kristi-wright.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 10,
   },
   {
@@ -226,6 +237,7 @@ export const teamMembers: TeamMember[] = [
     email: "info@medicareinspokane.com",
     image: "/team/cathy-franklin.jpg",
     active: true,
+    reviewable: true,
     sortOrder: 11,
   },
 ];
@@ -240,4 +252,21 @@ export function getActiveTeamMembers(): TeamMember[] {
 /** Returns all public team members, including retired members, sorted by sortOrder. */
 export function getPublicTeamMembers(): TeamMember[] {
   return [...teamMembers].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function getTeamMemberSlug(member: Pick<TeamMember, "name"> | string): string {
+  return sanitizeReviewSlug(typeof member === "string" ? member : member.name) ?? "";
+}
+
+export function isReviewableTeamMember(member: TeamMember): boolean {
+  return member.active && !member.retired && member.reviewable === true;
+}
+
+export function getActiveReviewableTeamMembers(): TeamMember[] {
+  return getActiveTeamMembers().filter(isReviewableTeamMember);
+}
+
+export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
+  const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
+  return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
 }
