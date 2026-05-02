@@ -68,7 +68,7 @@ test("proxy permanently redirects apex host to canonical www with path and query
   );
 });
 
-test("proxy removes port 8080 when redirecting the apex host to canonical www", () => {
+test("proxy redirects apex host with port 8080 to canonical www without any port", () => {
   const response = proxy(new NextRequest("https://medicareinspokane.com:8080/contact?x=1"));
 
   assert.equal(response.status, 301);
@@ -80,6 +80,19 @@ test("proxy uses forwarded apex host when deciding the canonical redirect", () =
     new NextRequest("https://medicare-spokane-site-12345-uc.a.run.app/contact?x=1", {
       headers: {
         "x-forwarded-host": "medicareinspokane.com",
+      },
+    }),
+  );
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/contact?x=1");
+});
+
+test("proxy uses forwarded apex host with port 8080 when deciding the canonical redirect", () => {
+  const response = proxy(
+    new NextRequest("https://medicare-spokane-site-12345-uc.a.run.app/contact?x=1", {
+      headers: {
+        "x-forwarded-host": "medicareinspokane.com:8080",
       },
     }),
   );
