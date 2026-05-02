@@ -1,0 +1,55 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { NextRequest } from "next/server";
+import sitemap from "../app/sitemap";
+import { getLegacyRedirectDestination, legacyRedirects } from "../lib/legacyRedirects";
+import { siteConfig } from "../lib/site";
+import { proxy } from "../proxy";
+
+test("legacy redirect map includes required permanent destinations", () => {
+  assert.deepEqual(legacyRedirects, {
+    "/about": "/our-team",
+    "/lynn-wold": "/our-team",
+    "/craig-lenhart": "/our-team",
+    "/meg-shumaker": "/our-team",
+    "/rose-records": "/our-team",
+    "/sheryl-manchester": "/our-team",
+    "/karen-christensen": "/our-team",
+    "/karen-speerstra": "/our-team",
+    "/medicare-supplement-insurance-plans": "/medicare-supplements",
+    "/medicare-part-d-prescription-plans": "/medicare-part-d",
+    "/rx-drug-lookup": "/rx-drug-review",
+    "/rx-drug-lookup-form": "/rx-drug-review",
+    "/request-a-quote": "/contact",
+    "/request-contact": "/contact",
+    "/7-things-to-know-about-working-past-65": "/working-past-65-medicare",
+  });
+});
+
+test("legacy redirect lookup returns canonical destinations", () => {
+  assert.equal(getLegacyRedirectDestination("/rx-drug-lookup"), "/rx-drug-review");
+  assert.equal(getLegacyRedirectDestination("/request-a-quote"), "/contact");
+  assert.equal(getLegacyRedirectDestination("/about"), "/our-team");
+  assert.equal(getLegacyRedirectDestination("/does-not-exist"), null);
+});
+
+test("proxy returns 301 redirects for legacy URLs", () => {
+  const response = proxy(new NextRequest("https://example.com/request-a-quote?source=google"));
+
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "https://example.com/contact?source=google");
+});
+
+test("sitemap only includes canonical request, team, and prescription URLs", () => {
+  const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
+
+  assert.ok(sitemapUrls.has(`${siteConfig.url}/contact`));
+  assert.ok(sitemapUrls.has(`${siteConfig.url}/our-team`));
+  assert.ok(sitemapUrls.has(`${siteConfig.url}/rx-drug-review`));
+
+  assert.equal(sitemapUrls.has(`${siteConfig.url}/about`), false);
+  assert.equal(sitemapUrls.has(`${siteConfig.url}/request-contact`), false);
+  assert.equal(sitemapUrls.has(`${siteConfig.url}/request-a-quote`), false);
+  assert.equal(sitemapUrls.has(`${siteConfig.url}/rx-drug-lookup`), false);
+  assert.equal(sitemapUrls.has(`${siteConfig.url}/rx-drug-lookup-form`), false);
+});
