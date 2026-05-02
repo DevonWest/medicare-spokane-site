@@ -76,7 +76,7 @@ export default function ProcessSection() {
             Call {siteConfig.phone}
           </a>
           <Link
-            href="/request-contact"
+            href="/contact"
             className="inline-flex items-center justify-center bg-white text-blue-700 border-2 border-blue-700 hover:bg-blue-50 font-semibold px-7 py-3 rounded-lg transition-colors text-base"
           >
             Get Help Choosing

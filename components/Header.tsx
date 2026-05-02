@@ -143,7 +143,7 @@ export default function Header() {
               Call {siteConfig.phone}
             </a>
             <Link
-              href="/request-contact"
+              href="/contact"
               className="flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 text-base font-semibold text-white transition-colors hover:bg-blue-800"
               onClick={() => setIsMobileMenuOpen(false)}
             >

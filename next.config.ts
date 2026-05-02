@@ -22,34 +22,6 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  async redirects() {
-    return [
-      { source: "/lynn-wold", destination: "/our-team", permanent: true },
-      { source: "/craig-lenhart", destination: "/our-team", permanent: true },
-      { source: "/meg-shumaker", destination: "/our-team", permanent: true },
-      { source: "/rose-records", destination: "/our-team", permanent: true },
-      { source: "/sheryl-manchester", destination: "/our-team", permanent: true },
-      { source: "/karen-christensen", destination: "/our-team", permanent: true },
-      { source: "/karen-speerstra", destination: "/our-team", permanent: true },
-      {
-        source: "/medicare-supplement-insurance-plans",
-        destination: "/medicare-supplements",
-        permanent: true,
-      },
-      {
-        source: "/medicare-part-d-prescription-plans",
-        destination: "/medicare-part-d",
-        permanent: true,
-      },
-      { source: "/rx-drug-lookup-form", destination: "/rx-drug-review", permanent: true },
-      { source: "/request-contact", destination: "/contact", permanent: true },
-      {
-        source: "/7-things-to-know-about-working-past-65",
-        destination: "/working-past-65-medicare",
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {

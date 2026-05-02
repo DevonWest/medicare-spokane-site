@@ -29,7 +29,7 @@ const aboutLinks: Array<{ href: string; label: string }> = [
   { href: "/our-team", label: "Our Team" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/contact", label: "Contact" },
-  { href: "/request-contact", label: "Request a Call" },
+  { href: "/contact", label: "Request a Call" },
 ];
 
 export default function Footer() {

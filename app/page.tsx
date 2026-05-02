@@ -103,7 +103,7 @@ export default function HomePage() {
                 Call Now ({siteConfig.phone})
               </a>
               <Link
-                href="/request-contact"
+                href="/contact"
                 className="inline-flex items-center justify-center bg-blue-900 hover:bg-blue-950 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-lg border border-blue-400"
               >
                 Request Help
@@ -210,7 +210,7 @@ export default function HomePage() {
               Call {siteConfig.phone}
             </a>
             <Link
-              href="/request-contact"
+              href="/contact"
               className="inline-flex items-center justify-center bg-white text-blue-700 border border-blue-300 hover:border-blue-500 font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm"
             >
               Request a Consultation
@@ -307,7 +307,7 @@ export default function HomePage() {
               Call {siteConfig.phone}
             </a>
             <Link
-              href="/request-contact"
+              href="/contact"
               className="inline-flex items-center justify-center bg-white text-blue-700 border-2 border-blue-700 hover:bg-blue-50 font-semibold px-7 py-3 rounded-lg transition-colors text-base"
             >
               Compare Plans

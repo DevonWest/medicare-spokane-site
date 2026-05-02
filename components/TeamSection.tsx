@@ -80,7 +80,7 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
 
                 <div className="mt-5 flex flex-col gap-2">
                   <Link
-                    href="/request-contact"
+                    href="/contact"
                     className="inline-flex min-h-11 items-center justify-center bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-3 rounded-lg transition-colors"
                   >
                     Request a Call

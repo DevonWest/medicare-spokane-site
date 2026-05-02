@@ -103,7 +103,7 @@ export default function EnrollmentResourcesPage() {
             <p>
               {siteConfig.legalName} can help you understand which enrollment period applies to you
               and compare the plans we represent. To get started,{" "}
-              <Link href="/request-contact" className="text-blue-700 underline">
+              <Link href="/contact" className="text-blue-700 underline">
                 request a call back
               </Link>{" "}
               or call us at{" "}
