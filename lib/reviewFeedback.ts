@@ -13,10 +13,11 @@ import {
   type ReviewFeedbackInput,
   validateReviewFeedbackInput,
 } from "./reviewFlow";
+import { siteConfig } from "./site";
 import { getTeamMemberBySlug, getTeamMemberSlug, isReviewableTeamMember } from "./team";
 
 const COLLECTION = process.env.REVIEW_FEEDBACK_COLLECTION?.trim() || "review_feedback";
-const GENERIC_ERROR = "We couldn't submit your feedback. Please call us at 509-353-0476.";
+const GENERIC_ERROR = `We couldn't submit your feedback. Please call us at ${siteConfig.phone}.`;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Object.prototype.toString.call(value) === "[object Object]";

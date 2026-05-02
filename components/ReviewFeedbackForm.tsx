@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { telHref } from "@/lib/site";
+import { siteConfig, telHref } from "@/lib/site";
 import {
   getReviewRatingLabel,
   REVIEW_FEEDBACK_SOURCE_PATH,
@@ -12,6 +12,7 @@ import {
 
 type Status = "idle" | "submitting" | "success" | "error";
 type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "message", string>>;
+const REVIEW_FEEDBACK_ERROR = `We couldn't submit your feedback. Please call us at ${siteConfig.phone}.`;
 
 interface ReviewFeedbackFormProps {
   agentSlug?: string;
@@ -85,7 +86,7 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
       });
     } catch {
       setStatus("error");
-      setErrorMessage("We couldn't submit your feedback. Please call us at 509-353-0476.");
+      setErrorMessage(REVIEW_FEEDBACK_ERROR);
       return;
     }
 
@@ -93,7 +94,7 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
 
     if (!response.ok || !result?.ok) {
       setStatus("error");
-      setErrorMessage(result?.error ?? "We couldn't submit your feedback. Please call us at 509-353-0476.");
+      setErrorMessage(result?.error ?? REVIEW_FEEDBACK_ERROR);
       return;
     }
 
@@ -192,13 +193,13 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
             >
               <h2 className="text-2xl font-bold text-green-950">Thank you — we received your feedback.</h2>
               <p className="mt-3 text-base leading-7 text-slate-800">
-                Our team will review your message. If you need immediate help, call 509-353-0476.
+                Our team will review your message. If you need immediate help, call {siteConfig.phone}.
               </p>
               <a
                 href={telHref}
                 className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"
               >
-                Call 509-353-0476
+                Call {siteConfig.phone}
               </a>
             </div>
           ) : (
