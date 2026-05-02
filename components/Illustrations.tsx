@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 interface IllustrationProps {
   className?: string;
@@ -16,8 +16,6 @@ function IllustrationSvg({
   title,
   viewBox = "0 0 320 220",
 }: IllustrationSvgProps) {
-  const titleId = useId();
-
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -25,10 +23,10 @@ function IllustrationSvg({
       className={["h-auto w-full", className].filter(Boolean).join(" ")}
       role={title ? "img" : undefined}
       aria-hidden={title ? undefined : true}
-      aria-labelledby={title ? titleId : undefined}
+      aria-label={title}
       fill="none"
     >
-      {title ? <title id={titleId}>{title}</title> : null}
+      {title ? <title>{title}</title> : null}
       {children}
     </svg>
   );
