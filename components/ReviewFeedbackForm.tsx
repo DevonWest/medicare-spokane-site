@@ -5,6 +5,7 @@ import Link from "next/link";
 import { telHref } from "@/lib/site";
 import {
   getReviewRatingLabel,
+  REVIEW_FEEDBACK_SOURCE_PATH,
   validateReviewFeedbackInput,
 } from "@/lib/reviewFlow";
 
@@ -51,7 +52,7 @@ export default function ReviewFeedbackForm({ agentSlug, agentName, rating }: Rev
       message: getFormValue(formData, "message"),
       agentSlug,
       rating,
-      sourcePath: typeof window !== "undefined" ? window.location.pathname : "/review/feedback",
+      sourcePath: typeof window !== "undefined" ? window.location.pathname : REVIEW_FEEDBACK_SOURCE_PATH,
     };
 
     const validation = validateReviewFeedbackInput(payload);

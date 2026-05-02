@@ -7,6 +7,7 @@ import { SITE_SOURCE } from "./leadConstants";
 import { getSafeErrorDetails } from "./leadLogging";
 import { normalizeEmail, normalizePhone } from "./leadValidation";
 import {
+  REVIEW_FEEDBACK_SOURCE_PATH,
   sanitizeReviewSlug,
   sanitizeReviewString,
   type ReviewFeedbackInput,
@@ -21,8 +22,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Object.prototype.toString.call(value) === "[object Object]";
 }
 
-function stripUndefinedDeep<T>(value: T): T {
-  if (value === undefined) return undefined as T;
+function stripUndefinedDeep<T>(value: T | undefined): T | undefined {
+  if (value === undefined) return undefined;
   if (Array.isArray(value)) {
     return value
       .filter((item): item is Exclude<typeof item, undefined> => item !== undefined)
@@ -47,6 +48,24 @@ export interface ReviewFeedbackPayload {
   rating: number;
   message: string;
   sourcePath?: string;
+}
+
+export interface ReviewFeedbackDocument {
+  fullName: string;
+  email: string;
+  emailNorm: string;
+  phone: string | null;
+  phoneNorm: string | null;
+  agentSlug: string | null;
+  agentName: string | null;
+  rating: number;
+  message: string;
+  sourcePath: string;
+  submittedAt: Timestamp;
+  submittedAtIso: string;
+  createdAt: ReturnType<typeof FieldValue.serverTimestamp>;
+  status: "new";
+  siteSource: typeof SITE_SOURCE;
 }
 
 export interface ReviewFeedbackResult {
@@ -89,7 +108,7 @@ function sanitizeReviewFeedbackPayload(payload: ReviewFeedbackInput): ReviewFeed
   };
 }
 
-export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowMs: number): Record<string, unknown> {
+export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowMs: number): ReviewFeedbackDocument {
   const resolvedMember = payload.agentSlug ? getTeamMemberBySlug(payload.agentSlug) : undefined;
   const reviewableMember = resolvedMember && isReviewableTeamMember(resolvedMember) ? resolvedMember : undefined;
   const agentSlug = reviewableMember
@@ -110,13 +129,13 @@ export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowM
     agentName,
     rating: payload.rating,
     message: sanitizeReviewString(payload.message) ?? "",
-    sourcePath: sanitizeReviewString(payload.sourcePath) ?? "/review/feedback",
+    sourcePath: sanitizeReviewString(payload.sourcePath) ?? REVIEW_FEEDBACK_SOURCE_PATH,
     submittedAt: Timestamp.fromMillis(nowMs),
     submittedAtIso: new Date(nowMs).toISOString(),
     createdAt: FieldValue.serverTimestamp(),
     status: "new",
     siteSource: SITE_SOURCE,
-  });
+  }) as ReviewFeedbackDocument;
 }
 
 export async function submitReviewFeedbackWithDeps(

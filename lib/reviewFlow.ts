@@ -1,6 +1,7 @@
 import { cleanString, normalizeEmail, normalizePhone } from "./leadValidation";
 
 export const GOOGLE_REVIEW_URL = "https://g.page/r/CWQwLoKlN3KFEBM/review";
+export const REVIEW_FEEDBACK_SOURCE_PATH = "/review/feedback";
 
 const CONTROL_CHAR_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,6 +59,13 @@ export function getReviewValidationErrorMessage(errors: Record<string, string>):
     const error = errors[field];
     if (error) return error;
   }
+
+  if (Object.keys(errors).length > 0) {
+    console.warn("[review-feedback] Unmapped validation error keys.", {
+      errorKeys: Object.keys(errors),
+    });
+  }
+
   return "Please review your feedback and try again.";
 }
 

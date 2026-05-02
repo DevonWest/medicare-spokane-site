@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { submitReviewFeedback, type ReviewFeedbackResult } from "@/lib/reviewFeedback";
-import { getReviewRatingValue, sanitizeReviewSlug, sanitizeReviewString } from "@/lib/reviewFlow";
+import {
+  getReviewRatingValue,
+  REVIEW_FEEDBACK_SOURCE_PATH,
+  sanitizeReviewSlug,
+  sanitizeReviewString,
+} from "@/lib/reviewFlow";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +40,7 @@ export async function handleReviewFeedbackPost(
     agentSlug: sanitizeReviewSlug(clip(body.agentSlug, 100)),
     rating: getReviewRatingValue(body.rating),
     message: sanitizeReviewString(clip(body.message, 2000)) ?? "",
-    sourcePath: sanitizeReviewString(clip(body.sourcePath, 500)) ?? "/review/feedback",
+    sourcePath: sanitizeReviewString(clip(body.sourcePath, 500)) ?? REVIEW_FEEDBACK_SOURCE_PATH,
   };
 
   const result = await (deps.submitReviewFeedback ?? submitReviewFeedback)(payload);
