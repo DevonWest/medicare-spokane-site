@@ -24,19 +24,19 @@ export default function ContactPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 px-4">
+      <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 landscape-mobile:py-5 px-4">
         <div className="max-w-5xl mx-auto">
-          <nav aria-label="Breadcrumb" className="text-blue-200 text-sm mb-4">
+          <nav aria-label="Breadcrumb" className="text-blue-200 text-sm mb-4 landscape-mobile:mb-2">
             <Link href="/" className="hover:text-white">
               Home
             </Link>
             <span className="mx-2">/</span>
             <span>Contact</span>
           </nav>
-          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
+          <h1 className="text-4xl landscape-mobile:text-2xl landscape-mobile:leading-snug md:text-5xl font-extrabold leading-tight mb-4 landscape-mobile:mb-2">
             Contact Us
           </h1>
-          <p className="text-xl text-blue-100 max-w-2xl">
+          <p className="text-xl landscape-mobile:text-base text-blue-100 max-w-2xl">
             Talk to a licensed independent Medicare agent serving Spokane, Spokane Valley, Liberty Lake, Cheney, Airway
             Heights, Medical Lake, Mead, Deer Park, and the surrounding Eastern Washington area.
           </p>

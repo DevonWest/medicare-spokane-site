@@ -15,7 +15,7 @@ const primaryNav: Array<{ href: string; label: string }> = [
 
 const mobileMenuId = "primary-mobile-menu";
 const headerRowClassName =
-  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 lg:flex lg:h-16 lg:items-center lg:justify-between lg:gap-4 lg:py-0";
+  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 landscape-mobile:py-1 landscape-mobile:gap-y-1 lg:flex lg:h-16 lg:items-center lg:justify-between lg:gap-4 lg:py-0";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function Header() {
               height={216}
               priority
               sizes="(min-width: 1280px) 336px, (min-width: 1024px) 320px, (min-width: 640px) 250px, 230px"
-              className="h-auto w-[230px] object-contain sm:w-[250px] lg:w-[320px] xl:w-[336px]"
+              className="h-auto w-[230px] object-contain sm:w-[250px] landscape-mobile:w-[160px] lg:w-[320px] xl:w-[336px]"
             />
           </Link>
 
@@ -60,7 +60,7 @@ export default function Header() {
 
           <a
             href={telHref}
-            className="inline-flex h-11 items-center justify-center gap-2 justify-self-end rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
+            className="inline-flex h-11 landscape-mobile:h-8 items-center justify-center gap-2 justify-self-end rounded-lg bg-blue-700 px-4 landscape-mobile:px-2 text-sm landscape-mobile:text-xs font-semibold text-white transition-colors hover:bg-blue-800"
             aria-label={`Call ${siteConfig.phone}`}
           >
             <svg
@@ -84,7 +84,7 @@ export default function Header() {
 
           <button
             type="button"
-            className="inline-flex h-11 items-center justify-center gap-2 justify-self-end rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50 lg:hidden"
+            className="inline-flex h-11 landscape-mobile:h-8 items-center justify-center gap-2 justify-self-end rounded-lg border border-gray-300 px-4 landscape-mobile:px-2 text-sm landscape-mobile:text-xs font-semibold text-gray-900 transition-colors hover:bg-gray-50 lg:hidden"
             aria-expanded={isMobileMenuOpen}
             aria-controls={mobileMenuId}
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
