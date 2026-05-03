@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import { buildLeadFormFields, buildLeadRequestPayload } from "@/lib/leadPayload";
 import { submitLeadRequest } from "@/lib/leadSubmissionClient";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
@@ -118,6 +119,9 @@ export default function LeadForm({
           role="status"
           aria-live="polite"
         >
+          <div className="mb-5 hidden overflow-hidden rounded-2xl border border-white/80 bg-white p-4 shadow-sm sm:block">
+            <FriendlyIllustration name="requestConfirmation" />
+          </div>
           <h3 className="mb-3 text-2xl font-semibold text-green-950">Thank you — we received your request.</h3>
           <p className="text-base leading-7 text-slate-800">
             A licensed local Medicare agent will review your information and contact you soon. We typically respond the

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
-import { AppointmentChecklistIllustration } from "@/components/Illustrations";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -187,9 +186,6 @@ export default function MedicareAppointmentChecklistPage() {
           </div>
 
           <aside className="rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm sm:p-8">
-            <div className="mx-auto mb-6 hidden max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm md:block">
-              <AppointmentChecklistIllustration className="text-sky-700" />
-            </div>
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">Local Spokane support</p>
             <h2 className="mt-3 text-3xl font-bold text-gray-900">In-person or phone appointments</h2>
             <div className="mt-4 space-y-4 text-lg leading-relaxed text-gray-700">

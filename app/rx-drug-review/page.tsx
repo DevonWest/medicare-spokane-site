@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
-import { PartDIllustration } from "@/components/Illustrations";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -113,7 +113,7 @@ export default function RxDrugReviewPage() {
               </p>
             </div>
             <div className="mx-auto hidden w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm md:block">
-              <PartDIllustration />
+              <FriendlyIllustration name="prescriptionReview" />
             </div>
           </div>
 

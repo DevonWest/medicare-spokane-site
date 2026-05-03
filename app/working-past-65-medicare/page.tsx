@@ -4,7 +4,6 @@ import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
 import CTASection from "@/components/CTASection";
-import { WorkingPast65Illustration } from "@/components/Illustrations";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -184,9 +183,6 @@ export default function WorkingPastSixtyFivePage() {
           </div>
 
           <aside className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm sm:p-8">
-            <div className="mx-auto mb-6 hidden max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm lg:block">
-              <WorkingPast65Illustration />
-            </div>
             <p className="text-sm font-semibold uppercase tracking-wider text-amber-700">Important note</p>
             <p className="mt-4 text-lg leading-relaxed text-gray-800">
               Employer coverage, HSA rules, and Medicare enrollment timing can be complex. We can help you understand

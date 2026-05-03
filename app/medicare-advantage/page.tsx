@@ -5,7 +5,6 @@ import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
-import { MedicareAdvantageIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -46,7 +45,6 @@ export default function MedicareAdvantagePage() {
         title="Medicare Advantage in Spokane"
         subtitle="Help comparing Medicare Advantage (Part C) options in Spokane County and Eastern Washington."
         crumbs={[{ href: "/", label: "Home" }, { label: "Medicare Advantage" }]}
-        illustration={<MedicareAdvantageIllustration />}
       />
 
       <section className="py-14 px-4 bg-white">

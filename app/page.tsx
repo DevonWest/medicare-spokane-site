@@ -4,7 +4,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import HomeTestimonials from "@/components/HomeTestimonials";
-import { HomepageHeroIllustration } from "@/components/Illustrations";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
@@ -155,7 +155,7 @@ export default function HomePage() {
             </ul>
 
             <div className="mt-6 hidden max-w-sm rounded-3xl border border-white/10 bg-white/10 p-4 shadow-lg backdrop-blur-sm lg:block">
-              <HomepageHeroIllustration />
+              <FriendlyIllustration name="homepageGuidance" priority />
             </div>
 
             {/* Team preview row */}
@@ -378,22 +378,29 @@ export default function HomePage() {
 
       {/* RX review band */}
       <section className="py-16 px-4 bg-blue-50 border-y border-blue-100">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-            Bring Your Prescription List
-          </h2>
-           <p className="text-gray-700 leading-relaxed mb-6 text-lg">
-             One of the most useful things we do during a no-cost consultation is review your current
-             prescriptions. We will help you compare how the Medicare Advantage and Part D plans we
-             represent would cover your medications — including tier placement, preferred pharmacies,
-             and estimated annual costs — so you can choose with confidence.
-           </p>
-           <Link
-             href="/rx-drug-review"
-             className="inline-block bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-           >
-             Request a Drug Review
-           </Link>
+        <div className="mx-auto max-w-5xl">
+          <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+            <div className="text-center lg:text-left">
+              <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">
+                Bring Your Prescription List
+              </h2>
+              <p className="mb-6 text-lg leading-relaxed text-gray-700">
+                One of the most useful things we do during a no-cost consultation is review your current
+                prescriptions. We will help you compare how the Medicare Advantage and Part D plans we
+                represent would cover your medications — including tier placement, preferred pharmacies,
+                and estimated annual costs — so you can choose with confidence.
+              </p>
+              <Link
+                href="/rx-drug-review"
+                className="inline-block rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
+              >
+                Request a Drug Review
+              </Link>
+            </div>
+            <div className="mx-auto hidden w-full max-w-sm rounded-3xl border border-blue-100 bg-white p-5 shadow-sm lg:block">
+              <FriendlyIllustration name="prescriptionReview" />
+            </div>
+          </div>
         </div>
       </section>
 

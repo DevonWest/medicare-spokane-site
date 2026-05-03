@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
-import { ContactOfficeIllustration } from "@/components/Illustrations";
 import { siteConfig, telHref } from "@/lib/site";
 
 const directionsHref =
@@ -85,7 +85,7 @@ export default function ContactPage() {
                 </div>
                 <div className="hidden lg:block">
                   <div className="mx-auto max-w-sm rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
-                    <ContactOfficeIllustration />
+                    <FriendlyIllustration name="officeLocation" />
                   </div>
                 </div>
               </div>

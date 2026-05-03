@@ -3,7 +3,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
-import { HelpingParentIllustration } from "@/components/Illustrations";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -165,7 +165,7 @@ export default function HelpingParentWithMedicarePage() {
               </p>
             </div>
             <div className="mx-auto hidden w-full max-w-sm rounded-3xl border border-stone-200 bg-stone-50 p-5 shadow-sm md:block">
-              <HelpingParentIllustration className="text-sky-700" />
+              <FriendlyIllustration name="helpingParent" />
             </div>
           </div>
           <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
