@@ -113,6 +113,11 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
   const zipLabel = city.zipCodes.length > 1 ? "ZIP codes" : "ZIP code";
   const zipLabelLower = city.zipCodes.length > 1 ? "zip codes" : "zip code";
   const leadSource = localLeadSourceByCitySlug[city.slug];
+
+  if (!leadSource) {
+    notFound();
+  }
+
   const faqItems = [
     {
       question: `Can I get help comparing Medicare plans in ${city.name}?`,

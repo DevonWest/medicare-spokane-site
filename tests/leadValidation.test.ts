@@ -125,8 +125,8 @@ test("validateLead rejects missing email and phone", () => {
     zip: "99206",
   });
   assert.equal(r.ok, false);
-  assert.equal(r.errors.email, "Email or phone is required.");
-  assert.equal(r.errors.phone, "Email or phone is required.");
+  assert.equal(r.errors.email, "Provide an email address or phone number.");
+  assert.equal(r.errors.phone, "Provide a phone number or email address.");
 });
 
 test("validateLead accepts a blank ZIP", () => {
@@ -334,26 +334,24 @@ test("buildCrmFormSubmissionPayload normalizes and trims lead fields", () => {
 });
 
 test("buildCrmFormSubmissionPayload derives sourceUrl for root and missing source paths", () => {
-  assert.equal(
-    buildCrmFormSubmissionPayload({
-      fullName: "Jane Doe",
-      email: "jane@example.com",
-      phone: "5095550100",
-      source: "homepage",
-    }).sourceUrl,
-    "https://www.medicareinspokane.com/",
-  );
+  const missingSourcePath = buildCrmFormSubmissionPayload({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "5095550100",
+    source: "",
+  });
+  const rootSourcePath = buildCrmFormSubmissionPayload({
+    fullName: "Jane Doe",
+    email: "jane@example.com",
+    phone: "5095550100",
+    source: "homepage",
+    sourcePath: "/",
+  });
 
-  assert.equal(
-    buildCrmFormSubmissionPayload({
-      fullName: "Jane Doe",
-      email: "jane@example.com",
-      phone: "5095550100",
-      source: "homepage",
-      sourcePath: "/",
-    }).sourceUrl,
-    "https://www.medicareinspokane.com/",
-  );
+  assert.equal(missingSourcePath.sourceUrl, "https://www.medicareinspokane.com/");
+  assert.equal("pageSource" in missingSourcePath, false);
+  assert.equal(rootSourcePath.sourceUrl, "https://www.medicareinspokane.com/");
+  assert.equal(rootSourcePath.pageSource, "homepage");
 });
 
 test("CRM helpers derive URLs and nested ids safely", () => {

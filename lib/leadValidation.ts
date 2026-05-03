@@ -84,8 +84,8 @@ export function validateLead(input: LeadValidationInput): LeadValidationResult {
   const phoneDigits = normalizePhone(input.phone);
 
   if (!email && !phoneDigits) {
-    errors.email = "Email or phone is required.";
-    errors.phone = "Email or phone is required.";
+    errors.email = "Provide an email address or phone number.";
+    errors.phone = "Provide a phone number or email address.";
   } else {
     if (email && (!EMAIL_RE.test(email) || email.length > 200)) {
       errors.email = "Email is invalid.";
