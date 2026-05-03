@@ -1,6 +1,3 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import Image from "next/image";
 import Link from "next/link";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -10,10 +7,6 @@ const officeBullets = [
   "Licensed local insurance agents",
   "No-cost Medicare consultations",
 ];
-
-const hasOfficePhoto = existsSync(
-  join(process.cwd(), "public/images/providence-building.jpg"),
-);
 
 export default function OfficeLocationTrust() {
   return (
@@ -82,82 +75,51 @@ export default function OfficeLocationTrust() {
               </div>
             </div>
 
-            {hasOfficePhoto ? (
-              <div className="relative min-h-[320px] border-t border-slate-200 bg-slate-900 lg:border-t-0 lg:border-l">
-                <Image
-                  src="/images/providence-building.jpg"
-                  alt="Exterior of the Spokane office building at 820 South McClellan"
-                  fill
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/40 to-slate-900/10" />
-                <div className="absolute inset-x-6 bottom-6 rounded-3xl border border-white/10 bg-white/95 p-6 shadow-lg backdrop-blur-sm">
-                  <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                    Visit Our Spokane Office
-                  </p>
-                  <div className="mt-4 space-y-3 text-gray-800">
-                    <p className="text-2xl font-bold text-gray-900">{siteConfig.address.buildingName}</p>
-                    <address className="not-italic text-base leading-relaxed text-gray-700">
-                      {siteConfig.address.streetAddress}
-                      <br />
-                      {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
-                      {siteConfig.address.postalCode}
-                      <br />
-                      <a href={telHref} className="font-semibold text-blue-700 hover:underline">
-                        {siteConfig.phone}
-                      </a>
-                    </address>
-                  </div>
+            <div className="flex items-center justify-center border-t border-slate-200 bg-slate-900 p-8 lg:border-t-0 lg:border-l">
+              {/* TODO: Replace this location card with /public/images/providence-building.jpg when the real office photo is available. */}
+              <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-lg">
+                <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-7 w-7"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 21s6-5.686 6-11a6 6 0 10-12 0c0 5.314 6 11 6 11z"
+                    />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center border-t border-slate-200 bg-slate-900 p-8 lg:border-t-0 lg:border-l">
-                {/* TODO: Replace this location card with /public/images/providence-building.jpg when the real office photo is available. */}
-                <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-lg">
-                  <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="h-7 w-7"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 21s6-5.686 6-11a6 6 0 10-12 0c0 5.314 6 11 6 11z"
-                      />
-                      <circle cx="12" cy="10" r="2.5" />
-                    </svg>
-                  </div>
 
-                  <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                    Visit Our Spokane Office
-                  </p>
-                  <div className="mt-4 space-y-3 text-gray-800">
-                    <p className="text-2xl font-bold text-gray-900">{siteConfig.address.buildingName}</p>
-                    <address className="not-italic text-base leading-relaxed text-gray-700">
-                      {siteConfig.address.streetAddress}
-                      <br />
-                      {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
-                      {siteConfig.address.postalCode}
-                      <br />
-                      <a href={telHref} className="font-semibold text-blue-700 hover:underline">
-                        {siteConfig.phone}
-                      </a>
-                    </address>
-                  </div>
-
-                  <p className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                    Located in the Providence Medical Building for convenient in-person Medicare
-                    consultations in Spokane.
-                  </p>
+                <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                  Visit Our Spokane Office
+                </p>
+                <div className="mt-4 space-y-3 text-gray-800">
+                  <p className="text-2xl font-bold text-gray-900">{siteConfig.address.buildingName}</p>
+                  <address className="not-italic text-base leading-relaxed text-gray-700">
+                    {siteConfig.address.streetAddress}
+                    <br />
+                    {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion}{" "}
+                    {siteConfig.address.postalCode}
+                    <br />
+                    <a href={telHref} className="font-semibold text-blue-700 hover:underline">
+                      {siteConfig.phone}
+                    </a>
+                  </address>
                 </div>
+
+                <p className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                  Located in the Providence Medical Building for convenient in-person Medicare
+                  consultations in Spokane.
+                </p>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import Image from "next/image";
 import Link from "next/link";
 import { getLocalMedicarePath, spokaneAreaCities } from "@/lib/cities";
@@ -27,17 +25,16 @@ const resourceLinks: Array<{ href: string; label: string }> = [
   { href: "/medicare-part-d", label: "Medicare Part D" },
 ];
 
-const hasReviewPage = existsSync(join(process.cwd(), "app/review/page.tsx"));
+const aboutLinks: Array<{ href: string; label: string }> = [
+  { href: "/our-team", label: "Our Team" },
+  { href: "/testimonials", label: "Testimonials" },
+  { href: "/review", label: "Review Us" },
+  { href: "/contact", label: "Contact" },
+  { href: "/contact", label: "Request a Call" },
+];
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const aboutLinks: Array<{ href: string; label: string }> = [
-    { href: "/our-team", label: "Our Team" },
-    { href: "/testimonials", label: "Testimonials" },
-    ...(hasReviewPage ? [{ href: "/review", label: "Review Us" }] : []),
-    { href: "/contact", label: "Contact" },
-    { href: "/contact", label: "Request a Call" },
-  ];
 
   return (
     <footer className="bg-gray-900 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] text-gray-300 md:pb-0 print:pb-0">
