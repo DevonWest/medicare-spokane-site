@@ -20,42 +20,42 @@ interface FriendlyIllustrationProps {
 
 const illustrations: Record<FriendlyIllustrationName, { src: string; width: number; height: number }> = {
   annualPlanReview: {
-    src: "/illustrations/annual-plan-review.svg",
+    src: "/illustrations/annual-plan-review.png",
     width: 960,
     height: 640,
   },
   compareOptions: {
-    src: "/illustrations/compare-options.svg",
+    src: "/illustrations/compare-options.png",
     width: 960,
     height: 640,
   },
   helpingParent: {
-    src: "/illustrations/helping-parent.svg",
+    src: "/illustrations/helping-parent.png",
     width: 960,
     height: 640,
   },
   homepageGuidance: {
-    src: "/illustrations/homepage-guidance.svg",
+    src: "/illustrations/homepage-guidance.png",
     width: 960,
     height: 640,
   },
   officeLocation: {
-    src: "/illustrations/office-location.svg",
+    src: "/illustrations/office-location.png",
     width: 960,
     height: 640,
   },
   prescriptionReview: {
-    src: "/illustrations/prescription-review.svg",
+    src: "/illustrations/prescription-review.png",
     width: 960,
     height: 640,
   },
   requestConfirmation: {
-    src: "/illustrations/request-confirmation.svg",
+    src: "/illustrations/request-confirmation.png",
     width: 960,
     height: 640,
   },
   turning65Checklist: {
-    src: "/illustrations/turning-65-checklist.svg",
+    src: "/illustrations/turning-65-checklist.png",
     width: 960,
     height: 640,
   },
@@ -78,7 +78,7 @@ export default function FriendlyIllustration({
       height={illustration.height}
       priority={priority}
       sizes={sizes}
-      unoptimized
+      loading={priority ? "eager" : "lazy"}
       className={["h-auto w-full", className].filter(Boolean).join(" ")}
     />
   );
