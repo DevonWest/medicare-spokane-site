@@ -17,13 +17,21 @@ function mockServerOnlyModule() {
 async function loadReviewFeedbackModules() {
   mockServerOnlyModule();
 
-  const [{ handleReviewFeedbackPost }, { buildReviewFeedbackDocument }, { SITE_SOURCE }] = await Promise.all([
+  const [{ handleReviewFeedbackPost }, { buildReviewFeedbackDocument, submitReviewFeedbackWithDeps }, { CRM_PUBLIC_FORM_SUBMISSION_PATH }, { CRM_SYNC_STATUS, SITE_SOURCE }] = await Promise.all([
     import("../app/api/review-feedback/route"),
     import("../lib/reviewFeedback"),
+    import("../lib/crmPaths"),
     import("../lib/leadConstants"),
   ]);
 
-  return { handleReviewFeedbackPost, buildReviewFeedbackDocument, SITE_SOURCE };
+  return {
+    handleReviewFeedbackPost,
+    buildReviewFeedbackDocument,
+    submitReviewFeedbackWithDeps,
+    CRM_PUBLIC_FORM_SUBMISSION_PATH,
+    CRM_SYNC_STATUS,
+    SITE_SOURCE,
+  };
 }
 
 function makeRequest(body: Record<string, unknown>): Request {
@@ -43,6 +51,32 @@ function makeValidPayload() {
     rating: 3,
     message: "I had trouble understanding my options.",
     sourcePath: "/review/feedback",
+  };
+}
+
+function createFakeFirestore() {
+  const updates: Array<Record<string, unknown>> = [];
+  const addedDocs: Array<Record<string, unknown>> = [];
+  const ref = {
+    id: "feedback_123",
+    async update(data: Record<string, unknown>) {
+      updates.push(data);
+    },
+  };
+
+  return {
+    db: {
+      collection() {
+        return {
+          async add(doc: Record<string, unknown>) {
+            addedDocs.push(doc);
+            return ref;
+          },
+        };
+      },
+    },
+    addedDocs,
+    updates,
   };
 }
 
@@ -85,7 +119,7 @@ test("feedback API stores valid 1-4 star feedback", async () => {
   const response = await handleReviewFeedbackPost(makeRequest(makeValidPayload()), {
     submitReviewFeedback: async (payload) => {
       addedDocs.push(payload as Record<string, unknown>);
-      return { ok: true, id: "feedback_123" };
+      return { ok: true, id: "feedback_123", crmSyncStatus: "synced" };
     },
   });
 
@@ -93,6 +127,7 @@ test("feedback API stores valid 1-4 star feedback", async () => {
   assert.deepEqual(await response.json(), {
     ok: true,
     id: "feedback_123",
+    crmSyncStatus: "synced",
   });
   assert.equal(addedDocs.length, 1);
   assert.equal(addedDocs[0]?.fullName, "Jane Doe");
@@ -100,8 +135,35 @@ test("feedback API stores valid 1-4 star feedback", async () => {
   assert.equal(addedDocs[0]?.agentSlug, "kristi-wright");
 });
 
+test("review feedback returns success when CRM sync fails after Firestore save", async () => {
+  const { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, submitReviewFeedbackWithDeps } =
+    await loadReviewFeedbackModules();
+  const fakeFirestore = createFakeFirestore();
+
+  const result = await submitReviewFeedbackWithDeps(makeValidPayload(), {
+    getFirestoreAdmin: () => fakeFirestore.db as never,
+    submitCrmLeadForm: async () => ({
+      ok: false,
+      path: CRM_PUBLIC_FORM_SUBMISSION_PATH,
+      status: 503,
+      error: "CRM unavailable.",
+    }),
+  });
+
+  assert.deepEqual(result, {
+    ok: true,
+    id: "feedback_123",
+    crmSyncStatus: CRM_SYNC_STATUS.failed,
+  });
+  assert.equal(fakeFirestore.addedDocs.length, 1);
+  assert.equal(fakeFirestore.updates.length, 1);
+  assert.equal(fakeFirestore.updates[0]?.crmSyncStatus, CRM_SYNC_STATUS.failed);
+  assert.equal(fakeFirestore.updates[0]?.crmEndpointPath, CRM_PUBLIC_FORM_SUBMISSION_PATH);
+  assert.equal(fakeFirestore.updates[0]?.crmSyncErrorSafe, "CRM unavailable.");
+});
+
 test("review feedback document stores the required Firestore fields", async () => {
-  const { buildReviewFeedbackDocument, SITE_SOURCE } = await loadReviewFeedbackModules();
+  const { buildReviewFeedbackDocument, CRM_SYNC_STATUS, SITE_SOURCE } = await loadReviewFeedbackModules();
 
   const doc = buildReviewFeedbackDocument(
     {
@@ -125,6 +187,10 @@ test("review feedback document stores the required Firestore fields", async () =
   assert.equal(doc.message, "Follow-up needed.");
   assert.equal(doc.sourcePath, "/review/feedback");
   assert.equal(doc.status, "new");
+  assert.equal(doc.crmSyncStatus, CRM_SYNC_STATUS.pending);
+  assert.equal(doc.crmSyncAttempts, 0);
+  assert.equal(doc.crmContactId, null);
+  assert.equal(doc.crmEndpointPath, null);
   assert.equal(doc.siteSource, SITE_SOURCE);
   assert.ok(doc.submittedAt);
   assert.ok(doc.createdAt);

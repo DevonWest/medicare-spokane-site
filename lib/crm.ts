@@ -16,15 +16,18 @@ export interface CrmSubmissionResult {
 
 interface CrmConfig {
   baseUrl: string;
+  apiKey?: string;
 }
 
 function getCrmConfig(): CrmConfig | null {
   const baseUrl = env("CRM_API_BASE_URL");
+  const apiKey = env("CRM_API_KEY");
 
   if (!baseUrl) return null;
 
   return {
     baseUrl: baseUrl.replace(/\/+$/, ""),
+    apiKey,
   };
 }
 
@@ -76,6 +79,7 @@ export async function submitCrmLeadForm(lead: CrmLeadInput): Promise<CrmSubmissi
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...(config.apiKey ? { "x-api-key": config.apiKey } : {}),
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(CRM_TIMEOUT_MS),
