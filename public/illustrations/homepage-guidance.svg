@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-labelledby="title desc">
+  <title id="title">Local Medicare guidance</title>
+  <desc id="desc">Friendly Medicare in Spokane illustration in soft blue, green, and warm neutral tones.</desc>
+  <defs>
+    <linearGradient id="softBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EFF8FF"/>
+      <stop offset="100%" stop-color="#F7FBF7"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0F3B5F" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" rx="48" fill="url(#softBg)"/>
+  
+  <circle cx="800" cy="120" r="58" fill="#DFF3E3" opacity="0.8"/>
+  <circle cx="130" cy="520" r="86" fill="#BFE4FF" opacity="0.45"/>
+  <rect x="112" y="132" width="736" height="390" rx="34" fill="#FFFFFF" filter="url(#shadow)"/>
+  <rect x="450" y="172" width="260" height="308" rx="22" fill="#EAF6FF" stroke="#2C5575" stroke-width="4"/>
+  <text x="480" y="225" fill="#0F3B5F" font-size="30" font-family="Arial, sans-serif" font-weight="700">Medicare Options</text>
+  <rect x="488" y="260" width="164" height="18" rx="9" fill="#BFE4FF"/>
+  <rect x="488" y="300" width="188" height="18" rx="9" fill="#DFF3E3"/>
+  <rect x="488" y="340" width="136" height="18" rx="9" fill="#F5E6D3"/>
+  <circle cx="505" cy="414" r="22" fill="#7EB77F"/>
+  <path d="M494 414l8 8 16-19" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="290" cy="250" r="52" fill="#F5E6D3" stroke="#2C5575" stroke-width="4"/>
+  <circle cx="280" cy="240" r="5" fill="#203445"/><circle cx="310" cy="240" r="5" fill="#203445"/>
+  <path d="M276 266c18 15 42 13 56-2" fill="none" stroke="#203445" stroke-width="4" stroke-linecap="round"/>
+  <path d="M236 305c20-34 90-40 120 0v88H236z" fill="#2864C8" opacity="0.88"/>
+  <circle cx="188" cy="290" r="45" fill="#F5E6D3" stroke="#2C5575" stroke-width="4"/>
+  <path d="M150 280c20-36 58-36 82 0" fill="#5F7284"/>
+  <circle cx="176" cy="290" r="4" fill="#203445"/><circle cx="202" cy="290" r="4" fill="#203445"/>
+  <path d="M174 315c14 10 28 10 42 0" fill="none" stroke="#203445" stroke-width="4" stroke-linecap="round"/>
+  <path d="M145 340c28-22 78-22 104 0v58H145z" fill="#7EB77F" opacity="0.88"/>
+  <path d="M360 410c56 24 96 14 132-26" fill="none" stroke="#2C5575" stroke-width="7" stroke-linecap="round"/>
+  <path d="M480 382l18 1-6 17" fill="none" stroke="#2C5575" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="150" y="475" fill="#0F3B5F" font-size="28" font-family="Arial, sans-serif" font-weight="700">Clear guidance, no pressure</text>
+
+</svg>
