@@ -59,6 +59,13 @@ const trustBullets: string[] = [
   "No-cost consultations",
 ];
 
+const whatHappensNextSteps: string[] = [
+  "We review your request.",
+  "A licensed local Medicare agent contacts you.",
+  "We help compare options from the plans we represent.",
+  "There is no cost or obligation.",
+];
+
 export default function HomePage() {
   const activeMembers = getActiveTeamMembers();
   const heroFaces = activeMembers.slice(0, 3);
@@ -111,7 +118,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <p className="mt-4 flex items-center gap-3 text-sm font-semibold text-blue-50 sm:text-base">
+            <p className="mt-4 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-50 shadow-sm backdrop-blur-sm sm:text-base">
               <span className="tracking-[0.2em] text-amber-300" aria-hidden="true">
                 ★★★★★
               </span>
@@ -197,6 +204,22 @@ export default function HomePage() {
               heading="Schedule a No-Cost Medicare Review"
               subheading="A licensed insurance professional will reach out to help you compare options in your area."
             />
+            <section className="mt-4 rounded-2xl border border-blue-100 bg-white/95 p-5 shadow-sm sm:p-6">
+              <h3 className="text-xl font-bold text-gray-900">What Happens After You Submit?</h3>
+              <ol className="mt-4 space-y-3">
+                {whatHappensNextSteps.map((step, index) => (
+                  <li key={index} className="flex items-start gap-3 text-base leading-7 text-gray-700">
+                    <span
+                      className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-700 text-sm font-semibold text-white"
+                      aria-hidden="true"
+                    >
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </div>
         </div>
       </section>

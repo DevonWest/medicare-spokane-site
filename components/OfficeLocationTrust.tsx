@@ -19,11 +19,11 @@ export default function OfficeLocationTrust() {
                 Spokane Office Location
               </p>
               <h2 className="mb-5 text-3xl font-bold text-gray-900 md:text-4xl">
-                Local Medicare Help Inside the Providence Medical Building
+                Local Medicare Help at Our Spokane Office
               </h2>
               <div className="space-y-4 text-base leading-relaxed text-gray-700 md:text-lg">
                 <p>
-                  Our Spokane office is located inside the Providence Medical Building at 820
+                  Our Spokane office is located in the Providence Medical Building at 820
                   South McClellan, making it easy for local residents to meet with a licensed
                   insurance agent in person. Whether you prefer to meet face-to-face or get help
                   by phone, our team is here to guide you through your Medicare options with
@@ -76,6 +76,7 @@ export default function OfficeLocationTrust() {
             </div>
 
             <div className="flex items-center justify-center border-t border-slate-200 bg-slate-900 p-8 lg:border-t-0 lg:border-l">
+              {/* TODO: Replace this location card with /public/images/providence-building.jpg when the real office photo is available. */}
               <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-lg">
                 <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
                   <svg
@@ -114,7 +115,7 @@ export default function OfficeLocationTrust() {
                 </div>
 
                 <p className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                  Located inside the Providence Medical Building for convenient in-person Medicare
+                  Located in the Providence Medical Building for convenient in-person Medicare
                   consultations in Spokane.
                 </p>
               </div>
