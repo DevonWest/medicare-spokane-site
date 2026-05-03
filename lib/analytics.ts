@@ -14,7 +14,7 @@
 
 import { sendGTMEvent } from "@next/third-parties/google";
 import { getGtmId, getSiteEnv } from "./env";
-import type { LeadSource } from "./leads";
+import type { LeadSource } from "./leadSources";
 import type { UtmParams } from "./utm";
 
 export interface LeadConversionMeta {

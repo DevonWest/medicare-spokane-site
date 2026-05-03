@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { submitLead, type LeadPayload, type LeadSource } from "@/lib/leads";
+import { submitLead, type LeadPayload } from "@/lib/leads";
 import { getFirebaseAdminEnvSummary } from "@/lib/firebase-admin";
 import { getSafeErrorDetails } from "@/lib/leadLogging";
 import type { LeadRequestPayload } from "@/lib/leadPayload";
+import { LEAD_SOURCES, type LeadSource } from "@/lib/leadSources";
 import { cleanString, validateLeadRequest } from "@/lib/leadValidation";
 import type { UtmParams } from "@/lib/utm";
 
@@ -10,30 +11,7 @@ import type { UtmParams } from "@/lib/utm";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_SOURCES: LeadSource[] = [
-  "homepage",
-  "medicare-spokane",
-  "turning-65",
-  "helping-parent-with-medicare",
-  "compare-medicare-options",
-  "working-past-65-medicare",
-  "turning-65-medicare-spokane",
-  "medicare-appointment-checklist",
-  "medicare-plan-review-spokane",
-  "advantage-vs-supplement",
-  "medicare-advantage",
-  "medicare-supplements",
-  "medicare-part-d",
-  "supplemental-insurance",
-  "carriers",
-  "testimonials",
-  "about",
-  "request-contact",
-  "medicare-faq",
-  "medicare-enrollment-resources",
-  "contact",
-  "unknown",
-];
+const ALLOWED_SOURCES: readonly LeadSource[] = LEAD_SOURCES;
 
 const UTM_KEYS: Array<keyof UtmParams> = ["source", "medium", "campaign", "term", "content"];
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -88,7 +89,7 @@ export default function RxDrugReviewPage() {
       </section>
 
       <section className="py-14 px-4 bg-white">
-        <div className="max-w-4xl mx-auto text-gray-800 space-y-8">
+        <div className="max-w-5xl mx-auto text-gray-800 space-y-8">
           <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-5 text-lg leading-relaxed">
               <p>
@@ -175,28 +176,29 @@ export default function RxDrugReviewPage() {
           </div>
 
           <section className="rounded-2xl bg-blue-700 px-6 py-8 text-white">
-            <h2 className="text-2xl font-bold mb-3">Request your RX drug review</h2>
-            <p className="text-blue-100 leading-relaxed mb-6 max-w-2xl">
-              Bring your list, ask questions, and get a plain-English review of the Medicare
-              Advantage and Part D options we represent. If you are ready to start,{" "}
-              <Link href="/contact" className="font-semibold text-white underline underline-offset-2">
-                contact our Spokane office
-              </Link>{" "}
-              or call today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-              >
-                Request a Drug Review
-              </Link>
-              <a
-                href={telHref}
-                className="inline-flex items-center justify-center rounded-lg border border-blue-300 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
-              >
-                Call 509-353-0476
-              </a>
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1fr] lg:items-start">
+              <div>
+                <h2 className="text-2xl font-bold mb-3">Request your RX drug review</h2>
+                <p className="text-blue-100 leading-relaxed mb-6 max-w-2xl">
+                  Bring your list, ask questions, and get a plain-English review of the Medicare
+                  Advantage and Part D options we represent. Send your request here or call today.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <a
+                    href={telHref}
+                    className="inline-flex items-center justify-center rounded-lg border border-blue-300 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
+                  >
+                    Call 509-353-0476
+                  </a>
+                </div>
+              </div>
+              <LeadForm
+                source="rx-drug-review"
+                heading="Request an RX Drug Review"
+                subheading="Share your prescription review questions and a licensed local agent will follow up."
+                showMessage
+                className="text-gray-900"
+              />
             </div>
           </section>
         </div>

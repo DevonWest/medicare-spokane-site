@@ -1,6 +1,8 @@
+import { CRM_PUBLIC_FORM_SLUG } from "./crmPaths";
 import { readRecordString } from "./runtimeValues";
 import { SITE_SOURCE } from "./leadConstants";
 import { cleanString, normalizeEmail } from "./leadValidation";
+import { siteConfig } from "./site";
 import type { UtmParams } from "./utm";
 
 export interface CrmLeadInput {
@@ -39,15 +41,32 @@ export function joinCrmUrl(baseUrl: string, path: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+function buildSourceUrl(sourcePath: string | undefined): string {
+  const siteUrl = siteConfig.url.replace(/\/+$/, "");
+  const cleanPath = cleanString(sourcePath);
+
+  if (!cleanPath || cleanPath === "/") {
+    return `${siteUrl}/`;
+  }
+
+  return joinCrmUrl(siteUrl, cleanPath);
+}
+
 /** Build the CRM public form payload, keeping the visitor name in `fullName`. */
 export function buildCrmFormSubmissionPayload(lead: CrmLeadInput): Record<string, unknown> {
+  const pageSource = cleanString(lead.source);
+
   return stripUndefined({
+    formSlug: CRM_PUBLIC_FORM_SLUG,
+    source: SITE_SOURCE,
+    sourceUrl: buildSourceUrl(lead.sourcePath),
+    pageSource,
+    pageIdentifier: pageSource,
     fullName: cleanString(lead.fullName) ?? "",
     email: normalizeEmail(lead.email),
     phone: cleanString(lead.phone) ?? "",
     zip: cleanString(lead.zip),
     message: cleanString(lead.message),
-    source: lead.source,
     sourcePath: cleanString(lead.sourcePath),
     referrer: cleanString(lead.referrer),
     utm: lead.utm,

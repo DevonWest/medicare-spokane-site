@@ -1,4 +1,4 @@
-import type { LeadSource } from "./leads";
+import type { LeadSource } from "./leadSources";
 import type { UtmParams } from "./utm";
 
 export interface LeadFormFields {

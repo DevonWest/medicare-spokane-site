@@ -159,7 +159,7 @@ lib/
 | `FIREBASE_PRIVATE_KEY` | Service-account private key. Newlines may be escaped as `\n` — they are unescaped at runtime. **Server-only — never expose to the client.** | _required if not using ADC_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
 | `CRM_API_BASE_URL` | Base URL for the CRM public form submission endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
-| `CRM_API_KEY` | Not used by the public form submission endpoint. Remove it from the service config if it is still set. | _unused_ |
+| `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -170,11 +170,11 @@ When running on Google Cloud Run, the simplest setup is to grant the Cloud Run s
 
 ## Lead Capture (Firestore)
 
-`POST /api/leads` validates the request, writes a sanitized document to the `website_leads` collection as a backup, then submits the full form payload to the CRM public form endpoint from the server-side route. Stored fields:
+`POST /api/leads` validates the request, writes a sanitized document to the `website_leads` collection as a backup, then submits the full form payload to the CRM public form endpoint from the server-side route. Standard lead forms require `fullName` plus either `email` or `phone`; `zip` and `message` are optional. Stored fields:
 
 - `fullName`, `email`, `phone`, `zip`, `message`
 - `emailNorm`, `phoneNorm` — normalized identities used for dedupe
-- `source` (`homepage` | `medicare-spokane` | `turning-65` | `advantage-vs-supplement` | `contact` | `unknown`)
+- `source` (`homepage` | `contact` | `rx-drug-review` | `compare-medicare-options` | `turning-65-medicare-spokane` | `working-past-65-medicare` | `helping-parent-with-medicare` | `medicare-appointment-checklist` | `medicare-plan-review-spokane` | `medicare-enrollment-resources` | `medicare-advantage` | `medicare-supplements` | `medicare-part-d` | `supplemental-insurance` | `advantage-vs-supplement` | `medicare-spokane` | `medicare-spokane-valley` | `medicare-liberty-lake` | `medicare-cheney` | `medicare-airway-heights` | `medicare-medical-lake` | `medicare-mead` | `medicare-deer-park` | `unknown`)
 - Attribution: `sourcePath`, `referrer`, `utm`, `clientSubmittedAt`
 - Server stamps: `submittedAt` (Firestore Timestamp), `submittedAtIso`, `createdAt` (`serverTimestamp`)
 - Workflow: `status: "new"`, `siteSource: "medicareinspokane.com"`
@@ -183,6 +183,8 @@ When running on Google Cloud Run, the simplest setup is to grant the Cloud Run s
 If the same normalized email **or** phone submits again within 10 minutes, the existing document id is returned with `duplicate: true` instead of creating a new doc. If that recent lead has not synced to the CRM yet, the server retries the CRM sync against the existing Firestore backup before responding.
 
 The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and the CRM client lives in the server-only `lib/crm.ts`. Both are only called from the Node.js route handler, so the Firestore credentials and CRM API key are never exposed to the browser.
+
+`POST /api/review-feedback` follows the same backup-first pattern for the review funnel: validate the request, save the feedback to the `review_feedback` collection, then attempt the CRM public form sync without blocking a successful response after the Firestore write.
 
 ### Suggested Firestore index
 

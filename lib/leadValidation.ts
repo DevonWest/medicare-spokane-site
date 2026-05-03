@@ -67,8 +67,9 @@ export function getLeadValidationErrorMessage(errors: Record<string, string>): s
  *
  * Rules:
  *  - `fullName` is required, 2..200 chars after trim.
- *  - `email` is required and must look like an email.
- *  - `phone` is required and must contain at least 7 digits (strip non-digits first).
+ *  - `email` or `phone` is required.
+ *  - `email`, if provided, must look like an email.
+ *  - `phone`, if provided, must contain at least 7 digits (strip non-digits first).
  *  - `zip`, if provided, must be a 5-digit US ZIP.
  *  - `message`, if present, max 2000 chars.
  */
@@ -80,12 +81,20 @@ export function validateLead(input: LeadValidationInput): LeadValidationResult {
   else if (name.length > 200) errors.fullName = "Name is too long.";
 
   const email = normalizeEmail(input.email);
-  if (!email) errors.email = "Email is required.";
-  else if (!EMAIL_RE.test(email) || email.length > 200) errors.email = "Email is invalid.";
-
   const phoneDigits = normalizePhone(input.phone);
-  if (!phoneDigits) errors.phone = "Phone is required.";
-  else if (phoneDigits.length < 7 || phoneDigits.length > 15) errors.phone = "Phone is invalid.";
+
+  if (!email && !phoneDigits) {
+    errors.email = "Provide an email address or phone number.";
+    errors.phone = "Provide a phone number or email address.";
+  } else {
+    if (email && (!EMAIL_RE.test(email) || email.length > 200)) {
+      errors.email = "Email is invalid.";
+    }
+
+    if (phoneDigits && (phoneDigits.length < 7 || phoneDigits.length > 15)) {
+      errors.phone = "Phone is invalid.";
+    }
+  }
 
   const zip = cleanString(input.zip);
   if (zip && !ZIP_RE.test(zip)) errors.zip = "ZIP code must be 5 digits.";
