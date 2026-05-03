@@ -27,9 +27,10 @@ const resourceLinks: Array<{ href: string; label: string }> = [
   { href: "/medicare-part-d", label: "Medicare Part D" },
 ];
 
+const hasReviewPage = existsSync(join(process.cwd(), "app/review/page.tsx"));
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const hasReviewPage = existsSync(join(process.cwd(), "app/review/page.tsx"));
   const aboutLinks: Array<{ href: string; label: string }> = [
     { href: "/our-team", label: "Our Team" },
     { href: "/testimonials", label: "Testimonials" },

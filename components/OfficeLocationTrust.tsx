@@ -11,11 +11,11 @@ const officeBullets = [
   "No-cost Medicare consultations",
 ];
 
-export default function OfficeLocationTrust() {
-  const hasOfficePhoto = existsSync(
-    join(process.cwd(), "public/images/providence-building.jpg"),
-  );
+const hasOfficePhoto = existsSync(
+  join(process.cwd(), "public/images/providence-building.jpg"),
+);
 
+export default function OfficeLocationTrust() {
   return (
     <section className="bg-slate-100 py-16 px-4 md:py-20">
       <div className="mx-auto max-w-6xl">
