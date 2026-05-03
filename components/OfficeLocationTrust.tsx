@@ -77,6 +77,7 @@ export default function OfficeLocationTrust() {
             </div>
 
             <div className="flex items-center justify-center border-t border-slate-200 bg-slate-900 p-8 lg:border-t-0 lg:border-l">
+              {/* TODO: Replace this illustration with /public/images/providence-building.jpg when the real office photo is available. */}
               <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-lg">
                 <div className="mb-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
                   <FriendlyIllustration name="officeLocation" />
