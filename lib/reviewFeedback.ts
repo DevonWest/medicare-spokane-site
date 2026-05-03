@@ -148,6 +148,7 @@ export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowM
   const email = normalizeEmail(payload.email);
   const phone = sanitizeReviewString(payload.phone);
   const phoneNorm = phone ? normalizePhone(phone) : null;
+  const sourcePath = sanitizeReviewString(payload.sourcePath) ?? REVIEW_FEEDBACK_SOURCE_PATH;
 
   return stripUndefinedDeep({
     fullName: sanitizeReviewString(payload.fullName) ?? "",
@@ -159,7 +160,7 @@ export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowM
     agentName,
     rating: payload.rating,
     message: sanitizeReviewString(payload.message) ?? "",
-    sourcePath: sanitizeReviewString(payload.sourcePath) ?? REVIEW_FEEDBACK_SOURCE_PATH,
+    sourcePath,
     submittedAt: Timestamp.fromMillis(nowMs),
     submittedAtIso: new Date(nowMs).toISOString(),
     createdAt: FieldValue.serverTimestamp(),
