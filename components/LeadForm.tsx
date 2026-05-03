@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { buildLeadFormFields, buildLeadRequestPayload } from "@/lib/leadPayload";
 import { submitLeadRequest } from "@/lib/leadSubmissionClient";
+import type { LeadSource } from "@/lib/leadSources";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
-import type { LeadSource } from "@/lib/leads";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { trackLeadConversion } from "@/lib/analytics";
 
@@ -139,13 +139,16 @@ export default function LeadForm({
           noValidate
           aria-describedby="lead-form-reassurance"
         >
-          <div className="mb-5">
-            <h2 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">{heading}</h2>
-            <p className="text-sm leading-6 text-gray-600">{subheading}</p>
-            <p id="lead-form-reassurance" className="mt-2 text-sm leading-6 text-gray-600">
-              We typically respond the same business day. There is no cost and no obligation.
-            </p>
-            <p className="mt-1.5 text-sm text-gray-700">
+        <div className="mb-5">
+          <h2 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">{heading}</h2>
+          <p className="text-sm leading-6 text-gray-600">{subheading}</p>
+          <p id="lead-form-reassurance" className="mt-2 text-sm leading-6 text-gray-600">
+            We typically respond the same business day. There is no cost and no obligation.
+          </p>
+          <p id="lead-contact-requirement" className="mt-1.5 text-sm leading-6 text-gray-600">
+            Full name and either an email address or phone number are required.
+          </p>
+          <p className="mt-1.5 text-sm text-gray-700">
               <span className="text-red-600" aria-hidden="true">
                 *
             </span>{" "}
@@ -178,17 +181,16 @@ export default function LeadForm({
 
           <div>
               <label htmlFor="lead-email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email <span className="text-red-600" aria-hidden="true">*</span>
-              <span className="sr-only">(required)</span>
+              Email
+              <span className="sr-only">(required if you do not provide a phone number)</span>
             </label>
             <input
               id="lead-email"
               name="email"
               type="email"
-              required
               autoComplete="email"
               aria-invalid={fieldErrors.email ? "true" : "false"}
-              aria-describedby={fieldErrors.email ? "lead-email-error" : undefined}
+              aria-describedby={fieldErrors.email ? "lead-contact-requirement lead-email-error" : "lead-contact-requirement"}
               className={getFieldClassName(Boolean(fieldErrors.email))}
             />
             {fieldErrors.email && (
@@ -200,17 +202,16 @@ export default function LeadForm({
 
           <div>
               <label htmlFor="lead-phone" className="mb-1 block text-sm font-medium text-gray-700">
-              Best phone number <span className="text-red-600" aria-hidden="true">*</span>
-              <span className="sr-only">(required)</span>
+              Best phone number
+              <span className="sr-only">(required if you do not provide an email address)</span>
             </label>
             <input
               id="lead-phone"
               name="phone"
               type="tel"
-              required
               autoComplete="tel"
               aria-invalid={fieldErrors.phone ? "true" : "false"}
-              aria-describedby={fieldErrors.phone ? "lead-phone-error" : undefined}
+              aria-describedby={fieldErrors.phone ? "lead-contact-requirement lead-phone-error" : "lead-contact-requirement"}
               className={getFieldClassName(Boolean(fieldErrors.phone))}
             />
             {fieldErrors.phone && (

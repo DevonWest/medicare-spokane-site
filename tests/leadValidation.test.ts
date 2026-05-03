@@ -95,26 +95,38 @@ test("validateLead rejects missing name", () => {
   assert.ok(r.errors.fullName);
 });
 
-test("validateLead rejects missing email", () => {
-  const r = leadValidation.validateLead({
-    fullName: "Jane Doe",
-    email: "",
-    phone: "5095550100",
-    zip: "99206",
-  });
-  assert.equal(r.ok, false);
-  assert.ok(r.errors.email);
-});
-
-test("validateLead rejects missing phone", () => {
+test("validateLead accepts a lead with only email", () => {
   const r = leadValidation.validateLead({
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "",
     zip: "99206",
   });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.errors, {});
+});
+
+test("validateLead accepts a lead with only phone", () => {
+  const r = leadValidation.validateLead({
+    fullName: "Jane Doe",
+    email: "",
+    phone: "5095550100",
+    zip: "99206",
+  });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.errors, {});
+});
+
+test("validateLead rejects missing email and phone", () => {
+  const r = leadValidation.validateLead({
+    fullName: "Jane Doe",
+    email: "",
+    phone: "",
+    zip: "99206",
+  });
   assert.equal(r.ok, false);
-  assert.ok(r.errors.phone);
+  assert.equal(r.errors.email, "Email or phone is required.");
+  assert.equal(r.errors.phone, "Email or phone is required.");
 });
 
 test("validateLead accepts a blank ZIP", () => {
@@ -303,12 +315,16 @@ test("buildCrmFormSubmissionPayload normalizes and trims lead fields", () => {
   });
 
   assert.deepEqual(payload, {
+    formSlug: "medicare-in-spokane-contact",
+    source: "medicareinspokane.com",
+    sourceUrl: "https://www.medicareinspokane.com/contact",
+    pageSource: "contact",
+    pageIdentifier: "contact",
     fullName: "Jane Doe",
     email: "jane@example.com",
     phone: "(509) 555-0100",
     zip: "99206",
     message: "Please call me.",
-    source: "contact",
     sourcePath: "/contact",
     referrer: "https://example.com/",
     utm: { source: "google", medium: "cpc" },

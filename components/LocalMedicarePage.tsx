@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import FAQ from "@/components/FAQ";
 import Disclaimer from "@/components/Disclaimer";
+import LeadForm from "@/components/LeadForm";
 import { getCityBySlug, getLocalMedicarePath } from "@/lib/cities";
+import type { LeadSource } from "@/lib/leadSources";
 import { siteConfig, telHref } from "@/lib/site";
 
 const internalResources = [
@@ -33,6 +35,17 @@ const internalResources = [
     body: "Schedule a no-cost consultation with our Spokane-based team if you want in-person, phone, or remote Medicare guidance.",
   },
 ] as const;
+
+const localLeadSourceByCitySlug: Record<string, LeadSource> = {
+  spokane: "medicare-spokane",
+  "spokane-valley": "medicare-spokane-valley",
+  "liberty-lake": "medicare-liberty-lake",
+  cheney: "medicare-cheney",
+  "airway-heights": "medicare-airway-heights",
+  "medical-lake": "medicare-medical-lake",
+  mead: "medicare-mead",
+  "deer-park": "medicare-deer-park",
+};
 
 function joinList(values: string[], fallback: string) {
   if (values.length <= 1) {
@@ -99,6 +112,7 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
   const zipCodes = joinList(city.zipCodes, city.zipCodes[0] ?? city.name);
   const zipLabel = city.zipCodes.length > 1 ? "ZIP codes" : "ZIP code";
   const zipLabelLower = city.zipCodes.length > 1 ? "zip codes" : "zip code";
+  const leadSource = localLeadSourceByCitySlug[city.slug];
   const faqItems = [
     {
       question: `Can I get help comparing Medicare plans in ${city.name}?`,
@@ -335,6 +349,26 @@ export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) 
             ))}
           </div>
           <Disclaimer className="mt-10" />
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 lg:grid-cols-[1fr_0.95fr] lg:items-start">
+            <div>
+              <h2 className="mb-4 text-3xl font-bold text-gray-900">Request Medicare help for {city.name}</h2>
+              <p className="text-lg leading-relaxed text-gray-700">
+                Tell us a little about what you want to review in {city.name}, and a licensed local Medicare agent will
+                follow up. We can help by phone, remotely, or with an in-person appointment in Spokane.
+              </p>
+            </div>
+            <LeadForm
+              source={leadSource}
+              heading={`Request Medicare Help in ${city.name}`}
+              subheading={`Share your questions about Medicare coverage in ${city.name}, and our Spokane team will follow up.`}
+              showMessage
+            />
+          </div>
         </div>
       </section>
 

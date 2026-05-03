@@ -37,31 +37,8 @@ import { CRM_SYNC_STATUS } from "./leadConstants";
 import { getFirestoreAdmin, getFirebaseAdminEnvSummary } from "./firebase-admin";
 import { buildLeadFirestoreDocument } from "./leadFirestore";
 import { getSafeErrorDetails } from "./leadLogging";
+import type { LeadSource } from "./leadSources";
 import type { UtmParams } from "./utm";
-
-export type LeadSource =
-  | "homepage"
-  | "medicare-spokane"
-  | "turning-65"
-  | "turning-65-medicare-spokane"
-  | "medicare-appointment-checklist"
-  | "medicare-plan-review-spokane"
-  | "compare-medicare-options"
-  | "helping-parent-with-medicare"
-  | "working-past-65-medicare"
-  | "advantage-vs-supplement"
-  | "medicare-advantage"
-  | "medicare-supplements"
-  | "medicare-part-d"
-  | "supplemental-insurance"
-  | "carriers"
-  | "testimonials"
-  | "about"
-  | "request-contact"
-  | "medicare-faq"
-  | "medicare-enrollment-resources"
-  | "contact"
-  | "unknown";
 
 export interface LeadAttribution {
   /** Pathname of the page the form was submitted from (e.g. "/contact"). */

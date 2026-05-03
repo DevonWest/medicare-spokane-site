@@ -45,7 +45,10 @@ export async function handleReviewFeedbackPost(
 
   const result = await (deps.submitReviewFeedback ?? submitReviewFeedback)(payload);
   if (result.ok) {
-    return NextResponse.json({ ok: true, id: result.id }, { status: getReviewFeedbackResponseStatus(result) });
+    return NextResponse.json(
+      { ok: true, id: result.id, crmSyncStatus: result.crmSyncStatus },
+      { status: getReviewFeedbackResponseStatus(result) },
+    );
   }
 
   return NextResponse.json({ ok: false, error: result.error }, { status: getReviewFeedbackResponseStatus(result) });
