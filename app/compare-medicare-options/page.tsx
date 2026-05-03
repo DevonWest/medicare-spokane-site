@@ -3,7 +3,7 @@ import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
-import { CompareOptionsIllustration } from "@/components/Illustrations";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -146,7 +146,7 @@ export default function CompareMedicareOptionsPage() {
             </div>
             <div className="hidden lg:flex lg:justify-center">
               <div className="w-full max-w-sm rounded-3xl border border-white/15 bg-white/10 p-4 shadow-lg backdrop-blur-sm">
-                <CompareOptionsIllustration />
+                <FriendlyIllustration name="compareOptions" />
               </div>
             </div>
           </div>

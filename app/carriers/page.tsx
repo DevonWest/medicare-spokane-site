@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import PageHero from "@/components/PageHero";
-import { CarrierOptionsIllustration } from "@/components/Illustrations";
 import { carriers } from "@/lib/carriers";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -26,7 +26,7 @@ export default function CarriersPage() {
         title="Carriers We Represent"
         subtitle="The insurance organizations we currently work with for Medicare Advantage, Medicare Supplement, Part D, dental, vision, and other supplemental coverage in the Spokane area."
         crumbs={[{ href: "/", label: "Home" }, { label: "Carriers" }]}
-        illustration={<CarrierOptionsIllustration />}
+        illustration={<FriendlyIllustration name="compareOptions" />}
       />
 
       <section className="py-12 px-4 bg-white">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import { siteConfig, telHref } from "@/lib/site";
 
 const officeBullets = [
@@ -76,25 +77,10 @@ export default function OfficeLocationTrust() {
             </div>
 
             <div className="flex items-center justify-center border-t border-slate-200 bg-slate-900 p-8 lg:border-t-0 lg:border-l">
-              {/* TODO: Replace this location card with /public/images/providence-building.jpg when the real office photo is available. */}
+              {/* TODO: Replace this illustration with /public/images/providence-building.jpg when the real office photo is available. */}
               <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-lg">
-                <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-7 w-7"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 21s6-5.686 6-11a6 6 0 10-12 0c0 5.314 6 11 6 11z"
-                    />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
+                <div className="mb-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <FriendlyIllustration name="officeLocation" />
                 </div>
 
                 <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
-import { PartDIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export default function MedicarePartDPage() {
         title="Medicare Part D in Spokane"
         subtitle="Help comparing standalone Medicare Part D prescription drug plans, including a no-cost prescription review."
         crumbs={[{ href: "/", label: "Home" }, { label: "Medicare Part D" }]}
-        illustration={<PartDIllustration />}
+        illustration={<FriendlyIllustration name="prescriptionReview" />}
       />
 
       <section className="py-14 px-4 bg-white">

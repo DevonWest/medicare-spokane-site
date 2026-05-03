@@ -5,7 +5,6 @@ import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
-import { MedicareSupplementIllustration } from "@/components/Illustrations";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -46,7 +45,6 @@ export default function MedicareSupplementsPage() {
         title="Medicare Supplements (Medigap)"
         subtitle="Help comparing Medicare Supplement plans that work alongside Original Medicare to lower your out-of-pocket costs."
         crumbs={[{ href: "/", label: "Home" }, { label: "Medicare Supplements" }]}
-        illustration={<MedicareSupplementIllustration />}
       />
 
       <section className="py-14 px-4 bg-white">
