@@ -118,12 +118,12 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="mt-4 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-50 shadow-sm backdrop-blur-sm sm:text-base">
+            <p className="mt-4 inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-50 shadow-sm backdrop-blur-sm sm:text-base">
               <span className="tracking-[0.2em] text-amber-300" aria-hidden="true">
                 ★★★★★
               </span>
               <span>Trusted by Spokane-area Medicare clients</span>
-            </div>
+            </p>
 
             {/* Trust bullets */}
             <ul className="mt-5 grid grid-cols-1 gap-2.5 text-sm sm:mt-6 sm:grid-cols-3 sm:gap-3">
@@ -205,7 +205,7 @@ export default function HomePage() {
               subheading="A licensed insurance professional will reach out to help you compare options in your area."
             />
             <section className="mt-4 rounded-2xl border border-blue-100 bg-white/95 p-5 shadow-sm sm:p-6">
-              <h2 className="text-xl font-bold text-gray-900">What Happens After You Submit?</h2>
+              <h3 className="text-xl font-bold text-gray-900">What Happens After You Submit?</h3>
               <ol className="mt-4 space-y-3">
                 {whatHappensNextSteps.map((step, index) => (
                   <li key={step} className="flex items-start gap-3 text-base leading-7 text-gray-700">
