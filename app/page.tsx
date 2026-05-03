@@ -208,7 +208,7 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-gray-900">What Happens After You Submit?</h3>
               <ol className="mt-4 space-y-3">
                 {whatHappensNextSteps.map((step, index) => (
-                  <li key={step} className="flex items-start gap-3 text-base leading-7 text-gray-700">
+                  <li key={index} className="flex items-start gap-3 text-base leading-7 text-gray-700">
                     <span
                       className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-700 text-sm font-semibold text-white"
                       aria-hidden="true"
