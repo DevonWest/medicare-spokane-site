@@ -349,9 +349,13 @@ test("buildCrmFormSubmissionPayload derives sourceUrl for root and missing sourc
   });
 
   assert.equal(missingSourcePath.sourceUrl, "https://www.medicareinspokane.com/");
+  assert.equal(missingSourcePath.formSlug, "medicare-in-spokane-contact");
   assert.equal("pageSource" in missingSourcePath, false);
+  assert.equal("pageIdentifier" in missingSourcePath, false);
   assert.equal(rootSourcePath.sourceUrl, "https://www.medicareinspokane.com/");
+  assert.equal(rootSourcePath.formSlug, "medicare-in-spokane-contact");
   assert.equal(rootSourcePath.pageSource, "homepage");
+  assert.equal(rootSourcePath.pageIdentifier, "homepage");
 });
 
 test("CRM helpers derive URLs and nested ids safely", () => {

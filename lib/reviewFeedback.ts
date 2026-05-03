@@ -127,16 +127,16 @@ function sanitizeReviewFeedbackPayload(payload: ReviewFeedbackInput): ReviewFeed
   };
 }
 
-function buildReviewFeedbackCrmMessage(payload: ReviewFeedbackPayload): string {
-  const agentSlug = sanitizeReviewSlug(payload.agentSlug);
-  const sourcePath = sanitizeReviewString(payload.sourcePath);
+function buildReviewFeedbackCrmMessage(reviewPayload: ReviewFeedbackPayload): string {
+  const agentSlug = sanitizeReviewSlug(reviewPayload.agentSlug);
+  const sourcePath = sanitizeReviewString(reviewPayload.sourcePath);
   const details = [
-    `Feedback rating: ${payload.rating} star${payload.rating === 1 ? "" : "s"}`,
+    `Feedback rating: ${reviewPayload.rating} star${reviewPayload.rating === 1 ? "" : "s"}`,
     agentSlug ? `Agent: ${agentSlug}` : undefined,
     sourcePath ? `Source path: ${sourcePath}` : undefined,
   ].filter((value): value is string => Boolean(value));
 
-  return [details.join("\n"), sanitizeReviewString(payload.message) ?? ""].filter(Boolean).join("\n\n");
+  return [details.join("\n"), sanitizeReviewString(reviewPayload.message) ?? ""].filter(Boolean).join("\n\n");
 }
 
 export function buildReviewFeedbackDocument(payload: ReviewFeedbackPayload, nowMs: number): ReviewFeedbackDocument {

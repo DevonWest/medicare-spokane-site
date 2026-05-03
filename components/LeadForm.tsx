@@ -190,7 +190,7 @@ export default function LeadForm({
               type="email"
               autoComplete="email"
               aria-invalid={fieldErrors.email ? "true" : "false"}
-              aria-describedby={fieldErrors.email ? "lead-contact-requirement lead-email-error" : "lead-contact-requirement"}
+              aria-describedby={fieldErrors.email ? "lead-email-error" : undefined}
               className={getFieldClassName(Boolean(fieldErrors.email))}
             />
             {fieldErrors.email && (
@@ -211,7 +211,7 @@ export default function LeadForm({
               type="tel"
               autoComplete="tel"
               aria-invalid={fieldErrors.phone ? "true" : "false"}
-              aria-describedby={fieldErrors.phone ? "lead-contact-requirement lead-phone-error" : "lead-contact-requirement"}
+              aria-describedby={fieldErrors.phone ? "lead-phone-error" : undefined}
               className={getFieldClassName(Boolean(fieldErrors.phone))}
             />
             {fieldErrors.phone && (
