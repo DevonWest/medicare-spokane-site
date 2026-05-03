@@ -333,6 +333,29 @@ test("buildCrmFormSubmissionPayload normalizes and trims lead fields", () => {
   });
 });
 
+test("buildCrmFormSubmissionPayload derives sourceUrl for root and missing source paths", () => {
+  assert.equal(
+    buildCrmFormSubmissionPayload({
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      phone: "5095550100",
+      source: "homepage",
+    }).sourceUrl,
+    "https://www.medicareinspokane.com/",
+  );
+
+  assert.equal(
+    buildCrmFormSubmissionPayload({
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      phone: "5095550100",
+      source: "homepage",
+      sourcePath: "/",
+    }).sourceUrl,
+    "https://www.medicareinspokane.com/",
+  );
+});
+
 test("CRM helpers derive URLs and nested ids safely", () => {
   assert.equal(joinCrmUrl("https://crm.example.com/", "/contacts"), "https://crm.example.com/contacts");
   assert.equal(extractCrmContactId({ id: "contact_123" }), "contact_123");

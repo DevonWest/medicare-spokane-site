@@ -129,10 +129,11 @@ function sanitizeReviewFeedbackPayload(payload: ReviewFeedbackInput): ReviewFeed
 
 function buildReviewFeedbackCrmMessage(payload: ReviewFeedbackPayload): string {
   const agentSlug = sanitizeReviewSlug(payload.agentSlug);
+  const sourcePath = sanitizeReviewString(payload.sourcePath);
   const details = [
     `Feedback rating: ${payload.rating} star${payload.rating === 1 ? "" : "s"}`,
     agentSlug ? `Agent: ${agentSlug}` : undefined,
-    sanitizeReviewString(payload.sourcePath) ? `Source path: ${sanitizeReviewString(payload.sourcePath)}` : undefined,
+    sourcePath ? `Source path: ${sourcePath}` : undefined,
   ].filter((value): value is string => Boolean(value));
 
   return [details.join("\n"), sanitizeReviewString(payload.message) ?? ""].filter(Boolean).join("\n\n");
