@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getLegacyRedirectDestination } from "@/lib/legacyRedirects";
+import { getLegacyPathResolution } from "@/lib/legacyRedirects";
 
 const apexHostname = "medicareinspokane.com";
 const canonicalHostname = "www.medicareinspokane.com";
@@ -41,14 +41,22 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
-  const destination = getLegacyRedirectDestination(request.nextUrl.pathname);
+  const legacyResolution = getLegacyPathResolution(request.nextUrl.pathname);
 
-  if (!destination) {
+  if (!legacyResolution) {
     return NextResponse.next();
   }
 
+  if (legacyResolution.type === "gone") {
+    return new NextResponse(null, { status: 410 });
+  }
+
   const redirectUrl = request.nextUrl.clone();
-  redirectUrl.pathname = destination;
+  redirectUrl.pathname = legacyResolution.destination;
+
+  if (!legacyResolution.preserveQuery) {
+    redirectUrl.search = "";
+  }
 
   return NextResponse.redirect(redirectUrl, 301);
 }

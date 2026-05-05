@@ -1,14 +1,17 @@
 export const legacyRedirects = {
   "/about": "/our-team",
+  "/home": "/",
   "/lynn-wold": "/our-team",
   "/craig-lenhart": "/our-team",
   "/meg-shumaker": "/our-team",
   "/rose-records": "/our-team",
+  "/profiles/rose-records": "/our-team",
   "/sheryl-manchester": "/our-team",
   "/karen-christensen": "/our-team",
   "/karen-speerstra": "/our-team",
   "/medicare-supplement-insurance-plans": "/medicare-supplements",
   "/medicare-part-d-prescription-plans": "/medicare-part-d",
+  "/videos": "/resources",
   "/rx-drug-lookup": "/rx-drug-review",
   "/rx-drug-lookup-form": "/rx-drug-review",
   "/request-a-quote": "/contact",
@@ -18,6 +21,71 @@ export const legacyRedirects = {
 
 export type LegacyRedirectPath = keyof typeof legacyRedirects;
 
+export const localDirectoryRedirects = {
+  "/directory/spokane-wa": "/medicare-spokane",
+  "/directory/spokane-valley-wa": "/medicare-spokane-valley",
+  "/directory/cheney-wa": "/medicare-cheney",
+  "/directory/airway-heights-wa": "/medicare-airway-heights",
+  "/directory/liberty-lake-wa": "/medicare-liberty-lake",
+  "/directory/medical-lake-wa": "/medicare-medical-lake",
+  "/directory/mead-wa": "/medicare-mead",
+  "/directory/deer-park-wa": "/medicare-deer-park",
+} as const;
+
+type LocalDirectoryRedirectPath = keyof typeof localDirectoryRedirects;
+
+const legacyGonePaths = new Set(["/charlie-howell"]);
+
+export type LegacyPathResolution =
+  | { type: "redirect"; destination: string; preserveQuery: boolean }
+  | { type: "gone" };
+
+function normalizeLegacyPath(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname;
+}
+
+function normalizeDirectoryPath(pathname: string): string {
+  return pathname.toLowerCase().startsWith("/directory/") ? pathname.toLowerCase() : pathname;
+}
+
+function isUnknownDirectoryPath(pathname: string): boolean {
+  return pathname.toLowerCase().startsWith("/directory/");
+}
+
+export function getLegacyPathResolution(pathname: string): LegacyPathResolution | null {
+  const normalizedPath = normalizeLegacyPath(pathname);
+  const normalizedDirectoryPath = normalizeDirectoryPath(normalizedPath);
+
+  if (legacyGonePaths.has(normalizedPath)) {
+    return { type: "gone" };
+  }
+
+  const directDestination = legacyRedirects[normalizedPath as LegacyRedirectPath];
+
+  if (directDestination) {
+    return { type: "redirect", destination: directDestination, preserveQuery: true };
+  }
+
+  const localDirectoryDestination =
+    localDirectoryRedirects[normalizedDirectoryPath as LocalDirectoryRedirectPath];
+
+  if (localDirectoryDestination) {
+    return { type: "redirect", destination: localDirectoryDestination, preserveQuery: false };
+  }
+
+  if (isUnknownDirectoryPath(normalizedPath)) {
+    return { type: "gone" };
+  }
+
+  return null;
+}
+
 export function getLegacyRedirectDestination(pathname: string): string | null {
-  return legacyRedirects[pathname as LegacyRedirectPath] ?? null;
+  const resolution = getLegacyPathResolution(pathname);
+
+  return resolution?.type === "redirect" ? resolution.destination : null;
 }
