@@ -58,21 +58,13 @@ test("proxy returns 301 redirects for legacy URLs", () => {
 test("local directory redirect map includes required canonical destinations", () => {
   assert.deepEqual(localDirectoryRedirects, {
     "/directory/spokane-wa": "/medicare-spokane",
-    "/Directory/spokane-wa": "/medicare-spokane",
     "/directory/spokane-valley-wa": "/medicare-spokane-valley",
-    "/Directory/spokane-valley-wa": "/medicare-spokane-valley",
     "/directory/cheney-wa": "/medicare-cheney",
-    "/Directory/cheney-wa": "/medicare-cheney",
     "/directory/airway-heights-wa": "/medicare-airway-heights",
-    "/Directory/airway-heights-wa": "/medicare-airway-heights",
     "/directory/liberty-lake-wa": "/medicare-liberty-lake",
-    "/Directory/liberty-lake-wa": "/medicare-liberty-lake",
     "/directory/medical-lake-wa": "/medicare-medical-lake",
-    "/Directory/medical-lake-wa": "/medicare-medical-lake",
     "/directory/mead-wa": "/medicare-mead",
-    "/Directory/mead-wa": "/medicare-mead",
     "/directory/deer-park-wa": "/medicare-deer-park",
-    "/Directory/deer-park-wa": "/medicare-deer-park",
   });
 });
 

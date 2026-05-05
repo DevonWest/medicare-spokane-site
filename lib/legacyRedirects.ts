@@ -23,26 +23,18 @@ export type LegacyRedirectPath = keyof typeof legacyRedirects;
 
 export const localDirectoryRedirects = {
   "/directory/spokane-wa": "/medicare-spokane",
-  "/Directory/spokane-wa": "/medicare-spokane",
   "/directory/spokane-valley-wa": "/medicare-spokane-valley",
-  "/Directory/spokane-valley-wa": "/medicare-spokane-valley",
   "/directory/cheney-wa": "/medicare-cheney",
-  "/Directory/cheney-wa": "/medicare-cheney",
   "/directory/airway-heights-wa": "/medicare-airway-heights",
-  "/Directory/airway-heights-wa": "/medicare-airway-heights",
   "/directory/liberty-lake-wa": "/medicare-liberty-lake",
-  "/Directory/liberty-lake-wa": "/medicare-liberty-lake",
   "/directory/medical-lake-wa": "/medicare-medical-lake",
-  "/Directory/medical-lake-wa": "/medicare-medical-lake",
   "/directory/mead-wa": "/medicare-mead",
-  "/Directory/mead-wa": "/medicare-mead",
   "/directory/deer-park-wa": "/medicare-deer-park",
-  "/Directory/deer-park-wa": "/medicare-deer-park",
 } as const;
 
 type LocalDirectoryRedirectPath = keyof typeof localDirectoryRedirects;
 
-const goneLegacyPaths = new Set(["/charlie-howell"]);
+const legacyGonePaths = new Set(["/charlie-howell"]);
 
 export type LegacyPathResolution =
   | { type: "redirect"; destination: string; preserveQuery: boolean }
@@ -56,14 +48,19 @@ function normalizeLegacyPath(pathname: string): string {
   return pathname;
 }
 
+function normalizeDirectoryPath(pathname: string): string {
+  return pathname.toLowerCase().startsWith("/directory/") ? pathname.toLowerCase() : pathname;
+}
+
 function isUnknownDirectoryPath(pathname: string): boolean {
-  return pathname.startsWith("/directory/") || pathname.startsWith("/Directory/");
+  return pathname.toLowerCase().startsWith("/directory/");
 }
 
 export function getLegacyPathResolution(pathname: string): LegacyPathResolution | null {
   const normalizedPath = normalizeLegacyPath(pathname);
+  const normalizedDirectoryPath = normalizeDirectoryPath(normalizedPath);
 
-  if (goneLegacyPaths.has(normalizedPath)) {
+  if (legacyGonePaths.has(normalizedPath)) {
     return { type: "gone" };
   }
 
@@ -74,7 +71,7 @@ export function getLegacyPathResolution(pathname: string): LegacyPathResolution 
   }
 
   const localDirectoryDestination =
-    localDirectoryRedirects[normalizedPath as LocalDirectoryRedirectPath];
+    localDirectoryRedirects[normalizedDirectoryPath as LocalDirectoryRedirectPath];
 
   if (localDirectoryDestination) {
     return { type: "redirect", destination: localDirectoryDestination, preserveQuery: false };
