@@ -8,6 +8,7 @@ import {
 import {
   getActiveLicensedTeamMembers,
   getActiveReviewableTeamMembers,
+  getTeamMemberInitials,
   getTeamMemberLastName,
   getTeamMemberSlug,
 } from "../lib/team";
@@ -72,8 +73,15 @@ test("homepage team preview includes all active licensed agents in neutral alpha
 
 test("team last-name helper handles suffixes, hyphenated names, and single-word names", () => {
   assert.equal(getTeamMemberLastName("John Doe Jr."), "Doe");
+  assert.equal(getTeamMemberLastName("Jane Doe Sr."), "Doe");
+  assert.equal(getTeamMemberLastName("John Doe II"), "Doe");
+  assert.equal(getTeamMemberLastName("John Doe III"), "Doe");
   assert.equal(getTeamMemberLastName("Mary Smith-Jones"), "Smith-Jones");
   assert.equal(getTeamMemberLastName("Cher"), "Cher");
+});
+
+test("team initials helper ignores extra spaces", () => {
+  assert.equal(getTeamMemberInitials("  Denise   Chan "), "DC");
 });
 
 test("review feedback validation rejects rating 5 for internal feedback", () => {

@@ -274,6 +274,10 @@ export function getTeamMemberLastName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const suffixes = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"]);
 
+  if (parts.length === 0) {
+    return name;
+  }
+
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     const part = parts[index];
 
@@ -283,6 +287,15 @@ export function getTeamMemberLastName(name: string): string {
   }
 
   return parts.at(-1) ?? name;
+}
+
+export function getTeamMemberInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2);
 }
 
 export function getActiveLicensedTeamMembers(): TeamMember[] {

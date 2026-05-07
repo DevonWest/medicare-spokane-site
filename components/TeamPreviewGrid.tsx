@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { TeamMember } from "@/lib/team";
+import { getTeamMemberInitials, type TeamMember } from "@/lib/team";
 
 interface TeamPreviewGridProps {
   members: TeamMember[];
@@ -9,12 +9,7 @@ export default function TeamPreviewGrid({ members }: TeamPreviewGridProps) {
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
       {members.map((member) => {
-        const initials = member.name
-          .split(" ")
-          .filter(Boolean)
-          .map((part) => part[0])
-          .join("")
-          .slice(0, 2);
+        const initials = getTeamMemberInitials(member.name);
 
         return (
           <article
