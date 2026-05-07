@@ -266,6 +266,24 @@ export function getActiveReviewableTeamMembers(): TeamMember[] {
   return getActiveTeamMembers().filter(isReviewableTeamMember);
 }
 
+export function isLicensedTeamMember(member: TeamMember): boolean {
+  return member.active && !member.retired && member.title.includes("Licensed Insurance Agent");
+}
+
+function getLastName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts.at(-1) ?? name;
+}
+
+export function getActiveLicensedTeamMembers(): TeamMember[] {
+  return teamMembers
+    .filter(isLicensedTeamMember)
+    .sort((a, b) => {
+      const lastNameComparison = getLastName(a.name).localeCompare(getLastName(b.name));
+      return lastNameComparison !== 0 ? lastNameComparison : a.name.localeCompare(b.name);
+    });
+}
+
 export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
   const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
   return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);

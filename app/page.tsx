@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import FAQ, { type FAQItem } from "@/components/FAQ";
@@ -8,10 +7,10 @@ import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
-import TeamSection from "@/components/TeamSection";
+import TeamPreviewGrid from "@/components/TeamPreviewGrid";
 import TrustBenefits from "@/components/TrustBenefits";
 import { siteConfig, telHref } from "@/lib/site";
-import { getActiveTeamMembers } from "@/lib/team";
+import { getActiveLicensedTeamMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
@@ -67,9 +66,7 @@ const whatHappensNextSteps: string[] = [
 ];
 
 export default function HomePage() {
-  const activeMembers = getActiveTeamMembers();
-  const heroFaces = activeMembers.slice(0, 3);
-  const previewMembers = activeMembers.slice(0, 3);
+  const previewMembers = getActiveLicensedTeamMembers();
 
   return (
     <>
@@ -158,43 +155,10 @@ export default function HomePage() {
               <FriendlyIllustration name="homepageGuidance" priority />
             </div>
 
-            {/* Team preview row */}
-            <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex shrink-0 -space-x-3">
-                {heroFaces.map((m) => (
-                  <div
-                    key={m.name}
-                    className="h-10 w-10 overflow-hidden rounded-full bg-blue-100 ring-2 ring-white sm:h-12 sm:w-12"
-                  >
-                    {m.image ? (
-                      <Image
-                        src={m.image}
-                        alt={`Photo of ${m.name}, ${m.title}`}
-                        width={96}
-                        height={96}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-xs font-bold text-blue-800">
-                        {m.name
-                          .split(" ")
-                          .map((p) => p[0])
-                          .join("")
-                          .slice(0, 2)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="min-w-0 flex-1 text-sm leading-6 text-blue-50">
-                <p className="font-semibold text-white">Meet your local team</p>
-                <Link
-                  href="/our-team"
-                  className="inline break-words text-blue-100 underline-offset-2 hover:underline"
-                >
-                  Helping Spokane-area residents navigate Medicare year-round →
-                </Link>
-              </div>
+            <div className="mt-6 inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 shadow-sm backdrop-blur-sm">
+              <Link href="/our-team" className="underline-offset-2 hover:underline">
+                Meet our Spokane-area licensed team →
+              </Link>
             </div>
           </div>
 
@@ -354,23 +318,20 @@ export default function HomePage() {
       {/* Team preview */}
       <section className="py-20 px-4 bg-slate-50 border-y border-slate-100">
         <div className="max-w-6xl mx-auto">
-          <p className="text-center text-blue-700 text-sm font-semibold uppercase tracking-wider mb-3">
-            Our Local Team
-          </p>
           <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
-            Meet Your Local Medicare Team
+            Meet Our Local Medicare Team
           </h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto text-lg">
-            Our licensed insurance professionals are Spokane locals who offer no-cost Medicare
-            guidance to help you compare options and find coverage that fits your needs.
+            Our Spokane-area licensed agents work together to help clients understand Medicare
+            options with clear, no-cost guidance.
           </p>
-          <TeamSection members={previewMembers} />
+          <TeamPreviewGrid members={previewMembers} />
           <div className="mt-12 text-center">
             <Link
               href="/our-team"
               className="inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 text-white font-semibold px-7 py-3 rounded-lg transition-colors text-base"
             >
-              Meet the Full Team →
+              Meet the Full Team
             </Link>
           </div>
         </div>

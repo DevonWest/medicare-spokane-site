@@ -5,7 +5,11 @@ import {
   getReviewRatingDestination,
   validateReviewFeedbackInput,
 } from "../lib/reviewFlow";
-import { getActiveReviewableTeamMembers, getTeamMemberSlug } from "../lib/team";
+import {
+  getActiveLicensedTeamMembers,
+  getActiveReviewableTeamMembers,
+  getTeamMemberSlug,
+} from "../lib/team";
 
 test("5-star rating redirects to the Google review page", () => {
   assert.equal(getReviewRatingDestination("kristi-wright", 5), GOOGLE_REVIEW_URL);
@@ -41,6 +45,26 @@ test("reviewable team members include the active agents and exclude retired or n
   assert.ok(!names.includes("Anna Parker"));
   assert.ok(!names.includes("Val Trca"));
   assert.equal(getTeamMemberSlug("Kristi Wright"), "kristi-wright");
+});
+
+test("homepage team preview includes all active licensed agents in neutral alphabetical order", () => {
+  const names = getActiveLicensedTeamMembers().map((member) => member.name);
+
+  assert.deepEqual(names, [
+    "Denise Chan",
+    "Cathy Franklin",
+    "Craig Lenhart",
+    "Sheryl Manchester",
+    "Rose Records",
+    "Meg Shumaker",
+    "Devon West",
+    "Lynn Wold",
+    "Kristi Wright",
+  ]);
+  assert.ok(!names.includes("Karen Christensen"));
+  assert.ok(!names.includes("Karen Speerstra"));
+  assert.ok(!names.includes("Anna Parker"));
+  assert.ok(!names.includes("Val Trca"));
 });
 
 test("review feedback validation rejects rating 5 for internal feedback", () => {
