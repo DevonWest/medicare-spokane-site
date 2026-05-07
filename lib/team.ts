@@ -291,8 +291,9 @@ export function getTeamMemberLastName(name: string): string {
 
 export function getTeamMemberInitials(name: string): string {
   return name
+    .trim()
     .split(" ")
-    .filter(Boolean)
+    .filter((part) => part.length > 0)
     .map((part) => part[0])
     .join("")
     .slice(0, 2);

@@ -23,7 +23,7 @@ export default function TeamPreviewGrid({ members }: TeamPreviewGridProps) {
                   alt={`Photo of ${member.name}, ${member.title}`}
                   width={480}
                   height={600}
-                  sizes="(max-width: 639px) 50vw, (max-width: 767px) 45vw, (max-width: 1279px) 30vw, 22vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 45vw, (max-width: 1280px) 30vw, 22vw"
                   className="h-full w-full object-cover"
                 />
               ) : (
