@@ -15,7 +15,7 @@ A production-ready Next.js (App Router) website for a local Medicare insurance a
 - JSON-LD structured data (LocalBusiness + FAQPage schemas)
 - Dynamic XML sitemap and robots.txt generation
 - Local SEO page structure:
-  - **Directory pages**: `/directory/[city-state]/` for canonicalized legacy city URLs
+  - **Directory pages**: `/directory/[city-state]` for canonicalized legacy city URLs
   - **Local area Medicare pages**: `/medicare-spokane`, `/medicare-spokane-valley`, etc.
   - **ZIP code pages**: `/zip/[zip]` (e.g., `/zip/99201`)
   - **Topic pages**: `/topics/[topic]` (e.g., `/topics/medicare-advantage`)

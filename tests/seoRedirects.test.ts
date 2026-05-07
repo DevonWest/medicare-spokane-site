@@ -61,14 +61,14 @@ test("proxy returns 301 redirects for legacy URLs", () => {
 
 test("local directory pages include required canonical destinations", () => {
   assert.deepEqual(localDirectoryPages, {
-    "/directory/spokane-wa": "/directory/spokane-wa/",
-    "/directory/spokane-valley-wa": "/directory/spokane-valley-wa/",
-    "/directory/cheney-wa": "/directory/cheney-wa/",
-    "/directory/airway-heights-wa": "/directory/airway-heights-wa/",
-    "/directory/liberty-lake-wa": "/directory/liberty-lake-wa/",
-    "/directory/medical-lake-wa": "/directory/medical-lake-wa/",
-    "/directory/mead-wa": "/directory/mead-wa/",
-    "/directory/deer-park-wa": "/directory/deer-park-wa/",
+    "/directory/spokane-wa": "/directory/spokane-wa",
+    "/directory/spokane-valley-wa": "/directory/spokane-valley-wa",
+    "/directory/cheney-wa": "/directory/cheney-wa",
+    "/directory/airway-heights-wa": "/directory/airway-heights-wa",
+    "/directory/liberty-lake-wa": "/directory/liberty-lake-wa",
+    "/directory/medical-lake-wa": "/directory/medical-lake-wa",
+    "/directory/mead-wa": "/directory/mead-wa",
+    "/directory/deer-park-wa": "/directory/deer-park-wa",
   });
 });
 
@@ -86,8 +86,8 @@ test("legacy path resolution keeps charlie-howell on the team page", () => {
 });
 
 test("directory helpers normalize case, trailing slash, and supported locations", () => {
-  assert.equal(getCanonicalDirectoryDestination("/Directory/deer-park-wa"), "/directory/deer-park-wa/");
-  assert.equal(getCanonicalDirectoryDestination("/directory/steptoe-wa/"), "/directory/steptoe-wa/");
+  assert.equal(getCanonicalDirectoryDestination("/Directory/deer-park-wa"), "/directory/deer-park-wa");
+  assert.equal(getCanonicalDirectoryDestination("/directory/steptoe-wa/"), "/directory/steptoe-wa");
   assert.equal(getCanonicalDirectoryDestination("/contact"), null);
   assert.equal(isKnownDirectoryPath("/directory/deer-park-wa/"), true);
   assert.equal(isKnownDirectoryPath("/directory/steptoe-wa/"), false);
@@ -138,11 +138,11 @@ test("proxy redirects /profiles/rose-records to /our-team", () => {
   assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/our-team");
 });
 
-test("proxy redirects /directory/cheney-wa to the canonical lowercase directory URL", () => {
+test("proxy allows canonical lowercase directory URLs to render", () => {
   const response = proxy(new NextRequest("https://www.medicareinspokane.com/directory/cheney-wa"));
 
-  assert.equal(response.status, 301);
-  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/directory/cheney-wa/");
+  assert.notEqual(response.status, 301);
+  assert.equal(response.headers.get("location"), null);
 });
 
 test("proxy redirects old uppercase directory URLs to lowercase directory URLs without from", () => {
@@ -153,7 +153,7 @@ test("proxy redirects old uppercase directory URLs to lowercase directory URLs w
   assert.equal(response.status, 301);
   assert.equal(
     response.headers.get("location"),
-    "https://www.medicareinspokane.com/directory/deer-park-wa/",
+    "https://www.medicareinspokane.com/directory/deer-park-wa",
   );
 });
 
@@ -170,12 +170,12 @@ test("proxy redirects unknown uppercase directory URLs to lowercase before resol
   );
 
   assert.equal(response.status, 301);
-  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/directory/monument-or/");
+  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/directory/monument-or");
 });
 
 test("proxy returns 410 for unknown canonical directory URLs instead of 5xx or 401", () => {
   const response = proxy(
-    new NextRequest("https://www.medicareinspokane.com/directory/steptoe-wa/"),
+    new NextRequest("https://www.medicareinspokane.com/directory/steptoe-wa"),
   );
 
   assert.equal(response.status, 410);
@@ -184,7 +184,7 @@ test("proxy returns 410 for unknown canonical directory URLs instead of 5xx or 4
 
 test("proxy allows canonical supported directory URLs to render", () => {
   const response = proxy(
-    new NextRequest("https://www.medicareinspokane.com/directory/deer-park-wa/"),
+    new NextRequest("https://www.medicareinspokane.com/directory/deer-park-wa"),
   );
 
   assert.notEqual(response.status, 301);
@@ -198,7 +198,7 @@ test("directory page metadata uses a self-referencing canonical URL", async () =
 
   assert.equal(
     metadata.alternates?.canonical,
-    "https://www.medicareinspokane.com/directory/deer-park-wa/",
+    "https://www.medicareinspokane.com/directory/deer-park-wa",
   );
 });
 

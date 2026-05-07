@@ -48,7 +48,7 @@ export function proxy(request: NextRequest) {
   const canonicalDirectoryDestination = getCanonicalDirectoryDestination(request.nextUrl.pathname);
 
   if (canonicalDirectoryDestination) {
-    const redirectUrl = request.nextUrl.clone();
+    const redirectUrl = new URL(request.url);
     const shouldRedirect = request.nextUrl.pathname !== canonicalDirectoryDestination;
 
     redirectUrl.pathname = canonicalDirectoryDestination;

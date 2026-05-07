@@ -29,7 +29,7 @@ export const localDirectoryPages = Object.fromEntries(
     `/directory/${directorySlug}`,
     getDirectoryPath(directorySlug),
   ]),
-) as Record<`/directory/${string}`, `/directory/${string}/`>;
+) as Record<`/directory/${string}`, `/directory/${string}`>;
 
 type LocalDirectoryPath = keyof typeof localDirectoryPages;
 
@@ -54,7 +54,7 @@ export function getCanonicalDirectoryDestination(pathname: string): string | nul
     return null;
   }
 
-  return `${normalizedPath.toLowerCase()}/`;
+  return normalizedPath.toLowerCase();
 }
 
 export function isKnownDirectoryPath(pathname: string): boolean {

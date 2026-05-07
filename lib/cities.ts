@@ -197,5 +197,5 @@ export function getAllDirectorySlugs(): string[] {
 }
 
 export function getDirectoryPath(directorySlug: string): string {
-  return `/directory/${directorySlug}/`;
+  return `/directory/${directorySlug}`;
 }
