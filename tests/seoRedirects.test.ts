@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
+import { generateMetadata as generateDirectoryMetadata } from "../app/directory/[location]/page";
 import { metadata as homeMetadata } from "../app/page";
 import robots from "../app/robots";
 import sitemap from "../app/sitemap";
 import {
+  getCanonicalDirectoryDestination,
   getLegacyPathResolution,
   getLegacyRedirectDestination,
   legacyRedirects,
-  localDirectoryRedirects,
+  isKnownDirectoryPath,
+  localDirectoryPages,
 } from "../lib/legacyRedirects";
 import { siteConfig } from "../lib/site";
 import { proxy } from "../proxy";
@@ -16,6 +19,7 @@ import { proxy } from "../proxy";
 test("legacy redirect map includes required permanent destinations", () => {
   assert.deepEqual(legacyRedirects, {
     "/about": "/our-team",
+    "/charlie-howell": "/our-team",
     "/home": "/",
     "/lynn-wold": "/our-team",
     "/craig-lenhart": "/our-team",
@@ -43,8 +47,8 @@ test("legacy redirect lookup returns canonical destinations and normalizes trail
   assert.equal(getLegacyRedirectDestination("/rx-drug-lookup"), "/rx-drug-review");
   assert.equal(getLegacyRedirectDestination("/request-a-quote"), "/contact");
   assert.equal(getLegacyRedirectDestination("/about"), "/our-team");
+  assert.equal(getLegacyRedirectDestination("/charlie-howell"), "/our-team");
   assert.equal(getLegacyRedirectDestination("/profiles/rose-records/"), "/our-team");
-  assert.equal(getLegacyRedirectDestination("/directory/cheney-wa/"), "/medicare-cheney");
   assert.equal(getLegacyRedirectDestination("/does-not-exist"), null);
 });
 
@@ -55,24 +59,38 @@ test("proxy returns 301 redirects for legacy URLs", () => {
   assert.equal(response.headers.get("location"), "https://example.com/contact?source=google");
 });
 
-test("local directory redirect map includes required canonical destinations", () => {
-  assert.deepEqual(localDirectoryRedirects, {
-    "/directory/spokane-wa": "/medicare-spokane",
-    "/directory/spokane-valley-wa": "/medicare-spokane-valley",
-    "/directory/cheney-wa": "/medicare-cheney",
-    "/directory/airway-heights-wa": "/medicare-airway-heights",
-    "/directory/liberty-lake-wa": "/medicare-liberty-lake",
-    "/directory/medical-lake-wa": "/medicare-medical-lake",
-    "/directory/mead-wa": "/medicare-mead",
-    "/directory/deer-park-wa": "/medicare-deer-park",
+test("local directory pages include required canonical destinations", () => {
+  assert.deepEqual(localDirectoryPages, {
+    "/directory/spokane-wa": "/directory/spokane-wa",
+    "/directory/spokane-valley-wa": "/directory/spokane-valley-wa",
+    "/directory/cheney-wa": "/directory/cheney-wa",
+    "/directory/airway-heights-wa": "/directory/airway-heights-wa",
+    "/directory/liberty-lake-wa": "/directory/liberty-lake-wa",
+    "/directory/medical-lake-wa": "/directory/medical-lake-wa",
+    "/directory/mead-wa": "/directory/mead-wa",
+    "/directory/deer-park-wa": "/directory/deer-park-wa",
   });
 });
 
-test("legacy path resolution returns 410 for removed and unknown legacy directory URLs", () => {
-  assert.deepEqual(getLegacyPathResolution("/charlie-howell"), { type: "gone" });
-  assert.deepEqual(getLegacyPathResolution("/charlie-howell/"), { type: "gone" });
-  assert.deepEqual(getLegacyPathResolution("/directory/monument-or"), { type: "gone" });
-  assert.deepEqual(getLegacyPathResolution("/Directory/hamilton-wa/"), { type: "gone" });
+test("legacy path resolution keeps charlie-howell on the team page", () => {
+  assert.deepEqual(getLegacyPathResolution("/charlie-howell"), {
+    type: "redirect",
+    destination: "/our-team",
+    preserveQuery: true,
+  });
+  assert.deepEqual(getLegacyPathResolution("/charlie-howell/"), {
+    type: "redirect",
+    destination: "/our-team",
+    preserveQuery: true,
+  });
+});
+
+test("directory helpers normalize case, trailing slash, and supported locations", () => {
+  assert.equal(getCanonicalDirectoryDestination("/Directory/deer-park-wa"), "/directory/deer-park-wa");
+  assert.equal(getCanonicalDirectoryDestination("/directory/steptoe-wa/"), "/directory/steptoe-wa");
+  assert.equal(getCanonicalDirectoryDestination("/contact"), null);
+  assert.equal(isKnownDirectoryPath("/directory/deer-park-wa/"), true);
+  assert.equal(isKnownDirectoryPath("/directory/steptoe-wa/"), false);
 });
 
 test("proxy redirects /home to the canonical homepage", () => {
@@ -120,17 +138,14 @@ test("proxy redirects /profiles/rose-records to /our-team", () => {
   assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/our-team");
 });
 
-test("proxy redirects /directory/cheney-wa to /medicare-cheney", () => {
+test("proxy allows canonical lowercase directory URLs to render", () => {
   const response = proxy(new NextRequest("https://www.medicareinspokane.com/directory/cheney-wa"));
 
-  assert.equal(response.status, 301);
-  assert.equal(
-    response.headers.get("location"),
-    "https://www.medicareinspokane.com/medicare-cheney",
-  );
+  assert.notEqual(response.status, 301);
+  assert.equal(response.headers.get("location"), null);
 });
 
-test("proxy redirects old uppercase directory URLs to local medicare pages without legacy query strings", () => {
+test("proxy redirects old uppercase directory URLs to lowercase directory URLs without from", () => {
   const response = proxy(
     new NextRequest("https://www.medicareinspokane.com/Directory/deer-park-wa?from=deer-park-wa"),
   );
@@ -138,24 +153,53 @@ test("proxy redirects old uppercase directory URLs to local medicare pages witho
   assert.equal(response.status, 301);
   assert.equal(
     response.headers.get("location"),
-    "https://www.medicareinspokane.com/medicare-deer-park",
+    "https://www.medicareinspokane.com/directory/deer-park-wa",
   );
 });
 
-test("proxy returns 410 for /charlie-howell", () => {
+test("proxy redirects /charlie-howell to /our-team", () => {
   const response = proxy(new NextRequest("https://www.medicareinspokane.com/charlie-howell"));
 
-  assert.equal(response.status, 410);
-  assert.equal(response.headers.get("location"), null);
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/our-team");
 });
 
-test("proxy returns 410 for unknown directory URLs instead of 5xx", () => {
+test("proxy redirects unknown uppercase directory URLs to lowercase before resolution", () => {
   const response = proxy(
     new NextRequest("https://www.medicareinspokane.com/Directory/monument-or?from=monument-or"),
   );
 
+  assert.equal(response.status, 301);
+  assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/directory/monument-or");
+});
+
+test("proxy returns 410 for unknown canonical directory URLs instead of 5xx or 401", () => {
+  const response = proxy(
+    new NextRequest("https://www.medicareinspokane.com/directory/steptoe-wa"),
+  );
+
   assert.equal(response.status, 410);
   assert.equal(response.headers.get("location"), null);
+});
+
+test("proxy allows canonical supported directory URLs to render", () => {
+  const response = proxy(
+    new NextRequest("https://www.medicareinspokane.com/directory/deer-park-wa"),
+  );
+
+  assert.notEqual(response.status, 301);
+  assert.equal(response.headers.get("location"), null);
+});
+
+test("directory page metadata uses a self-referencing canonical URL", async () => {
+  const metadata = await generateDirectoryMetadata({
+    params: Promise.resolve({ location: "deer-park-wa" }),
+  });
+
+  assert.equal(
+    metadata.alternates?.canonical,
+    "https://www.medicareinspokane.com/directory/deer-park-wa",
+  );
 });
 
 test("proxy permanently redirects the apex root host to canonical www without any port", () => {
