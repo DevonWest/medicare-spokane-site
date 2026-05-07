@@ -5,7 +5,13 @@ import {
   getReviewRatingDestination,
   validateReviewFeedbackInput,
 } from "../lib/reviewFlow";
-import { getActiveReviewableTeamMembers, getTeamMemberSlug } from "../lib/team";
+import {
+  getActiveLicensedTeamMembers,
+  getActiveReviewableTeamMembers,
+  getTeamMemberInitials,
+  getTeamMemberLastName,
+  getTeamMemberSlug,
+} from "../lib/team";
 
 test("5-star rating redirects to the Google review page", () => {
   assert.equal(getReviewRatingDestination("kristi-wright", 5), GOOGLE_REVIEW_URL);
@@ -41,6 +47,41 @@ test("reviewable team members include the active agents and exclude retired or n
   assert.ok(!names.includes("Anna Parker"));
   assert.ok(!names.includes("Val Trca"));
   assert.equal(getTeamMemberSlug("Kristi Wright"), "kristi-wright");
+});
+
+test("homepage team preview includes all active licensed agents in neutral alphabetical order", () => {
+  const members = getActiveLicensedTeamMembers();
+  const names = members.map((member) => member.name);
+
+  assert.deepEqual(names, [
+    "Denise Chan",
+    "Cathy Franklin",
+    "Craig Lenhart",
+    "Sheryl Manchester",
+    "Rose Records",
+    "Meg Shumaker",
+    "Devon West",
+    "Lynn Wold",
+    "Kristi Wright",
+  ]);
+  assert.ok(
+    members.every(
+      (member) => member.active && !member.retired && member.title.includes("Licensed Insurance Agent"),
+    ),
+  );
+});
+
+test("team last-name helper handles suffixes, hyphenated names, and single-word names", () => {
+  assert.equal(getTeamMemberLastName("John Doe Jr."), "Doe");
+  assert.equal(getTeamMemberLastName("Jane Doe Sr."), "Doe");
+  assert.equal(getTeamMemberLastName("John Doe II"), "Doe");
+  assert.equal(getTeamMemberLastName("John Doe III"), "Doe");
+  assert.equal(getTeamMemberLastName("Mary Smith-Jones"), "Smith-Jones");
+  assert.equal(getTeamMemberLastName("Cher"), "Cher");
+});
+
+test("team initials helper ignores extra spaces", () => {
+  assert.equal(getTeamMemberInitials("  Denise   Chan "), "DC");
 });
 
 test("review feedback validation rejects rating 5 for internal feedback", () => {

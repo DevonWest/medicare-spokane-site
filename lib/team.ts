@@ -266,6 +266,50 @@ export function getActiveReviewableTeamMembers(): TeamMember[] {
   return getActiveTeamMembers().filter(isReviewableTeamMember);
 }
 
+export function isLicensedTeamMember(member: TeamMember): boolean {
+  return member.active && !member.retired && member.title.includes("Licensed Insurance Agent");
+}
+
+export function getTeamMemberLastName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const suffixes = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"]);
+
+  if (parts.length === 0) {
+    return name;
+  }
+
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+
+    if (!suffixes.has(part.toLowerCase())) {
+      return part;
+    }
+  }
+
+  return parts.at(-1) ?? name;
+}
+
+export function getTeamMemberInitials(name: string): string {
+  return name
+    .trim()
+    .split(" ")
+    .filter((part) => part.length > 0)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2);
+}
+
+export function getActiveLicensedTeamMembers(): TeamMember[] {
+  return teamMembers
+    .filter(isLicensedTeamMember)
+    .sort((a, b) => {
+      const lastNameComparison = getTeamMemberLastName(a.name).localeCompare(
+        getTeamMemberLastName(b.name),
+      );
+      return lastNameComparison !== 0 ? lastNameComparison : a.name.localeCompare(b.name);
+    });
+}
+
 export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
   const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
   return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
