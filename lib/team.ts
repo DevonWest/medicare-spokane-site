@@ -270,8 +270,18 @@ export function isLicensedTeamMember(member: TeamMember): boolean {
   return member.active && !member.retired && member.title.includes("Licensed Insurance Agent");
 }
 
-function getLastName(name: string): string {
-  const parts = name.trim().split(/\s+/);
+export function getTeamMemberLastName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const suffixes = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"]);
+
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+
+    if (!suffixes.has(part.toLowerCase())) {
+      return part;
+    }
+  }
+
   return parts.at(-1) ?? name;
 }
 
@@ -279,7 +289,9 @@ export function getActiveLicensedTeamMembers(): TeamMember[] {
   return teamMembers
     .filter(isLicensedTeamMember)
     .sort((a, b) => {
-      const lastNameComparison = getLastName(a.name).localeCompare(getLastName(b.name));
+      const lastNameComparison = getTeamMemberLastName(a.name).localeCompare(
+        getTeamMemberLastName(b.name),
+      );
       return lastNameComparison !== 0 ? lastNameComparison : a.name.localeCompare(b.name);
     });
 }

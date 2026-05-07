@@ -8,6 +8,7 @@ import {
 import {
   getActiveLicensedTeamMembers,
   getActiveReviewableTeamMembers,
+  getTeamMemberLastName,
   getTeamMemberSlug,
 } from "../lib/team";
 
@@ -48,7 +49,8 @@ test("reviewable team members include the active agents and exclude retired or n
 });
 
 test("homepage team preview includes all active licensed agents in neutral alphabetical order", () => {
-  const names = getActiveLicensedTeamMembers().map((member) => member.name);
+  const members = getActiveLicensedTeamMembers();
+  const names = members.map((member) => member.name);
 
   assert.deepEqual(names, [
     "Denise Chan",
@@ -61,10 +63,17 @@ test("homepage team preview includes all active licensed agents in neutral alpha
     "Lynn Wold",
     "Kristi Wright",
   ]);
-  assert.ok(!names.includes("Karen Christensen"));
-  assert.ok(!names.includes("Karen Speerstra"));
-  assert.ok(!names.includes("Anna Parker"));
-  assert.ok(!names.includes("Val Trca"));
+  assert.ok(
+    members.every(
+      (member) => member.active && !member.retired && member.title.includes("Licensed Insurance Agent"),
+    ),
+  );
+});
+
+test("team last-name helper handles suffixes, hyphenated names, and single-word names", () => {
+  assert.equal(getTeamMemberLastName("John Doe Jr."), "Doe");
+  assert.equal(getTeamMemberLastName("Mary Smith-Jones"), "Smith-Jones");
+  assert.equal(getTeamMemberLastName("Cher"), "Cher");
 });
 
 test("review feedback validation rejects rating 5 for internal feedback", () => {

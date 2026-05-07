@@ -11,6 +11,7 @@ export default function TeamPreviewGrid({ members }: TeamPreviewGridProps) {
       {members.map((member) => {
         const initials = member.name
           .split(" ")
+          .filter(Boolean)
           .map((part) => part[0])
           .join("")
           .slice(0, 2);
