@@ -183,3 +183,19 @@ export function getLocalMedicarePath(slug: string): string {
 export function getAllLocalMedicarePaths(): string[] {
   return spokaneAreaCities.map((city) => getLocalMedicarePath(city.slug));
 }
+
+function getDirectorySlugByCity(city: Pick<City, "slug" | "stateCode">): string {
+  return `${city.slug}-${city.stateCode.toLowerCase()}`;
+}
+
+export function getCityByDirectorySlug(directorySlug: string): City | undefined {
+  return spokaneAreaCities.find((city) => getDirectorySlugByCity(city) === directorySlug);
+}
+
+export function getAllDirectorySlugs(): string[] {
+  return spokaneAreaCities.map((city) => getDirectorySlugByCity(city));
+}
+
+export function getDirectoryPath(directorySlug: string): string {
+  return `/directory/${directorySlug}/`;
+}

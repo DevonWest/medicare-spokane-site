@@ -62,14 +62,16 @@ function getPrimaryNearbyCommunities(values: string[], fallback: string) {
   return { primary, secondary };
 }
 
-export function getLocalMedicareMetadata(citySlug: string): Metadata {
+export function getLocalMedicareMetadata(
+  citySlug: string,
+  canonicalPath = getLocalMedicarePath(citySlug),
+): Metadata {
   const city = getCityBySlug(citySlug);
 
   if (!city) {
     return { title: "Not Found" };
   }
 
-  const canonicalPath = getLocalMedicarePath(city.slug);
   const title = `Medicare Help in ${city.name}, ${city.stateCode}`;
   const { primary, secondary } = getPrimaryNearbyCommunities(city.nearbyCommunities, city.name);
   const description = `Compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options in ${city.name}, ${city.stateCode} with no-cost help from a Spokane-based licensed independent insurance agency serving ${primary} and ${secondary}.`;
@@ -97,16 +99,20 @@ export function getLocalMedicareMetadata(citySlug: string): Metadata {
 
 interface LocalMedicarePageProps {
   citySlug: string;
+  canonicalPath?: string;
 }
 
-export default function LocalMedicarePage({ citySlug }: LocalMedicarePageProps) {
+export default function LocalMedicarePage({
+  citySlug,
+  canonicalPath: canonicalPathOverride,
+}: LocalMedicarePageProps) {
   const city = getCityBySlug(citySlug);
 
   if (!city) {
     notFound();
   }
 
-  const canonicalPath = getLocalMedicarePath(city.slug);
+  const canonicalPath = canonicalPathOverride ?? getLocalMedicarePath(city.slug);
   const nearbyCommunities = joinList(city.nearbyCommunities, city.name);
   const { primary, secondary } = getPrimaryNearbyCommunities(city.nearbyCommunities, city.name);
   const zipCodes = joinList(city.zipCodes, city.zipCodes[0] ?? city.name);
