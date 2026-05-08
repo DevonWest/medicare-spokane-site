@@ -10,7 +10,7 @@ import ProcessSection from "@/components/ProcessSection";
 import TeamPreviewGrid from "@/components/TeamPreviewGrid";
 import TrustBenefits from "@/components/TrustBenefits";
 import { siteConfig, telHref } from "@/lib/site";
-import { getActiveLicensedTeamMembers } from "@/lib/team";
+import { getHomepageTeamPreviewMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
@@ -66,7 +66,7 @@ const whatHappensNextSteps: string[] = [
 ];
 
 export default function HomePage() {
-  const previewMembers = getActiveLicensedTeamMembers();
+  const previewMembers = getHomepageTeamPreviewMembers();
 
   return (
     <>

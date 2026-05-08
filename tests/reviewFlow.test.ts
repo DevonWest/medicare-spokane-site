@@ -8,6 +8,7 @@ import {
 import {
   getActiveLicensedTeamMembers,
   getActiveReviewableTeamMembers,
+  getHomepageTeamPreviewMembers,
   getTeamMemberInitials,
   getTeamMemberLastName,
   getTeamMemberSlug,
@@ -68,6 +69,27 @@ test("homepage team preview includes all active licensed agents in neutral alpha
     members.every(
       (member) => member.active && !member.retired && member.title.includes("Licensed Insurance Agent"),
     ),
+  );
+});
+
+test("homepage team preview keeps all active licensed agents visible and places Devon West and Denise Chan last", () => {
+  const previewMembers = getHomepageTeamPreviewMembers();
+  const previewNames = previewMembers.map((member) => member.name);
+
+  assert.deepEqual(previewNames, [
+    "Cathy Franklin",
+    "Craig Lenhart",
+    "Sheryl Manchester",
+    "Rose Records",
+    "Meg Shumaker",
+    "Lynn Wold",
+    "Kristi Wright",
+    "Devon West",
+    "Denise Chan",
+  ]);
+  assert.deepEqual(
+    [...previewNames].sort(),
+    [...getActiveLicensedTeamMembers().map((member) => member.name)].sort(),
   );
 });
 

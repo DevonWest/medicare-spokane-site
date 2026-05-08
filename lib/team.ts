@@ -310,6 +310,20 @@ export function getActiveLicensedTeamMembers(): TeamMember[] {
     });
 }
 
+const homepageTeamPreviewLastNames = ["Devon West", "Denise Chan"] as const;
+const homepageTeamPreviewLastNameSet = new Set<string>(homepageTeamPreviewLastNames);
+
+export function getHomepageTeamPreviewMembers(): TeamMember[] {
+  const members = getActiveLicensedTeamMembers();
+
+  return [
+    ...members.filter((member) => !homepageTeamPreviewLastNameSet.has(member.name)),
+    ...homepageTeamPreviewLastNames
+      .map((name) => members.find((member) => member.name === name))
+      .filter((member): member is TeamMember => member !== undefined),
+  ];
+}
+
 export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
   const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
   return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
