@@ -310,15 +310,15 @@ export function getActiveLicensedTeamMembers(): TeamMember[] {
     });
 }
 
-const homepageTeamPreviewLastNames = ["Devon West", "Denise Chan"] as const;
-const homepageTeamPreviewLastNameSet = new Set<string>(homepageTeamPreviewLastNames);
+const homepageTeamPreviewEndNames = ["Devon West", "Denise Chan"] as const;
+const homepageTeamPreviewEndNameSet = new Set<string>(homepageTeamPreviewEndNames);
 
 export function getHomepageTeamPreviewMembers(): TeamMember[] {
   const members = getActiveLicensedTeamMembers();
 
   return [
-    ...members.filter((member) => !homepageTeamPreviewLastNameSet.has(member.name)),
-    ...homepageTeamPreviewLastNames
+    ...members.filter((member) => !homepageTeamPreviewEndNameSet.has(member.name)),
+    ...homepageTeamPreviewEndNames
       .map((name) => members.find((member) => member.name === name))
       .filter((member): member is TeamMember => member !== undefined),
   ];
