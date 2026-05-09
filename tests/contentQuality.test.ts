@@ -32,23 +32,23 @@ const excludedPathParts = [
 
 const internalPublicContentPhrases = [
   "broad education",
+  "category-level education",
+  "compliance note",
+  "compliance reminder",
+  "content governance",
   "content strategy",
-  "thin content",
-  "indexable",
-  "seo",
-  "template",
-  "visitors",
   "conversion",
   "crm",
-  "lead routing",
+  "indexable",
   "local plan details",
-  "category-level education",
-  "without overpromising",
-  "compliance reminder",
-  "compliance note",
-  "use these sections",
+  "lead routing",
   "move from broad education",
-  "content governance",
+  "seo",
+  "template",
+  "thin content",
+  "use these sections",
+  "visitors",
+  "without overpromising",
 ];
 
 function listPublicContentFiles(dir: string): string[] {
@@ -77,6 +77,10 @@ function withoutCodeComments(content: string) {
   return content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
+/**
+ * Use word-boundary-style matching so phrase checks do not flag technical
+ * identifiers that merely contain a blocked word as one segment.
+ */
 function includesPhrase(content: string, phrase: string) {
   const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^a-z])${escapedPhrase}([^a-z]|$)`).test(content);
