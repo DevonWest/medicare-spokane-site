@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const TS_FILE_PATTERN = /\.(ts|tsx)$/;
 
 const publicContentRootNames = ["app", "components", "lib"] as const;
 const publicContentRoots = publicContentRootNames.map((dir) => join(root, dir));
@@ -56,7 +57,7 @@ const internalPublicContentPhrases = [
 const internalPublicContentPatterns = internalPublicContentPhrases.map((phrase) => ({
   phrase,
   // Word boundaries avoid flagging technical identifiers that merely contain a blocked word.
-  pattern: new RegExp(`\\b${escapeRegex(phrase)}\\b`),
+  pattern: new RegExp(`\\b${escapeRegex(phrase)}\\b`, "i"),
 }));
 
 function listPublicContentFiles(dir: string): string[] {
@@ -69,7 +70,7 @@ function listPublicContentFiles(dir: string): string[] {
       return listPublicContentFiles(path);
     }
 
-    if (!/\.(ts|tsx)$/.test(path)) {
+    if (!TS_FILE_PATTERN.test(path)) {
       return [];
     }
 
