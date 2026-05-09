@@ -83,11 +83,11 @@ function escapeRegex(value: string) {
 }
 
 /**
- * Use word-boundary-style matching so phrase checks do not flag technical
+ * Use word-boundary matching so phrase checks do not flag technical
  * identifiers that merely contain a blocked word as one segment.
  */
 function includesPhrase(content: string, phrase: string) {
-  return new RegExp(`(^|[^a-z])${escapeRegex(phrase)}([^a-z]|$)`).test(content);
+  return new RegExp(`\\b${escapeRegex(phrase)}\\b`).test(content);
 }
 
 test("public content avoids internal-facing review phrases", () => {

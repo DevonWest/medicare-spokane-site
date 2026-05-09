@@ -44,7 +44,7 @@ function makeLeadPayload(): LeadPayload {
   };
 }
 
-function makeLeadRequest(body: object): Request {
+function makeLeadRequest(body: LeadPayload | Record<string, unknown>): Request {
   return new Request("http://localhost/api/leads", {
     method: "POST",
     headers: { "content-type": "application/json" },
