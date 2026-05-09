@@ -164,7 +164,7 @@ export default function ContactPage() {
             </div>
 
             <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">
-              <p className="font-semibold mb-1">Compliance note</p>
+              <p className="font-semibold mb-1">Important Medicare information</p>
               <p>{siteConfig.disclaimer}</p>
               <p className="mt-2">{siteConfig.nonAffiliation}</p>
             </div>

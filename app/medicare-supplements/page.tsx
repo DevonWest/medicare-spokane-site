@@ -43,7 +43,7 @@ export default function MedicareSupplementsPage() {
     <>
       <PageHero
         title="Medicare Supplements (Medigap)"
-        subtitle="Help comparing Medicare Supplement plans that work alongside Original Medicare to lower your out-of-pocket costs."
+        subtitle="Help comparing Medicare Supplement plans that work alongside Original Medicare and may help with some out-of-pocket costs."
         crumbs={[{ href: "/", label: "Home" }, { label: "Medicare Supplements" }]}
       />
 
@@ -73,7 +73,7 @@ export default function MedicareSupplementsPage() {
           </ul>
 
           <p>
-            Not sure if Medigap or Medicare Advantage is the better fit?{" "}
+            Not sure how Medigap and Medicare Advantage compare?{" "}
             <Link
               href="/medicare-advantage-vs-supplement-spokane"
               className="text-blue-700 underline"

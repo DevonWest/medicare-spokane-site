@@ -94,7 +94,7 @@ const relatedLinks = [
   {
     href: "/rx-drug-review",
     title: "RX Drug Review",
-    body: "Use our prescription review page if you want extra help organizing medications and pharmacy details before your appointment.",
+    body: "Visit our prescription review page if you want extra help organizing medications and pharmacy details before your appointment.",
   },
   {
     href: "/compare-medicare-options",
@@ -104,7 +104,7 @@ const relatedLinks = [
   {
     href: "/turning-65-medicare-spokane",
     title: "Turning 65 Medicare Spokane",
-    body: "Read more if you are preparing for Medicare for the first time and want a Spokane-focused planning guide.",
+    body: "Read more if you are preparing for Medicare for the first time and want Spokane-focused planning help.",
   },
   {
     href: "/working-past-65-medicare",
@@ -135,8 +135,8 @@ export default function MedicareAppointmentChecklistPage() {
               What to Bring to Your Medicare Appointment
             </h1>
             <p className="max-w-3xl text-xl text-blue-100">
-              Having the right information ready can make your Medicare review easier, faster, and more helpful. Use
-              this checklist before meeting with one of our local licensed insurance agents.
+              Having the right information ready can make your Medicare review easier, faster, and more helpful. Start
+              with this checklist before meeting with one of our local licensed insurance agents.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <a

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
+import type { LeadPayload } from "../lib/leads";
 
 const require = createRequire(import.meta.url);
 
@@ -28,7 +29,7 @@ async function loadLeadModules() {
   return { CRM_PUBLIC_FORM_SUBMISSION_PATH, CRM_SYNC_STATUS, handleLeadPost, submitLeadWithDeps };
 }
 
-function makeLeadPayload() {
+function makeLeadPayload(): LeadPayload {
   return {
     fullName: "Jane Doe",
     email: "jane@example.com",
@@ -43,7 +44,7 @@ function makeLeadPayload() {
   };
 }
 
-function makeLeadRequest(body: Record<string, unknown>): Request {
+function makeLeadRequest(body: LeadPayload | Record<string, unknown>): Request {
   return new Request("http://localhost/api/leads", {
     method: "POST",
     headers: { "content-type": "application/json" },

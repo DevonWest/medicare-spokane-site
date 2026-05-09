@@ -149,7 +149,7 @@ export default function TurningSixtyFivePage() {
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Turning 65 checklist</h2>
             <p className="mt-3 max-w-3xl text-lg leading-relaxed text-gray-700">
-              Use this checklist to organize your next Medicare steps before your enrollment window arrives.
+              Start with this checklist to organize your next Medicare steps before your enrollment window arrives.
             </p>
             <div className="mt-8 grid gap-4">
               {checklistItems.map((item) => (

@@ -128,7 +128,7 @@ export default async function TopicPage({ params }: Props) {
 
       <CTASection
         heading={`Ready to Explore ${topic.title} Options?`}
-        subheading={`Get personalized ${topic.title} advice from a licensed Spokane Medicare agent — free of charge.`}
+        subheading={`Get personalized ${topic.title} help from a licensed Spokane Medicare agent — at no cost to you.`}
       />
     </>
   );

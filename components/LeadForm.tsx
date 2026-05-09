@@ -100,7 +100,7 @@ export default function LeadForm({
     setStatus("success");
     setErrorMessage("");
     setFieldErrors({});
-    // Privacy-friendly conversion tracking — no PII/PHI sent to GTM.
+    // Privacy-friendly request tracking — no PII/PHI sent to GTM.
     trackLeadConversion({
       source,
       utm: Object.keys(utm).length ? utm : undefined,
@@ -285,7 +285,7 @@ export default function LeadForm({
             disabled={status === "submitting"}
             className="mt-5 min-h-11 w-full scroll-mb-[calc(var(--mobile-sticky-cta-offset)+1rem)] rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800 disabled:bg-blue-400"
           >
-            {status === "submitting" ? "Sending..." : "Request My Free Medicare Review"}
+            {status === "submitting" ? "Sending..." : "Request My No-Cost Medicare Review"}
           </button>
 
           <p className="mt-4 text-[11px] leading-5 text-gray-500">

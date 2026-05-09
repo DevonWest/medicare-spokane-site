@@ -28,7 +28,7 @@ const faqs: FAQItem[] = [
   {
     question: "Do I need supplemental insurance if I already have Medicare Advantage?",
     answer:
-      "Some Medicare Advantage plans include limited dental, vision, or hearing benefits. Standalone supplemental policies can fill gaps when those embedded benefits are limited. We can review what your current plan covers and help you decide whether additional coverage is worth it for your situation.",
+      "Some Medicare Advantage plans include limited dental, vision, or hearing benefits. Standalone supplemental policies may help with needs that are not fully covered by your current plan. We can review what your current plan covers and help you decide whether additional coverage is worth reviewing for your situation.",
   },
   {
     question: "Can I add supplemental coverage at any time of year?",
@@ -49,9 +49,9 @@ export default function SupplementalInsurancePage() {
       <section className="py-14 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-gray-800 space-y-5 text-lg leading-relaxed">
           <p>
-            Original Medicare and many Medicare Advantage plans leave gaps in dental, vision, and
-            hospital coverage. Standalone supplemental policies can help fill those gaps so an
-            unexpected event has less of an impact on your budget.
+            Original Medicare and many Medicare Advantage plans may leave gaps in dental, vision, and
+            hospital coverage. Standalone supplemental policies can help with certain expenses, depending
+            on the product, benefits, and eligibility rules.
           </p>
 
           <h2 className="text-2xl font-bold text-gray-900 pt-2">Common supplemental options we help with</h2>
@@ -71,8 +71,8 @@ export default function SupplementalInsurancePage() {
           </ul>
 
           <p>
-            {siteConfig.legalName} can compare the supplemental products we represent and help you
-            decide whether they make sense alongside your Medicare coverage. Carrier and product
+            {siteConfig.legalName} can help you compare the supplemental products we represent and think through
+            whether they make sense alongside your Medicare coverage. Carrier and product
             availability may vary by county.
           </p>
         </div>
