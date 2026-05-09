@@ -22,7 +22,7 @@ const faqs: FAQItem[] = [
   {
     question: "Is Medicare Advantage or Medicare Supplement better in Spokane?",
     answer:
-      "Neither plan type is universally better — they are designed for different priorities. Medicare Advantage often has lower monthly premiums and bundles in extras, but uses provider networks. Medicare Supplement plans typically have higher premiums but predictable out-of-pocket costs and broad provider access. We can review both with you to see which fits your situation.",
+      "Neither plan type is right for everyone — they are designed for different priorities. Medicare Advantage often has lower monthly premiums and may include extra benefits, but uses provider networks. Medicare Supplement plans typically have higher premiums but can offer access to Medicare-accepting providers nationwide. We can review both with you to see which fits your situation.",
   },
   {
     question: "Can I switch from Medicare Advantage to Medicare Supplement later?",

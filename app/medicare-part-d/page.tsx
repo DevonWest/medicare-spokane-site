@@ -32,9 +32,9 @@ const faqs: FAQItem[] = [
       "Creditable coverage is prescription drug coverage that is expected to pay, on average, at least as much as standard Medicare Part D. If you delay enrolling in Part D and do not have creditable coverage, you may owe a late enrollment penalty when you do enroll. We can review your situation with you.",
   },
   {
-    question: "How do I know which Part D plan is best for my prescriptions?",
+    question: "How do I know which Part D plan fits my prescriptions?",
     answer:
-      "There is no single ‘best’ plan — the right plan depends on your specific medications, dosages, and pharmacy preferences. We can sit down with your prescription list and compare how the Part D plans we represent would cover your drugs, including tier placement and preferred-pharmacy pricing.",
+      "There is no single right plan for everyone — the plan to review depends on your specific medications, dosages, and pharmacy preferences. We can sit down with your prescription list and compare how the Part D plans we represent would cover your drugs, including tier placement and preferred-pharmacy pricing.",
   },
 ];
 

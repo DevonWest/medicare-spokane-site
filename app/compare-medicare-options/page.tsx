@@ -247,7 +247,7 @@ export default function CompareMedicareOptionsPage() {
               agent can review doctors, prescriptions, and budget considerations with you.
             </p>
             <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm leading-relaxed text-blue-900">
-              <p className="font-semibold">Compliance note</p>
+              <p className="font-semibold">Important Medicare information</p>
               <p className="mt-2">{siteConfig.disclaimer}</p>
               <p className="mt-2">{siteConfig.nonAffiliation}</p>
             </div>

@@ -21,7 +21,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "The largest city in Eastern Washington and the hub of the Inland Northwest, Spokane is home to thousands of Medicare-eligible residents seeking quality health coverage.",
+      "The largest city in Eastern Washington and the hub of the Inland Northwest, Spokane is home to many Medicare-eligible residents reviewing coverage choices.",
     heroSummary:
       "Straightforward Medicare guidance for Spokane residents who want local help reviewing plan types, prescription coverage, provider access, and out-of-pocket costs.",
     localIntro:
@@ -40,7 +40,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Spokane Valley is a vibrant community east of Spokane with many Medicare options available to its senior residents.",
+      "Spokane Valley is a vibrant community east of Spokane where residents may need to compare plan availability by ZIP code and county.",
     heroSummary:
       "Local Medicare help for Spokane Valley residents who want to compare coverage with east-county provider access, pharmacy convenience, and predictable costs in mind.",
     localIntro:
@@ -59,7 +59,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Home to Eastern Washington University, Cheney offers Medicare beneficiaries access to quality healthcare and insurance options.",
+      "Home to Eastern Washington University, Cheney residents often compare Medicare choices around local access and trips into Spokane.",
     heroSummary:
       "Helpful Medicare comparisons for Cheney residents who want coverage that fits west-county travel patterns, prescription needs, and access to Spokane-area care.",
     localIntro:
@@ -78,7 +78,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Located near Fairchild Air Force Base, Airway Heights residents have access to a growing range of Medicare Advantage and Supplement plans.",
+      "Located near Fairchild Air Force Base, Airway Heights residents often review Medicare Advantage, Medicare Supplement, and Part D options around west-county care patterns.",
     heroSummary:
       "Local Medicare guidance for Airway Heights residents who want to compare plans around west-side travel, provider access, and prescription costs.",
     localIntro:
@@ -97,7 +97,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "One of Washington's newest cities, Liberty Lake offers suburban living with easy access to Spokane-area Medicare insurance options.",
+      "One of Washington's newest cities, Liberty Lake offers suburban living with many residents using care across the eastern Spokane County corridor.",
     heroSummary:
       "Medicare guidance for Liberty Lake residents who want to compare plans without losing sight of pharmacy access, ZIP-based availability, and east-county provider networks.",
     localIntro:
@@ -116,7 +116,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Medical Lake is a small city west of Spokane with Medicare plans tailored to its close-knit senior community.",
+      "Medical Lake is a small city west of Spokane where plan availability, provider access, and pharmacy choices may vary by location.",
     heroSummary:
       "Practical Medicare help for Medical Lake residents who want to compare plans around small-town convenience, prescription coverage, and travel into Spokane for care.",
     localIntro:
@@ -135,7 +135,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Mead is a northern Spokane suburb where Medicare beneficiaries can find comprehensive coverage options.",
+      "Mead is a northern Spokane suburb where Medicare beneficiaries often compare coverage around North Spokane provider and pharmacy access.",
     heroSummary:
       "Local Medicare comparisons for Mead residents who want north-corridor provider access, dependable prescription coverage, and help from a Spokane-based agency.",
     localIntro:
@@ -154,7 +154,7 @@ export const spokaneAreaCities: City[] = [
     state: "Washington",
     stateCode: "WA",
     description:
-      "Deer Park is a small community north of Spokane offering Medicare plans for its growing senior population.",
+      "Deer Park is a small community north of Spokane where distance, pharmacy access, and county-based availability can matter when reviewing Medicare options.",
     heroSummary:
       "Straightforward Medicare guidance for Deer Park residents who want to compare plans around distance, pharmacy access, and trips into greater Spokane for care.",
     localIntro:

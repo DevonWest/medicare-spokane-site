@@ -12,14 +12,14 @@ export const medicareTopics: Topic[] = [
     title: "Medicare Advantage (Part C)",
     slug: "medicare-advantage",
     shortDescription:
-      "Medicare Advantage plans bundle hospital, medical, and often drug coverage into one convenient plan offered by private insurers.",
+      "Medicare Advantage plans are offered by Medicare-approved private insurers and may combine hospital, medical, drug, and other benefits.",
     longDescription:
-      "Medicare Advantage (Part C) is an alternative to Original Medicare offered by Medicare-approved private insurance companies. These plans must cover everything Original Medicare covers and often include additional benefits like dental, vision, hearing, and prescription drug coverage. Many Spokane-area residents choose Medicare Advantage for its all-in-one convenience and potential cost savings.",
+      "Medicare Advantage (Part C) is an alternative to Original Medicare offered by Medicare-approved private insurance companies. These plans must cover everything Original Medicare covers and may include benefits like dental, vision, hearing, and prescription drug coverage. Plan benefits, networks, costs, and drug coverage vary by plan and ZIP code.",
     keywords: ["Medicare Advantage", "Part C", "Medicare Advantage plans Spokane", "HMO Medicare", "PPO Medicare"],
     benefits: [
-      "All-in-one coverage bundling hospital and medical",
-      "Often includes dental, vision, and hearing benefits",
-      "Prescription drug coverage (Part D) typically included",
+      "One plan may include hospital, medical, and other benefits",
+      "Some plans include dental, vision, and hearing benefits",
+      "Many plans include prescription drug coverage, but not all",
       "May have $0 or low monthly premiums",
       "Out-of-pocket maximum protection",
     ],
@@ -30,10 +30,10 @@ export const medicareTopics: Topic[] = [
     shortDescription:
       "Medicare Supplement plans help pay the costs that Original Medicare doesn't cover, like copays, coinsurance, and deductibles.",
     longDescription:
-      "Medicare Supplement insurance (Medigap) is sold by private companies to fill the 'gaps' in Original Medicare coverage. If you have Original Medicare and a Medigap policy, Medicare pays its share of approved costs, then your Medigap policy pays its share. This means you can see any doctor in the US who accepts Medicare — with predictable, manageable out-of-pocket costs.",
+      "Medicare Supplement insurance (Medigap) is sold by private companies to help pay some out-of-pocket costs in Original Medicare. If you have Original Medicare and a Medigap policy, Medicare pays its share of approved costs, then your Medigap policy pays its share based on the plan letter you choose. You can generally see any doctor in the U.S. who accepts Medicare.",
     keywords: ["Medigap", "Medicare Supplement", "Medicare Supplement plans Spokane WA", "Plan G", "Plan N"],
     benefits: [
-      "Predictable, low out-of-pocket costs",
+      "More predictable out-of-pocket costs for some services",
       "See any Medicare-accepting doctor nationwide",
       "No network restrictions",
       "Covers Medicare Part A and B cost-sharing",
@@ -44,15 +44,15 @@ export const medicareTopics: Topic[] = [
     title: "Medicare Part D (Drug Plans)",
     slug: "medicare-part-d",
     shortDescription:
-      "Medicare Part D prescription drug plans help cover the cost of medications, reducing your out-of-pocket drug expenses.",
+      "Medicare Part D prescription drug plans help pay for covered medications, with details that vary by plan.",
     longDescription:
-      "Medicare Part D is the prescription drug coverage portion of Medicare. It's offered through private insurance companies approved by Medicare. Part D plans help cover the cost of prescription drugs and can lower your medication expenses significantly. Spokane-area residents with Original Medicare can add a standalone Part D plan, while Medicare Advantage plans typically include drug coverage.",
+      "Medicare Part D helps pay for prescription drugs and is offered through private insurance companies approved by Medicare. Each plan has its own formulary, pharmacy network, tiers, and costs. Spokane-area residents with Original Medicare can add a standalone Part D plan, while many Medicare Advantage plans include drug coverage.",
     keywords: ["Medicare Part D", "prescription drug plan", "Medicare drug coverage Spokane", "PDP"],
     benefits: [
       "Covers brand-name and generic prescription drugs",
-      "Protects against high medication costs",
-      "Available as standalone PDP or included in Medicare Advantage",
-      "Formulary covers thousands of medications",
+      "Helps with covered prescription drug costs",
+      "Available as standalone PDP or included in many Medicare Advantage plans",
+      "Each plan has its own formulary and pharmacy rules",
       "Catastrophic coverage for very high drug costs",
     ],
   },
@@ -76,14 +76,14 @@ export const medicareTopics: Topic[] = [
     title: "Medicare for Seniors 65+",
     slug: "medicare-for-seniors",
     shortDescription:
-      "Turn 65 soon? Get a clear guide to Medicare options for new beneficiaries in the Spokane area.",
+      "Turn 65 soon? Get plain-English help reviewing Medicare options in the Spokane area.",
     longDescription:
-      "Turning 65 is a major Medicare milestone. When you become eligible, you'll have access to Original Medicare (Parts A and B), Medicare Advantage (Part C), Medicare Supplement (Medigap), and Part D drug plans. A licensed Medicare broker in Spokane can help you understand your options, compare plans, and enroll in the coverage that best fits your health needs and budget — at no cost to you.",
+      "Turning 65 is a major Medicare milestone. When you become eligible, you can review Original Medicare (Parts A and B), Medicare Advantage (Part C), Medicare Supplement (Medigap), and Part D drug plans. A licensed Medicare agent in Spokane can help you understand your options, compare the plans we represent, and choose coverage based on your health needs and budget — at no cost to you.",
     keywords: ["Medicare turning 65", "Medicare for seniors", "new to Medicare Spokane", "Medicare 65 enrollment"],
     benefits: [
-      "Understand all Medicare options at 65",
+      "Understand Medicare options at 65",
       "Compare Original Medicare vs. Medicare Advantage",
-      "Free consultation with a licensed local agent",
+      "No-cost consultation with a licensed local agent",
       "Avoid common Medicare enrollment mistakes",
       "Get coverage tailored to your health and budget",
     ],
@@ -100,7 +100,7 @@ export const medicareTopics: Topic[] = [
       "Review and update coverage every year",
       "Switch between Original Medicare and Medicare Advantage",
       "Change your Part D prescription drug plan",
-      "Take advantage of new plan benefits",
+      "Review new plan benefits when available",
       "Compare updated plan costs and formularies",
     ],
   },

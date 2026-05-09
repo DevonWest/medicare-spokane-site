@@ -36,26 +36,26 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         href: "/turning-65-medicare-spokane",
         title: "Turning 65 in Spokane",
         body: "Use a local checklist to understand enrollment timing, employer coverage questions, and the next steps before Medicare begins.",
-        ctaLabel: "Read Guide",
+        ctaLabel: "Read More",
       },
       {
         href: "/compare-medicare-options",
         title: "Compare Medicare Options",
         body: "Review Medicare Advantage, Medicare Supplement, Part D, and related coverage types from the plans we represent.",
-        ctaLabel: "Read Guide",
+        ctaLabel: "Read More",
       },
       {
         href: "/medicare-appointment-checklist",
         title: "What to Bring to Your Medicare Appointment",
         body: "Use this simple checklist to organize prescriptions, doctors, pharmacies, and questions before your visit.",
-        ctaLabel: "Read Guide",
+        ctaLabel: "Read More",
       },
     ],
   },
   {
     title: "Reviewing or Changing Coverage",
     intro:
-      "Use these guides when you want help reviewing prescriptions, plan types, and coverage details before you make a change.",
+      "Review these pages when you want help with prescriptions, plan types, and coverage details before you make a change.",
     items: [
       {
         href: "/medicare-plan-review-spokane",
@@ -73,7 +73,7 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         href: "/medicare-part-d",
         title: "Medicare Part D",
         body: "Learn how standalone prescription drug coverage works, what changes year to year, and what to review before enrolling.",
-        ctaLabel: "Read Guide",
+        ctaLabel: "Read More",
       },
     ],
   },
@@ -99,7 +99,7 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         href: "/working-past-65-medicare",
         title: "Working Past 65 and Medicare",
         body: "Understand Medicare timing, employer coverage questions, Part B, Part D, and HSA-related concerns.",
-        ctaLabel: "Read Guide",
+        ctaLabel: "Read More",
       },
     ],
   },
@@ -188,7 +188,7 @@ export default function ResourcesPage() {
                       </h4>
                       <p className="mt-3 text-base leading-relaxed text-gray-700">{resource.body}</p>
                       <span className="mt-5 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                        {resource.ctaLabel ?? "Read Guide"} →
+                        {resource.ctaLabel ?? "Read More"} →
                       </span>
                     </Link>
                   ))}

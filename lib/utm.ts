@@ -3,7 +3,7 @@
  *
  * UTMs are parsed once on first arrival and persisted in `sessionStorage`
  * so they survive client-side navigation and remain attached to whichever
- * page the visitor finally converts on.
+ * page the user completes their request on.
  */
 
 export interface UtmParams {
