@@ -5,7 +5,8 @@ import test from "node:test";
 
 const root = process.cwd();
 
-const publicContentRoots = ["app", "components", "lib"].map((dir) => join(root, dir));
+const publicContentRootNames = ["app", "components", "lib"] as const;
+const publicContentRoots = publicContentRootNames.map((dir) => join(root, dir));
 
 const excludedPathParts = [
   `${join("app", "api")}${"/"}`,
@@ -77,13 +78,16 @@ function withoutCodeComments(content: string) {
   return content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Use word-boundary-style matching so phrase checks do not flag technical
  * identifiers that merely contain a blocked word as one segment.
  */
 function includesPhrase(content: string, phrase: string) {
-  const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[^a-z])${escapedPhrase}([^a-z]|$)`).test(content);
+  return new RegExp(`(^|[^a-z])${escapeRegex(phrase)}([^a-z]|$)`).test(content);
 }
 
 test("public content avoids internal-facing review phrases", () => {
