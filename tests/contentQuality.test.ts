@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = process.cwd();
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const publicContentRootNames = ["app", "components", "lib"] as const;
 const publicContentRoots = publicContentRootNames.map((dir) => join(root, dir));
@@ -52,6 +53,12 @@ const internalPublicContentPhrases = [
   "without overpromising",
 ];
 
+const internalPublicContentPatterns = internalPublicContentPhrases.map((phrase) => ({
+  phrase,
+  // Word boundaries avoid flagging technical identifiers that merely contain a blocked word.
+  pattern: new RegExp(`\\b${escapeRegex(phrase)}\\b`),
+}));
+
 function listPublicContentFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
@@ -74,20 +81,8 @@ function listPublicContentFiles(dir: string): string[] {
   });
 }
 
-function withoutCodeComments(content: string) {
-  return content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
-}
-
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Use word-boundary matching so phrase checks do not flag technical
- * identifiers that merely contain a blocked word as one segment.
- */
-function includesPhrase(content: string, phrase: string) {
-  return new RegExp(`\\b${escapeRegex(phrase)}\\b`).test(content);
 }
 
 test("public content avoids internal-facing review phrases", () => {
@@ -95,10 +90,11 @@ test("public content avoids internal-facing review phrases", () => {
     .flatMap(listPublicContentFiles)
     .flatMap((path) => {
       const relPath = relative(root, path);
-      const content = withoutCodeComments(readFileSync(path, "utf8")).toLowerCase();
+      const content = readFileSync(path, "utf8").toLowerCase();
 
-      return internalPublicContentPhrases
-        .filter((phrase) => includesPhrase(content, phrase))
+      return internalPublicContentPatterns
+        .filter(({ pattern }) => pattern.test(content))
+        .map(({ phrase }) => phrase)
         .map((phrase) => `${relPath}: "${phrase}"`);
     });
 
