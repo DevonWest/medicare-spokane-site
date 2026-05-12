@@ -2,7 +2,6 @@ import { getAllDirectorySlugs, getDirectoryPath } from "./cities";
 
 export const legacyRedirects = {
   "/about": "/our-team",
-  "/charlie-howell": "/our-team",
   "/home": "/",
   "/lynn-wold": "/our-team",
   "/craig-lenhart": "/our-team",
@@ -12,6 +11,7 @@ export const legacyRedirects = {
   "/sheryl-manchester": "/our-team",
   "/karen-christensen": "/our-team",
   "/karen-speerstra": "/our-team",
+  "/profiles/karen-speerstra": "/our-team",
   "/medicare-supplement-insurance-plans": "/medicare-supplements",
   "/medicare-part-d-prescription-plans": "/medicare-part-d",
   "/videos": "/resources",
@@ -33,7 +33,24 @@ export const localDirectoryPages = Object.fromEntries(
 
 type LocalDirectoryPath = keyof typeof localDirectoryPages;
 
-const legacyGonePaths = new Set<string>();
+// Legacy /directory/* URLs from the prior site that map to a relevant local
+// Medicare page. These take precedence over the generic 410 Gone response we
+// otherwise return for unknown directory paths so Search Console crawls land
+// on the closest active local page.
+export const legacyDirectoryRedirects: Record<string, string> = {
+  "/directory/mica-wa": "/medicare-spokane",
+  "/directory/newman-lake-wa": "/medicare-spokane-valley",
+  "/directory/fairfield-wa": "/medicare-spokane",
+  "/directory/freeman-wa": "/medicare-spokane",
+  "/directory/four-lakes-wa": "/medicare-spokane",
+};
+
+// Removed/irrelevant legacy paths that should return 410 Gone so search
+// engines drop them. /directory/* paths that are not in the known directory
+// set and not in legacyDirectoryRedirects also return 410 by default.
+const legacyGonePaths = new Set<string>([
+  "/charlie-howell",
+]);
 
 export type LegacyPathResolution =
   | { type: "redirect"; destination: string; preserveQuery: boolean }
@@ -63,8 +80,14 @@ export function isKnownDirectoryPath(pathname: string): boolean {
   return Boolean(localDirectoryPages[normalizedPath as LocalDirectoryPath]);
 }
 
+export function getLegacyDirectoryRedirect(pathname: string): string | null {
+  const normalizedPath = normalizeLegacyPath(pathname).toLowerCase();
+
+  return legacyDirectoryRedirects[normalizedPath] ?? null;
+}
+
 export function getLegacyPathResolution(pathname: string): LegacyPathResolution | null {
-  const normalizedPath = normalizeLegacyPath(pathname);
+  const normalizedPath = normalizeLegacyPath(pathname).toLowerCase();
 
   if (legacyGonePaths.has(normalizedPath)) {
     return { type: "gone" };
