@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
-  getCanonicalDirectoryDestination,
+  getLegacyDirectoryRedirect,
   getLegacyPathResolution,
   isKnownDirectoryPath,
 } from "@/lib/legacyRedirects";
@@ -33,6 +33,14 @@ function getRequestHost(request: NextRequest): string {
   );
 }
 
+function stripTrailingSlash(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname;
+}
+
 export function proxy(request: NextRequest) {
   const requestHost = getRequestHost(request);
 
@@ -45,37 +53,53 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
-  const canonicalDirectoryDestination = getCanonicalDirectoryDestination(request.nextUrl.pathname);
+  const pathname = request.nextUrl.pathname;
+  const lowerPathname = pathname.toLowerCase();
 
-  if (canonicalDirectoryDestination) {
-    const redirectUrl = new URL(request.url);
-    const shouldRedirect = request.nextUrl.pathname !== canonicalDirectoryDestination;
+  if (lowerPathname.startsWith("/directory/")) {
+    const normalizedLowerPath = stripTrailingSlash(lowerPathname);
 
-    redirectUrl.pathname = canonicalDirectoryDestination;
+    // Legacy directory paths that should redirect to the closest active
+    // local Medicare page take precedence over the generic 410 response.
+    const legacyDirectoryDestination = getLegacyDirectoryRedirect(normalizedLowerPath);
 
-    if (redirectUrl.searchParams.has("from")) {
-      redirectUrl.searchParams.delete("from");
-    }
-
-    if (
-      shouldRedirect ||
-      redirectUrl.search !== request.nextUrl.search
-    ) {
-      if (!redirectUrl.searchParams.size) {
-        redirectUrl.search = "";
-      }
+    if (legacyDirectoryDestination) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = legacyDirectoryDestination;
+      redirectUrl.search = "";
 
       return NextResponse.redirect(redirectUrl, 301);
     }
 
-    if (!isKnownDirectoryPath(request.nextUrl.pathname)) {
-      return new NextResponse(null, { status: 410 });
+    if (isKnownDirectoryPath(normalizedLowerPath)) {
+      const needsPathRewrite = pathname !== normalizedLowerPath;
+      const hasFromQuery = request.nextUrl.searchParams.has("from");
+
+      if (needsPathRewrite || hasFromQuery) {
+        const redirectUrl = new URL(request.url);
+        redirectUrl.pathname = normalizedLowerPath;
+
+        if (hasFromQuery) {
+          redirectUrl.searchParams.delete("from");
+        }
+
+        if (!redirectUrl.searchParams.size) {
+          redirectUrl.search = "";
+        }
+
+        return NextResponse.redirect(redirectUrl, 301);
+      }
+
+      return NextResponse.next();
     }
 
-    return NextResponse.next();
+    // Unknown legacy /directory/* path → 410 Gone regardless of case or
+    // query string so Search Console drops it cleanly without producing a
+    // soft-404 redirect chain.
+    return new NextResponse(null, { status: 410 });
   }
 
-  const legacyResolution = getLegacyPathResolution(request.nextUrl.pathname);
+  const legacyResolution = getLegacyPathResolution(pathname);
 
   if (!legacyResolution) {
     return NextResponse.next();
@@ -85,7 +109,7 @@ export function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 410 });
   }
 
-  const redirectUrl = request.nextUrl.clone();
+  const redirectUrl = new URL(request.url);
   redirectUrl.pathname = legacyResolution.destination;
 
   if (!legacyResolution.preserveQuery) {
