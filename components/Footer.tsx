@@ -26,6 +26,7 @@ const resourceLinks: Array<{ href: string; label: string }> = [
   { href: "/helping-parent-with-medicare", label: "Helping a Parent with Medicare" },
   { href: "/working-past-65-medicare", label: "Working Past 65 & Medicare" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
+  { href: "/health-insurance-spokane", label: "Health Insurance Help in Spokane" },
 ];
 
 const aboutLinks: Array<{ href: string; label: string }> = [

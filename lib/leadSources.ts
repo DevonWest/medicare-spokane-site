@@ -32,6 +32,7 @@ export const LEAD_SOURCES = [
   "medicare-mead",
   "medicare-deer-park",
   "review-feedback",
+  "health-insurance-spokane",
   "unknown",
 ] as const;
 

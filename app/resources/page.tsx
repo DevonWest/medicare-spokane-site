@@ -110,6 +110,19 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
     ],
   },
   {
+    title: "Health Insurance Help",
+    intro:
+      "Help for Spokane-area individuals and families reviewing health insurance options when Medicare is not yet a factor.",
+    items: [
+      {
+        href: "/health-insurance-spokane",
+        title: "Health Insurance Help in Spokane",
+        body: "Local guidance for individuals, families, self-employed workers, and people not yet eligible for Medicare reviewing health insurance options.",
+        ctaLabel: "Read More",
+      },
+    ],
+  },
+  {
     title: "More Spokane Medicare Resources",
     intro:
       "Additional guides and supporting pages for common Medicare questions, plan comparisons, and local agency information.",
