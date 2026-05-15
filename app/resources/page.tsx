@@ -64,6 +64,12 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         ctaLabel: "Get Help",
       },
       {
+        href: "/medicare-annual-enrollment-spokane",
+        title: "Medicare Annual Enrollment Help in Spokane",
+        body: "Plain-language overview of the Annual Enrollment Period (Oct 15 – Dec 7) and what to review for the next plan year.",
+        ctaLabel: "Get Help",
+      },
+      {
         href: "/rx-drug-review",
         title: "Prescription Drug Review",
         body: "Bring your medication list and compare how Medicare Advantage and Part D plans we represent may cover your prescriptions.",
@@ -112,6 +118,16 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         href: "/medicare-enrollment-resources",
         title: "Medicare Enrollment Resources",
         body: "Initial Enrollment Period, Annual Enrollment Period, and Special Enrollment Periods explained in plain language.",
+      },
+      {
+        href: "/moving-to-spokane-medicare",
+        title: "Moving to Spokane & Medicare",
+        body: "Why Medicare Advantage and Part D options can vary by county, ZIP code, network, and pharmacy when you move.",
+      },
+      {
+        href: "/medicare-savings-program-extra-help-washington",
+        title: "Medicare Savings Program & Extra Help (Washington)",
+        body: "Educational overview of programs that may help with Medicare costs, including Medicare Savings Programs, Apple Health, and Extra Help.",
       },
       {
         href: "/medicare-faq",
