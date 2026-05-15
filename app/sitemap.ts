@@ -63,6 +63,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.85,
     },
+    {
+      url: `${baseUrl}/medicare-annual-enrollment-spokane`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/medicare-savings-program-extra-help-washington`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/moving-to-spokane-medicare`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
     { url: `${baseUrl}/resources`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
