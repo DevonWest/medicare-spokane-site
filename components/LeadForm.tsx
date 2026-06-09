@@ -14,6 +14,10 @@ interface LeadFormProps {
   heading?: string;
   subheading?: string;
   showMessage?: boolean;
+  submitLabel?: string;
+  successBody?: string;
+  zipHelperText?: string;
+  disclosureText?: string;
   className?: string;
 }
 
@@ -25,6 +29,10 @@ export default function LeadForm({
   heading = "Request a Free Medicare Review",
   subheading = "Fill out the form and a licensed agent will contact you. There is no cost or obligation.",
   showMessage = false,
+  submitLabel = "Request My No-Cost Medicare Review",
+  successBody = "A licensed local Medicare agent will review your information and contact you soon. We typically respond the same business day during business hours.",
+  zipHelperText = "Optional, but helpful because Medicare plan availability varies by ZIP code.",
+  disclosureText = "By submitting, you agree to be contacted by a licensed insurance professional about Medicare insurance options. We do not offer every plan available in your area. Currently, we represent 8 organizations which offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health Insurance Assistance Program (SHIP) to get information on all of your options.",
   className = "",
 }: LeadFormProps) {
   const [status, setStatus] = useState<Status>("idle");
@@ -123,10 +131,7 @@ export default function LeadForm({
             <FriendlyIllustration name="requestConfirmation" />
           </div>
           <h3 className="mb-3 text-2xl font-semibold text-green-950">Thank you — we received your request.</h3>
-          <p className="text-base leading-7 text-slate-800">
-            A licensed local Medicare agent will review your information and contact you soon. We typically respond the
-            same business day during business hours.
-          </p>
+          <p className="text-base leading-7 text-slate-800">{successBody}</p>
           <p className="mt-3 text-base font-medium text-slate-900">Need help right away? Call 509-353-0476.</p>
           <a
             href="tel:5093530476"
@@ -230,7 +235,7 @@ export default function LeadForm({
                 ZIP code
               </label>
               <p id="lead-zip-helper" className="mb-1 text-sm leading-5 text-gray-600">
-                Optional, but helpful because Medicare plan availability varies by ZIP code.
+                {zipHelperText}
               </p>
             <input
               id="lead-zip"
@@ -285,14 +290,11 @@ export default function LeadForm({
             disabled={status === "submitting"}
             className="mt-5 min-h-11 w-full scroll-mb-[calc(var(--mobile-sticky-cta-offset)+1rem)] rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800 disabled:bg-blue-400"
           >
-            {status === "submitting" ? "Sending..." : "Request My No-Cost Medicare Review"}
+          {status === "submitting" ? "Sending..." : submitLabel}
           </button>
 
           <p className="mt-4 text-[11px] leading-5 text-gray-500">
-            By submitting, you agree to be contacted by a licensed insurance professional about Medicare insurance
-            options. We do not offer every plan available in your area. Currently, we represent 8 organizations which
-          offer 75 products in your area. Please contact Medicare.gov, 1-800-MEDICARE, or your local State Health
-          Insurance Assistance Program (SHIP) to get information on all of your options.
+          {disclosureText}
         </p>
       </form>
     </div>

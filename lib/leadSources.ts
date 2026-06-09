@@ -33,6 +33,9 @@ export const LEAD_SOURCES = [
   "medicare-deer-park",
   "review-feedback",
   "health-insurance-spokane",
+  "individual-family-health-insurance-spokane",
+  "self-employed-health-insurance-spokane",
+  "health-insurance-special-enrollment-spokane",
   "unknown",
 ] as const;
 
