@@ -6,30 +6,30 @@ import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Health Insurance Help Spokane WA | Health Insurance Options",
+  title: "Affordable Health Insurance Help in Spokane, WA | Health Insurance Options",
   description:
-    "Get local help reviewing health insurance options in Spokane, WA. Health Insurance Options LLC helps individuals and families understand coverage choices before Medicare.",
+    "Get local help reviewing individual and family health insurance options in Spokane, WA. Health Insurance Options LLC helps people compare coverage, costs, provider access, and enrollment timing before Medicare.",
   alternates: { canonical: `${siteConfig.url}/health-insurance-spokane` },
   openGraph: {
-    title: "Health Insurance Help Spokane WA | Health Insurance Options",
+    title: "Affordable Health Insurance Help in Spokane, WA | Health Insurance Options",
     description:
-      "Get local help reviewing health insurance options in Spokane, WA. Health Insurance Options LLC helps individuals and families understand coverage choices before Medicare.",
+      "Get local help reviewing individual and family health insurance options in Spokane, WA. Health Insurance Options LLC helps people compare coverage, costs, provider access, and enrollment timing before Medicare.",
     url: `${siteConfig.url}/health-insurance-spokane`,
   },
 };
 
 const audienceCards: Array<{ title: string; body: string }> = [
   {
-    title: "Individuals and families",
-    body: "Households reviewing health insurance options for themselves or their dependents.",
-  },
-  {
     title: "Self-employed workers",
-    body: "Freelancers, contractors, and small-business owners who need their own coverage.",
+    body: "Freelancers, contractors, and small-business owners reviewing coverage options outside an employer plan.",
   },
   {
     title: "People losing employer coverage",
-    body: "Workers leaving a job, retiring early, or coming off a spouse's plan.",
+    body: "Workers leaving a job, retiring early, or coming off a spouse's plan who need to understand enrollment timing.",
+  },
+  {
+    title: "Families comparing coverage",
+    body: "Households reviewing premiums, deductibles, copays, prescriptions, and provider access for dependents.",
   },
   {
     title: "People moving to Washington",
@@ -40,8 +40,8 @@ const audienceCards: Array<{ title: string; body: string }> = [
     body: "Adults under 65 looking at health insurance choices before Medicare begins.",
   },
   {
-    title: "People comparing Marketplace or private health insurance options",
-    body: "Anyone weighing Washington Healthplanfinder Marketplace plans alongside private coverage.",
+    title: "People between jobs",
+    body: "Spokane-area residents reviewing available options while they are between employer coverage.",
   },
 ];
 
@@ -65,6 +65,11 @@ const processSteps: string[] = [
 
 const faqs: FAQItem[] = [
   {
+    question: "Can you help me find affordable health insurance in Spokane?",
+    answer:
+      "Yes. We help Spokane-area individuals and families review available health insurance options and understand costs, provider access, prescriptions, and enrollment timing. We do not guarantee savings or eligibility.",
+  },
+  {
     question: "Do you help people who are not on Medicare?",
     answer:
       "Yes. While most of our work focuses on Medicare, we also help Spokane-area individuals and families review health insurance options when Medicare is not yet a factor.",
@@ -72,7 +77,7 @@ const faqs: FAQItem[] = [
   {
     question: "Can you help if I am self-employed?",
     answer:
-      "Yes. Self-employed workers, freelancers, and small-business owners often need to find their own coverage. We can walk through the options available through the carriers and plans we represent.",
+      "Yes. Self-employed workers, freelancers, and small-business owners often need to find their own coverage. We can walk through available options through the carriers and plans we represent.",
   },
   {
     question: "Can you help if I lost employer coverage?",
@@ -80,15 +85,17 @@ const faqs: FAQItem[] = [
       "Yes. Losing employer coverage may open a Special Enrollment Period. We can help you understand timing, what to look at, and what coverage choices may be available.",
   },
   {
-    question: "Can you help families compare health insurance options?",
-    answer:
-      "Yes. We can sit down with families to review premiums, deductibles, doctor and provider access, prescription needs, and household considerations so you can choose what fits.",
-  },
-  {
     question: "What if I am turning 65 soon?",
     answer:
       "If you are turning 65 or already on Medicare, your options are different. Visit our Turning 65 in Spokane page or our Medicare Help page for guidance on Medicare Advantage, Medicare Supplement, and Part D.",
   },
+];
+
+const affordabilityBullets: string[] = [
+  "Review premiums, deductibles, copays, and out-of-pocket costs",
+  "Look at doctor and provider access",
+  "Consider prescription coverage and pharmacy needs",
+  "Explain enrollment timing and special enrollment situations",
 ];
 
 const internalLinks: Array<{ href: string; label: string; body: string }> = [
@@ -137,10 +144,10 @@ export default function HealthInsuranceSpokanePage() {
           </nav>
           <div className="max-w-4xl">
             <p className="mb-3 landscape-mobile:mb-1 text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
-              Local Health Insurance Help for Spokane-Area Residents
+              Affordable Coverage Guidance for Individuals and Families
             </p>
             <h1 className="mb-4 landscape-mobile:mb-2 text-4xl landscape-mobile:text-2xl landscape-mobile:leading-snug font-extrabold leading-tight md:text-5xl">
-              Health Insurance Help for Spokane Residents
+              Health Insurance Help in Spokane, WA
             </h1>
             <p className="max-w-3xl text-xl landscape-mobile:text-base text-blue-100">
               {siteConfig.legalName} helps Spokane-area individuals and families review health insurance options,
@@ -170,12 +177,26 @@ export default function HealthInsuranceSpokanePage() {
       <section className="bg-white px-4 py-16">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Who this page is for</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              This page is for people who are not currently on Medicare and want help reviewing health insurance
-              options.
+            <h2 className="text-3xl font-bold text-gray-900">
+              Looking for Affordable Health Insurance Coverage in Spokane?
+            </h2>
+            <p className="mt-3 text-lg leading-relaxed text-gray-700">
+              We help individuals and families review available health insurance options before Medicare. A local
+              licensed agent can explain coverage options clearly so you can compare costs, provider access,
+              prescription coverage, and enrollment timing before you decide what to do next.
+            </p>
+            <p className="mt-4 text-base leading-relaxed text-gray-700">
+              We do not guarantee savings or eligibility. Our role is to help you understand the plans we represent
+              and other available options in plain language so you can make an informed decision.
             </p>
           </div>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+            {affordabilityBullets.map((item) => (
+              <li key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-gray-800">
+                {item}
+              </li>
+            ))}
+          </ul>
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {audienceCards.map((card) => (
               <article key={card.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
@@ -223,8 +244,8 @@ export default function HealthInsuranceSpokanePage() {
               Visit our Medicare help page.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-gray-800">
-              If you are turning 65 or already have Medicare, your options are different. Visit our Medicare Help
-              page for Medicare Advantage, Medicare Supplement, and Part D information.
+              If you are turning 65 or already on Medicare, your options are different. Visit our Medicare Help and
+              Turning 65 pages for Medicare Advantage, Medicare Supplement, and Part D information.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
