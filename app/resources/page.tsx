@@ -120,6 +120,24 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         body: "Local guidance for individuals, families, self-employed workers, and people not yet eligible for Medicare reviewing health insurance options.",
         ctaLabel: "Read More",
       },
+      {
+        href: "/individual-family-health-insurance-spokane",
+        title: "Individual & Family Health Insurance",
+        body: "Help for Spokane-area individuals and families reviewing health insurance options before Medicare.",
+        ctaLabel: "Read More",
+      },
+      {
+        href: "/self-employed-health-insurance-spokane",
+        title: "Self-Employed Health Insurance",
+        body: "Guidance for self-employed workers, contractors, small business owners, and people without employer coverage.",
+        ctaLabel: "Read More",
+      },
+      {
+        href: "/health-insurance-special-enrollment-spokane",
+        title: "Special Enrollment Health Insurance",
+        body: "Help understanding enrollment timing after lost coverage, a move, household changes, or another qualifying event.",
+        ctaLabel: "Read More",
+      },
     ],
   },
   {
