@@ -54,7 +54,7 @@ const relatedLinks: Array<{ href: string; label: string; body: string }> = [
 ];
 
 const healthInsuranceDisclosure =
-  "By submitting, you agree to be contacted by a licensed insurance professional about health insurance options. We can help review coverage options, compare costs and coverage, and discuss plans we represent and other available options. We do not guarantee savings or eligibility.";
+  "By submitting, you agree to be contacted by a licensed insurance professional about health insurance options. We can help review coverage options, compare costs and coverage, and discuss plans we represent and other available options. Lower costs or approval are not promised.";
 
 export default function FocusedHealthInsuranceLandingPage({
   config,
@@ -149,10 +149,9 @@ export default function FocusedHealthInsuranceLandingPage({
           </div>
 
           <aside className="rounded-3xl border-2 border-blue-200 bg-blue-50 p-6 shadow-sm sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-              Turning 65 or already on Medicare?
-            </p>
-            <h2 className="mt-3 text-2xl font-bold text-gray-900">Your options are different.</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Turning 65 or already on Medicare? Your options are different.
+            </h2>
             <p className="mt-4 text-base leading-relaxed text-gray-800">
               Medicare-specific coverage has different enrollment rules, plan types, and timing. Use these Medicare
               pages if you are approaching age 65 or already enrolled in Medicare.

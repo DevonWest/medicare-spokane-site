@@ -64,9 +64,9 @@ const config: FocusedHealthInsurancePageConfig = {
         "Yes. We help Spokane-area individuals and families review coverage options, compare costs and coverage, and understand enrollment timing before Medicare.",
     },
     {
-      question: "Do you guarantee savings or eligibility?",
+      question: "Do you promise lower costs or approval?",
       answer:
-        "No. We do not guarantee savings or eligibility. We can help you review available options and explain plan details in plain language.",
+        "No. Lower costs or approval are not promised. We can help you review available options and explain plan details in plain language.",
     },
     {
       question: "Can you review doctors and prescriptions?",

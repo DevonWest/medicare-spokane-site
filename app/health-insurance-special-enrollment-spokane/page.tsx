@@ -61,7 +61,7 @@ const config: FocusedHealthInsurancePageConfig = {
     {
       question: "What is a health insurance Special Enrollment Period?",
       answer:
-        "A Special Enrollment Period is a time outside the regular open enrollment window when certain life events may let someone review and apply for coverage. We can help you understand timing, but we do not guarantee eligibility.",
+        "A Special Enrollment Period is a time outside the regular open enrollment window when certain life events may let someone review and apply for coverage. We can help you understand timing, but approval is not promised.",
     },
     {
       question: "Can you help if I lost employer coverage?",

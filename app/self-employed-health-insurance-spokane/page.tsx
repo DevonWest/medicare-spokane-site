@@ -69,9 +69,9 @@ const config: FocusedHealthInsurancePageConfig = {
         "Yes. We can help you compare costs and coverage, including premiums, deductibles, copays, out-of-pocket costs, provider access, and prescriptions.",
     },
     {
-      question: "Do you compare every plan?",
+      question: "Can you review available options?",
       answer:
-        "No. We can review plans we represent and other available options, but we do not say that we compare every plan.",
+        "Yes. We can review plans we represent and other available options so you can compare costs and coverage.",
     },
     {
       question: "What if I am nearing Medicare age?",
