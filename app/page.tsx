@@ -379,6 +379,30 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pre-Medicare health insurance — secondary path */}
+      <section className="bg-slate-50 border-y border-slate-100 py-12 px-4">
+        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                Need Health Insurance Before Medicare?
+              </h2>
+              <p className="mt-2 text-base leading-relaxed text-gray-700">
+                We also help Spokane-area individuals and families review health insurance options
+                before age 65, including coverage for self-employed workers, families, and people
+                losing employer coverage.
+              </p>
+            </div>
+            <Link
+              href="/health-insurance-spokane"
+              className="inline-flex flex-shrink-0 items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-6 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              Health Insurance Help
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <FAQ items={homepageFaqs} heading="Common Medicare Questions in Spokane" />
 
       {/* Final CTA */}
