@@ -27,6 +27,7 @@ const resourceLinks: Array<{ href: string; label: string }> = [
   { href: "/working-past-65-medicare", label: "Working Past 65 & Medicare" },
   { href: "/medicare-part-d", label: "Medicare Part D" },
   { href: "/health-insurance-spokane", label: "Health Insurance Help in Spokane" },
+  { href: "/health-insurance-agent-spokane", label: "Health Insurance Agent in Spokane" },
   { href: "/individual-family-health-insurance-spokane", label: "Individual & Family Health Insurance" },
   { href: "/self-employed-health-insurance-spokane", label: "Self-Employed Health Insurance" },
   { href: "/health-insurance-special-enrollment-spokane", label: "Special Enrollment Health Insurance" },

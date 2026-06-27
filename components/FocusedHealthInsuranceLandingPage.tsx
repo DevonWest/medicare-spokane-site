@@ -18,9 +18,11 @@ export interface FocusedHealthInsurancePageConfig {
   faqs: FAQItem[];
   formHeading: string;
   formSubheading: string;
+  /** Optional override for the "Related pages" cards. Defaults to the shared set below. */
+  relatedLinks?: Array<{ href: string; label: string; body: string }>;
 }
 
-const relatedLinks: Array<{ href: string; label: string; body: string }> = [
+const defaultRelatedLinks: Array<{ href: string; label: string; body: string }> = [
   {
     href: "/health-insurance-spokane",
     label: "Health Insurance Help in Spokane",
@@ -61,6 +63,7 @@ export default function FocusedHealthInsuranceLandingPage({
 }: {
   config: FocusedHealthInsurancePageConfig;
 }) {
+  const relatedLinks = config.relatedLinks ?? defaultRelatedLinks;
   return (
     <>
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white landscape-mobile:py-5">

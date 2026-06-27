@@ -36,6 +36,7 @@ export const LEAD_SOURCES = [
   "individual-family-health-insurance-spokane",
   "self-employed-health-insurance-spokane",
   "health-insurance-special-enrollment-spokane",
+  "health-insurance-agent-spokane",
   "unknown",
 ] as const;
 
