@@ -98,6 +98,24 @@ const affordabilityBullets: string[] = [
   "Explain enrollment timing and special enrollment situations",
 ];
 
+const moreHealthInsuranceHelp: Array<{ href: string; label: string; body: string }> = [
+  {
+    href: "/individual-family-health-insurance-spokane",
+    label: "Individual & Family Health Insurance",
+    body: "Review coverage options for individuals, families, and people buying coverage outside an employer plan.",
+  },
+  {
+    href: "/self-employed-health-insurance-spokane",
+    label: "Self-Employed Health Insurance",
+    body: "Explore coverage considerations for self-employed workers, contractors, and small business owners.",
+  },
+  {
+    href: "/health-insurance-special-enrollment-spokane",
+    label: "Special Enrollment Help",
+    body: "Understand enrollment timing after losing employer coverage, moving, or experiencing another qualifying life event.",
+  },
+];
+
 const internalLinks: Array<{ href: string; label: string; body: string }> = [
   {
     href: "/contact",
@@ -297,6 +315,35 @@ export default function HealthInsuranceSpokanePage() {
                 </li>
               ))}
             </ol>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl font-bold text-gray-900">More Health Insurance Help</h2>
+            <p className="mt-3 text-lg text-gray-600">
+              Explore additional health insurance pages for Spokane-area individuals, families, and
+              workers who are not yet eligible for Medicare.
+            </p>
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {moreHealthInsuranceHelp.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
+                  {item.label}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
+                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
+                  Visit page →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
