@@ -121,6 +121,12 @@ const resourceSections: Array<{ title: string; intro: string; items: ResourceLin
         ctaLabel: "Read More",
       },
       {
+        href: "/health-insurance-agent-spokane",
+        title: "Health Insurance Agent in Spokane",
+        body: "Work with a local Spokane health insurance agent to review coverage options for individuals, families, self-employed workers, and people losing employer coverage.",
+        ctaLabel: "Read More",
+      },
+      {
         href: "/individual-family-health-insurance-spokane",
         title: "Individual & Family Health Insurance",
         body: "Help for Spokane-area individuals and families reviewing health insurance options before Medicare.",

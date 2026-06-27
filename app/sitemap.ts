@@ -106,6 +106,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.65,
     },
+    {
+      url: `${baseUrl}/health-insurance-agent-spokane`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
 
