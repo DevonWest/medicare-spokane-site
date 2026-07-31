@@ -376,7 +376,7 @@ export async function createKnowledgeCmsArticleMigrationDraftAction(
     );
     const created =
       await executeKnowledgeCmsAdminArticleMigrationDraft(request);
-    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/${created.kind}/${encodeURIComponent(created.id)}`;
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview/${encodeURIComponent(created.id)}`;
   } catch (error) {
     return errorState(error);
   }

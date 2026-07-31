@@ -44,8 +44,9 @@ export default function KnowledgeArticleMigrationExecutionControl({
       </p>
       <p className="mt-2 text-xs leading-5 text-amber-900">
         This creates only the CMS draft and its transactional locks and audit
-        event. The verified static page stays public, indexing stays blocked,
-        and no other control is executed.
+        event, then opens a fresh read-only verification receipt. The verified
+        static page stays public, indexing stays blocked, and no other control
+        is executed.
       </p>
       <label
         className="mt-3 block text-xs font-semibold text-slate-800"

@@ -332,15 +332,35 @@ test("materialization rejects an invalid clock and unauthorized actor before use
   );
 });
 
-test("the server DAL reauthorizes before exactly three reads and performs no writes", async () => {
+test("the server DAL reauthorizes before four collection reads and performs no writes", async () => {
   const { previewKnowledgeCmsArticleMaterialization } =
     await loadMigrationDal();
   const kinds: string[] = [];
+  let historyReads = 0;
   const workspace = await previewKnowledgeCmsArticleMaterialization(
     {
       list: async ({ kind }) => {
         kinds.push(kind);
         return [];
+      },
+      listArticleMigrationExecutions: async () => {
+        historyReads += 1;
+        return {
+          version: 1,
+          mode: "authenticated_execution_history",
+          entries: [],
+          summary: {
+            eventsObserved: 0,
+            validEvents: 0,
+            invalidEvents: 0,
+            controlsVerified: 0,
+            controlsMismatched: 0,
+            returned: 0,
+            truncated: false,
+            collectionReads: 1,
+            writeCount: 0,
+          },
+        };
       },
     },
     ACTOR,
@@ -348,6 +368,7 @@ test("the server DAL reauthorizes before exactly three reads and performs no wri
   );
 
   assert.deepEqual(kinds.sort(), ["article", "faq", "topic"]);
+  assert.equal(historyReads, 1);
   assert.equal(workspace.preview.writeCount, 0);
   assert.equal(
     workspace.articleMaterializationDryRun.summary.writeCount,
@@ -361,6 +382,10 @@ test("the server DAL reauthorizes before exactly three reads and performs no wri
         list: async () => {
           unauthorizedReads += 1;
           return [];
+        },
+        listArticleMigrationExecutions: async () => {
+          unauthorizedReads += 1;
+          throw new Error("History must not be read for an unauthorized actor.");
         },
       },
       { id: "materialization-editor", roles: ["editor"] },

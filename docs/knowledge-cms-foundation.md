@@ -339,6 +339,44 @@ and contains only the private migration control note. The writer has no update,
 overwrite, bulk, public-render, sitemap, indexing, or cutover behavior. The
 existing verified React route remains the public source.
 
+The revision-one audit event also stores the execution version, expected write
+count, canonical path, and SHA-256 of the exact server-materialized record.
+Executions created by the immediately preceding release remain readable as
+legacy events; they are verified directly against their current artifacts and
+are never silently upgraded or rewritten.
+
+## Execution history and post-create verification contract
+
+The publisher/admin migration workspace reads authenticated execution history
+from `migration_create_private_draft` audit events only. It validates the
+document ID, actor, record identity, timestamp, control ID/fingerprint, static
+public-source marker, and optional current-version evidence before exposing a
+row. Malformed audit documents are counted but excluded from actionable
+history. History is sorted newest first, limited to 100 valid events, and uses
+one audit-collection read with zero writes.
+
+Each valid row opens a private per-record verification route. The route
+re-resolves the Firebase actor and again requires `publisher` or `admin`, then
+uses a read-only Firestore transaction to obtain one consistent snapshot of
+exactly five artifacts:
+
+- the append-only revision-one migration audit event;
+- the current article record;
+- the current per-kind slug lock;
+- the current cross-kind canonical-path lock; and
+- the current search projection or its confirmed absence.
+
+For an untouched revision-one draft, the verifier rematerializes the record
+from the deterministic control, actor, and execution timestamp and requires an
+exact SHA-256 match. For a legitimately edited later revision, it reports
+`record_advanced` only when the original creation provenance and all current
+locks/search state remain internally consistent. Missing, malformed, stale, or
+contradictory evidence reports `failed`; verification never repairs, retries,
+publishes, indexes, or changes a record. The receipt itself is timestamped and
+fingerprinted but not stored. A successful create redirects to this fresh
+verification view instead of treating the transaction response as sufficient
+proof.
+
 ## Lossless renderer and rollback contract
 
 Every one of the 22 article routes has a contract that:
@@ -391,8 +429,9 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may add an authenticated execution
-history and per-record post-create verification view without adding bulk
-execution. Public cutover, indexing changes, and CMS-native public bodies must
+The next independently reviewed release may add a read-only operational
+readiness report for the private CMS, authentication roles, execution flag,
+and migration evidence before any production activation is proposed. Bulk
+execution, public cutover, indexing changes, and CMS-native public bodies must
 remain separate. No cutover should be proposed until governed records exist
 and route-by-route shadow evidence plus rollback verification are reviewed.

@@ -43,7 +43,11 @@ export default async function KnowledgeMigrationPreviewPage() {
     notFound();
   }
 
-  const { preview, articleMaterializationDryRun } =
+  const {
+    preview,
+    articleMaterializationDryRun,
+    executionHistory,
+  } =
     await getKnowledgeCmsAdminMigrationWorkspacePreview();
   const materializationByTargetId = new Map(
     articleMaterializationDryRun.receipts.map((receipt) => [
@@ -251,6 +255,129 @@ export default async function KnowledgeMigrationPreviewPage() {
             Bulk execution: blocked · overwrite: blocked · indexing: blocked ·
             public source: verified static route
           </p>
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-700">
+            Authenticated execution history
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            Private-draft migration events
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">
+            This read-only history comes only from append-only revision-one
+            migration audit events. Each row links to a fresh five-artifact
+            verification of the article, slug lock, canonical lock, search
+            projection, and audit evidence. Verification never repairs or
+            rewrites an artifact.
+          </p>
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              ["Recorded", executionHistory.summary.validEvents],
+              ["Controls verified", executionHistory.summary.controlsVerified],
+              ["Control mismatches", executionHistory.summary.controlsMismatched],
+              ["Invalid events", executionHistory.summary.invalidEvents],
+              ["Writes", executionHistory.summary.writeCount],
+            ].map(([label, value]) => (
+              <div
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                key={label}
+              >
+                <dt className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  {label}
+                </dt>
+                <dd className="mt-1 text-2xl font-bold text-slate-950">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {executionHistory.summary.invalidEvents > 0 ? (
+            <p className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-900">
+              One or more audit documents failed validation and were excluded
+              from actionable history. Investigate the stored evidence before
+              running another migration.
+            </p>
+          ) : null}
+          {executionHistory.entries.length === 0 ? (
+            <p className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              No article migration execution has been recorded.
+            </p>
+          ) : (
+            <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead className="bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <tr>
+                    <th className="px-5 py-4">Article</th>
+                    <th className="px-5 py-4">Execution</th>
+                    <th className="px-5 py-4">Control evidence</th>
+                    <th className="px-5 py-4">Verification</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {executionHistory.entries.map((entry) => (
+                    <tr className="align-top" key={entry.auditEventId}>
+                      <td className="px-5 py-5">
+                        <p className="font-semibold text-slate-950">
+                          {entry.title ?? entry.slug}
+                        </p>
+                        <p className="mt-1 font-mono text-xs text-slate-500">
+                          {entry.recordId}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {entry.canonicalPath ?? "Canonical path unavailable"}
+                        </p>
+                      </td>
+                      <td className="px-5 py-5 text-xs leading-6 text-slate-700">
+                        <p>
+                          {new Date(entry.occurredAt).toLocaleString("en-US", {
+                            timeZone: "America/Los_Angeles",
+                          })}
+                        </p>
+                        <p className="font-mono">actor: {entry.actorId}</p>
+                        <p>
+                          {entry.transaction.writeCount} atomic writes · one
+                          private draft
+                        </p>
+                      </td>
+                      <td className="min-w-80 px-5 py-5 text-xs leading-6 text-slate-700">
+                        <p
+                          className={
+                            entry.control.validation === "verified"
+                              ? "font-semibold text-emerald-700"
+                              : "font-semibold text-red-700"
+                          }
+                        >
+                          {entry.control.validation === "verified"
+                            ? "Deterministic control verified"
+                            : "Control mismatch—investigation required"}
+                        </p>
+                        <p className="mt-1 break-all font-mono">
+                          {entry.control.id}
+                        </p>
+                        <p className="break-all font-mono">
+                          sha256:{entry.evidenceFingerprint}
+                        </p>
+                      </td>
+                      <td className="px-5 py-5">
+                        <Link
+                          className="inline-flex rounded-lg bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800"
+                          href={`/admin/knowledge/migration-preview/${encodeURIComponent(entry.recordId)}`}
+                        >
+                          Verify artifacts
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {executionHistory.summary.truncated ? (
+            <p className="mt-4 text-xs font-semibold text-amber-800">
+              History is limited to the newest 100 valid execution events.
+            </p>
+          ) : null}
         </section>
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">

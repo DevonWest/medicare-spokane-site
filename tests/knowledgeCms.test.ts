@@ -132,7 +132,27 @@ class FakeQuery {
     readonly collectionName: string,
     readonly fieldPath: string,
     readonly value: unknown,
+    private readonly documents: Map<
+      string,
+      Record<string, unknown>
+    >,
   ) {}
+
+  async get() {
+    return {
+      docs: [...this.documents.entries()]
+        .filter(
+          ([path, data]) =>
+            path.startsWith(`${this.collectionName}/`) &&
+            readFakeField(data, this.fieldPath) === this.value,
+        )
+        .map(([path, data]) => ({
+          id: path.slice(this.collectionName.length + 1),
+          exists: true,
+          data: () => JSON.parse(JSON.stringify(data)),
+        })),
+    };
+  }
 }
 
 function readFakeField(
@@ -155,7 +175,7 @@ class FakeFirestore {
       doc: (id: string) => new FakeDocumentReference(`${name}/${id}`),
       where: (fieldPath: string, operator: string, value: unknown) => {
         assert.equal(operator, "==");
-        return new FakeQuery(name, fieldPath, value);
+        return new FakeQuery(name, fieldPath, value, this.documents);
       },
       get: async () => ({
         docs: [...this.documents.entries()]
@@ -1313,7 +1333,36 @@ test("one confirmed article control creates one private draft transaction", asyn
   assert.equal(audit?.event, "migration_create_private_draft");
   assert.equal(audit?.migrationControlId, control.controlId);
   assert.equal(audit?.migrationControlFingerprint, control.fingerprint.value);
+  assert.equal(audit?.migrationExecutionVersion, 1);
+  assert.equal(audit?.migrationWriteCount, 4);
+  assert.equal(audit?.canonicalPath, candidate.target.canonicalPath);
+  assert.match(
+    String(audit?.migrationRecordFingerprint),
+    /^[a-f0-9]{64}$/,
+  );
   assert.equal(firestore.documents.size, 4);
+
+  const history = await storage.listArticleMigrationExecutions(publisher);
+  assert.equal(history.summary.validEvents, 1);
+  assert.equal(history.summary.controlsVerified, 1);
+  assert.equal(history.entries[0].recordId, created.id);
+  const verification =
+    await storage.verifyArticleMigrationExecution(
+      publisher,
+      created.id,
+    );
+  assert.equal(verification?.status, "verified_private_draft");
+  assert.equal(verification?.artifacts.readCount, 5);
+  assert.equal(verification?.artifacts.writeCount, 0);
+  assert.equal(firestore.documents.size, 4);
+  await assert.rejects(
+    storage.listArticleMigrationExecutions(editor),
+    /preview_migration.*role_required/i,
+  );
+  await assert.rejects(
+    storage.verifyArticleMigrationExecution(editor, created.id),
+    /preview_migration.*role_required/i,
+  );
 
   await assert.rejects(
     storage.createArticleMigrationDraft(publisher, {

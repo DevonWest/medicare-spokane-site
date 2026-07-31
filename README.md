@@ -235,6 +235,9 @@ control server-side and atomically checks the expected-absent document, slug,
 canonical path, search projection, and revision-one audit event before writing
 the draft plus its slug/canonical locks and append-only audit event. It cannot
 overwrite, bulk-execute, publish, index, or change the verified static route.
+Publisher/admin history is derived from validated migration audit events, and
+each event opens a five-artifact, zero-write verification receipt that checks
+the current article, locks, search state, and deterministic control evidence.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 
