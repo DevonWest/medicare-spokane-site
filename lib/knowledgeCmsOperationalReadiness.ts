@@ -9,6 +9,7 @@ import {
 import {
   assertKnowledgeCmsActionAllowed,
   type KnowledgeCmsActor,
+  type KnowledgeCmsRecordKind,
   type KnowledgeCmsRole,
 } from "./knowledgeCms";
 import { resolveKnowledgeCmsActor } from "./knowledgeCmsAdminAuth";
@@ -16,9 +17,17 @@ import type { KnowledgeCmsMigrationWorkspacePreview } from "./knowledgeCmsMigrat
 import type {
   KnowledgeCmsArticleMigrationPostCreateVerification,
 } from "./knowledgeCmsArticleMigrationVerification";
+import {
+  validateKnowledgeCmsSupportingMigrationControl,
+  type KnowledgeCmsSupportingMigrationKind,
+} from "./knowledgeCmsSupportingMigrationControl";
+import { getKnowledgeCmsSupportingMigrationControlInput } from "./knowledgeCmsSupportingMigrationExecution";
+import type {
+  KnowledgeCmsSupportingMigrationPostCreateVerification,
+} from "./knowledgeCmsSupportingMigrationVerification";
 import type { KnowledgeCmsRendererModeResolution } from "./knowledgeCmsRendererContract";
 
-export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_VERSION = 3 as const;
 export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_WRITE_COUNT = 0 as const;
 export const KNOWLEDGE_CMS_ROLE_DIRECTORY_PAGE_SIZE = 1_000 as const;
 export const KNOWLEDGE_CMS_ROLE_DIRECTORY_MAX_PAGES = 100 as const;
@@ -43,6 +52,8 @@ export type KnowledgeCmsBooleanGateState =
 export interface KnowledgeCmsOperationalConfiguration {
   cmsGate: KnowledgeCmsBooleanGateState;
   articleMigrationExecutionGate: KnowledgeCmsBooleanGateState;
+  supportingMigrationExecutionGate: KnowledgeCmsBooleanGateState;
+  nativeRepresentationExecutionGate: KnowledgeCmsBooleanGateState;
   renderer: KnowledgeCmsRendererModeResolution;
   firebase: {
     adminConfigured: boolean;
@@ -101,11 +112,19 @@ export interface KnowledgeCmsOperationalVerificationRead {
   result?: KnowledgeCmsArticleMigrationPostCreateVerification;
 }
 
+export interface KnowledgeCmsOperationalSupportingVerificationRead {
+  kind: KnowledgeCmsSupportingMigrationKind;
+  recordId: string;
+  status: "available" | "missing" | "unavailable";
+  result?: KnowledgeCmsSupportingMigrationPostCreateVerification;
+}
+
 export type KnowledgeCmsOperationalWorkspaceEvidence =
   | {
       status: "available";
       workspace: KnowledgeCmsMigrationWorkspacePreview;
-      verifications: KnowledgeCmsOperationalVerificationRead[];
+      articleVerifications: KnowledgeCmsOperationalVerificationRead[];
+      supportingVerifications: KnowledgeCmsOperationalSupportingVerificationRead[];
     }
   | {
       status: "unavailable";
@@ -135,6 +154,10 @@ export interface KnowledgeCmsOperationalReadinessCheck {
     | "role_claim_integrity"
     | "role_directory"
     | "source_and_route_evidence"
+    | "supporting_controls"
+    | "supporting_execution_gate"
+    | "native_representation_execution_gate"
+    | "supporting_migration_evidence"
     | "zero_write_boundary";
   area: "authentication" | "configuration" | "migration" | "public_safety";
   status: KnowledgeCmsOperationalCheckStatus;
@@ -149,10 +172,26 @@ export type KnowledgeCmsOperationalTargetStatus =
 
 export interface KnowledgeCmsOperationalTargetEvidence {
   id: string;
+  kind: KnowledgeCmsRecordKind;
   slug: string;
   title: string;
   status: KnowledgeCmsOperationalTargetStatus;
   detail: string;
+}
+
+export interface KnowledgeCmsOperationalMigrationStep {
+  order: number;
+  kind: KnowledgeCmsRecordKind;
+  id: string;
+  slug: string;
+  title: string;
+  targetStatus: KnowledgeCmsOperationalTargetStatus;
+  action: "blocked" | "create_one_private_draft" | "verify_only";
+  executionGate:
+    | "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED"
+    | "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED";
+  expectedAtomicWrites: 0 | 3 | 4;
+  refreshRequired: true;
 }
 
 export interface KnowledgeCmsOperationalMigrationSummary {
@@ -164,10 +203,23 @@ export interface KnowledgeCmsOperationalMigrationSummary {
     faqs: number;
   };
   controls: {
+    total: number;
     defined: number;
     verified: number;
     fingerprinted: number;
     integrityReady: boolean;
+    articles: {
+      total: number;
+      defined: number;
+      verified: number;
+      fingerprinted: number;
+    };
+    supporting: {
+      total: number;
+      defined: number;
+      verified: number;
+      fingerprinted: number;
+    };
   };
   targets: {
     total: number;
@@ -192,6 +244,8 @@ export interface KnowledgeCmsOperationalMigrationSummary {
     unavailable: number;
     passed: number;
     failed: number;
+    duplicateRecordReads: number;
+    unexpectedRecordReads: number;
   };
   evidence: {
     sourceOrRouteBlockers: number;
@@ -199,6 +253,17 @@ export interface KnowledgeCmsOperationalMigrationSummary {
     legacyReviewWarnings: number;
     otherWarnings: number;
     ready: boolean;
+  };
+  completion: {
+    status: "blocked" | "complete" | "ready_for_one_record_execution";
+    nextStep: number | null;
+    prepared: number;
+    verified: number;
+    bulkExecution: false;
+    executionAuthorized: false;
+    refreshAfterEveryExecution: true;
+    writeCount: 0;
+    steps: KnowledgeCmsOperationalMigrationStep[];
   };
   targetEvidence: KnowledgeCmsOperationalTargetEvidence[];
 }
@@ -212,6 +277,8 @@ export interface KnowledgeCmsOperationalReadinessReport {
     privateWorkspace: "blocked" | "ready";
     editorialWorkflow: "blocked" | "ready";
     singleRecordArticleMigration: "blocked" | "complete" | "ready";
+    singleRecordSupportingMigration: "blocked" | "complete" | "ready";
+    allRecordsMigration: "blocked" | "complete" | "ready";
     privateShadow: "available" | "blocked" | "disabled";
     publicCutover: "prohibited";
   };
@@ -469,10 +536,13 @@ function emptyMigrationSummary(): KnowledgeCmsOperationalMigrationSummary {
     status: "unavailable",
     inventory: { total: 0, articles: 0, topics: 0, faqs: 0 },
     controls: {
+      total: 0,
       defined: 0,
       verified: 0,
       fingerprinted: 0,
       integrityReady: false,
+      articles: { total: 0, defined: 0, verified: 0, fingerprinted: 0 },
+      supporting: { total: 0, defined: 0, verified: 0, fingerprinted: 0 },
     },
     targets: {
       total: 0,
@@ -497,6 +567,8 @@ function emptyMigrationSummary(): KnowledgeCmsOperationalMigrationSummary {
       unavailable: 0,
       passed: 0,
       failed: 0,
+      duplicateRecordReads: 0,
+      unexpectedRecordReads: 0,
     },
     evidence: {
       sourceOrRouteBlockers: 0,
@@ -504,6 +576,17 @@ function emptyMigrationSummary(): KnowledgeCmsOperationalMigrationSummary {
       legacyReviewWarnings: 0,
       otherWarnings: 0,
       ready: false,
+    },
+    completion: {
+      status: "blocked",
+      nextStep: null,
+      prepared: 0,
+      verified: 0,
+      bulkExecution: false,
+      executionAuthorized: false,
+      refreshAfterEveryExecution: true,
+      writeCount: 0,
+      steps: [],
     },
     targetEvidence: [],
   };
@@ -516,76 +599,186 @@ function summarizeMigrationEvidence(
     return emptyMigrationSummary();
   }
 
-  const { preview, articleMaterializationDryRun, executionHistory } =
-    evidence.workspace;
+  const {
+    preview,
+    articleMaterializationDryRun,
+    executionHistory,
+    supportingExecutionHistory,
+  } = evidence.workspace;
   const articleCandidates = preview.candidates.filter(
-    (candidate) => candidate.target.kind === "article",
+    (
+      candidate,
+    ): candidate is typeof candidate & {
+      target: Extract<typeof candidate.target, { kind: "article" }>;
+    } => candidate.target.kind === "article",
   );
-  const candidateById = new Map(
-    articleCandidates.map((candidate) => [candidate.target.id, candidate]),
+  const supportingCandidates = preview.candidates.filter(
+    (
+      candidate,
+    ): candidate is typeof candidate & {
+      target: Extract<typeof candidate.target, { kind: "topic" | "faq" }>;
+    } => candidate.target.kind === "topic" || candidate.target.kind === "faq",
   );
-  const historiesByRecordId = new Map<
-    string,
-    typeof executionHistory.entries
-  >();
-  for (const entry of executionHistory.entries) {
-    historiesByRecordId.set(entry.recordId, [
-      ...(historiesByRecordId.get(entry.recordId) ?? []),
-      entry,
-    ]);
+  const keyFor = (kind: KnowledgeCmsRecordKind, id: string) => `${kind}:${id}`;
+  const orderedCandidates = [...preview.candidates].sort((left, right) => {
+    const kindOrder: Record<KnowledgeCmsRecordKind, number> = {
+      topic: 0,
+      faq: 1,
+      article: 2,
+    };
+    const leftOrder = left.target.kind === "topic" ? left.target.order : 0;
+    const rightOrder = right.target.kind === "topic" ? right.target.order : 0;
+    return (
+      kindOrder[left.target.kind] - kindOrder[right.target.kind] ||
+      leftOrder - rightOrder ||
+      left.target.title.localeCompare(right.target.title) ||
+      left.target.id.localeCompare(right.target.id)
+    );
+  });
+  const candidateByKey = new Map(
+    orderedCandidates.map((candidate) => [
+      keyFor(candidate.target.kind, candidate.target.id),
+      candidate,
+    ]),
+  );
+  const receiptById = new Map(
+    articleMaterializationDryRun.receipts.map((receipt) => [
+      receipt.target.id,
+      receipt,
+    ]),
+  );
+  const supportingControlValidByKey = new Map<string, boolean>();
+  for (const candidate of supportingCandidates) {
+    const control = candidate.target.controlRecord;
+    supportingControlValidByKey.set(
+      keyFor(candidate.target.kind, candidate.target.id),
+      Boolean(
+        control &&
+          validateKnowledgeCmsSupportingMigrationControl(
+            control,
+            getKnowledgeCmsSupportingMigrationControlInput(candidate),
+          ).length === 0,
+      ),
+    );
   }
-  const verificationByRecordId = new Map<
-    string,
-    KnowledgeCmsOperationalVerificationRead[]
-  >();
-  for (const verification of evidence.verifications) {
-    verificationByRecordId.set(verification.recordId, [
-      ...(verificationByRecordId.get(verification.recordId) ?? []),
+
+  interface NormalizedHistory {
+    kind: KnowledgeCmsRecordKind;
+    recordId: string;
+    controlId: string;
+    controlFingerprint: string;
+    controlVerified: boolean;
+  }
+  const normalizedHistory: NormalizedHistory[] = [
+    ...executionHistory.entries.map((entry) => ({
+      kind: "article" as const,
+      recordId: entry.recordId,
+      controlId: entry.control.id,
+      controlFingerprint: entry.control.fingerprint,
+      controlVerified: entry.control.validation === "verified",
+    })),
+    ...(supportingExecutionHistory?.entries ?? []).map((entry) => ({
+      kind: entry.kind,
+      recordId: entry.recordId,
+      controlId: entry.controlId,
+      controlFingerprint: entry.controlFingerprint,
+      controlVerified: entry.controlValidation === "verified",
+    })),
+  ];
+  const historiesByKey = new Map<string, NormalizedHistory[]>();
+  for (const entry of normalizedHistory) {
+    const key = keyFor(entry.kind, entry.recordId);
+    historiesByKey.set(key, [...(historiesByKey.get(key) ?? []), entry]);
+  }
+
+  type NormalizedVerification =
+    | (KnowledgeCmsOperationalVerificationRead & { kind: "article" })
+    | KnowledgeCmsOperationalSupportingVerificationRead;
+  const normalizedVerifications: NormalizedVerification[] = [
+    ...evidence.articleVerifications.map((item) => ({
+      ...item,
+      kind: "article" as const,
+    })),
+    ...evidence.supportingVerifications,
+  ];
+  const verificationsByKey = new Map<string, NormalizedVerification[]>();
+  for (const verification of normalizedVerifications) {
+    const key = keyFor(verification.kind, verification.recordId);
+    verificationsByKey.set(key, [
+      ...(verificationsByKey.get(key) ?? []),
       verification,
     ]);
   }
+  const duplicateVerificationReads = [...verificationsByKey.values()].filter(
+    (reads) => reads.length !== 1,
+  ).length;
 
-  const targetIds = new Set(
-    articleMaterializationDryRun.receipts.map((receipt) => receipt.target.id),
-  );
-  const duplicateRecordEvents = [...historiesByRecordId.values()].filter(
+  const targetKeys = new Set(candidateByKey.keys());
+  const duplicateRecordEvents = [...historiesByKey.values()].filter(
     (entries) => entries.length !== 1,
   ).length;
-  const unexpectedRecordEvents = executionHistory.entries.filter(
-    (entry) => !targetIds.has(entry.recordId),
+  const unexpectedRecordEvents = normalizedHistory.filter(
+    (entry) => !targetKeys.has(keyFor(entry.kind, entry.recordId)),
+  ).length;
+  const unexpectedVerificationReads = normalizedVerifications.filter(
+    (item) => !targetKeys.has(keyFor(item.kind, item.recordId)),
   ).length;
   const targetEvidence: KnowledgeCmsOperationalTargetEvidence[] = [];
 
-  for (const receipt of articleMaterializationDryRun.receipts) {
-    const candidate = candidateById.get(receipt.target.id);
-    const histories = historiesByRecordId.get(receipt.target.id) ?? [];
-    const verificationReads =
-      verificationByRecordId.get(receipt.target.id) ?? [];
-    const unexpectedBlockers = (candidate?.issues ?? []).filter(
+  for (const candidate of orderedCandidates) {
+    const target = candidate.target;
+    const key = keyFor(target.kind, target.id);
+    const receipt = target.kind === "article"
+      ? receiptById.get(target.id)
+      : undefined;
+    const histories = historiesByKey.get(key) ?? [];
+    const verificationReads = verificationsByKey.get(key) ?? [];
+    const unexpectedBlockers = candidate.issues.filter(
       (item) =>
         item.severity === "blocker" &&
-        item.code !== intentionalPublicCutoverBlocker,
+        !(
+          target.kind === "article" &&
+          item.code === intentionalPublicCutoverBlocker
+        ),
     );
     const base = {
-      id: receipt.target.id,
-      slug: receipt.target.slug,
-      title: candidate?.target.title ?? receipt.target.id,
+      id: target.id,
+      kind: target.kind,
+      slug: target.slug,
+      title: target.title,
     };
+    const control = target.controlRecord;
+    const controlVerified = target.kind === "article"
+      ? Boolean(
+          control &&
+            receipt?.control.validation === "verified" &&
+            receipt.control.id === control.controlId &&
+            receipt.control.fingerprint === control.fingerprint.value,
+        )
+      : supportingControlValidByKey.get(key) === true;
+    const observedAbsent = target.kind === "article"
+      ? receipt?.target.observedState === "absent"
+      : candidate.state === "ready";
+    const observedPresent = target.kind === "article"
+      ? receipt?.target.observedState === "present"
+      : candidate.state === "already_present";
 
-    if (receipt.target.observedState === "absent") {
+    if (observedAbsent) {
       const prepared = Boolean(
-        candidate &&
+        control &&
+          controlVerified &&
           histories.length === 0 &&
-          receipt.control.validation === "verified" &&
-          receipt.materialization.status === "verified_in_memory" &&
-          receipt.target.conflictCodes.length === 0 &&
+          verificationReads.length === 0 &&
+          (target.kind !== "article" ||
+            (receipt?.materialization.status === "verified_in_memory" &&
+              receipt.target.conflictCodes.length === 0)) &&
           unexpectedBlockers.length === 0,
       );
       targetEvidence.push({
         ...base,
         status: prepared ? "prepared_absent" : "blocked",
         detail: prepared
-          ? "The deterministic control and in-memory private draft are verified against a currently absent target."
+          ? "The deterministic private-draft control is verified against a currently absent target with no execution history."
           : "The absent target has conflicting, stale, duplicate, or incomplete migration evidence.",
       });
       continue;
@@ -598,21 +791,49 @@ function summarizeMigrationEvidence(
       verificationRead?.status === "available"
         ? verificationRead.result
         : undefined;
-    const verified = Boolean(
-      candidate &&
-        history?.control.validation === "verified" &&
-        receipt.control.validation === "verified" &&
-        history.control.id === receipt.control.id &&
-        history.control.fingerprint === receipt.control.fingerprint &&
+    const historyMatches = Boolean(
+      control &&
+        history?.controlVerified &&
+        history.controlId === control.controlId &&
+        history.controlFingerprint === control.fingerprint.value,
+    );
+    const articleVerificationMatches = Boolean(
+      target.kind === "article" &&
+        verificationRead?.kind === "article" &&
         verification &&
-        verification.recordId === receipt.target.id &&
+        "rollout" in verification &&
+        "cmsBodyPubliclyRendered" in verification.rollout &&
+        verification.recordId === target.id &&
         verification.status !== "failed" &&
         verification.artifacts.readCount === 5 &&
         verification.artifacts.writeCount === 0 &&
         !verification.artifacts.repairAttempted &&
         !verification.rollout.cmsBodyPubliclyRendered &&
         !verification.rollout.indexingChanged &&
-        !verification.rollout.cutoverEligible &&
+        !verification.rollout.cutoverEligible,
+    );
+    const supportingVerificationMatches = Boolean(
+      target.kind !== "article" &&
+        verificationRead?.kind === target.kind &&
+        verification &&
+        "kind" in verification &&
+        "cmsRecordPubliclyRendered" in verification.rollout &&
+        verification.kind === target.kind &&
+        verification.recordId === target.id &&
+        verification.status !== "failed" &&
+        verification.artifacts.readCount ===
+          (target.canonicalPath ? 5 : 4) &&
+        verification.artifacts.writeCount === 0 &&
+        !verification.artifacts.repairAttempted &&
+        !verification.rollout.cmsRecordPubliclyRendered &&
+        !verification.rollout.indexingChanged &&
+        !verification.rollout.cutoverEligible,
+    );
+    const verified = Boolean(
+      observedPresent &&
+        controlVerified &&
+        historyMatches &&
+        (articleVerificationMatches || supportingVerificationMatches) &&
         unexpectedBlockers.length === 0,
     );
     targetEvidence.push({
@@ -623,16 +844,16 @@ function summarizeMigrationEvidence(
           ? "verified_advanced_record"
           : "verified_private_draft",
       detail: !verified
-        ? "The present target is missing one exact execution event or a current five-artifact verification failed."
+        ? "The present target is missing one exact execution event or a current artifact verification failed."
         : verification?.status === "record_advanced"
           ? "The migration creation evidence and current advanced record state are internally consistent."
-          : "The revision-one private draft, both locks, audit event, and absent search projection are verified.",
+          : "The revision-one private draft, required locks, audit event, and search evidence are verified.",
     });
   }
 
   const sourceOrRouteBlockers = [
     ...preview.issues,
-    ...articleCandidates.flatMap((candidate) => candidate.issues),
+    ...preview.candidates.flatMap((candidate) => candidate.issues),
   ].filter(
     (item) =>
       item.severity === "blocker" &&
@@ -647,32 +868,44 @@ function summarizeMigrationEvidence(
     ).length;
   const warnings = [
     ...preview.issues,
-    ...articleCandidates.flatMap((candidate) => candidate.issues),
+    ...preview.candidates.flatMap((candidate) => candidate.issues),
   ].filter((item) => item.severity === "warning");
   const legacyReviewWarnings = warnings.filter(
     (item) => item.code === "legacy_review_required",
   ).length;
-  const verificationAvailable = evidence.verifications.filter(
+  const verificationAvailable = normalizedVerifications.filter(
     (item) => item.status === "available" && item.result,
   );
-  const controls = preview.summary.articleControls;
-  const controlsVerified = articleMaterializationDryRun.summary.controlsVerified;
+  const articleControls = preview.summary.articleControls;
+  const supportingControls = preview.summary.supportingControls;
+  const articleControlsVerified =
+    articleMaterializationDryRun.summary.controlsVerified;
+  const supportingControlsVerified = [...supportingControlValidByKey.values()]
+    .filter(Boolean).length;
   const controlsIntegrityReady = Boolean(
-    articleCandidates.length > 0 &&
-      controls.controlsDefined === articleCandidates.length &&
-      controls.fingerprinted === articleCandidates.length &&
-      controls.privateDrafts === articleCandidates.length &&
-      controls.executionEligible === 0 &&
-      controls.writeCount === 0 &&
+    articleCandidates.length === 22 &&
+      supportingCandidates.length === 23 &&
+      articleControls.controlsDefined === articleCandidates.length &&
+      articleControls.fingerprinted === articleCandidates.length &&
+      articleControls.privateDrafts === articleCandidates.length &&
+      articleControls.executionEligible === 0 &&
+      articleControls.writeCount === 0 &&
       articleMaterializationDryRun.summary.controls === articleCandidates.length &&
-      controlsVerified === articleCandidates.length &&
+      articleControlsVerified === articleCandidates.length &&
       articleMaterializationDryRun.summary.receiptsVerified ===
         articleCandidates.length &&
       new Set(
         articleMaterializationDryRun.receipts.map(
           (receipt) => receipt.target.id,
         ),
-      ).size === articleCandidates.length,
+      ).size === articleCandidates.length &&
+      supportingControls.total === supportingCandidates.length &&
+      supportingControls.controlsDefined === supportingCandidates.length &&
+      supportingControls.fingerprinted === supportingCandidates.length &&
+      supportingControls.privateDrafts === supportingCandidates.length &&
+      supportingControls.executionEligible === 0 &&
+      supportingControls.writeCount === 0 &&
+      supportingControlsVerified === supportingCandidates.length,
   );
   const blockedTargets = targetEvidence.filter(
     (target) => target.status === "blocked",
@@ -681,16 +914,72 @@ function summarizeMigrationEvidence(
     controlsIntegrityReady &&
       sourceOrRouteBlockers === 0 &&
       publicRepresentationBlockers === articleCandidates.length &&
-      executionHistory.summary.invalidEvents === 0 &&
-      executionHistory.summary.controlsMismatched === 0 &&
+      supportingExecutionHistory !== undefined &&
+      executionHistory.summary.invalidEvents +
+          supportingExecutionHistory.summary.invalidEvents ===
+        0 &&
+      executionHistory.summary.controlsMismatched +
+          supportingExecutionHistory.summary.controlsMismatched ===
+        0 &&
       !executionHistory.summary.truncated &&
+      !supportingExecutionHistory.summary.truncated &&
       duplicateRecordEvents === 0 &&
       unexpectedRecordEvents === 0 &&
-      evidence.verifications.every(
+      duplicateVerificationReads === 0 &&
+      unexpectedVerificationReads === 0 &&
+      normalizedVerifications.every(
         (item) => item.status === "available" && item.result?.status !== "failed",
       ) &&
-      blockedTargets === 0,
+      blockedTargets === 0 &&
+      targetEvidence.length === preview.summary.total &&
+      new Set(
+        targetEvidence.map((target) => keyFor(target.kind, target.id)),
+      ).size === preview.summary.total,
   );
+  const preparedTargets = targetEvidence.filter(
+    (target) => target.status === "prepared_absent",
+  ).length;
+  const verifiedTargets = targetEvidence.filter(
+    (target) =>
+      target.status === "verified_private_draft" ||
+      target.status === "verified_advanced_record",
+  ).length;
+  const steps: KnowledgeCmsOperationalMigrationStep[] = targetEvidence.map(
+    (target, index) => {
+      const candidate = candidateByKey.get(keyFor(target.kind, target.id));
+      const action = target.status === "blocked"
+        ? "blocked" as const
+        : target.status === "prepared_absent"
+          ? "create_one_private_draft" as const
+          : "verify_only" as const;
+      return {
+        order: index + 1,
+        kind: target.kind,
+        id: target.id,
+        slug: target.slug,
+        title: target.title,
+        targetStatus: target.status,
+        action,
+        executionGate: target.kind === "article"
+          ? "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED" as const
+          : "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED" as const,
+        expectedAtomicWrites: action !== "create_one_private_draft"
+          ? 0 as const
+          : target.kind === "article" || candidate?.target.canonicalPath
+            ? 4 as const
+            : 3 as const,
+        refreshRequired: true as const,
+      };
+    },
+  );
+  const completionStatus = !evidenceReady
+    ? "blocked" as const
+    : preparedTargets > 0
+      ? "ready_for_one_record_execution" as const
+      : "complete" as const;
+  const nextStep = completionStatus === "ready_for_one_record_execution"
+    ? steps.find((step) => step.action === "create_one_private_draft")?.order ?? null
+    : null;
 
   return deepFreeze({
     status: "available" as const,
@@ -701,10 +990,25 @@ function summarizeMigrationEvidence(
       faqs: preview.summary.byKind.faq.total,
     },
     controls: {
-      defined: controls.controlsDefined,
-      verified: controlsVerified,
-      fingerprinted: controls.fingerprinted,
+      total: articleCandidates.length + supportingCandidates.length,
+      defined:
+        articleControls.controlsDefined + supportingControls.controlsDefined,
+      verified: articleControlsVerified + supportingControlsVerified,
+      fingerprinted:
+        articleControls.fingerprinted + supportingControls.fingerprinted,
       integrityReady: controlsIntegrityReady,
+      articles: {
+        total: articleCandidates.length,
+        defined: articleControls.controlsDefined,
+        verified: articleControlsVerified,
+        fingerprinted: articleControls.fingerprinted,
+      },
+      supporting: {
+        total: supportingCandidates.length,
+        defined: supportingControls.controlsDefined,
+        verified: supportingControlsVerified,
+        fingerprinted: supportingControls.fingerprinted,
+      },
     },
     targets: {
       total: targetEvidence.length,
@@ -720,21 +1024,32 @@ function summarizeMigrationEvidence(
       blocked: blockedTargets,
     },
     history: {
-      eventsObserved: executionHistory.summary.eventsObserved,
-      validEvents: executionHistory.summary.validEvents,
-      invalidEvents: executionHistory.summary.invalidEvents,
-      controlsMismatched: executionHistory.summary.controlsMismatched,
-      truncated: executionHistory.summary.truncated,
+      eventsObserved:
+        executionHistory.summary.eventsObserved +
+        (supportingExecutionHistory?.summary.eventsObserved ?? 0),
+      validEvents:
+        executionHistory.summary.validEvents +
+        (supportingExecutionHistory?.summary.validEvents ?? 0),
+      invalidEvents:
+        executionHistory.summary.invalidEvents +
+        (supportingExecutionHistory?.summary.invalidEvents ?? 0),
+      controlsMismatched:
+        executionHistory.summary.controlsMismatched +
+        (supportingExecutionHistory?.summary.controlsMismatched ?? 0),
+      truncated: Boolean(
+        executionHistory.summary.truncated ||
+          supportingExecutionHistory?.summary.truncated,
+      ),
       duplicateRecordEvents,
       unexpectedRecordEvents,
     },
     verifications: {
-      requested: evidence.verifications.length,
+      requested: normalizedVerifications.length,
       available: verificationAvailable.length,
-      missing: evidence.verifications.filter(
+      missing: normalizedVerifications.filter(
         (item) => item.status === "missing",
       ).length,
-      unavailable: evidence.verifications.filter(
+      unavailable: normalizedVerifications.filter(
         (item) => item.status === "unavailable",
       ).length,
       passed: verificationAvailable.filter(
@@ -743,6 +1058,8 @@ function summarizeMigrationEvidence(
       failed: verificationAvailable.filter(
         (item) => item.result?.status === "failed",
       ).length,
+      duplicateRecordReads: duplicateVerificationReads,
+      unexpectedRecordReads: unexpectedVerificationReads,
     },
     evidence: {
       sourceOrRouteBlockers,
@@ -750,6 +1067,17 @@ function summarizeMigrationEvidence(
       legacyReviewWarnings,
       otherWarnings: warnings.length - legacyReviewWarnings,
       ready: evidenceReady,
+    },
+    completion: {
+      status: completionStatus,
+      nextStep,
+      prepared: preparedTargets,
+      verified: verifiedTargets,
+      bulkExecution: false as const,
+      executionAuthorized: false as const,
+      refreshAfterEveryExecution: true as const,
+      writeCount: 0 as const,
+      steps,
     },
     targetEvidence,
   });
@@ -788,19 +1116,43 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       input.roleDirectory.capabilities.publisherAccounts > 0 &&
       input.roleDirectory.capabilities.reviewerPublisherSeparationReady,
   );
-  const allArticleTargetsVerified = Boolean(
-    migration.targets.total > 0 &&
-      migration.targets.preparedAbsent === 0 &&
-      migration.targets.blocked === 0 &&
-      migration.targets.verifiedPrivateDrafts +
-          migration.targets.verifiedAdvancedRecords ===
-        migration.targets.total,
+  const articleTargetEvidence = migration.targetEvidence.filter(
+    (target) => target.kind === "article",
   );
-  const articleMigration: KnowledgeCmsOperationalReadinessReport["capabilities"]["singleRecordArticleMigration"] = allArticleTargetsVerified && migration.evidence.ready
+  const supportingTargetEvidence = migration.targetEvidence.filter(
+    (target) => target.kind === "topic" || target.kind === "faq",
+  );
+  const allVerified = (
+    targets: KnowledgeCmsOperationalTargetEvidence[],
+  ): boolean => Boolean(
+    targets.length > 0 &&
+      targets.every(
+        (target) =>
+          target.status === "verified_private_draft" ||
+          target.status === "verified_advanced_record",
+      ),
+  );
+  const allArticleTargetsVerified = allVerified(articleTargetEvidence);
+  const allSupportingTargetsVerified = allVerified(supportingTargetEvidence);
+  const articleMigration: KnowledgeCmsOperationalReadinessReport["capabilities"]["singleRecordArticleMigration"] = allArticleTargetsVerified
     ? "complete"
     : workspaceReady &&
         migration.evidence.ready &&
         input.configuration.articleMigrationExecutionGate === "enabled"
+      ? "ready"
+      : "blocked";
+  const supportingMigration: KnowledgeCmsOperationalReadinessReport["capabilities"]["singleRecordSupportingMigration"] = allSupportingTargetsVerified
+    ? "complete"
+    : workspaceReady &&
+        migration.evidence.ready &&
+        input.configuration.supportingMigrationExecutionGate === "enabled"
+      ? "ready"
+      : "blocked";
+  const allRecordsMigration: KnowledgeCmsOperationalReadinessReport["capabilities"]["allRecordsMigration"] = migration.completion.status === "complete"
+    ? "complete"
+    : migration.completion.status === "ready_for_one_record_execution" &&
+        articleMigration !== "blocked" &&
+        supportingMigration !== "blocked"
       ? "ready"
       : "blocked";
   const rendererSafe = Boolean(
@@ -809,7 +1161,10 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
         input.configuration.renderer.requestedMode,
       ) &&
       input.configuration.renderer.effectiveMode === "static" &&
-      !input.configuration.renderer.activationAllowed,
+      !input.configuration.renderer.activationAllowed &&
+      input.configuration.nativeRepresentationExecutionGate !== "invalid" &&
+      (input.configuration.nativeRepresentationExecutionGate !== "enabled" ||
+        input.configuration.renderer.requestedMode === "shadow"),
   );
   const privateShadow: KnowledgeCmsOperationalReadinessReport["capabilities"]["privateShadow"] = !workspaceReady || !rendererSafe
     ? "blocked"
@@ -820,7 +1175,9 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
     editorialReady &&
     rendererSafe &&
     migration.evidence.ready &&
-    articleMigration !== "blocked"
+    articleMigration !== "blocked" &&
+    supportingMigration !== "blocked" &&
+    allRecordsMigration !== "blocked"
     ? "ready_for_guarded_private_operations"
     : "blocked";
 
@@ -907,6 +1264,30 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
         : `The one-record article migration execution gate is ${input.configuration.articleMigrationExecutionGate}.`,
     ),
     check(
+      "supporting_execution_gate",
+      "configuration",
+      allSupportingTargetsVerified
+        ? "not_applicable"
+        : input.configuration.supportingMigrationExecutionGate === "enabled"
+          ? "pass"
+          : "blocked",
+      allSupportingTargetsVerified
+        ? "All topic and FAQ targets already have verified creation evidence; the supporting execution gate is no longer required for completion."
+        : `The one-record topic/FAQ migration execution gate is ${input.configuration.supportingMigrationExecutionGate}.`,
+    ),
+    check(
+      "native_representation_execution_gate",
+      "configuration",
+      input.configuration.nativeRepresentationExecutionGate === "invalid"
+        ? "blocked"
+        : input.configuration.nativeRepresentationExecutionGate === "enabled"
+          ? "pass"
+          : "not_applicable",
+      input.configuration.nativeRepresentationExecutionGate === "enabled"
+        ? "The one-artifact CMS-native rendering gate is enabled only with private shadow mode."
+        : `The one-artifact CMS-native rendering gate is ${input.configuration.nativeRepresentationExecutionGate}.`,
+    ),
+    check(
       "renderer_configuration",
       "public_safety",
       rendererSafe ? "pass" : "blocked",
@@ -917,10 +1298,28 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
     check(
       "article_controls",
       "migration",
-      migration.controls.integrityReady ? "pass" : "blocked",
-      migration.controls.integrityReady
-        ? `All ${migration.controls.verified} article controls and fingerprints are deterministic, private, and zero-write.`
+      migration.controls.integrityReady &&
+        migration.controls.articles.verified ===
+          migration.controls.articles.total
+        ? "pass"
+        : "blocked",
+      migration.controls.articles.verified ===
+      migration.controls.articles.total
+        ? `All ${migration.controls.articles.verified} article controls and fingerprints are deterministic, private, and zero-write.`
         : "Article control coverage or fingerprint integrity is incomplete.",
+    ),
+    check(
+      "supporting_controls",
+      "migration",
+      migration.controls.integrityReady &&
+        migration.controls.supporting.verified ===
+          migration.controls.supporting.total
+        ? "pass"
+        : "blocked",
+      migration.controls.supporting.verified ===
+      migration.controls.supporting.total
+        ? `All ${migration.controls.supporting.verified} topic and FAQ controls and fingerprints are deterministic, private, and zero-write.`
+        : "Topic/FAQ control coverage or fingerprint integrity is incomplete.",
     ),
     check(
       "source_and_route_evidence",
@@ -936,10 +1335,20 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
     check(
       "article_migration_evidence",
       "migration",
-      migration.evidence.ready ? "pass" : "blocked",
-      migration.evidence.ready
-        ? `${migration.targets.preparedAbsent} target(s) are prepared and ${migration.targets.verifiedPrivateDrafts + migration.targets.verifiedAdvancedRecords} have verified creation evidence.`
-        : "One or more article targets, history events, controls, or current artifacts are incomplete or contradictory.",
+      migration.evidence.ready &&
+        articleTargetEvidence.every((target) => target.status !== "blocked")
+        ? "pass"
+        : "blocked",
+      `${articleTargetEvidence.filter((target) => target.status === "prepared_absent").length} article target(s) are prepared and ${articleTargetEvidence.filter((target) => target.status === "verified_private_draft" || target.status === "verified_advanced_record").length} have verified creation evidence.`,
+    ),
+    check(
+      "supporting_migration_evidence",
+      "migration",
+      migration.evidence.ready &&
+        supportingTargetEvidence.every((target) => target.status !== "blocked")
+        ? "pass"
+        : "blocked",
+      `${supportingTargetEvidence.filter((target) => target.status === "prepared_absent").length} topic/FAQ target(s) are prepared and ${supportingTargetEvidence.filter((target) => target.status === "verified_private_draft" || target.status === "verified_advanced_record").length} have verified creation evidence.`,
     ),
     check(
       "post_create_verification",
@@ -953,8 +1362,8 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
           ? "pass"
           : "blocked",
       migration.history.validEvents === 0
-        ? "No article migration execution has occurred; there are no stored artifacts to verify."
-        : `${migration.verifications.passed} of ${migration.history.validEvents} execution event(s) have a current passing five-artifact receipt.`,
+        ? "No governed migration execution has occurred; there are no stored artifacts to verify."
+        : `${migration.verifications.passed} of ${migration.history.validEvents} execution event(s) have a current passing four- or five-artifact receipt.`,
     ),
     check(
       "public_cutover_guard",
@@ -976,11 +1385,21 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
     ),
   ];
 
-  const verificationResults = input.workspaceEvidence.status === "available"
-    ? input.workspaceEvidence.verifications
+  const verificationResults: Array<
+    | KnowledgeCmsArticleMigrationPostCreateVerification
+    | KnowledgeCmsSupportingMigrationPostCreateVerification
+  > = input.workspaceEvidence.status === "available"
+    ? [
+        ...input.workspaceEvidence.articleVerifications,
+        ...input.workspaceEvidence.supportingVerifications,
+      ]
         .map((item) => item.result)
         .filter(
-          (item): item is KnowledgeCmsArticleMigrationPostCreateVerification =>
+          (
+            item,
+          ): item is
+            | KnowledgeCmsArticleMigrationPostCreateVerification
+            | KnowledgeCmsSupportingMigrationPostCreateVerification =>
             Boolean(item),
         )
     : [];
@@ -993,6 +1412,8 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       privateWorkspace: workspaceReady ? "ready" as const : "blocked" as const,
       editorialWorkflow: editorialReady ? "ready" as const : "blocked" as const,
       singleRecordArticleMigration: articleMigration,
+      singleRecordSupportingMigration: supportingMigration,
+      allRecordsMigration,
       privateShadow,
       publicCutover: "prohibited" as const,
     },
@@ -1011,10 +1432,11 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       firestoreInventoryCollectionReads:
         input.workspaceEvidence.status === "available" ? 3 : 0,
       firestoreHistoryCollectionReads:
-        input.workspaceEvidence.status === "available" ? 1 : 0,
+        input.workspaceEvidence.status === "available" ? 2 : 0,
       verificationTransactions:
         input.workspaceEvidence.status === "available"
-          ? input.workspaceEvidence.verifications.length
+          ? input.workspaceEvidence.articleVerifications.length +
+            input.workspaceEvidence.supportingVerifications.length
           : 0,
       verifiedArtifactReads: verificationResults.reduce(
         (total, result) => total + result.artifacts.readCount,
@@ -1022,7 +1444,8 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       ),
       maximumVerificationArtifactReads:
         (input.workspaceEvidence.status === "available"
-          ? input.workspaceEvidence.verifications.length
+          ? input.workspaceEvidence.articleVerifications.length +
+            input.workspaceEvidence.supportingVerifications.length
           : 0) * 5,
       writeCount: KNOWLEDGE_CMS_OPERATIONAL_READINESS_WRITE_COUNT,
       repairAttempted: false as const,
@@ -1064,6 +1487,7 @@ export function validateKnowledgeCmsOperationalReadinessReport(
     errors.push("The operational readiness fingerprint is invalid.");
   }
   if (
+    report.version !== KNOWLEDGE_CMS_OPERATIONAL_READINESS_VERSION ||
     report.mode !== "read_only_operational_readiness" ||
     report.readBoundary.writeCount !== 0 ||
     report.readBoundary.repairAttempted ||
@@ -1075,12 +1499,119 @@ export function validateKnowledgeCmsOperationalReadinessReport(
     report.publicSafety.effectiveRendererMode !== "static" ||
     report.capabilities.publicCutover !== "prohibited" ||
     !report.configuration.renderer.configurationValid ||
+    report.configuration.nativeRepresentationExecutionGate === "invalid" ||
     !["static", "shadow"].includes(
       report.configuration.renderer.requestedMode,
     )
   ) {
     errors.push(
       "Operational readiness must remain zero-write, static-public, non-indexing, non-bulk, and ineligible for cutover.",
+    );
+  }
+  const migration = report.migration;
+  const migrationAvailable = migration.status === "available";
+  const expectedCompletion = !migration.evidence.ready
+    ? "blocked"
+    : migration.targets.preparedAbsent > 0
+      ? "ready_for_one_record_execution"
+      : "complete";
+  const firstCreateStep = migration.completion.steps.find(
+    (step) => step.action === "create_one_private_draft",
+  )?.order ?? null;
+  const uniqueTargets = new Set(
+    migration.targetEvidence.map((target) => `${target.kind}:${target.id}`),
+  );
+  const uniqueSteps = new Set(
+    migration.completion.steps.map((step) => `${step.kind}:${step.id}`),
+  );
+  const targetByKey = new Map(
+    migration.targetEvidence.map((target) => [
+      `${target.kind}:${target.id}`,
+      target,
+    ]),
+  );
+  const kindOrder: Record<KnowledgeCmsRecordKind, number> = {
+    topic: 0,
+    faq: 1,
+    article: 2,
+  };
+  const orderedSteps = migration.completion.steps.every(
+    (step, index, steps) =>
+      step.order === index + 1 &&
+      (index === 0 ||
+        kindOrder[steps[index - 1].kind] <= kindOrder[step.kind]),
+  );
+  if (
+    migration.completion.bulkExecution ||
+    migration.completion.executionAuthorized ||
+    !migration.completion.refreshAfterEveryExecution ||
+    migration.completion.writeCount !== 0 ||
+    migration.completion.status !== expectedCompletion ||
+    migration.completion.nextStep !==
+      (expectedCompletion === "ready_for_one_record_execution"
+        ? firstCreateStep
+        : null) ||
+    migration.targets.preparedAbsent +
+        migration.targets.verifiedPrivateDrafts +
+        migration.targets.verifiedAdvancedRecords +
+        migration.targets.blocked !==
+      migration.targets.total ||
+    migration.completion.prepared !== migration.targets.preparedAbsent ||
+    migration.completion.verified !==
+      migration.targets.verifiedPrivateDrafts +
+        migration.targets.verifiedAdvancedRecords ||
+    migration.completion.steps.length !== migration.targets.total ||
+    migration.targetEvidence.length !== migration.targets.total ||
+    uniqueTargets.size !== migration.targets.total ||
+    uniqueSteps.size !== migration.targets.total ||
+    !orderedSteps ||
+    migration.completion.steps.some(
+      (step) => {
+        const target = targetByKey.get(`${step.kind}:${step.id}`);
+        const expectedAction = target?.status === "blocked"
+          ? "blocked"
+          : target?.status === "prepared_absent"
+            ? "create_one_private_draft"
+            : "verify_only";
+        return (
+        !target ||
+        step.slug !== target.slug ||
+        step.title !== target.title ||
+        step.targetStatus !== target.status ||
+        step.action !== expectedAction ||
+        !step.refreshRequired ||
+        step.executionGate !==
+          (step.kind === "article"
+            ? "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED"
+            : "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED") ||
+        (step.action !== "create_one_private_draft" &&
+          step.expectedAtomicWrites !== 0) ||
+        (step.kind === "article" &&
+          step.action === "create_one_private_draft" &&
+          step.expectedAtomicWrites !== 4)
+        );
+      },
+    )
+  ) {
+    errors.push(
+      "The migration completion plan is inconsistent, mutable, bulk-capable, or not a deterministic one-record sequence.",
+    );
+  }
+  if (
+    migrationAvailable &&
+    (migration.inventory.total !== 45 ||
+      migration.inventory.articles !== 22 ||
+      migration.inventory.topics !== 12 ||
+      migration.inventory.faqs !== 11 ||
+      migration.targets.total !== 45 ||
+      migration.controls.total !== 45 ||
+      migration.controls.articles.total !== 22 ||
+      migration.controls.supporting.total !== 23 ||
+      report.readBoundary.firestoreInventoryCollectionReads !== 3 ||
+      report.readBoundary.firestoreHistoryCollectionReads !== 2)
+  ) {
+    errors.push(
+      "The operational report does not cover the exact 22-article, 12-topic, 11-FAQ inventory and its two history streams.",
     );
   }
   return errors;

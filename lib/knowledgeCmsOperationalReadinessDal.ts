@@ -13,6 +13,12 @@ import {
   KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED_ENV,
 } from "./knowledgeCmsArticleMigrationExecution";
 import {
+  KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED_ENV,
+} from "./knowledgeCmsSupportingMigrationExecution";
+import {
+  KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED_ENV,
+} from "./knowledgeCmsNativeRepresentationExecution";
+import {
   previewKnowledgeCmsArticleMaterialization,
 } from "./knowledgeCmsMigrationDal";
 import {
@@ -21,6 +27,7 @@ import {
   type KnowledgeCmsBooleanGateState,
   type KnowledgeCmsOperationalConfiguration,
   type KnowledgeCmsOperationalReadinessReport,
+  type KnowledgeCmsOperationalSupportingVerificationRead,
   type KnowledgeCmsOperationalVerificationRead,
   type KnowledgeCmsOperationalWorkspaceEvidence,
   type KnowledgeCmsRoleDirectoryProvider,
@@ -33,6 +40,7 @@ import {
   createKnowledgeCmsRepository,
   type KnowledgeCmsArticleMigrationRepository,
   type KnowledgeCmsRepository,
+  type KnowledgeCmsSupportingMigrationRepository,
 } from "./knowledgeCmsRepository";
 import { env } from "./runtimeValues";
 
@@ -41,6 +49,10 @@ export type KnowledgeCmsOperationalReadinessRepository =
   Pick<
     KnowledgeCmsArticleMigrationRepository,
     "listArticleMigrationExecutions" | "verifyArticleMigrationExecution"
+  > &
+  Pick<
+    KnowledgeCmsSupportingMigrationRepository,
+    "listSupportingMigrationExecutions" | "verifySupportingMigrationExecution"
   >;
 
 function booleanGateState(value: string | undefined): KnowledgeCmsBooleanGateState {
@@ -75,6 +87,16 @@ export function getKnowledgeCmsOperationalConfiguration(): KnowledgeCmsOperation
     articleMigrationExecutionGate: booleanGateState(
       process.env[
         KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED_ENV
+      ],
+    ),
+    supportingMigrationExecutionGate: booleanGateState(
+      process.env[
+        KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED_ENV
+      ],
+    ),
+    nativeRepresentationExecutionGate: booleanGateState(
+      process.env[
+        KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED_ENV
       ],
     ),
     renderer: resolveKnowledgeCmsPublicRendererMode(
@@ -112,7 +134,7 @@ async function readWorkspaceEvidence(
     };
   }
 
-  const verifications: KnowledgeCmsOperationalVerificationRead[] =
+  const articleVerifications: KnowledgeCmsOperationalVerificationRead[] =
     await Promise.all(
       workspace.executionHistory.entries.map(async (entry) => {
         try {
@@ -138,11 +160,49 @@ async function readWorkspaceEvidence(
         }
       }),
     );
+  const supportingHistory = workspace.supportingExecutionHistory;
+  if (!supportingHistory) {
+    return {
+      status: "unavailable",
+      reason: "firestore_inventory_unavailable",
+    };
+  }
+  const supportingVerifications: KnowledgeCmsOperationalSupportingVerificationRead[] =
+    await Promise.all(
+      supportingHistory.entries.map(async (entry) => {
+        try {
+          const result = await repository.verifySupportingMigrationExecution(
+            actor,
+            entry.kind,
+            entry.recordId,
+          );
+          return result
+            ? {
+                kind: entry.kind,
+                recordId: entry.recordId,
+                status: "available" as const,
+                result,
+              }
+            : {
+                kind: entry.kind,
+                recordId: entry.recordId,
+                status: "missing" as const,
+              };
+        } catch {
+          return {
+            kind: entry.kind,
+            recordId: entry.recordId,
+            status: "unavailable" as const,
+          };
+        }
+      }),
+    );
 
   return {
     status: "available",
     workspace,
-    verifications,
+    articleVerifications,
+    supportingVerifications,
   };
 }
 

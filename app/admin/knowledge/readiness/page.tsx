@@ -156,6 +156,22 @@ export default async function KnowledgeCmsReadinessPage() {
               </div>
               <div>
                 <dt className="font-semibold text-slate-500">
+                  Topic/FAQ execution gate
+                </dt>
+                <dd className="mt-1 font-bold capitalize text-slate-900">
+                  {report.configuration.supportingMigrationExecutionGate}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">
+                  Rendering-artifact gate
+                </dt>
+                <dd className="mt-1 font-bold capitalize text-slate-900">
+                  {report.configuration.nativeRepresentationExecutionGate}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">
                   Requested renderer
                 </dt>
                 <dd className="mt-1 font-bold capitalize text-slate-900">
@@ -225,16 +241,19 @@ export default async function KnowledgeCmsReadinessPage() {
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <h2 className="text-xl font-bold text-slate-950">
-            Article migration evidence
+            Complete governed migration evidence
           </h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            Prepared targets are currently absent and have a verified in-memory
-            private draft. Created targets pass their current audit, record, slug
-            lock, canonical lock, and search-projection checks.
+            All 22 articles, 12 topics, and 11 FAQs are classified. Prepared
+            targets are absent with verified controls; created targets pass their
+            current audit, record, required lock, and search-projection checks.
           </p>
           <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             {[
-              ["Articles", report.migration.targets.total],
+              ["All records", report.migration.targets.total],
+              ["Articles", report.migration.inventory.articles],
+              ["Topics", report.migration.inventory.topics],
+              ["FAQs", report.migration.inventory.faqs],
               ["Prepared", report.migration.targets.preparedAbsent],
               ["Private drafts", report.migration.targets.verifiedPrivateDrafts],
               ["Advanced", report.migration.targets.verifiedAdvancedRecords],
@@ -264,7 +283,7 @@ export default async function KnowledgeCmsReadinessPage() {
               <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
                 <thead className="bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600">
                   <tr>
-                    <th className="px-5 py-4">Article</th>
+                    <th className="px-5 py-4">Record</th>
                     <th className="px-5 py-4">State</th>
                     <th className="px-5 py-4">Evidence</th>
                   </tr>
@@ -277,7 +296,7 @@ export default async function KnowledgeCmsReadinessPage() {
                           {target.title}
                         </p>
                         <p className="mt-1 font-mono text-xs text-slate-500">
-                          {target.id}
+                          {target.kind}:{target.id}
                         </p>
                       </td>
                       <td className="px-5 py-4">
@@ -296,6 +315,58 @@ export default async function KnowledgeCmsReadinessPage() {
               </table>
             </div>
           )}
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm md:p-8">
+          <h2 className="text-xl font-bold text-blue-950">
+            Deterministic one-record operator sequence
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-blue-950">
+            Status: {label(report.migration.completion.status)} · prepared:{" "}
+            {report.migration.completion.prepared} · verified:{" "}
+            {report.migration.completion.verified} · next step:{" "}
+            {report.migration.completion.nextStep ?? "none"}. Topics come first,
+            then FAQs, then articles. The report authorizes no execution and must
+            be refreshed after every separately confirmed transaction.
+          </p>
+          <p className="mt-3 text-sm font-semibold text-blue-950">
+            Bulk execution: blocked · report writes:{" "}
+            {report.migration.completion.writeCount} · execution authorized: no
+          </p>
+          <div className="mt-6 max-h-[42rem] overflow-auto rounded-xl border border-blue-200 bg-white">
+            <table className="min-w-full divide-y divide-blue-100 text-left text-sm">
+              <thead className="sticky top-0 bg-blue-100 text-xs font-bold uppercase tracking-wider text-blue-950">
+                <tr>
+                  <th className="px-5 py-4">Step</th>
+                  <th className="px-5 py-4">Target</th>
+                  <th className="px-5 py-4">Action</th>
+                  <th className="px-5 py-4">Boundary</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blue-100">
+                {report.migration.completion.steps.map((step) => (
+                  <tr className="align-top" key={`${step.kind}:${step.id}`}>
+                    <td className="px-5 py-4 font-bold text-slate-950">
+                      {step.order}
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="font-semibold text-slate-950">{step.title}</p>
+                      <p className="mt-1 font-mono text-xs text-slate-500">
+                        {step.kind}:{step.id}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 capitalize text-slate-800">
+                      {label(step.action)}
+                    </td>
+                    <td className="px-5 py-4 text-xs leading-6 text-slate-700">
+                      {step.expectedAtomicWrites} expected write(s) · refresh
+                      required · {step.executionGate}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm md:p-8">

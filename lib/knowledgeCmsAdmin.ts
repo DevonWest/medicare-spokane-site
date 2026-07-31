@@ -14,6 +14,12 @@ import type {
 import type {
   KnowledgeCmsSupportingMigrationExecutionRequest,
 } from "./knowledgeCmsSupportingMigrationExecution";
+import type {
+  KnowledgeCmsNativeRepresentationExecutionRequest,
+} from "./knowledgeCmsNativeRepresentationExecution";
+import type {
+  KnowledgeCmsPublicCutoverApprovalRequest,
+} from "./knowledgeCmsPublicCutoverDal";
 
 export const KNOWLEDGE_CMS_ADMIN_PATH = "/admin/knowledge";
 export const KNOWLEDGE_CMS_RECORD_KINDS: KnowledgeCmsRecordKind[] = [
@@ -426,6 +432,64 @@ export function parseKnowledgeCmsSupportingMigrationExecutionForm(
     ]);
   }
   return { kind, controlId, controlFingerprint, confirmation };
+}
+
+export function parseKnowledgeCmsNativeRepresentationExecutionForm(
+  controlIdValue: unknown,
+  controlFingerprintValue: unknown,
+  expectedArticleRevisionValue: unknown,
+  formData: FormData,
+): KnowledgeCmsNativeRepresentationExecutionRequest {
+  const controlId =
+    typeof controlIdValue === "string" ? controlIdValue.trim() : "";
+  const controlFingerprint =
+    typeof controlFingerprintValue === "string"
+      ? controlFingerprintValue.trim()
+      : "";
+  const expectedArticleRevision =
+    typeof expectedArticleRevisionValue === "number"
+      ? expectedArticleRevisionValue
+      : Number.NaN;
+  const confirmation = readString(formData, "confirmation", {
+    required: true,
+    maxLength: 300,
+  })!;
+  if (
+    !/^resource-library-rendering-control--[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
+      controlId,
+    ) ||
+    !/^[a-f0-9]{64}$/.test(controlFingerprint) ||
+    !Number.isInteger(expectedArticleRevision) ||
+    expectedArticleRevision < 1
+  ) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected CMS-native rendering control is invalid.",
+    ]);
+  }
+  return {
+    controlId,
+    controlFingerprint,
+    expectedArticleRevision,
+    confirmation,
+  };
+}
+
+export function parseKnowledgeCmsPublicCutoverApprovalForm(
+  receiptValue: unknown,
+  formData: FormData,
+): KnowledgeCmsPublicCutoverApprovalRequest {
+  const receipt =
+    typeof receiptValue === "string" ? receiptValue.trim() : "";
+  const confirmation = readString(formData, "confirmation", {
+    required: true,
+    maxLength: 300,
+  })!;
+  if (!/^[a-f0-9]{64}$/.test(receipt)) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected public cutover approval receipt is invalid.",
+    ]);
+  }
+  return { receipt, confirmation };
 }
 
 export function parseKnowledgeCmsCreateForm(

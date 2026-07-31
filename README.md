@@ -87,7 +87,12 @@ Set these in **Settings → Secrets and variables → Actions**.
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `<project>.firebaseapp.com` | Firebase Auth domain for the private CMS sign-in; required only before enabling the CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | Server-only feature gate; absence and every value except exact `true` keep the CMS hidden |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for explicitly confirmed, one-article-at-a-time private-draft creation; requires the CMS gate |
-| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | Server-only renderer gate. Exact `shadow` enables authenticated private comparison while public routes remain static; `cutover` is rejected. |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for one explicitly confirmed topic/FAQ private draft; requires the CMS gate |
+| `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for one immutable article rendering artifact; requires the CMS gate and exact `shadow` mode |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED` | `false` | Beta-only, admin-only gate for creating one immutable, expiring approval after fresh 45-record and 22-route verification |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | `false` | Final public-routing gate. Exact `true` is accepted only with `cutover`, a matching approval receipt, and every mutation gate disabled |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | _empty_ | Lowercase 64-character receipt of the current immutable approval; required only for guarded cutover |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | Server-only renderer gate. `shadow` is private; `cutover` routes only the 22 governed paths when every independent gate is exact. |
 
 #### Authentication — pick **one**
 
@@ -174,7 +179,12 @@ lib/
 | `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
 | `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS and private workspace. Only the exact value `true` enables it. Keep disabled until Firebase Auth, authorized domains, and explicit CMS role claims are configured. | `false` |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | Server-only gate for publisher/admin creation of one explicitly confirmed Resource Library article draft per transaction. It cannot activate unless `KNOWLEDGE_CMS_ENABLED=true`; bulk execution remains unavailable. | `false` |
-| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. Exact `shadow` enables the publisher/admin comparison workspace but never changes the public renderer; `cutover` and malformed values are rejected. | `static` |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | Server-only gate for one explicitly confirmed topic or FAQ private draft per transaction. It requires the CMS gate and has no bulk path. | `false` |
+| `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | Server-only gate for one revision-bound immutable rendering artifact plus audit event. It requires exact CMS and private-shadow activation. | `false` |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED` | Beta-only server gate for one admin-confirmed immutable approval. It requires exact shadow mode, all record/artifact execution gates disabled, and fresh complete evidence. | `false` |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | Independent public-routing gate. It requires exact CMS enablement, `cutover`, a current approval receipt, and every execution gate disabled. | `false` |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | Receipt suffix of the current immutable cutover approval. It must be exactly 64 lowercase hexadecimal characters. | _empty_ |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. `static` is the default, `shadow` enables private comparison, and `cutover` is effective only through the complete guarded routing configuration. | `static` |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -214,8 +224,9 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 ## Knowledge CMS foundation
 
 The default-off editorial foundation defines governed `knowledge_articles`,
-`knowledge_topics`, and `knowledge_faqs` records, along with unique slug locks,
-search projections, and append-only audit events. The private
+`knowledge_topics`, and `knowledge_faqs` records, plus revision-bound
+`knowledge_cms_article_renderings`, unique slug locks, search projections, and
+append-only audit events. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records
@@ -224,11 +235,13 @@ reviewer. A different authenticated publisher can record an explicit
 blocked-or-eligible indexing decision, publish into the private CMS search
 projection, and unpublish back to draft with an audited reason. Neither action
 creates a public route or changes the existing Resource Library.
-Exact private `shadow` mode adds a read-only publisher/admin workspace that
-checks governed published article records against all 22 immutable React and
-SEO parity contracts. It performs no writes, renders previews inertly, keeps
-the CMS Markdown body non-public, and leaves every public route on its existing
-static source.
+Exact private `shadow` mode adds a publisher/admin workspace that checks
+governed published articles and immutable CMS rendering artifacts against all
+22 React and metadata parity contracts. The preview performs no writes,
+reconstructs candidate React output without importing legacy page modules,
+renders it inertly, and leaves every public route on its existing static
+source. A separate default-off control may create one revision-bound artifact
+and one audit event; it cannot overwrite, bulk-execute, or authorize cutover.
 The authenticated operational readiness report independently checks deployment
 flags, browser/Admin Firebase project alignment, aggregate role coverage,
 reviewer-publisher separation, deterministic article controls, execution
@@ -250,6 +263,17 @@ overwrite, bulk-execute, publish, index, or change the verified static route.
 Publisher/admin history is derived from validated migration audit events, and
 each event opens a five-artifact, zero-write verification receipt that checks
 the current article, locks, search state, and deterministic control evidence.
+After all 45 records and all 22 current rendering artifacts pass, the private
+public-cutover workspace can create one immutable seven-day approval with two
+atomic writes: the approval and its audit event. A matching runtime receipt may
+then route only the 22 governed canonical paths through the CMS-native
+renderer. Every request revalidates the approval, current article revision,
+artifact fingerprint, canonical, and exact parity within a 1.5-second budget;
+any absence, drift, error, or timeout serves the verified local static snapshot
+instead. All 20 form-bearing routes restore the real `LeadForm` client boundary
+through exact-hash entry adapters, so public cutover does not turn conversion
+forms into inert HTML. Production cutover builds start as tagged no-traffic
+Cloud Run revisions, and traffic movement remains a separate operator action.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 

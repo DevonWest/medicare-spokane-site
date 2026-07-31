@@ -509,10 +509,10 @@ export default async function KnowledgeMigrationPreviewPage() {
               have verified route snapshots.
             </li>
             <li>
-              {preview.summary.articleParity.representationBlocked} article
-              migrations remain blocked until governed published records pass
-              private shadow comparison and a separately reviewed CMS-native
-              body/cutover design exists.
+              {preview.summary.articleParity.representationBlocked} editable
+              Markdown bodies remain intentionally non-public. Immutable
+              CMS-native rendering artifacts and exact parity are managed in
+              the separate private shadow workspace.
             </li>
             <li>
               {preview.summary.articleControls.controlsDefined} deterministic
@@ -543,8 +543,8 @@ export default async function KnowledgeMigrationPreviewPage() {
               for cutover.
             </li>
             <li>
-              Public rendering, URL cutover, sitemap changes, bulk execution,
-              and CMS-native public bodies remain outside this release.
+              Public CMS activation, URL cutover, sitemap changes, and bulk
+              execution remain outside this release.
             </li>
           </ul>
           {preview.issues.length > 0 ? (
@@ -723,7 +723,7 @@ export default async function KnowledgeMigrationPreviewPage() {
                             ) || "none"}
                           </p>
                           <p className="font-semibold text-red-700">
-                            CMS representation:{" "}
+                            Editable Markdown public status:{" "}
                             {candidate.target.routeParity.cmsRepresentation.status}
                           </p>
                           {candidate.target.rendererContract ? (

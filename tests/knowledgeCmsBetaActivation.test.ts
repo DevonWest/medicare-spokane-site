@@ -34,6 +34,7 @@ async function loadModules() {
     import("../lib/knowledgeCmsBetaActivationDal"),
     import("../lib/knowledgeCmsOperationalReadiness"),
     import("../lib/knowledgeCmsArticleMigrationVerification"),
+    import("../lib/knowledgeCmsSupportingMigrationVerification"),
   ]);
 }
 
@@ -68,7 +69,8 @@ function roleDirectory() {
 async function operationalReadiness(
   rendererMode: "cutover" | "shadow" | "static" = "static",
 ) {
-  const [, , readiness, verification] = await loadModules();
+  const [, , readiness, verification, supportingVerification] =
+    await loadModules();
   const preview = buildKnowledgeCmsMigrationPreview({
     asOf: NOW,
     rendererMode: "static",
@@ -85,6 +87,8 @@ async function operationalReadiness(
       }),
     executionHistory:
       verification.buildKnowledgeCmsArticleMigrationExecutionHistory([]),
+    supportingExecutionHistory:
+      supportingVerification.buildKnowledgeCmsSupportingMigrationExecutionHistory([]),
   };
   return readiness.buildKnowledgeCmsOperationalReadinessReport({
     actor: ACTOR,
@@ -92,6 +96,8 @@ async function operationalReadiness(
     configuration: {
       cmsGate: "enabled",
       articleMigrationExecutionGate: "enabled",
+      supportingMigrationExecutionGate: "enabled",
+      nativeRepresentationExecutionGate: "disabled",
       renderer: resolveKnowledgeCmsPublicRendererMode(rendererMode),
       firebase: {
         adminConfigured: true,
@@ -103,7 +109,8 @@ async function operationalReadiness(
     workspaceEvidence: {
       status: "available",
       workspace,
-      verifications: [],
+      articleVerifications: [],
+      supportingVerifications: [],
     },
   });
 }
@@ -144,7 +151,7 @@ test("a fresh ready receipt at the exact beta identity produces a zero-mutation 
   assert.equal(preview.readinessBinding.fingerprint, readiness.fingerprint.value);
   assert.equal(preview.readinessBinding.ageMilliseconds, 0);
   assert.equal(preview.checks.every((item) => item.status === "pass"), true);
-  assert.equal(preview.activation.changesRequired, 1);
+  assert.equal(preview.activation.changesRequired, 2);
   assert.deepEqual(
     preview.activation.variables.map((item) => [
       item.name,
@@ -157,6 +164,18 @@ test("a fresh ready receipt at the exact beta identity produces a zero-mutation 
       [
         "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
         "true",
+        "true",
+        "beta_only",
+      ],
+      [
+        "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
+        "true",
+        "true",
+        "beta_only",
+      ],
+      [
+        "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
+        "false",
         "true",
         "beta_only",
       ],

@@ -5,6 +5,18 @@ import {
   getLegacyPathResolution,
   isKnownDirectoryPath,
 } from "@/lib/legacyRedirects";
+import {
+  KNOWLEDGE_CMS_INTERNAL_RENDERER_PREFIX,
+  KNOWLEDGE_CMS_PUBLIC_CUTOVER_PROOF_HEADER,
+  KNOWLEDGE_CMS_PUBLIC_CUTOVER_RESPONSE_HEADER,
+  KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTE_HEADER,
+  createKnowledgeCmsPublicCutoverRouteProof,
+  getKnowledgeCmsEntryIdForPublicPath,
+  getKnowledgeCmsEntryIdForInternalRendererPath,
+  isKnowledgeCmsInternalRendererPath,
+  resolveKnowledgeCmsPublicRouting,
+  validateKnowledgeCmsInternalRendererRequest,
+} from "@/lib/knowledgeCmsPublicRouting";
 
 const apexHostname = "medicareinspokane.com";
 const canonicalHostname = "www.medicareinspokane.com";
@@ -56,6 +68,38 @@ export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const lowerPathname = pathname.toLowerCase();
 
+  if (isKnowledgeCmsInternalRendererPath(pathname)) {
+    const internalEntryId =
+      getKnowledgeCmsEntryIdForInternalRendererPath(pathname);
+    if (
+      internalEntryId &&
+      validateKnowledgeCmsInternalRendererRequest({
+        entryId: internalEntryId,
+        pathHeader: request.headers.get(
+          KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTE_HEADER,
+        ),
+        proofHeader: request.headers.get(
+          KNOWLEDGE_CMS_PUBLIC_CUTOVER_PROOF_HEADER,
+        ),
+      })
+    ) {
+      const response = NextResponse.next();
+      response.headers.set(
+        KNOWLEDGE_CMS_PUBLIC_CUTOVER_RESPONSE_HEADER,
+        "routed",
+      );
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
+    return new NextResponse(null, {
+      status: 404,
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow, noarchive",
+      },
+    });
+  }
+
   if (lowerPathname.startsWith("/directory/")) {
     const normalizedLowerPath = stripTrailingSlash(lowerPathname);
 
@@ -97,6 +141,37 @@ export function proxy(request: NextRequest) {
     // query string so Search Console drops it cleanly without producing a
     // soft-404 redirect chain.
     return new NextResponse(null, { status: 410 });
+  }
+
+  const publicRouting = resolveKnowledgeCmsPublicRouting();
+  const cutoverEntryId = publicRouting.routingEnabled
+    ? getKnowledgeCmsEntryIdForPublicPath(pathname)
+    : undefined;
+  if (cutoverEntryId) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = `${KNOWLEDGE_CMS_INTERNAL_RENDERER_PREFIX}/${cutoverEntryId}`;
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTE_HEADER,
+      pathname,
+    );
+    requestHeaders.set(
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_PROOF_HEADER,
+      createKnowledgeCmsPublicCutoverRouteProof({
+        entryId: cutoverEntryId,
+        path: pathname,
+        receipt: publicRouting.approvalReceipt!,
+      }),
+    );
+    const response = NextResponse.rewrite(rewriteUrl, {
+      request: { headers: requestHeaders },
+    });
+    response.headers.set(
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_RESPONSE_HEADER,
+      "routed",
+    );
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   const legacyResolution = getLegacyPathResolution(pathname);

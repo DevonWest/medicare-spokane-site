@@ -750,6 +750,7 @@ test("admin routes remain default-off and publication stays private and server-a
     "app/admin/knowledge/migration-preview/page.tsx",
     "app/admin/knowledge/migration-preview/[recordId]/page.tsx",
     "app/admin/knowledge/readiness/page.tsx",
+    "app/admin/knowledge/public-cutover/page.tsx",
   ].map((path) => readFileSync(join(root, path), "utf8"));
   const dataAccess = readFileSync(
     join(root, "lib/knowledgeCmsAdminDal.ts"),
@@ -807,7 +808,15 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);
   assert.match(
     deployWorkflow,
-    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static or shadow/,
+    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, or cutover/,
+  );
+  assert.match(
+    deployWorkflow,
+    /Public cutover approval receipt must be exactly 64 lowercase hex characters/,
+  );
+  assert.match(
+    deployWorkflow,
+    /Deploy production cutover candidate with no traffic/,
   );
   assert.match(
     deployWorkflow,

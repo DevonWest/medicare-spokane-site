@@ -53,11 +53,27 @@ import {
   type KnowledgeCmsSupportingMigrationExecutionHistory,
   type KnowledgeCmsSupportingMigrationPostCreateVerification,
 } from "./knowledgeCmsSupportingMigrationVerification";
+import {
+  knowledgeCmsNativeRepresentationControls,
+  type KnowledgeCmsNativeRepresentationArtifact,
+} from "./knowledgeCmsNativeRepresentation";
+import {
+  KnowledgeCmsNativeRepresentationExecutionError,
+  assertKnowledgeCmsNativeRepresentationExecutionEnabled,
+  buildKnowledgeCmsNativeRepresentationExecutionPlan,
+  getKnowledgeCmsNativeRepresentationAuditDocumentId,
+  type KnowledgeCmsNativeRepresentationExecutionRequest,
+} from "./knowledgeCmsNativeRepresentationExecution";
+import type {
+  KnowledgeCmsNativeRepresentationDocument,
+} from "./knowledgeCmsShadowRenderer";
 
 export type KnowledgeCmsAuditEvent =
   | "create"
   | "migration_create_private_draft"
   | "migration_create_private_supporting_draft"
+  | "create_private_article_rendering"
+  | "create_public_cutover_approval"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -118,6 +134,16 @@ export interface KnowledgeCmsSupportingMigrationRepository {
     kind: KnowledgeCmsSupportingMigrationKind,
     recordId: string,
   ): Promise<KnowledgeCmsSupportingMigrationPostCreateVerification | undefined>;
+}
+
+export interface KnowledgeCmsNativeRepresentationRepository {
+  createArticleRendering(
+    actor: KnowledgeCmsActor,
+    request: KnowledgeCmsNativeRepresentationExecutionRequest,
+  ): Promise<KnowledgeCmsNativeRepresentationArtifact>;
+  listArticleRenderings(
+    actor: KnowledgeCmsActor,
+  ): Promise<KnowledgeCmsNativeRepresentationDocument[]>;
 }
 
 export class KnowledgeCmsDisabledError extends Error {
@@ -340,7 +366,8 @@ export class FirestoreKnowledgeCmsRepository
   implements
     KnowledgeCmsRepository,
     KnowledgeCmsArticleMigrationRepository,
-    KnowledgeCmsSupportingMigrationRepository
+    KnowledgeCmsSupportingMigrationRepository,
+    KnowledgeCmsNativeRepresentationRepository
 {
   private readonly db: Firestore;
   private readonly now: () => Date;
@@ -986,12 +1013,114 @@ export class FirestoreKnowledgeCmsRepository
       });
     });
   }
+
+  async createArticleRendering(
+    actor: KnowledgeCmsActor,
+    request: KnowledgeCmsNativeRepresentationExecutionRequest,
+  ): Promise<KnowledgeCmsNativeRepresentationArtifact> {
+    assertKnowledgeCmsNativeRepresentationExecutionEnabled();
+    assertKnowledgeCmsActionAllowed(actor, "execute_article_rendering");
+    const control = knowledgeCmsNativeRepresentationControls.find(
+      (candidate) => candidate.controlId === request.controlId,
+    );
+    if (!control) {
+      throw new KnowledgeCmsNativeRepresentationExecutionError(
+        "control_not_found",
+        "The requested CMS-native rendering control was not found.",
+      );
+    }
+    const articleRef = this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.article)
+      .doc(control.target.articleId);
+
+    return this.db.runTransaction(async (transaction) => {
+      const articleSnapshot = await transaction.get(articleRef);
+      const record = parseSnapshotData(
+        articleSnapshot.exists,
+        () => articleSnapshot.data(),
+      );
+      if (!record || record.kind !== "article") {
+        throw new KnowledgeCmsNativeRepresentationExecutionError(
+          "article_not_eligible",
+          "The matching published article does not exist.",
+        );
+      }
+      const plan = buildKnowledgeCmsNativeRepresentationExecutionPlan({
+        actor,
+        request,
+        article: record,
+        now: this.now(),
+      });
+      const representationRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.articleRenderings)
+        .doc(plan.target.id);
+      const auditRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.audit)
+        .doc(
+          getKnowledgeCmsNativeRepresentationAuditDocumentId(
+            plan.target.id,
+          ),
+        );
+      const representationSnapshot = await transaction.get(
+        representationRef,
+      );
+      const auditSnapshot = await transaction.get(auditRef);
+      if (representationSnapshot.exists) {
+        throw new KnowledgeCmsConflictError(
+          "The CMS-native rendering artifact already exists and cannot be overwritten.",
+        );
+      }
+      if (auditSnapshot.exists) {
+        throw new KnowledgeCmsConflictError(
+          "The CMS-native rendering audit event already exists.",
+        );
+      }
+      transaction.set(
+        representationRef,
+        toFirestoreData(plan.artifact),
+      );
+      transaction.set(auditRef, {
+        event: "create_private_article_rendering",
+        actorId: actor.id,
+        kind: "article",
+        recordId: record.id,
+        revision: record.audit.revision,
+        status: record.status,
+        occurredAt: plan.transaction.serverTimestamp,
+        representationId: plan.artifact.id,
+        representationFingerprint: plan.artifact.fingerprint.value,
+        renderingControlId: plan.control.id,
+        renderingControlFingerprint: plan.control.fingerprint,
+        renderingExecutionVersion: plan.version,
+        renderingWriteCount: plan.transaction.writeCount,
+        renderedBodySha256: plan.artifact.body.renderedBodySha256,
+        publicSource: plan.rollout.publicSource,
+        note:
+          "Created one immutable private-shadow rendering artifact for a matching published article. Public routes remain static.",
+      });
+      return plan.artifact;
+    });
+  }
+
+  async listArticleRenderings(
+    actor: KnowledgeCmsActor,
+  ): Promise<KnowledgeCmsNativeRepresentationDocument[]> {
+    assertKnowledgeCmsActionAllowed(actor, "preview_shadow_rendering");
+    const snapshot = await this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.articleRenderings)
+      .get();
+    return snapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data(),
+    }));
+  }
 }
 
 export function createKnowledgeCmsRepository(
   options: FirestoreKnowledgeCmsRepositoryOptions = {},
 ): KnowledgeCmsRepository &
   KnowledgeCmsArticleMigrationRepository &
-  KnowledgeCmsSupportingMigrationRepository {
+  KnowledgeCmsSupportingMigrationRepository &
+  KnowledgeCmsNativeRepresentationRepository {
   return new FirestoreKnowledgeCmsRepository(options);
 }

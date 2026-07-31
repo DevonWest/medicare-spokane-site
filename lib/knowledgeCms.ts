@@ -4,6 +4,8 @@ export const KNOWLEDGE_CMS_COLLECTIONS = {
   article: "knowledge_articles",
   topic: "knowledge_topics",
   faq: "knowledge_faqs",
+  articleRenderings: "knowledge_cms_article_renderings",
+  cutoverApprovals: "knowledge_cms_cutover_approvals",
   search: "knowledge_search_documents",
   slugs: "knowledge_cms_slugs",
   canonicalPaths: "knowledge_cms_canonical_paths",
@@ -34,7 +36,10 @@ export type KnowledgeCmsAction =
   | "preview_migration"
   | "execute_article_migration"
   | "execute_supporting_migration"
+  | "execute_article_rendering"
   | "preview_shadow_rendering"
+  | "preview_public_cutover"
+  | "approve_public_cutover"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -1088,9 +1093,17 @@ export function getKnowledgeCmsAuthorizationDecision(
     action === "preview_migration" ||
     action === "execute_article_migration" ||
     action === "execute_supporting_migration" ||
-    action === "preview_shadow_rendering"
+    action === "execute_article_rendering" ||
+    action === "preview_shadow_rendering" ||
+    action === "preview_public_cutover"
   ) {
     return hasAnyRole(actor, ["publisher", "admin"])
+      ? { allowed: true, reason: "allowed" }
+      : { allowed: false, reason: "role_required" };
+  }
+
+  if (action === "approve_public_cutover") {
+    return hasAnyRole(actor, ["admin"])
       ? { allowed: true, reason: "allowed" }
       : { allowed: false, reason: "role_required" };
   }

@@ -1,73 +1,6 @@
 import "server-only";
 
-import type { Metadata } from "next";
-import type { ComponentType } from "react";
-import TurningSixtyFivePage, {
-  metadata as turningSixtyFiveMetadata,
-} from "@/app/turning-65-medicare-spokane/page";
-import CompareMedicareOptionsPage, {
-  metadata as compareMedicareOptionsMetadata,
-} from "@/app/compare-medicare-options/page";
-import MedicareAdvantagePage, {
-  metadata as medicareAdvantageMetadata,
-} from "@/app/medicare-advantage/page";
-import MedicareSupplementsPage, {
-  metadata as medicareSupplementsMetadata,
-} from "@/app/medicare-supplements/page";
-import MedicareAppointmentChecklistPage, {
-  metadata as medicareAppointmentChecklistMetadata,
-} from "@/app/medicare-appointment-checklist/page";
-import MedicarePlanReviewSpokanePage, {
-  metadata as medicarePlanReviewSpokaneMetadata,
-} from "@/app/medicare-plan-review-spokane/page";
-import MedicareAnnualEnrollmentSpokanePage, {
-  metadata as medicareAnnualEnrollmentSpokaneMetadata,
-} from "@/app/medicare-annual-enrollment-spokane/page";
-import RxDrugReviewPage, {
-  metadata as rxDrugReviewMetadata,
-} from "@/app/rx-drug-review/page";
-import MedicarePartDPage, {
-  metadata as medicarePartDMetadata,
-} from "@/app/medicare-part-d/page";
-import HelpingParentWithMedicarePage, {
-  metadata as helpingParentWithMedicareMetadata,
-} from "@/app/helping-parent-with-medicare/page";
-import WorkingPastSixtyFivePage, {
-  metadata as workingPastSixtyFiveMetadata,
-} from "@/app/working-past-65-medicare/page";
-import HealthInsuranceSpokanePage, {
-  metadata as healthInsuranceSpokaneMetadata,
-} from "@/app/health-insurance-spokane/page";
-import HealthInsuranceAgentSpokanePage, {
-  metadata as healthInsuranceAgentSpokaneMetadata,
-} from "@/app/health-insurance-agent-spokane/page";
-import IndividualFamilyHealthInsuranceSpokanePage, {
-  metadata as individualFamilyHealthInsuranceSpokaneMetadata,
-} from "@/app/individual-family-health-insurance-spokane/page";
-import SelfEmployedHealthInsuranceSpokanePage, {
-  metadata as selfEmployedHealthInsuranceSpokaneMetadata,
-} from "@/app/self-employed-health-insurance-spokane/page";
-import HealthInsuranceSpecialEnrollmentSpokanePage, {
-  metadata as healthInsuranceSpecialEnrollmentSpokaneMetadata,
-} from "@/app/health-insurance-special-enrollment-spokane/page";
-import EnrollmentResourcesPage, {
-  metadata as enrollmentResourcesMetadata,
-} from "@/app/medicare-enrollment-resources/page";
-import MovingToSpokaneMedicarePage, {
-  metadata as movingToSpokaneMedicareMetadata,
-} from "@/app/moving-to-spokane-medicare/page";
-import MedicareSavingsProgramExtraHelpWashingtonPage, {
-  metadata as medicareSavingsProgramExtraHelpWashingtonMetadata,
-} from "@/app/medicare-savings-program-extra-help-washington/page";
-import MedicareFaqPage, {
-  metadata as medicareFaqMetadata,
-} from "@/app/medicare-faq/page";
-import AdvantageVsSupplementPage, {
-  metadata as advantageVsSupplementMetadata,
-} from "@/app/medicare-advantage-vs-supplement-spokane/page";
-import CarriersPage, {
-  metadata as carriersMetadata,
-} from "@/app/carriers/page";
+import { createHash } from "node:crypto";
 import {
   knowledgeEntries,
   knowledgeSources,
@@ -78,6 +11,16 @@ import {
   type KnowledgeCmsArticle,
 } from "./knowledgeCms";
 import {
+  decodeKnowledgeCmsNativeRepresentationBody,
+  getKnowledgeCmsNativeRepresentationArtifactId,
+  getKnowledgeCmsNativeRepresentationControl,
+  isKnowledgeCmsNativeRepresentationArtifactId,
+  parseKnowledgeCmsNativeRepresentationArtifact,
+  validateKnowledgeCmsNativeRepresentationArtifact,
+  validateKnowledgeCmsNativeRepresentationControls,
+  type KnowledgeCmsNativeRepresentationArtifact,
+} from "./knowledgeCmsNativeRepresentation";
+import {
   getKnowledgeCmsRendererContract,
   knowledgeCmsRendererContracts,
   resolveKnowledgeCmsPublicRendererMode,
@@ -86,25 +29,24 @@ import {
   type KnowledgeCmsRendererContractEntry,
   type KnowledgeCmsRendererModeResolution,
 } from "./knowledgeCmsRendererContract";
-import { getKnowledgeCmsRouteParity } from "./knowledgeCmsRouteParity";
 
-export const KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_SHADOW_WRITE_COUNT = 0 as const;
 
 export type KnowledgeCmsShadowResultStatus =
-  | "adapter_invalid"
   | "candidate_missing"
   | "candidate_not_published"
   | "parity_failed"
   | "parity_passed"
-  | "record_contract_mismatch";
+  | "record_contract_mismatch"
+  | "representation_control_invalid"
+  | "representation_invalid"
+  | "representation_missing"
+  | "representation_stale";
 
-export interface KnowledgeCmsShadowRouteAdapter {
-  entryId: string;
-  path: string;
-  sourceFile: string;
-  Component: ComponentType;
-  metadata: Metadata;
+export interface KnowledgeCmsNativeRepresentationDocument {
+  id: string;
+  data: unknown;
 }
 
 export interface KnowledgeCmsShadowResult {
@@ -115,10 +57,12 @@ export interface KnowledgeCmsShadowResult {
   title: string;
   status: KnowledgeCmsShadowResultStatus;
   recordRevision?: number;
+  representationId?: string;
+  representationArtifact?: KnowledgeCmsNativeRepresentationArtifact;
   artifact?: KnowledgeCmsRendererArtifact;
   errors: string[];
   publicSource: "verified_static_route";
-  bodySource: "verified_static_component_adapter";
+  bodySource: "cms_native_lossless_artifact";
   cmsBodyPubliclyRendered: false;
   cutoverEligible: false;
 }
@@ -130,180 +74,29 @@ export interface KnowledgeCmsShadowPreview {
   writeCount: typeof KNOWLEDGE_CMS_SHADOW_WRITE_COUNT;
   rendererMode: KnowledgeCmsRendererModeResolution;
   publicSource: "verified_static_route";
+  bodySource: "cms_native_lossless_artifact";
   cmsBodyPubliclyRendered: false;
   cutoverEligible: false;
+  betaParityApproval: {
+    status: "blocked" | "verified";
+    routeCount: number;
+    exactPasses: number;
+    unexpectedRepresentationIds: string[];
+    fingerprint: string;
+    executionAuthority: false;
+    publicCutoverAuthority: false;
+  };
   summary: {
     total: number;
-    adaptersReady: number;
+    controlsReady: number;
     candidatesPresent: number;
+    representationsPresent: number;
+    unexpectedRepresentations: number;
     compared: number;
     passed: number;
     blocked: number;
   };
   results: KnowledgeCmsShadowResult[];
-}
-
-interface KnowledgeCmsShadowAdapterDefinition {
-  path: string;
-  sourceFile: string;
-  Component: ComponentType;
-  metadata: Metadata;
-}
-
-const adapterDefinitions: Readonly<
-  Record<string, KnowledgeCmsShadowAdapterDefinition>
-> = Object.freeze({
-  "turning-65-spokane": Object.freeze({
-    path: "/turning-65-medicare-spokane",
-    sourceFile: "app/turning-65-medicare-spokane/page.tsx",
-    Component: TurningSixtyFivePage,
-    metadata: turningSixtyFiveMetadata,
-  }),
-  "compare-options": Object.freeze({
-    path: "/compare-medicare-options",
-    sourceFile: "app/compare-medicare-options/page.tsx",
-    Component: CompareMedicareOptionsPage,
-    metadata: compareMedicareOptionsMetadata,
-  }),
-  "medicare-advantage": Object.freeze({
-    path: "/medicare-advantage",
-    sourceFile: "app/medicare-advantage/page.tsx",
-    Component: MedicareAdvantagePage,
-    metadata: medicareAdvantageMetadata,
-  }),
-  "medicare-supplements": Object.freeze({
-    path: "/medicare-supplements",
-    sourceFile: "app/medicare-supplements/page.tsx",
-    Component: MedicareSupplementsPage,
-    metadata: medicareSupplementsMetadata,
-  }),
-  "appointment-checklist": Object.freeze({
-    path: "/medicare-appointment-checklist",
-    sourceFile: "app/medicare-appointment-checklist/page.tsx",
-    Component: MedicareAppointmentChecklistPage,
-    metadata: medicareAppointmentChecklistMetadata,
-  }),
-  "annual-plan-review": Object.freeze({
-    path: "/medicare-plan-review-spokane",
-    sourceFile: "app/medicare-plan-review-spokane/page.tsx",
-    Component: MedicarePlanReviewSpokanePage,
-    metadata: medicarePlanReviewSpokaneMetadata,
-  }),
-  "annual-enrollment-spokane": Object.freeze({
-    path: "/medicare-annual-enrollment-spokane",
-    sourceFile: "app/medicare-annual-enrollment-spokane/page.tsx",
-    Component: MedicareAnnualEnrollmentSpokanePage,
-    metadata: medicareAnnualEnrollmentSpokaneMetadata,
-  }),
-  "prescription-review": Object.freeze({
-    path: "/rx-drug-review",
-    sourceFile: "app/rx-drug-review/page.tsx",
-    Component: RxDrugReviewPage,
-    metadata: rxDrugReviewMetadata,
-  }),
-  "part-d": Object.freeze({
-    path: "/medicare-part-d",
-    sourceFile: "app/medicare-part-d/page.tsx",
-    Component: MedicarePartDPage,
-    metadata: medicarePartDMetadata,
-  }),
-  "helping-parent": Object.freeze({
-    path: "/helping-parent-with-medicare",
-    sourceFile: "app/helping-parent-with-medicare/page.tsx",
-    Component: HelpingParentWithMedicarePage,
-    metadata: helpingParentWithMedicareMetadata,
-  }),
-  "working-past-65": Object.freeze({
-    path: "/working-past-65-medicare",
-    sourceFile: "app/working-past-65-medicare/page.tsx",
-    Component: WorkingPastSixtyFivePage,
-    metadata: workingPastSixtyFiveMetadata,
-  }),
-  "health-insurance-spokane": Object.freeze({
-    path: "/health-insurance-spokane",
-    sourceFile: "app/health-insurance-spokane/page.tsx",
-    Component: HealthInsuranceSpokanePage,
-    metadata: healthInsuranceSpokaneMetadata,
-  }),
-  "health-insurance-agent": Object.freeze({
-    path: "/health-insurance-agent-spokane",
-    sourceFile: "app/health-insurance-agent-spokane/page.tsx",
-    Component: HealthInsuranceAgentSpokanePage,
-    metadata: healthInsuranceAgentSpokaneMetadata,
-  }),
-  "individual-family-health-insurance": Object.freeze({
-    path: "/individual-family-health-insurance-spokane",
-    sourceFile: "app/individual-family-health-insurance-spokane/page.tsx",
-    Component: IndividualFamilyHealthInsuranceSpokanePage,
-    metadata: individualFamilyHealthInsuranceSpokaneMetadata,
-  }),
-  "self-employed-health-insurance": Object.freeze({
-    path: "/self-employed-health-insurance-spokane",
-    sourceFile: "app/self-employed-health-insurance-spokane/page.tsx",
-    Component: SelfEmployedHealthInsuranceSpokanePage,
-    metadata: selfEmployedHealthInsuranceSpokaneMetadata,
-  }),
-  "special-enrollment-health-insurance": Object.freeze({
-    path: "/health-insurance-special-enrollment-spokane",
-    sourceFile: "app/health-insurance-special-enrollment-spokane/page.tsx",
-    Component: HealthInsuranceSpecialEnrollmentSpokanePage,
-    metadata: healthInsuranceSpecialEnrollmentSpokaneMetadata,
-  }),
-  "enrollment-resources": Object.freeze({
-    path: "/medicare-enrollment-resources",
-    sourceFile: "app/medicare-enrollment-resources/page.tsx",
-    Component: EnrollmentResourcesPage,
-    metadata: enrollmentResourcesMetadata,
-  }),
-  "moving-to-spokane": Object.freeze({
-    path: "/moving-to-spokane-medicare",
-    sourceFile: "app/moving-to-spokane-medicare/page.tsx",
-    Component: MovingToSpokaneMedicarePage,
-    metadata: movingToSpokaneMedicareMetadata,
-  }),
-  "medicare-savings-extra-help": Object.freeze({
-    path: "/medicare-savings-program-extra-help-washington",
-    sourceFile:
-      "app/medicare-savings-program-extra-help-washington/page.tsx",
-    Component: MedicareSavingsProgramExtraHelpWashingtonPage,
-    metadata: medicareSavingsProgramExtraHelpWashingtonMetadata,
-  }),
-  "medicare-faq": Object.freeze({
-    path: "/medicare-faq",
-    sourceFile: "app/medicare-faq/page.tsx",
-    Component: MedicareFaqPage,
-    metadata: medicareFaqMetadata,
-  }),
-  "advantage-vs-supplement": Object.freeze({
-    path: "/medicare-advantage-vs-supplement-spokane",
-    sourceFile: "app/medicare-advantage-vs-supplement-spokane/page.tsx",
-    Component: AdvantageVsSupplementPage,
-    metadata: advantageVsSupplementMetadata,
-  }),
-  "represented-carriers": Object.freeze({
-    path: "/carriers",
-    sourceFile: "app/carriers/page.tsx",
-    Component: CarriersPage,
-    metadata: carriersMetadata,
-  }),
-});
-
-function metadataString(value: unknown): string | undefined {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (value instanceof URL) {
-    return value.toString();
-  }
-  if (
-    value &&
-    typeof value === "object" &&
-    "absolute" in value &&
-    typeof value.absolute === "string"
-  ) {
-    return value.absolute;
-  }
-  return undefined;
 }
 
 function uniqueErrors(errors: string[]): string[] {
@@ -317,16 +110,31 @@ function arraysEqual<T>(left: T[], right: T[]): boolean {
   );
 }
 
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, item]) => item !== undefined)
+    .sort(([left], [right]) =>
+      left < right ? -1 : left > right ? 1 : 0,
+    );
+  return `{${entries
+    .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+    .join(",")}}`;
+}
+
 function expectedArticleRelationships(entry: KnowledgeEntry) {
   return {
-    articleIds: (entry.relationships?.entryPaths ?? []).flatMap(
-      (path) => {
-        const related = knowledgeEntries.find(
-          (candidate) => candidate.path === path,
-        );
-        return related ? [`resource-entry--${related.id}`] : [];
-      },
-    ),
+    articleIds: (entry.relationships?.entryPaths ?? []).flatMap((path) => {
+      const related = knowledgeEntries.find(
+        (candidate) => candidate.path === path,
+      );
+      return related ? [`resource-entry--${related.id}`] : [];
+    }),
     topicIds: [
       `resource-category--${entry.categoryId}`,
       ...entry.topicSlugs.map((slug) => `resource-topic--${slug}`),
@@ -345,98 +153,28 @@ export function isKnowledgeCmsPrivateShadowEnabled(
   value: string | undefined = process.env
     .KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE,
 ): boolean {
-  return resolveKnowledgeCmsPublicRendererMode(value)
-    .privateShadowEnabled;
+  return resolveKnowledgeCmsPublicRendererMode(value).privateShadowEnabled;
 }
 
-export function getKnowledgeCmsShadowRouteAdapter(
-  entryId: string,
-): KnowledgeCmsShadowRouteAdapter | undefined {
-  const definition = adapterDefinitions[entryId];
-  return definition
-    ? Object.freeze({
-        entryId,
-        ...definition,
-      })
-    : undefined;
+export function validateKnowledgeCmsShadowRenderer(): string[] {
+  return validateKnowledgeCmsNativeRepresentationControls();
 }
 
-export function validateKnowledgeCmsShadowAdapters(): string[] {
-  const errors: string[] = [];
-  const seenPaths = new Set<string>();
-  const adapterIds = Object.keys(adapterDefinitions);
-
-  if (adapterIds.length !== knowledgeCmsRendererContracts.length) {
-    errors.push(
-      "Private shadow adapter count must match the renderer contract count.",
-    );
-  }
-
-  for (const contract of knowledgeCmsRendererContracts) {
-    const adapter = getKnowledgeCmsShadowRouteAdapter(contract.entryId);
-    const parity = getKnowledgeCmsRouteParity(contract.entryId);
-    if (!adapter || !parity) {
-      errors.push(
-        `Renderer contract "${contract.entryId}" has no private shadow adapter or parity entry.`,
-      );
-      continue;
-    }
-    if (seenPaths.has(adapter.path)) {
-      errors.push(`Private shadow path "${adapter.path}" is duplicated.`);
-    }
-    seenPaths.add(adapter.path);
-    if (
-      adapter.path !== contract.path ||
-      adapter.sourceFile !== contract.legacy.sourceFile
-    ) {
-      errors.push(
-        `Private shadow adapter "${contract.entryId}" does not match its renderer contract.`,
-      );
-    }
-    if (
-      metadataString(adapter.metadata.title) !==
-        parity.metadata.pageTitle ||
-      adapter.metadata.description !== parity.metadata.description ||
-      metadataString(adapter.metadata.alternates?.canonical) !==
-        parity.metadata.canonicalUrl ||
-      metadataString(adapter.metadata.openGraph?.title) !==
-        parity.metadata.openGraphTitle ||
-      adapter.metadata.openGraph?.description !==
-        parity.metadata.openGraphDescription ||
-      metadataString(adapter.metadata.openGraph?.url) !==
-        parity.metadata.openGraphUrl
-    ) {
-      errors.push(
-        `Private shadow adapter "${contract.entryId}" metadata does not match route parity.`,
-      );
-    }
-  }
-
-  for (const entryId of adapterIds) {
-    if (!getKnowledgeCmsRendererContract(entryId)) {
-      errors.push(
-        `Private shadow adapter "${entryId}" has no renderer contract.`,
-      );
-    }
-  }
-
-  return errors;
-}
-
-function validateShadowRecord(
+export function validateKnowledgeCmsShadowRecord(
   contract: KnowledgeCmsRendererContractEntry,
   record: KnowledgeCmsArticle,
   asOf: Date,
 ): string[] {
   const errors: string[] = [];
-  const parity = getKnowledgeCmsRouteParity(contract.entryId);
   const entry = knowledgeEntries.find(
     (candidate) => candidate.id === contract.entryId,
   );
-  if (!parity || !entry) {
-    return ["The renderer contract has no governed route mapping."];
+  const control = getKnowledgeCmsNativeRepresentationControl(
+    contract.entryId,
+  );
+  if (!entry || !control) {
+    return ["The renderer contract has no governed CMS-native mapping."];
   }
-
   if (
     record.id !== contract.record.id ||
     record.kind !== contract.record.kind ||
@@ -444,7 +182,7 @@ function validateShadowRecord(
     record.slug !== contract.path.slice(1)
   ) {
     errors.push(
-      "The candidate record identity, slug, or body format does not match the renderer contract.",
+      "The candidate record identity, slug, or editorial body format does not match the renderer contract.",
     );
   }
   if (record.status !== "published") {
@@ -456,11 +194,11 @@ function validateShadowRecord(
     );
   }
   if (
-    record.discoverability.pageTitle !== parity.metadata.pageTitle ||
-    record.discoverability.description !== parity.metadata.description
+    record.discoverability.pageTitle !== control.target.metadata.pageTitle ||
+    record.discoverability.description !== control.target.metadata.description
   ) {
     errors.push(
-      "The candidate page title or description does not match route parity.",
+      "The candidate page title or description does not match the CMS-native representation.",
     );
   }
   if (
@@ -483,24 +221,14 @@ function validateShadowRecord(
   for (const key of Object.keys(
     expectedRelationships,
   ) as Array<keyof typeof expectedRelationships>) {
-    if (
-      !arraysEqual(
-        record.relationships[key],
-        expectedRelationships[key],
-      )
-    ) {
+    if (!arraysEqual(record.relationships[key], expectedRelationships[key])) {
       errors.push(
         `The candidate ${key} relationships do not match the governed Resource Library entry.`,
       );
     }
   }
   const expectedSourceIds = entry.sourceIds ?? [];
-  if (
-    !arraysEqual(
-      record.sources.map((source) => source.id),
-      expectedSourceIds,
-    )
-  ) {
+  if (!arraysEqual(record.sources.map((source) => source.id), expectedSourceIds)) {
     errors.push(
       "The candidate source lineage does not match the governed Resource Library entry.",
     );
@@ -530,7 +258,6 @@ function validateShadowRecord(
       "The candidate reviewer and publisher must remain different authenticated users.",
     );
   }
-
   errors.push(...validateKnowledgeCmsPublishReadiness(record, asOf));
   return uniqueErrors(errors);
 }
@@ -538,14 +265,14 @@ function validateShadowRecord(
 function buildArtifact(
   contract: KnowledgeCmsRendererContractEntry,
   record: KnowledgeCmsArticle,
-): KnowledgeCmsRendererArtifact | undefined {
-  const parity = getKnowledgeCmsRouteParity(contract.entryId);
-  if (!parity) {
-    return undefined;
-  }
+  representation: KnowledgeCmsNativeRepresentationArtifact,
+): KnowledgeCmsRendererArtifact {
+  const rendered = decodeKnowledgeCmsNativeRepresentationBody(
+    representation.body,
+  );
   return {
     entryId: contract.entryId,
-    path: contract.path,
+    path: representation.path,
     record: {
       kind: "article",
       id: record.id,
@@ -554,28 +281,21 @@ function buildArtifact(
     },
     rendering: {
       mode: "private_shadow",
-      bodySource: "verified_static_component_adapter",
+      bodySource: "cms_native_lossless_artifact",
       cmsBodyPubliclyRendered: false,
     },
-    metadata: {
-      pageTitle: parity.metadata.pageTitle,
-      description: parity.metadata.description,
-      canonicalUrl: parity.metadata.canonicalUrl,
-      openGraphTitle: parity.metadata.openGraphTitle,
-      openGraphDescription: parity.metadata.openGraphDescription,
-      openGraphUrl: parity.metadata.openGraphUrl,
-    },
+    metadata: { ...representation.metadata },
     renderedBody: {
-      sha256: parity.renderedBody.sha256,
-      bytes: parity.renderedBody.bytes,
-      h1: parity.renderedBody.h1,
-      h1Count: parity.renderedBody.h1Count,
-      schemaTypes: [...parity.renderedBody.schemaTypes],
-      formCount: parity.renderedBody.formCount,
-      faqDisclosureCount: parity.renderedBody.faqDisclosureCount,
+      sha256: rendered.sha256,
+      bytes: rendered.bytes,
+      h1: rendered.h1,
+      h1Count: rendered.h1Count,
+      schemaTypes: [...rendered.schemaTypes],
+      formCount: rendered.formCount,
+      faqDisclosureCount: rendered.faqDisclosureCount,
     },
     satisfiedRequirements: [
-      ...parity.cmsRepresentation.preservationRequirements,
+      ...representation.renderer.preservationRequirements,
     ],
   };
 }
@@ -593,7 +313,7 @@ function baseResult(
     recordId: contract.record.id,
     title: entry?.title ?? contract.entryId,
     publicSource: "verified_static_route",
-    bodySource: "verified_static_component_adapter",
+    bodySource: "cms_native_lossless_artifact",
     cmsBodyPubliclyRendered: false,
     cutoverEligible: false,
   };
@@ -602,15 +322,16 @@ function baseResult(
 export function compareKnowledgeCmsShadowCandidate(
   contract: KnowledgeCmsRendererContractEntry,
   record: KnowledgeCmsArticle | undefined,
+  representationDocuments: KnowledgeCmsNativeRepresentationDocument[],
   asOf: Date = new Date(),
 ): KnowledgeCmsShadowResult {
   const base = baseResult(contract);
-  const adapterErrors = validateKnowledgeCmsShadowAdapters();
-  if (adapterErrors.length > 0) {
+  const controlErrors = validateKnowledgeCmsShadowRenderer();
+  if (controlErrors.length > 0) {
     return {
       ...base,
-      status: "adapter_invalid",
-      errors: adapterErrors,
+      status: "representation_control_invalid",
+      errors: controlErrors,
     };
   }
   if (!record) {
@@ -628,8 +349,11 @@ export function compareKnowledgeCmsShadowCandidate(
       errors: ["The matching Knowledge CMS article is not published."],
     };
   }
-
-  const recordErrors = validateShadowRecord(contract, record, asOf);
+  const recordErrors = validateKnowledgeCmsShadowRecord(
+    contract,
+    record,
+    asOf,
+  );
   if (recordErrors.length > 0) {
     return {
       ...base,
@@ -639,24 +363,118 @@ export function compareKnowledgeCmsShadowCandidate(
     };
   }
 
-  const artifact = buildArtifact(contract, record);
-  const parityErrors = artifact
-    ? verifyKnowledgeCmsRendererArtifact(contract, artifact)
-    : ["The private shadow artifact could not be built."];
-  if (!artifact || parityErrors.length > 0) {
+  const control = getKnowledgeCmsNativeRepresentationControl(
+    contract.entryId,
+  );
+  if (!control) {
+    return {
+      ...base,
+      status: "representation_control_invalid",
+      recordRevision: record.audit.revision,
+      errors: ["No CMS-native representation control exists."],
+    };
+  }
+  const expectedRepresentationId =
+    getKnowledgeCmsNativeRepresentationArtifactId(
+      contract.entryId,
+      record.audit.revision,
+    );
+  const matches = representationDocuments.filter(
+    (document) => document.id === expectedRepresentationId,
+  );
+  if (matches.length === 0) {
+    const historicalArtifactPresent = representationDocuments.some(
+      (document) =>
+        document.id.startsWith(control.target.idPrefix) &&
+        document.id !== expectedRepresentationId,
+    );
+    return {
+      ...base,
+      status: historicalArtifactPresent
+        ? "representation_stale"
+        : "representation_missing",
+      recordRevision: record.audit.revision,
+      representationId: expectedRepresentationId,
+      errors: [
+        historicalArtifactPresent
+          ? "A historical immutable rendering exists, but the current published article revision has no matching artifact."
+          : "No matching immutable CMS-native representation artifact exists.",
+      ],
+    };
+  }
+  if (matches.length !== 1) {
+    return {
+      ...base,
+      status: "representation_invalid",
+      recordRevision: record.audit.revision,
+      representationId: expectedRepresentationId,
+      errors: ["The CMS-native representation target is ambiguous."],
+    };
+  }
+  let representation: KnowledgeCmsNativeRepresentationArtifact;
+  try {
+    representation = parseKnowledgeCmsNativeRepresentationArtifact(
+      matches[0].data,
+    );
+  } catch (error) {
+    return {
+      ...base,
+      status: "representation_invalid",
+      recordRevision: record.audit.revision,
+      representationId: expectedRepresentationId,
+      errors: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+  if (representation.id !== matches[0].id) {
+    return {
+      ...base,
+      status: "representation_invalid",
+      recordRevision: record.audit.revision,
+      representationId: expectedRepresentationId,
+      errors: [
+        "The CMS-native representation document ID does not match its payload.",
+      ],
+    };
+  }
+  const representationErrors =
+    validateKnowledgeCmsNativeRepresentationArtifact(
+      representation,
+      record,
+    );
+  if (representationErrors.length > 0) {
+    return {
+      ...base,
+      status: representationErrors.some((error) => /stale/i.test(error))
+        ? "representation_stale"
+        : "representation_invalid",
+      recordRevision: record.audit.revision,
+      representationId: representation.id,
+      errors: representationErrors,
+    };
+  }
+
+  const artifact = buildArtifact(contract, record, representation);
+  const parityErrors = verifyKnowledgeCmsRendererArtifact(
+    contract,
+    artifact,
+  );
+  if (parityErrors.length > 0) {
     return {
       ...base,
       status: "parity_failed",
       recordRevision: record.audit.revision,
-      ...(artifact ? { artifact } : {}),
+      representationId: representation.id,
+      representationArtifact: representation,
+      artifact,
       errors: parityErrors,
     };
   }
-
   return {
     ...base,
     status: "parity_passed",
     recordRevision: record.audit.revision,
+    representationId: representation.id,
+    representationArtifact: representation,
     artifact,
     errors: [],
   };
@@ -664,6 +482,7 @@ export function compareKnowledgeCmsShadowCandidate(
 
 export function buildKnowledgeCmsShadowPreview(
   records: KnowledgeCmsArticle[],
+  representationDocuments: KnowledgeCmsNativeRepresentationDocument[],
   options: {
     asOf?: Date;
     rendererMode?: string;
@@ -681,6 +500,7 @@ export function buildKnowledgeCmsShadowPreview(
     compareKnowledgeCmsShadowCandidate(
       contract,
       recordById.get(contract.record.id),
+      representationDocuments,
       asOf,
     ),
   );
@@ -690,6 +510,27 @@ export function buildKnowledgeCmsShadowPreview(
   const passed = results.filter(
     (result) => result.status === "parity_passed",
   ).length;
+  const unexpectedRepresentationIds = representationDocuments
+    .map((document) => document.id)
+    .filter((id) => !isKnowledgeCmsNativeRepresentationArtifactId(id))
+    .sort();
+  const approvalEvidence = {
+    version: KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION,
+    asOf: asOf.toISOString(),
+    rendererMode: rendererMode.requestedMode,
+    routes: results.map((result) => ({
+      entryId: result.entryId,
+      status: result.status,
+      recordRevision: result.recordRevision ?? null,
+      representationFingerprint:
+        result.representationArtifact?.fingerprint.value ?? null,
+      renderedBodySha256: result.artifact?.renderedBody.sha256 ?? null,
+    })),
+    unexpectedRepresentationIds,
+  };
+  const approvalFingerprint = createHash("sha256")
+    .update(canonicalJson(approvalEvidence))
+    .digest("hex");
 
   return {
     version: KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION,
@@ -698,21 +539,156 @@ export function buildKnowledgeCmsShadowPreview(
     writeCount: KNOWLEDGE_CMS_SHADOW_WRITE_COUNT,
     rendererMode,
     publicSource: "verified_static_route",
+    bodySource: "cms_native_lossless_artifact",
     cmsBodyPubliclyRendered: false,
     cutoverEligible: false,
+    betaParityApproval: {
+      status:
+        rendererMode.requestedMode === "shadow" &&
+        rendererMode.privateShadowEnabled &&
+        unexpectedRepresentationIds.length === 0 &&
+        passed === knowledgeCmsRendererContracts.length
+          ? "verified"
+          : "blocked",
+      routeCount: knowledgeCmsRendererContracts.length,
+      exactPasses: passed,
+      unexpectedRepresentationIds,
+      fingerprint: approvalFingerprint,
+      executionAuthority: false,
+      publicCutoverAuthority: false,
+    },
     summary: {
       total: results.length,
-      adaptersReady:
-        results.length -
-        results.filter((result) => result.status === "adapter_invalid")
-          .length,
+      controlsReady:
+        validateKnowledgeCmsShadowRenderer().length === 0
+          ? results.length
+          : 0,
       candidatesPresent: results.filter(
         (result) => result.status !== "candidate_missing",
       ).length,
+      representationsPresent: results.filter(
+        (result) =>
+          ![
+            "candidate_missing",
+            "candidate_not_published",
+            "record_contract_mismatch",
+            "representation_control_invalid",
+            "representation_missing",
+          ].includes(result.status),
+      ).length,
+      unexpectedRepresentations: unexpectedRepresentationIds.length,
       compared,
       passed,
       blocked: results.length - passed,
     },
     results,
   };
+}
+
+export function validateKnowledgeCmsShadowPreview(
+  preview: KnowledgeCmsShadowPreview,
+): string[] {
+  const errors: string[] = [];
+  const expectedEntryIds = knowledgeCmsRendererContracts.map(
+    (contract) => contract.entryId,
+  );
+  const actualEntryIds = preview.results.map((result) => result.entryId);
+  const passed = preview.results.filter(
+    (result) => result.status === "parity_passed",
+  ).length;
+  const compared = preview.results.filter((result) =>
+    ["parity_failed", "parity_passed"].includes(result.status),
+  ).length;
+  const unexpectedRepresentationIds =
+    preview.betaParityApproval.unexpectedRepresentationIds;
+  const approvalEvidence = {
+    version: preview.version,
+    asOf: preview.asOf,
+    rendererMode: preview.rendererMode.requestedMode,
+    routes: preview.results.map((result) => ({
+      entryId: result.entryId,
+      status: result.status,
+      recordRevision: result.recordRevision ?? null,
+      representationFingerprint:
+        result.representationArtifact?.fingerprint.value ?? null,
+      renderedBodySha256: result.artifact?.renderedBody.sha256 ?? null,
+    })),
+    unexpectedRepresentationIds,
+  };
+  const hasUnexpectedIds = unexpectedRepresentationIds.length > 0;
+  const expectedApprovalFingerprint = createHash("sha256")
+    .update(canonicalJson(approvalEvidence))
+    .digest("hex");
+
+  if (
+    preview.version !== KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION ||
+    preview.mode !== "private_shadow" ||
+    preview.writeCount !== KNOWLEDGE_CMS_SHADOW_WRITE_COUNT ||
+    preview.publicSource !== "verified_static_route" ||
+    preview.bodySource !== "cms_native_lossless_artifact" ||
+    preview.cmsBodyPubliclyRendered ||
+    preview.cutoverEligible ||
+    Number.isNaN(new Date(preview.asOf).getTime())
+  ) {
+    errors.push(
+      "Private shadow evidence must remain zero-write, non-public, and cutover-ineligible.",
+    );
+  }
+  if (!arraysEqual(actualEntryIds, expectedEntryIds)) {
+    errors.push("Private shadow evidence does not cover the governed routes in order.");
+  }
+  if (
+    preview.summary.total !== preview.results.length ||
+    preview.summary.compared !== compared ||
+    preview.summary.passed !== passed ||
+    preview.summary.blocked !== preview.results.length - passed ||
+    preview.summary.unexpectedRepresentations !==
+      unexpectedRepresentationIds.length ||
+    preview.betaParityApproval.routeCount !== preview.results.length ||
+    preview.betaParityApproval.exactPasses !== passed ||
+    preview.betaParityApproval.executionAuthority ||
+    preview.betaParityApproval.publicCutoverAuthority
+  ) {
+    errors.push("Private shadow summary or authority evidence is inconsistent.");
+  }
+  const expectedApprovalStatus =
+    preview.rendererMode.requestedMode === "shadow" &&
+    preview.rendererMode.privateShadowEnabled &&
+    passed === preview.results.length &&
+    !hasUnexpectedIds
+      ? "verified"
+      : "blocked";
+  if (preview.betaParityApproval.status !== expectedApprovalStatus) {
+    errors.push("Verified shadow parity is not supported by all 22 exact routes.");
+  }
+  if (
+    preview.betaParityApproval.fingerprint !==
+    expectedApprovalFingerprint
+  ) {
+    errors.push("Private shadow approval fingerprint is invalid.");
+  }
+  if (hasUnexpectedIds && preview.betaParityApproval.status === "verified") {
+    errors.push("Unexpected rendering documents must block shadow approval.");
+  }
+  for (const result of preview.results) {
+    if (result.status !== "parity_passed") {
+      continue;
+    }
+    const contract = getKnowledgeCmsRendererContract(result.entryId);
+    if (
+      !contract ||
+      !result.artifact ||
+      !result.representationArtifact ||
+      result.errors.length > 0 ||
+      verifyKnowledgeCmsRendererArtifact(contract, result.artifact).length > 0 ||
+      validateKnowledgeCmsNativeRepresentationArtifact(
+        result.representationArtifact,
+      ).length > 0
+    ) {
+      errors.push(
+        `Private shadow result "${result.entryId}" does not retain exact verified evidence.`,
+      );
+    }
+  }
+  return uniqueErrors(errors);
 }

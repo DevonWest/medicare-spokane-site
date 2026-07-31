@@ -94,12 +94,20 @@ export default async function KnowledgeAdminPage() {
               </>
             ) : null}
             {canPreviewShadow ? (
-              <Link
-                className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
-                href="/admin/knowledge/shadow-preview"
-              >
-                Shadow renderer
-              </Link>
+              <>
+                <Link
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                  href="/admin/knowledge/shadow-preview"
+                >
+                  Shadow renderer
+                </Link>
+                <Link
+                  className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-100"
+                  href="/admin/knowledge/public-cutover"
+                >
+                  Public cutover
+                </Link>
+              </>
             ) : null}
             <LogoutButton />
           </div>
