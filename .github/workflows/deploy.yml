@@ -21,7 +21,10 @@
 #   KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED optional; defaults to false
-#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static or private shadow
+#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT required only for cutover
+#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static, private shadow, or guarded cutover
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
@@ -96,6 +99,9 @@ jobs:
       KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED || 'false' }}
       KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED || 'false' }}
       KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT || '' }}
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
@@ -140,14 +146,10 @@ jobs:
               ;;
           esac
           case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
-            static|shadow)
-              ;;
-            cutover)
-              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover cannot be activated until reviewed private shadow evidence and a CMS-native public body renderer are merged"
-              exit 1
+            static|shadow|cutover)
               ;;
             *)
-              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static or shadow"
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, or cutover"
               exit 1
               ;;
           esac
@@ -185,6 +187,44 @@ jobs:
               exit 1
               ;;
           esac
+          case "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED" in
+            false)
+              ;;
+            true)
+              test "$TARGET" = "beta" || (echo "::error::Public cutover approval may be created only on beta" && exit 1)
+              test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::Public cutover approval requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
+              test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" = "shadow" || (echo "::error::Public cutover approval requires exact shadow mode" && exit 1)
+              test "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED" = "false" || (echo "::error::Public cutover approval requires the cutover gate false" && exit 1)
+              test "$KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover approval requires article execution false" && exit 1)
+              test "$KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover approval requires supporting execution false" && exit 1)
+              test "$KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover approval requires rendering execution false" && exit 1)
+              ;;
+            *)
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED must be exactly true or false"
+              exit 1
+              ;;
+          esac
+          case "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED" in
+            false)
+              test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" != "cutover" || (echo "::error::Renderer cutover requires KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true" && exit 1)
+              ;;
+            true)
+              test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::Public cutover requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
+              test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" = "cutover" || (echo "::error::Public cutover requires KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover" && exit 1)
+              test "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires approval execution false" && exit 1)
+              test "$KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires article execution false" && exit 1)
+              test "$KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires supporting execution false" && exit 1)
+              test "$KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires rendering execution false" && exit 1)
+              test "${#KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT}" -eq 64 || (echo "::error::Public cutover approval receipt must be exactly 64 lowercase hex characters" && exit 1)
+              case "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT" in
+                *[!0-9a-f]*) echo "::error::Public cutover approval receipt must be lowercase hexadecimal"; exit 1 ;;
+              esac
+              ;;
+            *)
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED must be exactly true or false"
+              exit 1
+              ;;
+          esac
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -215,7 +255,8 @@ jobs:
       - name: Push container image
         run: docker push "${{ steps.cfg.outputs.image }}"
 
-      - name: Deploy to Cloud Run
+      - name: Deploy standard or beta-canary revision
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ steps.cfg.outputs.service }}
@@ -238,6 +279,41 @@ jobs:
             KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED }}
             KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED }}
             KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
+            KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
+            NODE_ENV=production
+
+      - name: Deploy production cutover candidate with no traffic
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' && env.TARGET == 'production' }}
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ steps.cfg.outputs.service }}
+          region: ${{ env.REGION }}
+          image: ${{ steps.cfg.outputs.image }}
+          flags: >-
+            --service-account=${{ env.RUNTIME_SA }}
+            --allow-unauthenticated
+            --port=8080
+            --cpu=1
+            --memory=512Mi
+            --min-instances=0
+            --max-instances=10
+            --no-traffic
+            --tag=cms-cutover-candidate
+          env_vars: |
+            NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
+            NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
+            NEXT_PUBLIC_GTM_ID=${{ vars.NEXT_PUBLIC_GTM_ID }}
+            FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }}
+            KNOWLEDGE_CMS_ENABLED=${{ env.KNOWLEDGE_CMS_ENABLED }}
+            KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
             NODE_ENV=production
 

@@ -117,6 +117,7 @@ test("lossless renderer contracts cover every parity route with a static rollbac
     );
     assert.equal(contract.candidate.cmsBodyPubliclyRendered, false);
     assert.equal(contract.rollout.shadowEligible, true);
+    assert.equal(contract.rollout.cutoverImplementationAvailable, true);
     assert.equal(contract.rollout.cutoverEligible, false);
     assert.ok(
       contract.rollout.blockers.includes(
@@ -195,7 +196,7 @@ test("every required React capability has an explicit adapter and evidence gate"
   );
 });
 
-test("public rendering stays static while private shadow is separately gated", () => {
+test("base rendering stays static while guarded cutover requires a separate runtime approval", () => {
   assert.equal(KNOWLEDGE_CMS_PUBLIC_RENDERER_ACTIVATION_ALLOWED, false);
   assert.equal(KNOWLEDGE_CMS_PRIVATE_SHADOW_ACTIVATION_ALLOWED, true);
   assert.deepEqual(resolveKnowledgeCmsPublicRendererMode(undefined), {
@@ -223,7 +224,7 @@ test("public rendering stays static while private shadow is separately gated", (
   assert.equal(cutover.effectiveMode, "static");
   assert.equal(cutover.activationAllowed, false);
   assert.equal(cutover.privateShadowEnabled, false);
-  assert.equal(cutover.reason, "cutover_not_implemented");
+  assert.equal(cutover.reason, "cutover_requires_runtime_approval");
   for (const invalid of ["", "false", "true", " shadow ", "STATIC"]) {
     const resolution =
       resolveKnowledgeCmsPublicRendererMode(invalid);

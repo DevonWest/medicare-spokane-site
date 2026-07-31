@@ -73,6 +73,7 @@ export type KnowledgeCmsAuditEvent =
   | "migration_create_private_draft"
   | "migration_create_private_supporting_draft"
   | "create_private_article_rendering"
+  | "create_public_cutover_approval"
   | "update"
   | "submit_for_review"
   | "approve"

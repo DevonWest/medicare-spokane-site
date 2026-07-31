@@ -53,6 +53,11 @@ async function loadNativeRenderer() {
   return import("../lib/knowledgeCmsNativeRepresentationRenderer");
 }
 
+async function loadPublicLeadFormAdapter() {
+  mockServerOnlyModule();
+  return import("../lib/knowledgeCmsPublicLeadFormAdapter");
+}
+
 function actor(roles: KnowledgeCmsActor["roles"]): KnowledgeCmsActor {
   return { id: "shadow-operator", roles };
 }
@@ -206,10 +211,17 @@ test("CMS-native artifacts round-trip every immutable route without legacy page 
   } = await loadNativeRepresentation();
   const { renderKnowledgeCmsNativeRepresentation } =
     await loadNativeRenderer();
+  const { hasKnowledgeCmsPublicLeadFormAdapter } =
+    await loadPublicLeadFormAdapter();
 
   assert.deepEqual(validateKnowledgeCmsNativeRepresentationControls(), []);
   assert.equal(knowledgeCmsNativeRepresentationControls.length, 22);
   for (const parity of knowledgeCmsRouteParityManifest) {
+    assert.equal(
+      hasKnowledgeCmsPublicLeadFormAdapter(parity.entryId),
+      parity.renderedBody.formCount > 0,
+      `${parity.path} must bind every rendered lead form to its client adapter`,
+    );
     const control = getKnowledgeCmsNativeRepresentationControl(parity.entryId);
     assert.ok(control);
     const record = articleRecord(parity.entryId);
@@ -486,7 +498,7 @@ test("shadow DAL is publisher-only, exact-mode gated, two-read, and zero-write",
   assert.equal(representationReads, 0);
 });
 
-test("private CMS-native UI is isolated from public routes and legacy page modules", () => {
+test("private shadow UI is isolated while the guarded internal renderer avoids legacy page modules", () => {
   const page = readFileSync(
     join(root, "app/admin/knowledge/shadow-preview/page.tsx"),
     "utf8",
@@ -498,6 +510,10 @@ test("private CMS-native UI is isolated from public routes and legacy page modul
   );
   const nativeRenderer = readFileSync(
     join(root, "lib/knowledgeCmsNativeRepresentationRenderer.tsx"),
+    "utf8",
+  );
+  const leadFormAdapter = readFileSync(
+    join(root, "lib/knowledgeCmsPublicLeadFormAdapter.tsx"),
     "utf8",
   );
   const workflow = readFileSync(
@@ -512,14 +528,18 @@ test("private CMS-native UI is isolated from public routes and legacy page modul
   assert.doesNotMatch(page, /["']use client["']/);
   assert.doesNotMatch(page, /dangerouslySetInnerHTML/);
   assert.match(nativeRenderer, /html-react-parser/);
+  assert.match(nativeRenderer, /replaceKnowledgeCmsPublicLeadForm/);
   assert.doesNotMatch(nativeRenderer, /dangerouslySetInnerHTML/);
+  assert.match(leadFormAdapter, /@\/components\/LeadForm/);
+  assert.doesNotMatch(leadFormAdapter, /app\/.+\/page/);
   assert.doesNotMatch(shadow, /@\/app\//);
   assert.doesNotMatch(shadow, /app\/.+\/page/);
   assert.doesNotMatch(dal, /\.save\s*\(/);
   assert.doesNotMatch(dal, /\.transition\s*\(/);
   assert.doesNotMatch(dal, /\.create\s*\(/);
-  assert.match(workflow, /static\|shadow/);
-  assert.match(workflow, /cutover cannot be activated/);
+  assert.match(workflow, /static\|shadow\|cutover/);
+  assert.match(workflow, /approval receipt must be exactly 64/);
+  assert.match(workflow, /Deploy production cutover candidate with no traffic/);
   assert.match(
     workflow,
     /KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED requires KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=shadow/,
@@ -530,7 +550,8 @@ test("private CMS-native UI is isolated from public routes and legacy page modul
     ...listTypeScriptFiles(join(root, "components")),
   ].filter(
     (sourceFile) =>
-      !relative(root, sourceFile).startsWith(`${join("app", "admin")}/`),
+      !relative(root, sourceFile).startsWith(`${join("app", "admin")}/`) &&
+      !relative(root, sourceFile).startsWith(`${join("app", "cms-render")}/`),
   );
   for (const sourceFile of publicSources) {
     assert.doesNotMatch(
@@ -539,4 +560,11 @@ test("private CMS-native UI is isolated from public routes and legacy page modul
       `${relative(root, sourceFile)} must not import private CMS rendering`,
     );
   }
+  const publicRendererPage = readFileSync(
+    join(root, "app/cms-render/[entryId]/page.tsx"),
+    "utf8",
+  );
+  assert.match(publicRendererPage, /loadKnowledgeCmsPublicRoute/);
+  assert.match(publicRendererPage, /renderKnowledgeCmsNativeRepresentationBody/);
+  assert.doesNotMatch(publicRendererPage, /app\/.+\/page/);
 });

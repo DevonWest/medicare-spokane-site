@@ -21,6 +21,7 @@ import {
   type KnowledgeCmsNativeRepresentationArtifact,
 } from "./knowledgeCmsNativeRepresentation";
 import {
+  getKnowledgeCmsRendererContract,
   knowledgeCmsRendererContracts,
   resolveKnowledgeCmsPublicRendererMode,
   verifyKnowledgeCmsRendererArtifact,
@@ -80,6 +81,7 @@ export interface KnowledgeCmsShadowPreview {
     status: "blocked" | "verified";
     routeCount: number;
     exactPasses: number;
+    unexpectedRepresentationIds: string[];
     fingerprint: string;
     executionAuthority: false;
     publicCutoverAuthority: false;
@@ -550,6 +552,7 @@ export function buildKnowledgeCmsShadowPreview(
           : "blocked",
       routeCount: knowledgeCmsRendererContracts.length,
       exactPasses: passed,
+      unexpectedRepresentationIds,
       fingerprint: approvalFingerprint,
       executionAuthority: false,
       publicCutoverAuthority: false,
@@ -580,4 +583,112 @@ export function buildKnowledgeCmsShadowPreview(
     },
     results,
   };
+}
+
+export function validateKnowledgeCmsShadowPreview(
+  preview: KnowledgeCmsShadowPreview,
+): string[] {
+  const errors: string[] = [];
+  const expectedEntryIds = knowledgeCmsRendererContracts.map(
+    (contract) => contract.entryId,
+  );
+  const actualEntryIds = preview.results.map((result) => result.entryId);
+  const passed = preview.results.filter(
+    (result) => result.status === "parity_passed",
+  ).length;
+  const compared = preview.results.filter((result) =>
+    ["parity_failed", "parity_passed"].includes(result.status),
+  ).length;
+  const unexpectedRepresentationIds =
+    preview.betaParityApproval.unexpectedRepresentationIds;
+  const approvalEvidence = {
+    version: preview.version,
+    asOf: preview.asOf,
+    rendererMode: preview.rendererMode.requestedMode,
+    routes: preview.results.map((result) => ({
+      entryId: result.entryId,
+      status: result.status,
+      recordRevision: result.recordRevision ?? null,
+      representationFingerprint:
+        result.representationArtifact?.fingerprint.value ?? null,
+      renderedBodySha256: result.artifact?.renderedBody.sha256 ?? null,
+    })),
+    unexpectedRepresentationIds,
+  };
+  const hasUnexpectedIds = unexpectedRepresentationIds.length > 0;
+  const expectedApprovalFingerprint = createHash("sha256")
+    .update(canonicalJson(approvalEvidence))
+    .digest("hex");
+
+  if (
+    preview.version !== KNOWLEDGE_CMS_SHADOW_PREVIEW_VERSION ||
+    preview.mode !== "private_shadow" ||
+    preview.writeCount !== KNOWLEDGE_CMS_SHADOW_WRITE_COUNT ||
+    preview.publicSource !== "verified_static_route" ||
+    preview.bodySource !== "cms_native_lossless_artifact" ||
+    preview.cmsBodyPubliclyRendered ||
+    preview.cutoverEligible ||
+    Number.isNaN(new Date(preview.asOf).getTime())
+  ) {
+    errors.push(
+      "Private shadow evidence must remain zero-write, non-public, and cutover-ineligible.",
+    );
+  }
+  if (!arraysEqual(actualEntryIds, expectedEntryIds)) {
+    errors.push("Private shadow evidence does not cover the governed routes in order.");
+  }
+  if (
+    preview.summary.total !== preview.results.length ||
+    preview.summary.compared !== compared ||
+    preview.summary.passed !== passed ||
+    preview.summary.blocked !== preview.results.length - passed ||
+    preview.summary.unexpectedRepresentations !==
+      unexpectedRepresentationIds.length ||
+    preview.betaParityApproval.routeCount !== preview.results.length ||
+    preview.betaParityApproval.exactPasses !== passed ||
+    preview.betaParityApproval.executionAuthority ||
+    preview.betaParityApproval.publicCutoverAuthority
+  ) {
+    errors.push("Private shadow summary or authority evidence is inconsistent.");
+  }
+  const expectedApprovalStatus =
+    preview.rendererMode.requestedMode === "shadow" &&
+    preview.rendererMode.privateShadowEnabled &&
+    passed === preview.results.length &&
+    !hasUnexpectedIds
+      ? "verified"
+      : "blocked";
+  if (preview.betaParityApproval.status !== expectedApprovalStatus) {
+    errors.push("Verified shadow parity is not supported by all 22 exact routes.");
+  }
+  if (
+    preview.betaParityApproval.fingerprint !==
+    expectedApprovalFingerprint
+  ) {
+    errors.push("Private shadow approval fingerprint is invalid.");
+  }
+  if (hasUnexpectedIds && preview.betaParityApproval.status === "verified") {
+    errors.push("Unexpected rendering documents must block shadow approval.");
+  }
+  for (const result of preview.results) {
+    if (result.status !== "parity_passed") {
+      continue;
+    }
+    const contract = getKnowledgeCmsRendererContract(result.entryId);
+    if (
+      !contract ||
+      !result.artifact ||
+      !result.representationArtifact ||
+      result.errors.length > 0 ||
+      verifyKnowledgeCmsRendererArtifact(contract, result.artifact).length > 0 ||
+      validateKnowledgeCmsNativeRepresentationArtifact(
+        result.representationArtifact,
+      ).length > 0
+    ) {
+      errors.push(
+        `Private shadow result "${result.entryId}" does not retain exact verified evidence.`,
+      );
+    }
+  }
+  return uniqueErrors(errors);
 }

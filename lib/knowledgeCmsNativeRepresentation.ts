@@ -29,6 +29,8 @@ export const KNOWLEDGE_CMS_NATIVE_REPRESENTATION_CONTROL_WRITE_COUNT =
   0 as const;
 export const KNOWLEDGE_CMS_NATIVE_REPRESENTATION_MAX_HTML_BYTES =
   200_000 as const;
+export const KNOWLEDGE_CMS_NATIVE_REPRESENTATION_PINNED_RENDERER_CONTRACT_VERSION =
+  3 as const;
 
 interface GeneratedRepresentation {
   entryId: string;
@@ -342,7 +344,9 @@ function buildUnsignedControl(entryId: string): UnsignedControl {
     generated.encoding !== KNOWLEDGE_CMS_NATIVE_REPRESENTATION_ENCODING ||
     generated.renderedBodySha256 !== parity.renderedBody.sha256 ||
     generated.renderedBodyBytes !== parity.renderedBody.bytes ||
-    contract.path !== parity.path
+    contract.path !== parity.path ||
+    contract.version <
+      KNOWLEDGE_CMS_NATIVE_REPRESENTATION_PINNED_RENDERER_CONTRACT_VERSION
   ) {
     throw new Error(
       `CMS-native representation "${entryId}" does not match route parity.`,
@@ -398,7 +402,8 @@ function buildUnsignedControl(entryId: string): UnsignedControl {
     },
     provenance: {
       routeParityVersion: parity.version,
-      rendererContractVersion: contract.version,
+      rendererContractVersion:
+        KNOWLEDGE_CMS_NATIVE_REPRESENTATION_PINNED_RENDERER_CONTRACT_VERSION,
       preservationRequirements: [
         ...parity.cmsRepresentation.preservationRequirements,
       ],

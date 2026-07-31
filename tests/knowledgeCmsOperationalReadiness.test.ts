@@ -379,6 +379,7 @@ async function completeWorkspace() {
     existingRecords: records,
   });
   return {
+    records,
     workspace: {
       preview,
       articleMaterializationDryRun:
@@ -574,6 +575,109 @@ test("all 45 verified records complete migration with both execution gates disab
   );
   assert.equal(report.readBoundary.verificationTransactions, 45);
   assert.equal(report.readBoundary.writeCount, 0);
+});
+
+test("complete 45-record readiness and all-22 shadow parity produce only a guarded approval preview", async () => {
+  mockServerOnlyModule();
+  const [readiness] = await loadReadinessModules();
+  const native = await import("../lib/knowledgeCmsNativeRepresentation");
+  const shadow = await import("../lib/knowledgeCmsShadowRenderer");
+  const cutover = await import("../lib/knowledgeCmsPublicCutover");
+  const complete = await completeWorkspace();
+  const report = readiness.buildKnowledgeCmsOperationalReadinessReport({
+    actor: ACTOR,
+    observedAt: NOW,
+    configuration: {
+      ...configuration(false),
+      renderer: resolveKnowledgeCmsPublicRendererMode("shadow"),
+    },
+    roleDirectory: await completeRoleDirectory(),
+    workspaceEvidence: {
+      status: "available",
+      workspace: complete.workspace,
+      articleVerifications: complete.articleVerifications,
+      supportingVerifications: complete.supportingVerifications,
+    },
+  });
+  const articles = complete.records.flatMap((record) =>
+    record.kind === "article"
+      ? [
+          {
+            ...record,
+            status: "published" as const,
+            review: {
+              reviewerAgentSlug: "lynn-wold",
+              reviewerVerificationId: "readiness-lynn-wold",
+              reviewedBy: "readiness-reviewer",
+              reviewedAt: "2026-07-30T20:00:00.000Z",
+              reviewDueAt: "2027-01-26",
+            },
+            publication: {
+              publishedAt: "2026-07-30T21:00:00.000Z",
+              publishedBy: ACTOR.id,
+            },
+            audit: {
+              ...record.audit,
+              revision: 4,
+              createdAt: "2026-07-30T19:00:00.000Z",
+              updatedAt: "2026-07-30T21:00:00.000Z",
+              updatedBy: ACTOR.id,
+            },
+          },
+        ]
+      : [],
+  );
+  const artifacts = articles.map((article) => {
+    const entryId = article.id.replace(/^resource-entry--/, "");
+    const control =
+      native.getKnowledgeCmsNativeRepresentationControl(entryId);
+    assert.ok(control);
+    return native.buildKnowledgeCmsNativeRepresentationArtifact({
+      control,
+      article,
+      actorId: ACTOR.id,
+      createdAt: NOW.toISOString(),
+    });
+  });
+  const shadowPreview = shadow.buildKnowledgeCmsShadowPreview(
+    articles,
+    artifacts.map((artifact) => ({ id: artifact.id, data: artifact })),
+    { asOf: NOW, rendererMode: "shadow" },
+  );
+  assert.equal(
+    shadowPreview.betaParityApproval.status,
+    "verified",
+    JSON.stringify(
+      shadowPreview.results
+        .filter((result) => result.status !== "parity_passed")
+        .map((result) => ({
+          entryId: result.entryId,
+          status: result.status,
+          errors: result.errors,
+        })),
+    ),
+  );
+  const preview = cutover.buildKnowledgeCmsPublicCutoverPreview({
+    actor: { id: "readiness-admin", roles: ["admin"] },
+    readiness: report,
+    shadow: shadowPreview,
+    observedAt: NOW,
+  });
+
+  assert.equal(
+    preview.eligibility,
+    "ready_for_admin_approval",
+    JSON.stringify(preview.checks),
+  );
+  assert.equal(preview.approvalControl.evidence.recordsVerified, 45);
+  assert.equal(preview.approvalControl.evidence.routesVerified, 22);
+  assert.equal(preview.mutationBoundary.writeCount, 0);
+  assert.equal(preview.activation.deploymentStarted, false);
+  assert.equal(preview.activation.trafficMoved, false);
+  assert.deepEqual(
+    cutover.validateKnowledgeCmsPublicCutoverPreview(preview),
+    [],
+  );
 });
 
 test("supporting gate, history availability, and duplicate events fail closed", async () => {

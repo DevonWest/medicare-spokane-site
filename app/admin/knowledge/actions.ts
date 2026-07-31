@@ -9,6 +9,7 @@ import {
   isKnowledgeCmsRecordKind,
   parseKnowledgeCmsArticleMigrationExecutionForm,
   parseKnowledgeCmsNativeRepresentationExecutionForm,
+  parseKnowledgeCmsPublicCutoverApprovalForm,
   parseKnowledgeCmsSupportingMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
@@ -46,6 +47,10 @@ import {
 import {
   executeKnowledgeCmsAdminNativeRepresentation,
 } from "@/lib/knowledgeCmsNativeRepresentationDal";
+import {
+  KnowledgeCmsPublicCutoverApprovalError,
+  executeKnowledgeCmsPublicCutoverApproval,
+} from "@/lib/knowledgeCmsPublicCutoverDal";
 import {
   KnowledgeCmsReviewerVerificationError,
   KnowledgeCmsStateError,
@@ -131,6 +136,26 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message:
         "This rendering control or published article changed. Reload the shadow workspace before continuing.",
+      conflict: true,
+    };
+  }
+  if (error instanceof KnowledgeCmsPublicCutoverApprovalError) {
+    if (error.reason === "approval_disabled") {
+      return {
+        ok: false,
+        message: "Public cutover approval execution is not enabled.",
+      };
+    }
+    if (error.reason === "confirmation_mismatch") {
+      return {
+        ok: false,
+        message: "The public cutover approval phrase did not match exactly.",
+      };
+    }
+    return {
+      ok: false,
+      message:
+        "The cutover evidence changed or the immutable approval already exists. Refresh the preview.",
       conflict: true,
     };
   }
@@ -492,4 +517,24 @@ export async function createKnowledgeCmsNativeRepresentationAction(
   revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
   revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/shadow-preview`);
   redirect(destination);
+}
+
+export async function createKnowledgeCmsPublicCutoverApprovalAction(
+  receipt: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    const request = parseKnowledgeCmsPublicCutoverApprovalForm(
+      receipt,
+      formData,
+    );
+    await executeKnowledgeCmsPublicCutoverApproval(request);
+  } catch (error) {
+    return errorState(error);
+  }
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/public-cutover`);
+  redirect(
+    `${KNOWLEDGE_CMS_ADMIN_PATH}/public-cutover?approved=${encodeURIComponent(receipt)}`,
+  );
 }

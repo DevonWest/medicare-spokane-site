@@ -7,9 +7,9 @@ import {
   type KnowledgeCmsRouteSchemaType,
 } from "./knowledgeCmsRouteParity";
 
-export const KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION = 3 as const;
+export const KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION = 4 as const;
 export const KNOWLEDGE_CMS_RENDERER_CONTRACT_STATE =
-  "cms_native_private_shadow_implemented" as const;
+  "cms_native_guarded_public_cutover_implemented" as const;
 export const KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV =
   "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" as const;
 export const KNOWLEDGE_CMS_PUBLIC_RENDERER_DEFAULT_MODE =
@@ -42,8 +42,10 @@ export type KnowledgeCmsRendererEvidenceKind =
 export type KnowledgeCmsRendererBlockerCode =
   | "cms_native_artifact_not_verified"
   | "candidate_snapshot_missing"
+  | "guarded_approval_missing"
   | "migration_not_executed"
   | "protected_route_verification_missing"
+  | "runtime_route_revalidation_missing"
   | "shadow_comparison_missing";
 
 export type KnowledgeCmsRendererRollbackTrigger =
@@ -91,6 +93,7 @@ export interface KnowledgeCmsRendererContractEntry {
   };
   rollout: {
     shadowEligible: true;
+    cutoverImplementationAvailable: true;
     cutoverEligible: false;
     blockers: readonly KnowledgeCmsRendererBlockerCode[];
   };
@@ -148,7 +151,7 @@ export interface KnowledgeCmsRendererModeResolution {
   activationAllowed: false;
   privateShadowEnabled: boolean;
   reason:
-    | "cutover_not_implemented"
+    | "cutover_requires_runtime_approval"
     | "default_static"
     | "explicit_static"
     | "invalid_value"
@@ -176,8 +179,10 @@ const rolloutBlockers: readonly KnowledgeCmsRendererBlockerCode[] =
   Object.freeze([
     "cms_native_artifact_not_verified",
     "candidate_snapshot_missing",
+    "guarded_approval_missing",
     "migration_not_executed",
     "protected_route_verification_missing",
+    "runtime_route_revalidation_missing",
     "shadow_comparison_missing",
   ]);
 
@@ -333,6 +338,7 @@ function freezeRendererContract(
   });
   const rollout = Object.freeze({
     shadowEligible: true as const,
+    cutoverImplementationAvailable: true as const,
     cutoverEligible: false as const,
     blockers: rolloutBlockers,
   });
@@ -367,7 +373,7 @@ export const knowledgeCmsRendererContracts: ReadonlyArray<KnowledgeCmsRendererCo
 
 export const knowledgeCmsRendererRollbackPlan = Object.freeze({
   version: KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
-  status: "public_cutover_not_activated" as const,
+  status: "guarded_public_cutover_available" as const,
   environmentVariable: KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
   rollbackValue: KNOWLEDGE_CMS_PUBLIC_RENDERER_DEFAULT_MODE,
   requiredAction: "serve_verified_static_routes" as const,
@@ -438,7 +444,7 @@ export function resolveKnowledgeCmsPublicRendererMode(
       configurationValid: true,
       activationAllowed: false,
       privateShadowEnabled: false,
-      reason: "cutover_not_implemented",
+      reason: "cutover_requires_runtime_approval",
     };
   }
   return {
@@ -622,9 +628,16 @@ export function validateKnowledgeCmsRendererContracts(): string[] {
         "cms_native_lossless_artifact" ||
       contract.candidate.cmsBodyPubliclyRendered ||
       !contract.rollout.shadowEligible ||
+      !contract.rollout.cutoverImplementationAvailable ||
       contract.rollout.cutoverEligible ||
       !contract.rollout.blockers.includes(
         "cms_native_artifact_not_verified",
+      ) ||
+      !contract.rollout.blockers.includes(
+        "guarded_approval_missing",
+      ) ||
+      !contract.rollout.blockers.includes(
+        "runtime_route_revalidation_missing",
       ) ||
       contract.rollback.mode !== "static" ||
       contract.rollback.dataMutation !== "none"

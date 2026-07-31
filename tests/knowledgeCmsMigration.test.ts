@@ -158,7 +158,7 @@ test("migration preview deterministically inventories the complete static regist
     writeCount: 0,
   });
   assert.deepEqual(preview.summary.renderer, {
-      contractVersion: 3,
+    contractVersion: 4,
     mode: {
       configuredValue: undefined,
       requestedMode: "static",
@@ -328,7 +328,7 @@ test("shadow is private-only while cutover remains globally fail-closed", () => 
   assert.equal(cutover.summary.renderer.mode.privateShadowEnabled, false);
   assert.equal(
     cutover.summary.renderer.mode.reason,
-    "cutover_not_implemented",
+    "cutover_requires_runtime_approval",
   );
   assert.equal(cutover.summary.renderer.cutoverEligible, 0);
   assert.equal(cutover.readyToExecute, false);

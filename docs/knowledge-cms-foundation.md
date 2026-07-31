@@ -1,18 +1,24 @@
 # Knowledge CMS foundation
 
 This foundation adds the server-side data model and workflow boundary for
-editable Medicare educational records. It remains disabled by default and is
-not connected to a public route, page, sitemap, or the existing Resource
-Library registry.
+editable Medicare educational records. It remains disabled by default. The
+existing Resource Library stays static unless the complete guarded-cutover
+configuration, current immutable approval, and per-request evidence all pass.
 
 ## Safety boundary
 
 - `KNOWLEDGE_CMS_ENABLED` is server-only and accepts only the exact value
   `true`.
-- `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` is server-only, defaults to `static`,
-  and accepts only exact `static` or `shadow`. `shadow` enables the
-  authenticated comparison workspace but still resolves every public request
-  to the existing static route. `cutover` and malformed values are rejected.
+- `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` is server-only and defaults to
+  `static`. Exact `shadow` enables only authenticated comparison. Exact
+  `cutover` remains inert unless the CMS gate, independent cutover gate,
+  current 64-character approval receipt, exact deployment identity, and all
+  execution-off invariants pass together.
+- `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED` is a separate,
+  beta-only admin gate for two atomic writes: one immutable seven-day approval
+  and one audit event. It never deploys or moves traffic.
+- `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` is the independent final routing gate.
+  It is rejected while any record, artifact, or approval executor is enabled.
 - `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` is a separate,
   default-off server-only gate. Exact `true` is accepted only with the CMS
   enabled and exact private `shadow` mode; it can create one immutable
@@ -21,11 +27,13 @@ Library registry.
 - The private `/admin/knowledge` surface returns 404 while the flag is off.
 - Enabling the flag exposes only the noindex admin sign-in route; CMS data
   still requires a verified Firebase session and an explicit CMS role.
-- Public pages and components are regression-tested not to import the CMS.
+- Existing public route modules and shared components are regression-tested not
+  to import the CMS renderer.
 - New records begin as drafts and are blocked from indexing.
 - Publishing a record does not make the existing site render it.
-- The current static Resource Library remains the production source of truth
-  until a separately reviewed migration is complete.
+- Every routed request revalidates the current approval, article revision, and
+  immutable rendering artifact. Missing, stale, contradictory, invalid, timed
+  out, or unavailable evidence serves the verified local static snapshot.
 
 Keep the flag false until the authentication and role-assignment prerequisites
 below are complete.
@@ -42,6 +50,7 @@ below are complete.
 | `knowledge_cms_slugs` | Transactional, per-record-kind slug locks |
 | `knowledge_cms_canonical_paths` | Transactional, cross-kind canonical-path locks |
 | `knowledge_cms_audit_events` | Append-only lifecycle audit events |
+| `knowledge_cms_cutover_approvals` | Immutable, expiring approvals binding all 45 records and 22 route artifacts |
 
 The repository writes the canonical record, slug lock, canonical-path lock,
 search projection, and audit event in one Firestore transaction. Updates
@@ -160,21 +169,20 @@ report a write count of zero. Displayed article controls are immutable
 representations rather than stored Firestore documents. A separate exact-true
 gate exposes the one-record execution form described below; a dry-run receipt
 is evidence only and is never accepted as write authority. Article route bodies
-and metadata retain explicit, test-enforced parity snapshots. Public article
-cutover still fails closed because the editable CMS Markdown body remains an
-editorial record, rendering artifacts are private and revision-bound, and no
-production cutover approval exists. The private CMS-native renderer preserves
-the current React output, forms, FAQ disclosures, relationship cards,
-structured data, and governed registries for comparison only. Its parity
-receipt cannot authorize public cutover.
+and metadata retain explicit, test-enforced parity snapshots. The editable CMS
+Markdown body remains an editorial record and is never rendered publicly. The
+revision-bound CMS-native artifact preserves the current React output, forms,
+FAQ disclosures, relationship cards, structured data, and governed registries.
+Its private parity receipt cannot authorize public routing; that requires the
+separate all-record cutover approval and complete runtime gate.
 
-This release intentionally has no archive, restore, public rendering, bulk
-migration, overwrite, or indexing path. The only migration mutation is the
-separately gated, explicitly confirmed creation of one private article draft
-plus its transactional locks and audit event. CMS publication remains private:
-it writes the governed record and search projection but does not add a route,
-sitemap entry, public card, schema block, or visible content to the existing
-site.
+This release intentionally has no bulk migration, overwrite, automatic
+indexing, automatic deployment, or traffic-movement path. The record and
+artifact mutations remain separately gated, explicitly confirmed one-record
+transactions. Ordinary CMS publication writes the governed record and search
+projection but does not add a route, sitemap entry, public card, schema block,
+or visible content to the existing site. Only the independent guarded-cutover
+configuration can route the 22 already-governed canonical paths.
 
 ## Authentication rollout prerequisites
 
@@ -234,13 +242,13 @@ browser never receives a way to assign or elevate roles.
 
 ## Not included in this release
 
-- Public Knowledge Center rendering
-- CMS conversion or import of public route bodies
+- Automatic beta or production activation
+- Automatic production traffic movement
+- Editable Markdown as a public article body
 - Hosted search service or embeddings
 - Bulk, overwrite, update, publish, or indexing migration executors
 - Firebase role-assignment tooling
-- Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
-  URLs
+- Changes to public titles, headings, canonicals, redirects, or sitemap URLs
 
 ## Migration preview contract
 
@@ -263,7 +271,7 @@ role. It:
 - compiles those controls into authenticated, server-clocked, zero-write
   materialization receipts against the current Firestore inventory; and
 - defines immutable CMS-native rendering controls for all 22 article routes
-  while keeping every public cutover blocked.
+  while keeping public routing independently gated and disabled.
 
 The preview does not claim the migration is executable. `readyToExecute` is
 always false, `writeCount` is always zero, and the page contains no mutation
@@ -431,7 +439,8 @@ risks into one ambiguous status:
 - complete 45-record migration readiness and deterministic operator order;
 - private shadow availability while the effective public renderer stays
   `static`; and
-- the unconditional prohibition on public cutover.
+- a fail-closed public-cutover status that remains prohibited until the
+  separate fresh shadow approval and runtime gates are completed.
 
 The Auth scan paginates up to 1,000 accounts per read and returns counts only.
 It does not expose UIDs, email addresses, claims, or account records. Malformed
@@ -539,10 +548,10 @@ Every one of the 22 article routes has a contract that:
 - requires an exact candidate match for title, description, canonical and Open
   Graph values, H1, schema types, form count, FAQ count, rendered byte count,
   and rendered SHA-256;
-- allows only private shadow comparison through a CMS-owned, immutable
-  rendering artifact after a matching governed published article exists,
-  while keeping the editable Markdown field non-public and cutover ineligible;
-  and
+- allows private shadow comparison and a guarded public candidate only through
+  a CMS-owned immutable rendering artifact after the matching governed
+  published article, complete migration, approval, and runtime gates pass;
+  keeps the editable Markdown field non-public; and
 - defines a no-write rollback to the current static route while preserving CMS
   records for diagnosis or correction.
 
@@ -552,11 +561,13 @@ Every one of the 22 article routes has a contract that:
 |---|---|---|
 | `static` | Default; private shadow workspace is hidden | Existing static route |
 | `shadow` | Enables authenticated publisher/admin comparison only | Existing static route |
-| `cutover` | Rejected; no public CMS body renderer is approved | Existing static route |
+| `cutover` | Routes the 22 governed paths only with the complete exact gate and a current approval | Verified CMS artifact, otherwise per-request static fallback |
 
-Invalid, whitespace-padded, differently cased, and `cutover` values cannot
-activate the renderer. Exact `shadow` sets `privateShadowEnabled=true` while
-the resolver's effective public mode remains `static`.
+Invalid, whitespace-padded, and differently cased values cannot activate the
+renderer. Exact `shadow` sets `privateShadowEnabled=true` while the resolver's
+effective public mode remains `static`. Exact `cutover` alone is insufficient:
+the independent gate, receipt, environment identity, and all execution-off
+values must also be exact.
 
 The shadow workspace:
 
@@ -571,10 +582,11 @@ The shadow workspace:
   candidate code has no import of the legacy page module;
 - exposes only minimal comparison evidence, not CMS ownership or audit
   internals; and
-- emits a fingerprinted all-22 beta parity approval only when every current
+- emits a fingerprinted all-22 beta parity receipt only when every current
   article revision and artifact passes in exact `shadow` mode; the receipt has
-  no execution or public-cutover authority; and
-- always leaves CMS content non-public and `cutoverEligible=false`.
+  no execution or public-routing authority by itself; and
+- leaves CMS content non-public until a separate immutable cutover approval is
+  created and its receipt is supplied to the complete runtime gate.
 
 ## CMS-native rendering-artifact execution contract
 
@@ -608,29 +620,69 @@ requires the verified static source and snapshot for every route, sets the
 global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 `/medicare-spokane` outside the renderer inventory.
 
-## Next release gate
+## Guarded public cutover and rollback contract
 
-The 12 topics and 11 FAQs now have deterministic, fingerprinted, zero-write
-controls. Their separate
-`KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` gate permits only one
-explicitly confirmed private draft per create-only transaction. The transaction
-reconstructs the governed control server-side and rechecks the target, slug,
-optional canonical path, absent search projection, and revision-one audit event.
-Each result has a four- or five-artifact zero-write verification receipt. Bulk,
-overwrite, publication, indexing, rendering, cutover, and production activation
-remain blocked.
+`/admin/knowledge/public-cutover` is a publisher/admin-only preview. It rereads
+the operational report and private shadow evidence and is eligible only when
+all 45 governed records—22 articles, 12 topics and 11 FAQs—are verified, all 22
+current revision artifacts pass exact parity, all three record/artifact
+executors are disabled, the renderer is still private `shadow`, and both
+evidence sets are no more than five minutes old. The preview is zero-write and
+cannot change a variable, deploy a revision, or move traffic.
 
-The operational report now classifies all 45 governed records, verifies both
-append-only execution histories and every current artifact receipt, and emits a
-deterministic topics → FAQs → articles operator sequence. It performs zero
-writes, authorizes no execution, blocks bulk behavior, and requires a fresh
-receipt after every one-record transaction. The article and supporting-record
-gates can resolve to `false` once their targets are complete; the separate
-rendering-artifact gate remains beta-only and one-record-at-a-time.
+An administrator may create the approval only on the exact beta deployment
+while the separate approval-execution gate is exact `true`. The server repeats
+all preview checks, requires the receipt-specific typed phrase, then rereads the
+22 articles and 22 artifacts in one transaction. Success writes only the
+immutable approval and append-only audit event. The approval binds the 45-record
+completion receipt, all-22 shadow receipt, route paths, article revisions,
+artifact fingerprints, rendered hashes, canonicals, and a seven-day validity
+window. It is not itself deployment or traffic authority.
 
-The next independently reviewed release may add a feature-gated public cutover
-router only after all 45 records are verified, all 22 current rendering
-artifacts produce one fresh exact beta parity receipt, and protected-route plus
-rollback evidence is reviewed. It must retain per-request static fallback,
-immediate environment rollback, indexing/sitemap guards, and production
-monitoring; this release does not activate any of those public behaviors.
+Runtime routing requires all of these values together:
+
+- exact CMS enablement, exact renderer mode `cutover`, and exact cutover gate
+  `true`;
+- the matching 64-character lowercase approval receipt;
+- approval, article, supporting-record, and rendering-artifact execution gates
+  all exact `false`; and
+- exact beta or production environment identity and canonical origin.
+
+Only the 22 contract paths are rewritten to the internal dynamic renderer.
+`/`, `/medicare-spokane`, `/resources`, redirects, sitemap output, and all
+other routes remain on their existing implementation. Direct requests to
+`/cms-render/*` return a private no-store 404 and are disallowed by the
+production robots policy.
+
+For each governed request the renderer has a 1.5-second total evidence budget.
+It rereads and validates the approval, current published article, immutable
+artifact, review/source currency, canonical, metadata, revision, fingerprint,
+and exact lossless parity. A missing, expired, stale, malformed, contradictory,
+unavailable, timed-out, or render-failed candidate returns the build-generated
+verified static snapshot with unchanged metadata. Each outcome emits a
+structured `knowledge_cms_public_renderer` event containing the route, outcome,
+reason, elapsed time, and—only for verified candidates—revision and artifact ID.
+
+Static HTML is not treated as sufficient for form-bearing pages. The 20
+governed routes with a lead form replace the verified form shell with the real
+`LeadForm` client component through an entry-specific adapter. Tests require
+every route whose parity snapshot contains a form to have exactly one adapter,
+and require the adapter's server render to retain the exact immutable body hash
+and byte count. This preserves validation, submission, attribution, success,
+and conversion behavior instead of serving an inert visual copy.
+
+Beta is the mandatory canary. A production cutover workflow creates a tagged
+Cloud Run revision with `--no-traffic`; moving traffic is a separate reviewed
+operator action after tagged-revision verification. Rollback order is:
+
+1. route traffic to the last known-good static revision;
+2. set `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false`;
+3. restore `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` and redeploy;
+4. verify all 22 governed routes plus `/`, `/medicare-spokane`, `/resources`,
+   redirects, sitemap, robots, canonicals, and security headers; and
+5. preserve every CMS record, lock, artifact, approval, and audit event for
+   diagnosis.
+
+No merge or ordinary deployment activates cutover: the gates default to false,
+the approval receipt defaults empty, production starts with no traffic, and the
+workflow contains no traffic-shift command.

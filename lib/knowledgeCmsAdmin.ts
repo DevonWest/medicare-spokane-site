@@ -17,6 +17,9 @@ import type {
 import type {
   KnowledgeCmsNativeRepresentationExecutionRequest,
 } from "./knowledgeCmsNativeRepresentationExecution";
+import type {
+  KnowledgeCmsPublicCutoverApprovalRequest,
+} from "./knowledgeCmsPublicCutoverDal";
 
 export const KNOWLEDGE_CMS_ADMIN_PATH = "/admin/knowledge";
 export const KNOWLEDGE_CMS_RECORD_KINDS: KnowledgeCmsRecordKind[] = [
@@ -469,6 +472,24 @@ export function parseKnowledgeCmsNativeRepresentationExecutionForm(
     expectedArticleRevision,
     confirmation,
   };
+}
+
+export function parseKnowledgeCmsPublicCutoverApprovalForm(
+  receiptValue: unknown,
+  formData: FormData,
+): KnowledgeCmsPublicCutoverApprovalRequest {
+  const receipt =
+    typeof receiptValue === "string" ? receiptValue.trim() : "";
+  const confirmation = readString(formData, "confirmation", {
+    required: true,
+    maxLength: 300,
+  })!;
+  if (!/^[a-f0-9]{64}$/.test(receipt)) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected public cutover approval receipt is invalid.",
+    ]);
+  }
+  return { receipt, confirmation };
 }
 
 export function parseKnowledgeCmsCreateForm(

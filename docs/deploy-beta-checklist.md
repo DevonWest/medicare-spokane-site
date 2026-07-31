@@ -49,7 +49,10 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
 | `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record topic/FAQ private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
 | `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | `false` | **Optional.** One immutable article-rendering artifact per transaction; requires the CMS gate and exact `shadow` mode. |
-| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** Exact `static` hides shadow comparison. Exact `shadow` enables only the authenticated publisher/admin comparison workspace; public routes remain static. `cutover` is rejected. |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED` | `false` | **Optional.** Beta-only, admin-only gate for one immutable approval. Never leave it true during cutover. |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | `false` | **Optional.** Independent final routing gate. Keep false except during an explicitly approved canary/cutover. |
+| `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | _empty_ | **Optional.** Current 64-character lowercase approval receipt; required only when the cutover gate is true. |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** `static` is the default, `shadow` is private comparison, and `cutover` is accepted only with every independent gate and receipt exact. |
 
 ### 1b. Authentication — pick ONE of these two options
 
@@ -367,9 +370,14 @@ What happens:
   - `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false` unless the
     exact GitHub variable is set to `true`; the workflow rejects `true` unless
     the CMS gate is true and renderer mode is exact `shadow`
-  - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact `shadow` is set
-    for authenticated private comparison; both values keep public routes
-    static, while `cutover` and malformed values fail before image build
+  - `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=false` unless an
+    administrator is deliberately creating a fresh approval on beta
+  - `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false` unless a current approval has
+    passed the beta canary and the matching receipt is configured
+  - `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` empty unless guarded
+    cutover is active
+  - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact private `shadow`
+    or fully gated `cutover` is intentionally configured
   - `NODE_ENV=production`
 
 If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when
@@ -463,7 +471,8 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
   repair writes and no public or indexing change.
 - [ ] A publisher/admin can open `/admin/knowledge/readiness`; the report shows
   aggregate role coverage without user identities, verifies every recorded
-  migration receipt, reports zero writes, and keeps public cutover prohibited.
+  migration receipt, reports zero writes, and cannot itself authorize public
+  cutover.
 - [ ] The readiness report classifies exactly 45 targets (22 articles, 12 topics,
   11 FAQs), reads both execution histories, verifies each current four- or
   five-artifact receipt, and reports no duplicate, unexpected, malformed, or
@@ -484,6 +493,30 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] Opening the same build with a production, unknown, or malformed deployment
   identity produces a blocked preview; never use this receipt to change a
   production service or repository variable.
+- [ ] After all 45 records and all 22 current rendering artifacts verify, an
+  admin can open `/admin/knowledge/public-cutover`; the preview is fresh,
+  zero-write, and binds 45 records plus 22 unique paths/revisions/artifacts.
+- [ ] Approval creation is attempted only on exact beta `shadow` with all
+  record/artifact execution gates false, the cutover gate false, and the
+  separate approval-execution gate true.
+- [ ] The admin types the full receipt-specific phrase. Success creates exactly
+  one immutable seven-day approval and one audit event, changes no variable,
+  starts no deployment, and moves no traffic.
+- [ ] Immediately set the approval-execution gate back to `false`; never enable
+  it at the same time as public cutover.
+- [ ] Configure the beta canary with CMS true, renderer `cutover`, cutover gate
+  true, the matching 64-character receipt, and all four execution gates false.
+- [ ] All 22 governed canonical URLs return 200 with unchanged title,
+  description, canonical, H1, schema types, forms, FAQs, and rendered body;
+  `/`, `/medicare-spokane`, and `/resources` remain unchanged.
+- [ ] Submit one Medicare-route form and one health-insurance-route form during
+  the beta canary. Both retain client validation, create the expected lead,
+  show the success state, and emit the existing conversion event without PII.
+- [ ] `/cms-render/<entry-id>` returns a private no-store 404 when requested
+  directly, and no internal renderer URL appears in the sitemap.
+- [ ] Cloud Run logs show structured `knowledge_cms_public_renderer` outcomes.
+  Any `static_fallback`, timeout, evidence mismatch, or elevated latency blocks
+  production traffic movement until investigated.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally
@@ -509,7 +542,27 @@ Repeat §6b–6d but for the prod service and prod hostname:
 3. **Target:** `production`
 4. **Run workflow.**
 
-The image is rebuilt with `NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com`, `NEXT_PUBLIC_SITE_ENV=production`, and your real GTM ID, then deployed to `medicare-spokane-site`.
+The image is rebuilt with
+`NEXT_PUBLIC_SITE_URL=https://www.medicareinspokane.com`,
+`NEXT_PUBLIC_SITE_ENV=production`, and your real GTM ID. A normal static or
+shadow configuration deploys normally. When the guarded cutover gate is true,
+the workflow creates a tagged `cms-cutover-candidate` revision with
+`--no-traffic`; it does not move production traffic.
+
+For a guarded cutover only:
+
+1. Open the tagged candidate URL from the workflow/Cloud Run revision and run
+   every §8 check against it, including all 22 governed paths and structured
+   renderer logs.
+2. Confirm `/healthz` reports requested/effective `cutover`, routing enabled,
+   valid configuration, and the exact production environment classification.
+3. Confirm direct `/cms-render/*` requests are 404 and the sitemap/robots,
+   `/`, `/medicare-spokane`, and `/resources` outputs are unchanged.
+4. Only after an explicit review, move a small percentage of traffic to the
+   candidate with Cloud Run traffic splitting. Observe request outcomes and
+   latency before each increase.
+5. Move 100% only after the canary remains clean. The deploy workflow never
+   performs steps 4 or 5 automatically.
 
 ### 9c. Verify prod (mirror of §8, but production-mode expectations)
 
@@ -543,6 +596,21 @@ the receipt's static-route, sitemap, robots, header, and quiet-404 checks.
 Passing this preview does not authorize a production configuration change,
 public CMS body, indexing change, or cutover.
 
+### Guarded public cutover
+
+At the first renderer fallback, evidence mismatch, error-rate increase,
+metadata/canonical difference, or latency regression:
+
+1. route 100% of traffic to the last known-good static revision;
+2. set `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false`;
+3. set `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static`, clear the approval receipt,
+   and keep every execution gate false;
+4. deploy the static configuration and recheck all 22 governed routes plus
+   `/`, `/medicare-spokane`, `/resources`, redirects, sitemap, robots,
+   canonicals, and security headers; and
+5. preserve CMS records, locks, rendering artifacts, approvals, and audit
+   events for diagnosis—rollback performs no CMS data deletion.
+
 ### Production site revision
 
 Cloud Run keeps every revision. To roll back instantly without rebuilding:
@@ -564,5 +632,9 @@ Then debug on beta (§7 with target `beta`), fix the issue on `main`, and re-run
 ## Recurring deploys after this
 
 After everything in §1–§6 is in place, every future change is just:
-1. Merge to `main` (auto-deploys to **production** via the `push` trigger), **or**
-2. **Actions → Deploy to Cloud Run → Run workflow → Target: beta** to test on beta first (recommended for any non-trivial change), then re-run with **Target: production** once beta passes §8.
+1. Merge to `main` (the push trigger deploys the **beta** target), **or**
+2. **Actions → Deploy to Cloud Run → Run workflow → Target: beta** for an
+   explicit beta run, then run **Target: production** after beta passes §8.
+
+Production guarded-cutover runs create a no-traffic candidate only. Traffic
+movement and rollback remain explicit Cloud Run operator actions.
