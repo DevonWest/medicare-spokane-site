@@ -215,7 +215,8 @@ search projections, and append-only audit events. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records
-on the public website. Approval and publication controls are not exposed.
+on the public website. Verified approval is available to a distinct licensed
+reviewer, while publication controls remain deliberately unexposed.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 

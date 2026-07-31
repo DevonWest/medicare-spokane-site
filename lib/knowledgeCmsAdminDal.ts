@@ -7,18 +7,25 @@ import {
   type KnowledgeCmsAdminRecordDto,
   type KnowledgeCmsAdminRecordSummaryDto,
 } from "./knowledgeCmsAdmin";
-import { resolveCurrentEditorialReviewerVerification } from "./editorial";
-import type {
-  KnowledgeCmsCreateInput,
-  KnowledgeCmsRecordKind,
-  KnowledgeCmsUpdateInput,
+import {
+  getEditorialReviewerVerificationValidThrough,
+  resolveCurrentEditorialReviewerVerification,
+} from "./editorial";
+import {
+  resolveKnowledgeCmsApprovalDueAt,
+  type KnowledgeCmsCreateInput,
+  type KnowledgeCmsRecordKind,
+  type KnowledgeCmsUpdateInput,
 } from "./knowledgeCms";
 import { requireKnowledgeCmsActor } from "./knowledgeCmsAdminAuth";
 import {
   KnowledgeCmsNotFoundError,
   createKnowledgeCmsRepository,
 } from "./knowledgeCmsRepository";
-import { KnowledgeCmsWorkflow } from "./knowledgeCmsWorkflow";
+import {
+  KnowledgeCmsReviewerVerificationError,
+  KnowledgeCmsWorkflow,
+} from "./knowledgeCmsWorkflow";
 
 function createWorkflow(): KnowledgeCmsWorkflow {
   return new KnowledgeCmsWorkflow(createKnowledgeCmsRepository());
@@ -137,4 +144,50 @@ export async function requestKnowledgeCmsAdminRecordChanges(
     actor,
   );
   return { revision: record.audit.revision, status: "draft" };
+}
+
+export async function approveKnowledgeCmsAdminRecord(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  expectedRevision: number,
+  decisionNote: string,
+): Promise<{ revision: number; status: "approved" }> {
+  const actor = await requireKnowledgeCmsActor();
+  const now = new Date();
+  const verification = actor.agentSlug
+    ? resolveCurrentEditorialReviewerVerification(actor.agentSlug, now)
+    : undefined;
+  const verificationValidThrough = verification
+    ? getEditorialReviewerVerificationValidThrough(verification)
+    : undefined;
+  if (!verification || !verificationValidThrough) {
+    throw new KnowledgeCmsReviewerVerificationError();
+  }
+
+  const repository = createKnowledgeCmsRepository();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => now,
+  });
+  const current = await workflow.get(kind, id, actor);
+  if (!current) {
+    throw new KnowledgeCmsNotFoundError(kind, id);
+  }
+  const reviewDueAt = resolveKnowledgeCmsApprovalDueAt(
+    now,
+    verificationValidThrough,
+    current.sources,
+  );
+  const record = await workflow.transition(
+    kind,
+    id,
+    {
+      action: "approve",
+      expectedRevision,
+      reviewerVerificationId: verification.id,
+      reviewDueAt,
+      decisionNote,
+    },
+    actor,
+  );
+  return { revision: record.audit.revision, status: "approved" };
 }

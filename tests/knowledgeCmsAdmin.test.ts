@@ -408,7 +408,7 @@ test("update parsing rejects kind changes and stale revision input", () => {
   );
 });
 
-test("workflow form parsing accepts only a revision and required change feedback", () => {
+test("workflow form parsing accepts only governed transition fields", () => {
   const submit = new FormData();
   submit.set("expectedRevision", "7");
   submit.set("feedback", "This must not affect a submit action.");
@@ -436,6 +436,23 @@ test("workflow form parsing accepts only a revision and required change feedback
     () => parseKnowledgeCmsWorkflowForm(request, "request_changes"),
     /feedback is too long/i,
   );
+
+  const approve = new FormData();
+  approve.set("expectedRevision", "9");
+  approve.set("reviewerVerificationId", "forged-verification");
+  approve.set("reviewDueAt", "2099-12-31");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(approve, "approve"),
+    /approvalNote is required/i,
+  );
+  approve.set(
+    "approvalNote",
+    " Official enrollment timing and source dates verified. ",
+  );
+  assert.deepEqual(parseKnowledgeCmsWorkflowForm(approve, "approve"), {
+    expectedRevision: 9,
+    decisionNote: "Official enrollment timing and source dates verified.",
+  });
 });
 
 test("admin DTOs omit ownership and audit internals while preserving access decisions", () => {
@@ -456,6 +473,7 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
   assert.equal("publication" in detail, false);
   assert.equal(detail.revision, 1);
   assert.deepEqual(detail.workflowActions, {
+    approve: false,
     submitForReview: true,
     requestChanges: false,
   });
@@ -498,13 +516,14 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
       { reviewerVerified: true },
     ).workflowActions,
     {
+      approve: true,
       submitForReview: false,
       requestChanges: true,
     },
   );
 });
 
-test("admin routes remain default-off, noindex, and limited to early review transitions", () => {
+test("admin routes remain default-off, noindex, and exclude publication transitions", () => {
   const layout = readFileSync(
     join(root, "app/admin/knowledge/layout.tsx"),
     "utf8",
@@ -541,7 +560,9 @@ test("admin routes remain default-off, noindex, and limited to early review tran
   assert.match(dataAccess, /requireKnowledgeCmsActor/);
   assert.match(actions, /submitKnowledgeCmsForReviewAction/);
   assert.match(actions, /requestKnowledgeCmsChangesAction/);
-  assert.doesNotMatch(actions, /approveKnowledge/i);
+  assert.match(actions, /approveKnowledgeCmsRecordAction/);
+  assert.match(dataAccess, /resolveCurrentEditorialReviewerVerification/);
+  assert.match(dataAccess, /resolveKnowledgeCmsApprovalDueAt/);
   assert.doesNotMatch(actions, /publishKnowledge/i);
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);

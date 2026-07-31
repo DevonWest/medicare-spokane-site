@@ -48,7 +48,41 @@ function resolveAsOfDate(asOf: string | Date): Date {
 }
 
 function isValidDateOnly(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parseDateOnly(value).getTime());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const parsed = parseDateOnly(value);
+  return (
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+}
+
+export function getEditorialReviewerVerificationValidThrough(
+  verification: EditorialReviewerVerification,
+): string | undefined {
+  if (
+    !isValidDateOnly(verification.verifiedAt) ||
+    (verification.validThrough &&
+      !isValidDateOnly(verification.validThrough))
+  ) {
+    return undefined;
+  }
+
+  const maximumValidThrough = addUtcDays(
+    parseDateOnly(verification.verifiedAt),
+    EDITORIAL_REVIEWER_VERIFICATION_MAX_AGE_DAYS,
+  )
+    .toISOString()
+    .slice(0, 10);
+  if (
+    verification.validThrough &&
+    verification.validThrough > maximumValidThrough
+  ) {
+    return undefined;
+  }
+
+  return verification.validThrough ?? maximumValidThrough;
 }
 
 export function isEditorialReviewerVerificationExpired(
@@ -59,16 +93,17 @@ export function isEditorialReviewerVerificationExpired(
     return true;
   }
 
-  const verifiedAt = parseDateOnly(verification.verifiedAt);
-  const validThrough = verification.validThrough
-    ? parseDateOnly(verification.validThrough)
-    : addUtcDays(verifiedAt, EDITORIAL_REVIEWER_VERIFICATION_MAX_AGE_DAYS);
-
-  if (Number.isNaN(verifiedAt.getTime()) || Number.isNaN(validThrough.getTime())) {
+  const validThrough = getEditorialReviewerVerificationValidThrough(
+    verification,
+  );
+  if (!validThrough) {
     return true;
   }
 
-  return resolveAsOfDate(asOf).getTime() > validThrough.getTime();
+  return (
+    resolveAsOfDate(asOf).getTime() >
+    parseDateOnly(validThrough).getTime()
+  );
 }
 
 export function resolveVerifiedEditorialReviewer(
@@ -171,6 +206,21 @@ export function validateEditorialReviewerVerifications(
     ) {
       errors.push(
         `Editorial reviewer verification ${verification.id} expires before it was verified.`,
+      );
+    }
+
+    if (
+      isValidDateOnly(verification.verifiedAt) &&
+      verification.validThrough &&
+      isValidDateOnly(verification.validThrough) &&
+      parseDateOnly(verification.validThrough).getTime() >
+        addUtcDays(
+          parseDateOnly(verification.verifiedAt),
+          EDITORIAL_REVIEWER_VERIFICATION_MAX_AGE_DAYS,
+        ).getTime()
+    ) {
+      errors.push(
+        `Editorial reviewer verification ${verification.id} cannot exceed ${EDITORIAL_REVIEWER_VERIFICATION_MAX_AGE_DAYS} days.`,
       );
     }
 
