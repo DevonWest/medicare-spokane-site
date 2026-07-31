@@ -3,6 +3,7 @@ import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -211,6 +212,8 @@ export default function RxDrugReviewPage() {
       </section>
 
       <FAQ items={faqs} heading="Prescription Drug Review FAQ" />
+
+      <KnowledgePageEnhancements currentPath="/rx-drug-review" />
     </>
   );
 }

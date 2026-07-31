@@ -3,6 +3,7 @@ import Link from "next/link";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import LeadForm from "@/components/LeadForm";
 import CTASection from "@/components/CTASection";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -163,6 +164,8 @@ export default function AdvantageVsSupplementPage() {
       </section>
 
       <FAQ items={faqs} heading="Common Questions: Advantage vs. Supplement" />
+
+      <KnowledgePageEnhancements currentPath="/medicare-advantage-vs-supplement-spokane" />
 
       <CTASection
         heading="Still Not Sure Which Plan Type Is Right?"

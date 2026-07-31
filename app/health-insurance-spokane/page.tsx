@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -96,52 +97,6 @@ const affordabilityBullets: string[] = [
   "Look at doctor and provider access",
   "Consider prescription coverage and pharmacy needs",
   "Explain enrollment timing and special enrollment situations",
-];
-
-const moreHealthInsuranceHelp: Array<{ href: string; label: string; body: string }> = [
-  {
-    href: "/individual-family-health-insurance-spokane",
-    label: "Individual & Family Health Insurance",
-    body: "Review coverage options for individuals, families, and people buying coverage outside an employer plan.",
-  },
-  {
-    href: "/self-employed-health-insurance-spokane",
-    label: "Self-Employed Health Insurance",
-    body: "Explore coverage considerations for self-employed workers, contractors, and small business owners.",
-  },
-  {
-    href: "/health-insurance-special-enrollment-spokane",
-    label: "Special Enrollment Help",
-    body: "Understand enrollment timing after losing employer coverage, moving, or experiencing another qualifying life event.",
-  },
-];
-
-const internalLinks: Array<{ href: string; label: string; body: string }> = [
-  {
-    href: "/contact",
-    label: "Contact Our Spokane Office",
-    body: "Reach our Spokane-based team by phone or in person at the Providence Medical Building.",
-  },
-  {
-    href: "/medicare-spokane",
-    label: "Medicare Help in Spokane",
-    body: "Local Medicare guidance for Spokane-area residents who are turning 65 or already on Medicare.",
-  },
-  {
-    href: "/turning-65-medicare-spokane",
-    label: "Turning 65 in Spokane",
-    body: "Checklists and answers to common questions for people approaching Medicare eligibility.",
-  },
-  {
-    href: "/working-past-65-medicare",
-    label: "Working Past 65 & Medicare",
-    body: "Understand how employer coverage and Medicare timing work when you keep working past 65.",
-  },
-  {
-    href: "/resources",
-    label: "Resource Library",
-    body: "Browse local guides and trusted government resources on coverage, enrollment, and more.",
-  },
 ];
 
 export default function HealthInsuranceSpokanePage() {
@@ -319,35 +274,6 @@ export default function HealthInsuranceSpokanePage() {
         </div>
       </section>
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">More Health Insurance Help</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Explore additional health insurance pages for Spokane-area individuals, families, and
-              workers who are not yet eligible for Medicare.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {moreHealthInsuranceHelp.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.label}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="border-y border-slate-100 bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-3xl" id="health-insurance-help-form">
           <LeadForm
@@ -361,39 +287,13 @@ export default function HealthInsuranceSpokanePage() {
 
       <FAQ items={faqs} heading="Health Insurance Help FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Related pages</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Looking for something else? These local pages may help.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.label}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="bg-white px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <Disclaimer />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/health-insurance-spokane" />
     </>
   );
 }

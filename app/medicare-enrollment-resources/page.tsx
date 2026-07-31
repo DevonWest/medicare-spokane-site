@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
 import { siteConfig, telHref } from "@/lib/site";
@@ -132,6 +133,8 @@ export default function EnrollmentResourcesPage() {
           />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/medicare-enrollment-resources" />
 
       <CTASection />
     </>

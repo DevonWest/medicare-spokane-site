@@ -3,6 +3,7 @@ import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -90,34 +91,6 @@ const faqs: FAQItem[] = [
     question: "Is there a cost for the plan review?",
     answer:
       "No. The consultation is no-cost and no-obligation. We explain your current coverage and options from the plans we represent so you can decide what makes sense for your situation.",
-  },
-];
-
-const internalLinks = [
-  {
-    href: "/rx-drug-review",
-    title: "RX Drug Review",
-    body: "Bring your medication list to see how prescriptions and pharmacies can affect coverage.",
-  },
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "Review Medicare Advantage, Supplement, Part D, and other coverage paths available through the plans we represent.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Learn more about prescription drug coverage, formularies, and preferred pharmacies.",
-  },
-  {
-    href: "/medicare-advantage",
-    title: "Medicare Advantage",
-    body: "See how provider networks, benefits, and out-of-pocket costs can vary by plan.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Request an in-person or phone consultation with a local licensed insurance agent.",
   },
 ];
 
@@ -348,33 +321,7 @@ export default function MedicarePlanReviewSpokanePage() {
 
       <FAQ items={faqs} heading="Annual Medicare Plan Review FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              Explore related Spokane Medicare pages before or after your annual review.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <KnowledgePageEnhancements currentPath="/medicare-plan-review-spokane" />
     </>
   );
 }

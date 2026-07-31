@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 import type { LeadSource } from "@/lib/leadSources";
@@ -18,42 +19,7 @@ export interface FocusedHealthInsurancePageConfig {
   faqs: FAQItem[];
   formHeading: string;
   formSubheading: string;
-  /** Optional override for the "Related pages" cards. Defaults to the shared set below. */
-  relatedLinks?: Array<{ href: string; label: string; body: string }>;
 }
-
-const defaultRelatedLinks: Array<{ href: string; label: string; body: string }> = [
-  {
-    href: "/health-insurance-spokane",
-    label: "Health Insurance Help in Spokane",
-    body: "Broader local health insurance guidance for individuals, families, self-employed workers, and people between coverage.",
-  },
-  {
-    href: "/contact",
-    label: "Contact Our Spokane Office",
-    body: "Reach our Spokane-based team by phone or request a no-cost consultation.",
-  },
-  {
-    href: "/resources",
-    label: "Resource Library",
-    body: "Browse Medicare and health insurance guides for Spokane-area residents.",
-  },
-  {
-    href: "/medicare-spokane",
-    label: "Medicare Help in Spokane",
-    body: "Local Medicare guidance for Spokane-area residents who are turning 65 or already on Medicare.",
-  },
-  {
-    href: "/turning-65-medicare-spokane",
-    label: "Turning 65 in Spokane",
-    body: "Understand Medicare timing and next steps as you approach age 65.",
-  },
-  {
-    href: "/working-past-65-medicare",
-    label: "Working Past 65 & Medicare",
-    body: "Review how employer coverage and Medicare timing can interact when you keep working.",
-  },
-];
 
 const healthInsuranceDisclosure =
   "By submitting, you agree to be contacted by a licensed insurance professional about health insurance options. We can help review coverage options, compare costs and coverage, and discuss plans we represent and other available options. Lower costs or approval are not promised.";
@@ -63,7 +29,6 @@ export default function FocusedHealthInsuranceLandingPage({
 }: {
   config: FocusedHealthInsurancePageConfig;
 }) {
-  const relatedLinks = config.relatedLinks ?? defaultRelatedLinks;
   return (
     <>
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white landscape-mobile:py-5">
@@ -227,31 +192,7 @@ export default function FocusedHealthInsuranceLandingPage({
 
       <FAQ items={config.faqs} heading="Health Insurance Help FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Related pages</h2>
-            <p className="mt-3 text-lg text-gray-600">These pages keep Medicare-specific guidance separate.</p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {relatedLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.label}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <KnowledgePageEnhancements currentPath={`/${config.slug}`} />
 
       <section className="bg-white px-4 py-12">
         <div className="mx-auto max-w-3xl">

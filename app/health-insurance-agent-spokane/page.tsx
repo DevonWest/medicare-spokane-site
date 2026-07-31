@@ -82,43 +82,6 @@ const config: FocusedHealthInsurancePageConfig = {
   formHeading: "Request Help From a Local Health Insurance Agent",
   formSubheading:
     "Tell us a little about your coverage needs and a licensed local agent will follow up to help you review health insurance options.",
-  relatedLinks: [
-    {
-      href: "/health-insurance-spokane",
-      label: "Health Insurance Help in Spokane",
-      body: "Broader local health insurance guidance for individuals, families, self-employed workers, and people between coverage.",
-    },
-    {
-      href: "/individual-family-health-insurance-spokane",
-      label: "Individual & Family Health Insurance",
-      body: "Local help for Spokane-area individuals and families reviewing coverage options before Medicare.",
-    },
-    {
-      href: "/self-employed-health-insurance-spokane",
-      label: "Self-Employed Health Insurance",
-      body: "Guidance for self-employed workers, contractors, and small business owners without employer coverage.",
-    },
-    {
-      href: "/health-insurance-special-enrollment-spokane",
-      label: "Special Enrollment Health Insurance",
-      body: "Help understanding enrollment timing after lost coverage, a move, or another qualifying life event.",
-    },
-    {
-      href: "/contact",
-      label: "Contact Our Spokane Office",
-      body: "Reach our Spokane-based team by phone or request a no-cost consultation.",
-    },
-    {
-      href: "/resources",
-      label: "Resource Library",
-      body: "Browse Medicare and health insurance guides for Spokane-area residents.",
-    },
-    {
-      href: "/medicare-spokane",
-      label: "Medicare Help in Spokane",
-      body: "Local Medicare guidance for Spokane-area residents who are turning 65 or already on Medicare.",
-    },
-  ],
 };
 
 export default function HealthInsuranceAgentSpokanePage() {

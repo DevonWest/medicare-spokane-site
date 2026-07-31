@@ -3,6 +3,7 @@ import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import PageHero from "@/components/PageHero";
 import { siteConfig } from "@/lib/site";
@@ -107,6 +108,8 @@ export default function MedicarePartDPage() {
           />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/medicare-part-d" />
 
       <CTASection />
     </>

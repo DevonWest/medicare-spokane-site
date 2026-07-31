@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -86,34 +87,6 @@ const faqs: FAQItem[] = [
     question: "Do you charge for help reviewing my options after a move?",
     answer:
       "No. Consultations are no-cost and no-obligation. We are a local licensed independent insurance agency, and we can review the Medicare Advantage, Medicare Supplement, and Part D options available from the plans we represent in Spokane and Spokane County.",
-  },
-];
-
-const internalLinks = [
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "See an overview of Medicare Advantage, Medicare Supplement, Part D, and other coverage paths.",
-  },
-  {
-    href: "/medicare-plan-review-spokane",
-    title: "Annual Medicare Plan Review",
-    body: "Review prescriptions, doctors, pharmacies, and out-of-pocket costs with a local licensed agent.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "Prescription Drug Review",
-    body: "Bring your medication list to compare how prescriptions and pharmacies may be covered in Spokane.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Learn how prescription drug coverage works, including formularies and preferred pharmacies.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Schedule an in-person or phone consultation with a local licensed insurance agent.",
   },
 ];
 
@@ -312,33 +285,7 @@ export default function MovingToSpokaneMedicarePage() {
 
       <FAQ items={faqs} heading="Moving to Spokane Medicare FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Related Spokane Medicare pages</h2>
-            <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              Continue exploring Spokane Medicare topics that often come up after a move.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <KnowledgePageEnhancements currentPath="/moving-to-spokane-medicare" />
     </>
   );
 }

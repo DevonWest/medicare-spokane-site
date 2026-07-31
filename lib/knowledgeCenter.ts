@@ -44,6 +44,9 @@ export interface KnowledgeSource {
   featuredInLibrary?: boolean;
 }
 
+export const KNOWLEDGE_SOURCE_MAX_AGE_DAYS = 180;
+export const KNOWLEDGE_REVIEW_MAX_AGE_DAYS = 365;
+
 export interface KnowledgeFaq {
   id: string;
   question: string;
@@ -221,6 +224,114 @@ export const knowledgeSources: KnowledgeSource[] = [
     lastChecked: "2026-07-30",
   },
   {
+    id: "medicare-open-enrollment",
+    title: "Medicare Open Enrollment",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/health-drug-plans/open-enrollment",
+    summary:
+      "Official Medicare guidance for the October 15 through December 7 Open Enrollment period.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-plan-compare",
+    title: "Medicare Plan Compare",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/plan-compare/",
+    summary:
+      "Official tool for finding Medicare health and drug plans available by location.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-compare-coverage",
+    title: "Compare Original Medicare and Medicare Advantage",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/get-started-with-medicare/get-more-coverage/your-coverage-options/compare-original-medicare-medicare-advantage",
+    summary:
+      "Official comparison of Original Medicare and Medicare Advantage coverage considerations.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-savings-programs",
+    title: "Medicare Savings Programs",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
+    summary:
+      "Official information about programs that may help pay Medicare premiums and other costs.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-extra-help",
+    title: "Help with Medicare drug costs",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/costs/help/drug-costs",
+    summary:
+      "Official information about Extra Help for Medicare prescription drug costs.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "washington-medicare-savings",
+    title: "Washington Medicare Savings Program",
+    publisher: "Washington State Health Care Authority",
+    url: "https://www.hca.wa.gov/free-or-low-cost-health-care/i-need-medical-dental-or-vision-care/medicare-savings-program",
+    summary:
+      "Official Washington information about Medicare Savings Program assistance.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-healthplanfinder",
+    title: "Washington Healthplanfinder",
+    publisher: "Washington Health Benefit Exchange",
+    url: "https://www.wahealthplanfinder.org/",
+    summary:
+      "Washington's official marketplace for individual and family health coverage.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-individual-family",
+    title: "Individuals and families",
+    publisher: "Washington Healthplanfinder",
+    url: "https://www.wahealthplanfinder.org/us/en/health-coverage/who-can-sign-up/individuals-and-families.html",
+    summary:
+      "Official Washington guidance for individuals and families seeking health coverage.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-self-employed",
+    title: "Self-employed people",
+    publisher: "Washington Healthplanfinder",
+    url: "https://www.wahealthplanfinder.org/us/en/health-coverage/who-can-sign-up/self-employed-people.html",
+    summary:
+      "Official Washington coverage guidance for self-employed people and contractors.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-special-enrollment",
+    title: "Open Enrollment vs. Special Enrollment",
+    publisher: "Washington Healthplanfinder",
+    url: "https://www.wahealthplanfinder.org/us/en/health-coverage/get-started/special-enrollment-en.html",
+    summary:
+      "Official Washington guidance about open enrollment, qualifying events, and special enrollment.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-broker-help",
+    title: "Find local health coverage help",
+    publisher: "Washington Healthplanfinder",
+    url: "https://www.wahealthplanfinder.org/us/en/tools-and-resources/connect-with-us.html",
+    summary:
+      "Official information about Washington navigators and insurance brokers who can help with enrollment.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "wa-oic-individual-plans",
+    title: "Individual and family health plans and premiums",
+    publisher: "Washington State Office of the Insurance Commissioner",
+    url: "https://www.insurance.wa.gov/insurance-resources/health-insurance/health-insurance-coverage/individual-and-family-health-plans-premiums",
+    summary:
+      "Official Washington information about individual and family plans sold on and off the Exchange.",
+    lastChecked: "2026-07-30",
+  },
+  {
     id: "washington-shiba",
     title: "Washington SHIBA (SHIP)",
     publisher: "Washington State Office of the Insurance Commissioner",
@@ -318,7 +429,11 @@ export const knowledgeEntries: KnowledgeEntry[] = [
       "medicare-supplement",
       "medicare-part-d",
     ],
-    sourceIds: ["medicare-coverage-options", "medicare-part-d"],
+    sourceIds: [
+      "medicare-coverage-options",
+      "medicare-compare-coverage",
+      "medicare-part-d",
+    ],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -382,7 +497,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Get Help",
     tags: ["annual-review", "costs", "doctors", "prescriptions"],
     topicSlugs: ["medicare-annual-enrollment", "medicare-part-d"],
-    sourceIds: ["medicare-part-d"],
+    sourceIds: ["medicare-open-enrollment", "medicare-part-d"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -398,7 +513,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Get Help",
     tags: ["annual-enrollment", "annual-review", "plan-changes"],
     topicSlugs: ["medicare-annual-enrollment"],
-    sourceIds: ["medicare-special-enrollment"],
+    sourceIds: ["medicare-open-enrollment"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -499,6 +614,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Read More",
     tags: ["families", "health-insurance", "individuals"],
     topicSlugs: [],
+    sourceIds: ["wa-healthplanfinder", "wa-oic-individual-plans"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -514,6 +630,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Read More",
     tags: ["agent", "families", "health-insurance", "individuals"],
     topicSlugs: [],
+    sourceIds: ["wa-broker-help", "wa-oic-individual-plans"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -529,6 +646,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Read More",
     tags: ["families", "health-insurance", "individuals"],
     topicSlugs: [],
+    sourceIds: ["wa-individual-family", "wa-oic-individual-plans"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -544,6 +662,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Read More",
     tags: ["health-insurance", "self-employed", "small-business"],
     topicSlugs: [],
+    sourceIds: ["wa-self-employed", "wa-healthplanfinder"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -559,6 +678,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     ctaLabel: "Read More",
     tags: ["health-insurance", "lost-coverage", "special-enrollment"],
     topicSlugs: [],
+    sourceIds: ["wa-special-enrollment"],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -609,7 +729,12 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     order: 3,
     tags: ["costs", "extra-help", "washington"],
     topicSlugs: ["medicare-part-d"],
-    sourceIds: ["medicare-official", "washington-shiba"],
+    sourceIds: [
+      "medicare-savings-programs",
+      "medicare-extra-help",
+      "washington-medicare-savings",
+      "washington-shiba",
+    ],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -642,7 +767,10 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     order: 5,
     tags: ["comparison", "plan-types"],
     topicSlugs: ["medicare-advantage", "medicare-supplement"],
-    sourceIds: ["medicare-coverage-options"],
+    sourceIds: [
+      "medicare-coverage-options",
+      "medicare-compare-coverage",
+    ],
     review: { status: "needs-review" },
     relationships: { citySlugs: ["spokane"] },
   },
@@ -661,6 +789,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
       "medicare-supplement",
       "medicare-part-d",
     ],
+    sourceIds: ["medicare-plan-compare"],
     review: { status: "needs-review" },
     relationships: {
       citySlugs: ["spokane"],
@@ -696,6 +825,59 @@ const topicAgentSpecialties: Partial<Record<string, string[]>> = {
     "Medicare Supplement",
   ],
 };
+
+function parseDateOnly(value: string): Date {
+  return new Date(`${value}T00:00:00Z`);
+}
+
+function addUtcDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+function resolveAsOfDate(asOf: string | Date): Date {
+  return typeof asOf === "string" ? parseDateOnly(asOf) : asOf;
+}
+
+export function isKnowledgeSourceExpired(
+  source: Pick<KnowledgeSource, "lastChecked">,
+  asOf: string | Date = new Date(),
+): boolean {
+  const checkedAt = parseDateOnly(source.lastChecked);
+
+  if (Number.isNaN(checkedAt.getTime())) {
+    return true;
+  }
+
+  return (
+    resolveAsOfDate(asOf).getTime() >
+    addUtcDays(checkedAt, KNOWLEDGE_SOURCE_MAX_AGE_DAYS).getTime()
+  );
+}
+
+export function isKnowledgeReviewExpired(
+  review: KnowledgeReview,
+  asOf: string | Date = new Date(),
+): boolean {
+  if (review.status !== "reviewed") {
+    return false;
+  }
+
+  const reviewedAt = parseDateOnly(review.reviewedAt);
+  const dueAt = review.reviewDueAt
+    ? parseDateOnly(review.reviewDueAt)
+    : addUtcDays(reviewedAt, KNOWLEDGE_REVIEW_MAX_AGE_DAYS);
+
+  if (
+    Number.isNaN(reviewedAt.getTime()) ||
+    Number.isNaN(dueAt.getTime())
+  ) {
+    return true;
+  }
+
+  return resolveAsOfDate(asOf).getTime() > dueAt.getTime();
+}
 
 function intersectCount(left: string[], right: string[]): number {
   const rightSet = new Set(right);
@@ -873,7 +1055,8 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
   }
 
   const reviewerSlug =
-    entry.review?.status === "reviewed"
+    entry.review?.status === "reviewed" &&
+    !isKnowledgeReviewExpired(entry.review)
       ? entry.review.reviewedByAgentSlug
       : undefined;
   const reviewer = reviewerSlug
@@ -961,7 +1144,9 @@ export function buildKnowledgePageSchema(
   };
 }
 
-export function validateKnowledgeCenter(): string[] {
+export function validateKnowledgeCenter(
+  asOf: string | Date = new Date(),
+): string[] {
   const errors: string[] = [];
   const categoryIds = new Set(
     knowledgeCategories.map((category) => category.id),
@@ -986,6 +1171,10 @@ export function validateKnowledgeCenter(): string[] {
 
     if (Number.isNaN(Date.parse(source.lastChecked))) {
       errors.push(`Source ${source.id} has an invalid lastChecked date.`);
+    } else if (isKnowledgeSourceExpired(source, asOf)) {
+      errors.push(
+        `Source ${source.id} is overdue for its official-link and accuracy check.`,
+      );
     }
   }
 
@@ -1100,6 +1289,12 @@ export function validateKnowledgeCenter(): string[] {
         Number.isNaN(Date.parse(entry.review.reviewDueAt))
       ) {
         errors.push(`Entry ${entry.id} has an invalid reviewDueAt date.`);
+      }
+
+      if (isKnowledgeReviewExpired(entry.review, asOf)) {
+        errors.push(
+          `Entry ${entry.id} has an expired licensed-review claim.`,
+        );
       }
 
       if ((entry.sourceIds ?? []).length === 0) {

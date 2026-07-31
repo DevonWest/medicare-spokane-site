@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import PageHero from "@/components/PageHero";
 import { carriers } from "@/lib/carriers";
 import { siteConfig, telHref } from "@/lib/site";
@@ -73,6 +74,8 @@ export default function CarriersPage() {
           <Disclaimer />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/carriers" />
 
       <CTASection
         heading="Want Help Reviewing Carrier Options?"
