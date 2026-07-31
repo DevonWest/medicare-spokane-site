@@ -68,12 +68,16 @@ export default async function KnowledgeMigrationPreviewPage() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           {[
             ["Candidates", preview.summary.total],
             [
               "Body snapshots",
               preview.summary.articleParity.snapshotsVerified,
+            ],
+            [
+              "Renderer contracts",
+              preview.summary.renderer.contractsDefined,
             ],
             ["Ready records", preview.summary.ready],
             ["Blocked", preview.summary.blocked],
@@ -153,9 +157,17 @@ export default async function KnowledgeMigrationPreviewPage() {
             </li>
             <li>
               {preview.summary.articleParity.representationBlocked} article
-              migrations remain blocked because the current Markdown-only CMS
-              renderer cannot yet preserve the verified React structure
-              losslessly.
+              migrations remain blocked until a CMS renderer implementation
+              passes the lossless contract in shadow mode.
+            </li>
+            <li>
+              Requested renderer mode:{" "}
+              {preview.summary.renderer.mode.requestedMode}. Effective public
+              mode: {preview.summary.renderer.mode.effectiveMode}.{" "}
+              {preview.summary.renderer.rollbackContractsDefined} static
+              rollback contracts are defined;{" "}
+              {preview.summary.renderer.cutoverEligible} routes are eligible
+              for cutover.
             </li>
             <li>
               Public rendering, URL cutover, sitemap changes, and migration
@@ -293,6 +305,26 @@ export default async function KnowledgeMigrationPreviewPage() {
                             CMS representation:{" "}
                             {candidate.target.routeParity.cmsRepresentation.status}
                           </p>
+                          {candidate.target.rendererContract ? (
+                            <>
+                              <p>
+                                Renderer contract: v
+                                {candidate.target.rendererContract.version} ·{" "}
+                                {
+                                  candidate.target.rendererContract.candidate
+                                    .capabilities.length
+                                }{" "}
+                                capabilities
+                              </p>
+                              <p>
+                                Shadow / cutover: blocked / blocked
+                              </p>
+                              <p className="font-semibold text-emerald-700">
+                                Rollback: verified static route · no CMS data
+                                mutation
+                              </p>
+                            </>
+                          ) : null}
                         </>
                       ) : null}
                     </td>

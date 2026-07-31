@@ -46,6 +46,7 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web API key | Required only before enabling the private Knowledge CMS |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `medicareinspokane-prod.firebaseapp.com` | Required only before enabling the private Knowledge CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | **Optional.** Leave absent or set to `false` until the full Auth checklist passes. |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** Contract-only guard; leave absent or set to exact `static`. `shadow` and `cutover` are not deployable yet. |
 
 ### 1b. Authentication — pick ONE of these two options
 
@@ -354,6 +355,8 @@ What happens:
   - `FIREBASE_PROJECT_ID=PROJECT_ID`
   - `KNOWLEDGE_CMS_ENABLED=false` unless the exact GitHub variable is set to
     `true`
+  - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static`; this contract-only release
+    rejects `shadow`, `cutover`, and malformed values before image build
   - `NODE_ENV=production`
 
 If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when

@@ -18,6 +18,7 @@
 #   NEXT_PUBLIC_FIREBASE_API_KEY required before enabling Knowledge CMS
 #   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN required before enabling Knowledge CMS
 #   KNOWLEDGE_CMS_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; defaults to static
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
@@ -89,6 +90,7 @@ jobs:
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       KNOWLEDGE_CMS_ENABLED: ${{ vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
     steps:
@@ -128,6 +130,18 @@ jobs:
               ;;
             *)
               echo "::error::KNOWLEDGE_CMS_ENABLED must be exactly true or false"
+              exit 1
+              ;;
+          esac
+          case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
+            static)
+              ;;
+            shadow|cutover)
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE is reserved but cannot be activated until a lossless renderer implementation and shadow evidence are merged"
+              exit 1
+              ;;
+            *)
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static in this contract-only release"
               exit 1
               ;;
           esac
@@ -181,6 +195,7 @@ jobs:
             NEXT_PUBLIC_GTM_ID=${{ vars.NEXT_PUBLIC_GTM_ID }}
             FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }}
             KNOWLEDGE_CMS_ENABLED=${{ env.KNOWLEDGE_CMS_ENABLED }}
+            KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
             NODE_ENV=production
 
       - name: Show service URL

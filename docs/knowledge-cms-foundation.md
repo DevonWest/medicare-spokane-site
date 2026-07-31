@@ -9,6 +9,9 @@ Library registry.
 
 - `KNOWLEDGE_CMS_ENABLED` is server-only and accepts only the exact value
   `true`.
+- `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` is server-only, defaults to `static`,
+  and this contract-only release rejects deployment values other than exact
+  `static`.
 - The data-access and workflow modules use `server-only`.
 - The private `/admin/knowledge` surface returns 404 while the flag is off.
 - Enabling the flag exposes only the noindex admin sign-in route; CMS data
@@ -125,7 +128,10 @@ request instead of trusting claims supplied by a form or browser state.
 - a deterministic route-parity manifest for all 22 article targets that pins
   the exported page metadata, canonical and Open Graph values, H1, rendered
   byte count, page-specific structured-data types, form/FAQ counts, and the
-  SHA-256 of each server-rendered route body.
+  SHA-256 of each server-rendered route body; and
+- a versioned lossless-renderer contract for every article route that maps
+  required React capabilities to adapters and parity evidence, plus a
+  route-specific verified-static rollback.
 
 Session exchange requires a sign-in from the preceding five minutes. Every
 read and mutation verifies the Firebase session with revocation checking and
@@ -137,10 +143,11 @@ The migration preview is intentionally not an import control. It has no Server
 Action, repository `save`, workflow transition, upload, or execute path. Its
 output always reports a write count of zero and keeps every proposed target
 indexing-blocked. Article route bodies and metadata now have explicit,
-test-enforced parity snapshots. Article migration still fails closed because a
-Markdown-only CMS article cannot preserve the current React component tree,
-forms, FAQ disclosures, relationship cards, structured data, and dynamic
-registries without a separately reviewed public renderer.
+test-enforced parity snapshots. Article migration still fails closed because
+the contract has no CMS renderer implementation or shadow-parity evidence. A
+Markdown-only CMS article cannot yet preserve the current React component
+tree, forms, FAQ disclosures, relationship cards, structured data, and dynamic
+registries.
 
 This release intentionally has no archive, restore, public rendering, or
 migration execution. CMS publication remains private: it writes the governed
@@ -176,6 +183,12 @@ The deployment workflow treats `KNOWLEDGE_CMS_ENABLED` as `false` when the
 repository variable is absent. If that variable is set to `true`, deployment
 fails before building unless the Firebase browser API key and Auth domain
 variables are present.
+
+The workflow treats `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` as `static` when the
+repository variable is absent. `shadow` and `cutover` are reserved contract
+values, but this release rejects them before image build because no candidate
+renderer is implemented. The existing static routes remain the only public
+source.
 
 Example custom-claim shape:
 
@@ -224,12 +237,48 @@ always false, `writeCount` is always zero, and the page contains no mutation
 control. The parity manifest deliberately excludes the homepage and
 `/medicare-spokane`.
 
+## Lossless renderer and rollback contract
+
+Every one of the 22 article routes has a contract that:
+
+- binds the future CMS article to its current path, canonical URL, static
+  source module, body SHA-256, and route-parity manifest version;
+- requires typed adapters for the existing React component tree, related
+  content, structured data, lead forms, FAQ disclosures, and any governed FAQ
+  or carrier registry used by that route;
+- requires an exact candidate match for title, description, canonical and Open
+  Graph values, H1, schema types, form count, FAQ count, rendered byte count,
+  and rendered SHA-256;
+- keeps both shadow comparison and public cutover ineligible until an
+  implementation, migrated published record, candidate snapshot, protected
+  route check, and shadow comparison exist; and
+- defines a no-write rollback to the current static route while preserving CMS
+  records for diagnosis or correction.
+
+`KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` has three reserved states:
+
+| Mode | Contract meaning in this release | Public source |
+|---|---|---|
+| `static` | Default and only deployable value | Existing static route |
+| `shadow` | Reserved for a later non-public comparison implementation | Existing static route |
+| `cutover` | Reserved for a later per-route reviewed cutover | Existing static route |
+
+Invalid, whitespace-padded, differently cased, `shadow`, and `cutover` values
+cannot activate the renderer in this release. The resolver and deployment
+workflow both fail closed to or require `static`.
+
+Rollback triggers are candidate unavailability, render error, parity,
+metadata, canonical, capability, or protected-route mismatch. The contract
+requires the verified static source and snapshot for every route, sets the
+global mode back to `static`, performs no CMS data mutation, and keeps `/` and
+`/medicare-spokane` outside the renderer inventory.
+
 ## Next release gate
 
-The next independently reviewed release may define a lossless public-renderer
-contract for the parity manifest's required React features and a deterministic
-rollback plan. It must remain feature-gated and non-public, keep migration
-execution separate, and prove that rendered copy, forms, FAQ disclosures,
-relationship cards, structured data, metadata, and canonical URLs remain
-identical. No cutover should be proposed until that contract, rollback output,
-and protected-ranking-page invariants are reviewed independently.
+The next independently reviewed release may implement the renderer only for
+private shadow comparison. It must keep static public output, migration
+execution, and cutover separate; produce a candidate artifact that passes the
+contract verifier; and show exact route-by-route parity without changing the
+homepage, `/medicare-spokane`, public sitemap, or canonical URLs. No cutover
+should be proposed until shadow evidence and rollback verification are
+reviewed independently.
