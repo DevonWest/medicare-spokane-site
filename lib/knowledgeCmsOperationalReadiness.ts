@@ -805,6 +805,9 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       : "blocked";
   const rendererSafe = Boolean(
     input.configuration.renderer.configurationValid &&
+      ["static", "shadow"].includes(
+        input.configuration.renderer.requestedMode,
+      ) &&
       input.configuration.renderer.effectiveMode === "static" &&
       !input.configuration.renderer.activationAllowed,
   );
@@ -1070,7 +1073,11 @@ export function validateKnowledgeCmsOperationalReadinessReport(
     report.publicSafety.bulkExecutionAvailable ||
     report.publicSafety.publicCutoverEligible ||
     report.publicSafety.effectiveRendererMode !== "static" ||
-    report.capabilities.publicCutover !== "prohibited"
+    report.capabilities.publicCutover !== "prohibited" ||
+    !report.configuration.renderer.configurationValid ||
+    !["static", "shadow"].includes(
+      report.configuration.renderer.requestedMode,
+    )
   ) {
     errors.push(
       "Operational readiness must remain zero-write, static-public, non-indexing, non-bulk, and ineligible for cutover.",

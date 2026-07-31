@@ -447,6 +447,18 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A publisher/admin can open `/admin/knowledge/readiness`; the report shows
   aggregate role coverage without user identities, verifies every recorded
   migration receipt, reports zero writes, and keeps public cutover prohibited.
+- [ ] A publisher/admin can open `/admin/knowledge/beta-activation`; it reports
+  exact `staging` and the canonical beta origin, binds a fresh valid readiness
+  SHA-256, and shows no blocked activation check.
+- [ ] The beta activation preview proposes only the three beta-scoped CMS
+  values, reports zero variables/deployments/traffic/roles/records changed, and
+  explicitly denies execution, production, and cutover authority.
+- [ ] The preview's rollback checklist starts by disabling one-record execution,
+  restores `static` before broader CMS disable or beta revision recovery,
+  preserves every CMS record, and includes all public/SEO verification checks.
+- [ ] Opening the same build with a production, unknown, or malformed deployment
+  identity produces a blocked preview; never use this receipt to change a
+  production service or repository variable.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally
@@ -492,6 +504,21 @@ You're live.
 ---
 
 ## Rollback (if §9c reveals a problem)
+
+### Private CMS beta activation
+
+Use the authenticated `/admin/knowledge/beta-activation` receipt as the
+authoritative beta-only sequence. Stop further draft execution first, restore
+the renderer to `static`, and deploy those values only to the beta service. If
+the private workspace remains unsafe, set the beta CMS gate to `false`; if the
+problem remains revision-specific, route beta traffic to the last known-good
+beta revision. Preserve all CMS records, locks, and audit evidence, and rerun
+the receipt's static-route, sitemap, robots, header, and quiet-404 checks.
+
+Passing this preview does not authorize a production configuration change,
+public CMS body, indexing change, or cutover.
+
+### Production site revision
 
 Cloud Run keeps every revision. To roll back instantly without rebuilding:
 

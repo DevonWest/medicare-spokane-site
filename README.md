@@ -235,6 +235,12 @@ reviewer-publisher separation, deterministic article controls, execution
 history, and every current five-artifact migration receipt. It exposes no Auth
 user identities, performs no repair or write, and cannot enable execution,
 publication, indexing, shadow mode, or public cutover.
+The publisher/admin beta activation preview then binds a fresh readiness receipt
+to exact `staging` plus `https://beta.medicareinspokane.com`, shows the proposed
+private-only settings without applying them, and supplies a deterministic
+record-preserving rollback checklist. It rejects production, stale or tampered
+evidence, malformed deployment identity, and `cutover`; it carries no variable,
+deployment, traffic, execution, indexing, or production authority.
 The separately gated migration boundary can create one explicitly confirmed,
 indexing-blocked article draft at a time. It reconstructs the deterministic
 control server-side and atomically checks the expected-absent document, slug,

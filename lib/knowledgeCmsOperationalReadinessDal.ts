@@ -172,12 +172,20 @@ export async function readKnowledgeCmsOperationalReadiness(input: {
   });
 }
 
-export async function getKnowledgeCmsAdminOperationalReadiness(): Promise<KnowledgeCmsOperationalReadinessReport> {
-  const actor = await requireKnowledgeCmsActor();
+export async function getKnowledgeCmsOperationalReadinessForActor(
+  actor: KnowledgeCmsActor,
+  now: Date = new Date(),
+): Promise<KnowledgeCmsOperationalReadinessReport> {
   return readKnowledgeCmsOperationalReadiness({
     actor,
     repository: createKnowledgeCmsRepository(),
     roleDirectoryProvider: getFirebaseAuthAdmin(),
     configuration: getKnowledgeCmsOperationalConfiguration(),
+    now,
   });
+}
+
+export async function getKnowledgeCmsAdminOperationalReadiness(): Promise<KnowledgeCmsOperationalReadinessReport> {
+  const actor = await requireKnowledgeCmsActor();
+  return getKnowledgeCmsOperationalReadinessForActor(actor);
 }
