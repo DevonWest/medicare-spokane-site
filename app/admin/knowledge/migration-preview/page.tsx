@@ -68,7 +68,7 @@ export default async function KnowledgeMigrationPreviewPage() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {[
             ["Candidates", preview.summary.total],
             [
@@ -78,6 +78,10 @@ export default async function KnowledgeMigrationPreviewPage() {
             [
               "Renderer contracts",
               preview.summary.renderer.contractsDefined,
+            ],
+            [
+              "Article controls",
+              preview.summary.articleControls.controlsDefined,
             ],
             ["Ready records", preview.summary.ready],
             ["Blocked", preview.summary.blocked],
@@ -160,6 +164,17 @@ export default async function KnowledgeMigrationPreviewPage() {
               migrations remain blocked until governed published records pass
               private shadow comparison and a separately reviewed CMS-native
               body/cutover design exists.
+            </li>
+            <li>
+              {preview.summary.articleControls.controlsDefined} deterministic
+              article controls are defined and{" "}
+              {preview.summary.articleControls.fingerprinted} have verified
+              SHA-256 fingerprints. All{" "}
+              {preview.summary.articleControls.privateDrafts} represented
+              payloads remain private, indexing-blocked drafts;{" "}
+              {preview.summary.articleControls.executionEligible} are
+              executable and the control write count is{" "}
+              {preview.summary.articleControls.writeCount}.
             </li>
             <li>
               Requested renderer mode:{" "}
@@ -328,6 +343,36 @@ export default async function KnowledgeMigrationPreviewPage() {
                               <p className="font-semibold text-emerald-700">
                                 Rollback: verified static route · no CMS data
                                 mutation
+                              </p>
+                            </>
+                          ) : null}
+                          {candidate.target.controlRecord ? (
+                            <>
+                              <p className="mt-2 font-semibold text-slate-800">
+                                Control:{" "}
+                                {
+                                  candidate.target.controlRecord
+                                    .controlId
+                                }
+                              </p>
+                              <p>
+                                Operation: create private draft · fail if
+                                present
+                              </p>
+                              <p className="break-all font-mono">
+                                sha256:
+                                {
+                                  candidate.target.controlRecord
+                                    .fingerprint.value
+                                }
+                              </p>
+                              <p>
+                                Server fields: authenticated owner and
+                                server-clock audit
+                              </p>
+                              <p className="font-semibold text-red-700">
+                                Execution disabled · 0 writes · Markdown is
+                                not the public page body
                               </p>
                             </>
                           ) : null}
