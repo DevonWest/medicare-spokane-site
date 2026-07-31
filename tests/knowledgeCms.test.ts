@@ -343,6 +343,14 @@ test("authorization separates authoring, review, and publishing duties", () => {
     ),
     { allowed: false, reason: "self_review_forbidden" },
   );
+  assert.deepEqual(
+    getKnowledgeCmsAuthorizationDecision(
+      { ...reviewer, id: author.id },
+      "request_changes",
+      draft,
+    ),
+    { allowed: false, reason: "self_review_forbidden" },
+  );
 });
 
 test("source expiration remains valid through the final UTC calendar day", () => {
@@ -564,6 +572,120 @@ test("the workflow requires a different verified reviewer before publishing", as
     repository.events.find((event) => event.event === "approve")?.note,
     "Official enrollment source checked.",
   );
+});
+
+test("requesting changes requires verified feedback and returns an actionable draft", async () => {
+  const {
+    KnowledgeCmsReviewerVerificationError,
+    KnowledgeCmsWorkflow,
+  } = await loadServerModules();
+  const repository = new MemoryKnowledgeCmsRepository();
+  enableKnowledgeCmsForTest();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => NOW,
+    idFactory: () => "article-1",
+    reviewerVerifier: (agentSlug, verificationId) =>
+      agentSlug === "lynn-wold" && verificationId === "wa-license-check-1",
+  });
+
+  const created = await workflow.create(articleInput(), author);
+  await workflow.transition(
+    "article",
+    created.id,
+    { action: "submit_for_review", expectedRevision: 1 },
+    author,
+  );
+
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "request_changes",
+        expectedRevision: 2,
+        reviewerVerificationId: "wa-license-check-1",
+      },
+      reviewer,
+    ),
+    /feedback is required/i,
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "request_changes",
+        expectedRevision: 2,
+        reviewerVerificationId: "wrong-check",
+        decisionNote: "Clarify the enrollment timing example.",
+      },
+      reviewer,
+    ),
+    KnowledgeCmsReviewerVerificationError,
+  );
+
+  const returned = await workflow.transition(
+    "article",
+    created.id,
+    {
+      action: "request_changes",
+      expectedRevision: 2,
+      reviewerVerificationId: "wa-license-check-1",
+      decisionNote: " Clarify the enrollment timing example. ",
+    },
+    reviewer,
+  );
+  assert.equal(returned.status, "draft");
+  assert.deepEqual(returned.changeRequest, {
+    requestedByAgentSlug: "lynn-wold",
+    reviewerVerificationId: "wa-license-check-1",
+    requestedAt: NOW.toISOString(),
+    feedback: "Clarify the enrollment timing example.",
+  });
+  assert.deepEqual(validateKnowledgeCmsRecord(returned), []);
+  assert.equal(repository.events.at(-1)?.event, "request_changes");
+  assert.equal(
+    repository.events.at(-1)?.note,
+    "Clarify the enrollment timing example.",
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "request_changes",
+        expectedRevision: 2,
+        reviewerVerificationId: "wa-license-check-1",
+        decisionNote: "A stale reviewer tab must not overwrite the draft.",
+      },
+      reviewer,
+    ),
+    /revision changed/i,
+  );
+
+  const revised = await workflow.update(
+    "article",
+    created.id,
+    {
+      kind: "article",
+      summary: "A clearer guide to Medicare enrollment timing.",
+    },
+    3,
+    author,
+  );
+  assert.equal(
+    revised.changeRequest?.feedback,
+    "Clarify the enrollment timing example.",
+  );
+
+  const resubmitted = await workflow.transition(
+    "article",
+    created.id,
+    { action: "submit_for_review", expectedRevision: 4 },
+    author,
+  );
+  assert.equal(resubmitted.status, "in_review");
+  assert.equal(resubmitted.changeRequest, undefined);
 });
 
 test("drafts do not produce search documents and unpublishing blocks indexing", async () => {

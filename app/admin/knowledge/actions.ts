@@ -5,12 +5,17 @@ import { redirect } from "next/navigation";
 import {
   KNOWLEDGE_CMS_ADMIN_PATH,
   KnowledgeCmsAdminInputError,
+  isKnowledgeCmsRecordId,
+  isKnowledgeCmsRecordKind,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
+  parseKnowledgeCmsWorkflowForm,
   type KnowledgeCmsAdminActionState,
 } from "@/lib/knowledgeCmsAdmin";
 import {
   createKnowledgeCmsAdminRecord,
+  requestKnowledgeCmsAdminRecordChanges,
+  submitKnowledgeCmsAdminRecordForReview,
   updateKnowledgeCmsAdminRecord,
 } from "@/lib/knowledgeCmsAdminDal";
 import { KnowledgeCmsAuthenticationError } from "@/lib/knowledgeCmsAdminAuth";
@@ -19,6 +24,10 @@ import {
   KnowledgeCmsValidationError,
   type KnowledgeCmsRecordKind,
 } from "@/lib/knowledgeCms";
+import {
+  KnowledgeCmsReviewerVerificationError,
+  KnowledgeCmsStateError,
+} from "@/lib/knowledgeCmsWorkflow";
 import {
   KnowledgeCmsConflictError,
   KnowledgeCmsDisabledError,
@@ -45,6 +54,21 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message: "This draft changed in another session. Reload before saving.",
       conflict: true,
+    };
+  }
+  if (error instanceof KnowledgeCmsStateError) {
+    return {
+      ok: false,
+      message:
+        "This record is no longer in the required workflow state. Reload before trying again.",
+      conflict: true,
+    };
+  }
+  if (error instanceof KnowledgeCmsReviewerVerificationError) {
+    return {
+      ok: false,
+      message:
+        "A current verified licensed-reviewer identity is required for this action.",
     };
   }
   if (
@@ -76,6 +100,17 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
   };
 }
 
+function assertValidRecordTarget(
+  kind: unknown,
+  id: unknown,
+): asserts kind is KnowledgeCmsRecordKind {
+  if (!isKnowledgeCmsRecordKind(kind) || !isKnowledgeCmsRecordId(id)) {
+    throw new KnowledgeCmsAdminInputError([
+      "The requested CMS record is invalid.",
+    ]);
+  }
+}
+
 export async function createKnowledgeCmsDraftAction(
   _previousState: KnowledgeCmsAdminActionState,
   formData: FormData,
@@ -100,6 +135,7 @@ export async function updateKnowledgeCmsDraftAction(
   formData: FormData,
 ): Promise<KnowledgeCmsAdminActionState> {
   try {
+    assertValidRecordTarget(kind, id);
     const { input, expectedRevision } = parseKnowledgeCmsUpdateForm(
       formData,
       kind,
@@ -117,6 +153,67 @@ export async function updateKnowledgeCmsDraftAction(
     return {
       ok: true,
       message: "Draft saved.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function submitKnowledgeCmsForReviewAction(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    assertValidRecordTarget(kind, id);
+    const { expectedRevision } = parseKnowledgeCmsWorkflowForm(
+      formData,
+      "submit_for_review",
+    );
+    const updated = await submitKnowledgeCmsAdminRecordForReview(
+      kind,
+      id,
+      expectedRevision,
+    );
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/${kind}/${encodeURIComponent(id)}`,
+    );
+    return {
+      ok: true,
+      message: "Submitted for review.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function requestKnowledgeCmsChangesAction(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    assertValidRecordTarget(kind, id);
+    const { expectedRevision, decisionNote } =
+      parseKnowledgeCmsWorkflowForm(formData, "request_changes");
+    const updated = await requestKnowledgeCmsAdminRecordChanges(
+      kind,
+      id,
+      expectedRevision,
+      decisionNote!,
+    );
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/${kind}/${encodeURIComponent(id)}`,
+    );
+    return {
+      ok: true,
+      message: "Changes requested and returned to draft.",
       revision: updated.revision,
     };
   } catch (error) {

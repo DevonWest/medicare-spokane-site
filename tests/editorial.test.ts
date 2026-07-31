@@ -4,6 +4,7 @@ import sitemap from "../app/sitemap";
 import {
   editorialReviewerVerifications,
   isEditorialReviewerVerificationExpired,
+  resolveCurrentEditorialReviewerVerification,
   resolveVerifiedEditorialReviewer,
   validateEditorialReviewerVerifications,
   type EditorialReviewerVerification,
@@ -59,6 +60,14 @@ test("reviewer verification requires the matching active licensed agent and curr
 
   assert.equal(reviewer?.name, "Lynn Wold");
   assert.equal(
+    resolveCurrentEditorialReviewerVerification(
+      "lynn-wold",
+      "2026-06-30",
+      [currentReviewerVerification],
+    )?.id,
+    currentReviewerVerification.id,
+  );
+  assert.equal(
     resolveVerifiedEditorialReviewer(
       "craig-lenhart",
       currentReviewerVerification.id,
@@ -76,6 +85,20 @@ test("reviewer verification requires the matching active licensed agent and curr
     ),
     undefined,
   );
+  assert.equal(
+    resolveCurrentEditorialReviewerVerification(
+      "lynn-wold",
+      "2026-06-30",
+      [
+        currentReviewerVerification,
+        {
+          ...currentReviewerVerification,
+          id: "second-current-verification",
+        },
+      ],
+    ),
+    undefined,
+  );
 });
 
 test("reviewer verification expires after its explicit or default verification window", () => {
@@ -83,6 +106,13 @@ test("reviewer verification expires after its explicit or default verification w
     isEditorialReviewerVerificationExpired(
       currentReviewerVerification,
       "2026-06-30",
+    ),
+    false,
+  );
+  assert.equal(
+    isEditorialReviewerVerificationExpired(
+      currentReviewerVerification,
+      new Date("2026-06-30T23:59:59.999Z"),
     ),
     false,
   );

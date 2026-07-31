@@ -1,9 +1,9 @@
 import {
   getKnowledgeCmsAuthorizationDecision,
   type KnowledgeCmsCreateInput,
+  type KnowledgeCmsActor,
   type KnowledgeCmsRecord,
   type KnowledgeCmsRecordKind,
-  type KnowledgeCmsRole,
   type KnowledgeCmsSource,
   type KnowledgeCmsUpdateInput,
 } from "./knowledgeCms";
@@ -27,15 +27,30 @@ export interface KnowledgeCmsAdminRecordSummaryDto {
   ownedByCurrentUser: boolean;
 }
 
+export interface KnowledgeCmsAdminChangeRequestDto {
+  feedback: string;
+  requestedAt: string;
+}
+
+export interface KnowledgeCmsAdminWorkflowActionsDto {
+  submitForReview: boolean;
+  requestChanges: boolean;
+}
+
 type KnowledgeCmsAdminRecordDtoFor<
   RecordType extends KnowledgeCmsRecord,
 > = RecordType extends KnowledgeCmsRecord
-  ? Omit<RecordType, "ownerId" | "audit" | "review" | "publication"> & {
+  ? Omit<
+      RecordType,
+      "ownerId" | "audit" | "changeRequest" | "review" | "publication"
+    > & {
+      changeRequest?: KnowledgeCmsAdminChangeRequestDto;
       editable: boolean;
       ownedByCurrentUser: boolean;
       revision: number;
       createdAt: string;
       updatedAt: string;
+      workflowActions: KnowledgeCmsAdminWorkflowActionsDto;
     }
   : never;
 
@@ -71,7 +86,7 @@ function recordTitle(record: KnowledgeCmsRecord): string {
 
 export function toKnowledgeCmsAdminRecordSummaryDto(
   record: KnowledgeCmsRecord,
-  actor: { id: string; roles: KnowledgeCmsRole[] },
+  actor: KnowledgeCmsActor,
 ): KnowledgeCmsAdminRecordSummaryDto {
   return {
     id: record.id,
@@ -89,16 +104,20 @@ export function toKnowledgeCmsAdminRecordSummaryDto(
 
 export function toKnowledgeCmsAdminRecordDto(
   record: KnowledgeCmsRecord,
-  actor: { id: string; roles: KnowledgeCmsRole[] },
+  actor: KnowledgeCmsActor,
+  options: { reviewerVerified?: boolean } = {},
 ): KnowledgeCmsAdminRecordDto {
   const audit = record.audit;
+  const changeRequest = record.changeRequest;
   const safeRecord = { ...record } as Partial<KnowledgeCmsRecord> & {
     audit?: KnowledgeCmsRecord["audit"];
+    changeRequest?: KnowledgeCmsRecord["changeRequest"];
     ownerId?: string;
     publication?: KnowledgeCmsRecord["publication"];
     review?: KnowledgeCmsRecord["review"];
   };
   delete safeRecord.audit;
+  delete safeRecord.changeRequest;
   delete safeRecord.ownerId;
   delete safeRecord.publication;
   delete safeRecord.review;
@@ -106,10 +125,35 @@ export function toKnowledgeCmsAdminRecordDto(
     ...safeRecord,
     editable: getKnowledgeCmsAuthorizationDecision(actor, "update", record)
       .allowed,
+    ...(changeRequest
+      ? {
+          changeRequest: {
+            feedback: changeRequest.feedback,
+            requestedAt: changeRequest.requestedAt,
+          },
+        }
+      : {}),
     ownedByCurrentUser: record.ownerId === actor.id,
     revision: audit.revision,
     createdAt: audit.createdAt,
     updatedAt: audit.updatedAt,
+    workflowActions: {
+      submitForReview:
+        record.status === "draft" &&
+        getKnowledgeCmsAuthorizationDecision(
+          actor,
+          "submit_for_review",
+          record,
+        ).allowed,
+      requestChanges:
+        record.status === "in_review" &&
+        options.reviewerVerified === true &&
+        getKnowledgeCmsAuthorizationDecision(
+          actor,
+          "request_changes",
+          record,
+        ).allowed,
+    },
   } as KnowledgeCmsAdminRecordDto;
 }
 
@@ -119,6 +163,15 @@ export function isKnowledgeCmsRecordKind(
   return (
     typeof value === "string" &&
     KNOWLEDGE_CMS_RECORD_KINDS.includes(value as KnowledgeCmsRecordKind)
+  );
+}
+
+const knowledgeCmsRecordIdPattern =
+  /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
+
+export function isKnowledgeCmsRecordId(value: unknown): value is string {
+  return (
+    typeof value === "string" && knowledgeCmsRecordIdPattern.test(value)
   );
 }
 
@@ -344,4 +397,30 @@ export function parseKnowledgeCmsUpdateForm(
     min: 1,
   })!;
   return { input, expectedRevision };
+}
+
+export type KnowledgeCmsAdminWorkflowAction =
+  | "submit_for_review"
+  | "request_changes";
+
+export function parseKnowledgeCmsWorkflowForm(
+  formData: FormData,
+  action: KnowledgeCmsAdminWorkflowAction,
+): { expectedRevision: number; decisionNote?: string } {
+  const expectedRevision = readInteger(formData, "expectedRevision", {
+    required: true,
+    min: 1,
+  })!;
+
+  if (action === "request_changes") {
+    return {
+      expectedRevision,
+      decisionNote: readString(formData, "feedback", {
+        required: true,
+        maxLength: 2_000,
+      }),
+    };
+  }
+
+  return { expectedRevision };
 }

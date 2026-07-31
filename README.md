@@ -213,8 +213,9 @@ The default-off editorial foundation defines governed `knowledge_articles`,
 `knowledge_topics`, and `knowledge_faqs` records, along with unique slug locks,
 search projections, and append-only audit events. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
-edit-draft views. It remains a server-authorized editing surface and does not
-render CMS records on the public website.
+edit-draft views, plus submit-for-review and verified request-changes controls.
+It remains a server-authorized editing surface and does not render CMS records
+on the public website. Approval and publication controls are not exposed.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 

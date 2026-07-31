@@ -82,6 +82,13 @@ export interface KnowledgeCmsReview {
   decisionNote?: string;
 }
 
+export interface KnowledgeCmsChangeRequest {
+  requestedByAgentSlug: string;
+  reviewerVerificationId: string;
+  requestedAt: string;
+  feedback: string;
+}
+
 export interface KnowledgeCmsPublication {
   publishedAt: string;
   publishedBy: string;
@@ -106,6 +113,7 @@ interface KnowledgeCmsBaseRecord {
   relationships: KnowledgeCmsRelationships;
   sources: KnowledgeCmsSource[];
   discoverability: KnowledgeCmsDiscoverability;
+  changeRequest?: KnowledgeCmsChangeRequest;
   review?: KnowledgeCmsReview;
   publication?: KnowledgeCmsPublication;
   audit: KnowledgeCmsAuditFields;
@@ -554,6 +562,33 @@ function validateReview(value: unknown): string[] {
   return errors;
 }
 
+function validateChangeRequest(value: unknown): string[] {
+  if (!isRecord(value)) {
+    return ["changeRequest must be an object."];
+  }
+
+  const errors: string[] = [];
+  if (
+    !isNonEmptyString(value.requestedByAgentSlug, 200) ||
+    !slugPattern.test(value.requestedByAgentSlug)
+  ) {
+    errors.push("changeRequest.requestedByAgentSlug is invalid.");
+  }
+  if (
+    !isNonEmptyString(value.reviewerVerificationId, 200) ||
+    !identifierPattern.test(value.reviewerVerificationId)
+  ) {
+    errors.push("changeRequest.reviewerVerificationId is invalid.");
+  }
+  if (!isIsoInstant(value.requestedAt)) {
+    errors.push("changeRequest.requestedAt must be an ISO timestamp.");
+  }
+  if (!isNonEmptyString(value.feedback, 2_000)) {
+    errors.push("changeRequest.feedback is required.");
+  }
+  return errors;
+}
+
 function validatePublication(value: unknown): string[] {
   if (!isRecord(value)) {
     return ["publication must be an object."];
@@ -663,6 +698,9 @@ function validateBaseRecord(value: Record<string, unknown>): string[] {
   if (value.review !== undefined) {
     errors.push(...validateReview(value.review));
   }
+  if (value.changeRequest !== undefined) {
+    errors.push(...validateChangeRequest(value.changeRequest));
+  }
   if (value.publication !== undefined) {
     errors.push(...validatePublication(value.publication));
   }
@@ -675,6 +713,15 @@ function validateBaseRecord(value: Record<string, unknown>): string[] {
   }
   if (value.status === "published" && value.publication === undefined) {
     errors.push("published records require publication metadata.");
+  }
+  if (
+    value.changeRequest !== undefined &&
+    value.status !== "draft" &&
+    value.status !== "archived"
+  ) {
+    errors.push(
+      "Only draft or archived records may retain an active change request.",
+    );
   }
   if (
     value.status !== "published" &&

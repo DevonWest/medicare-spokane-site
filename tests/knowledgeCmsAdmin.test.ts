@@ -9,6 +9,7 @@ import {
   KnowledgeCmsAdminInputError,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
+  parseKnowledgeCmsWorkflowForm,
   toKnowledgeCmsAdminRecordDto,
   toKnowledgeCmsAdminRecordSummaryDto,
 } from "../lib/knowledgeCmsAdmin";
@@ -407,6 +408,36 @@ test("update parsing rejects kind changes and stale revision input", () => {
   );
 });
 
+test("workflow form parsing accepts only a revision and required change feedback", () => {
+  const submit = new FormData();
+  submit.set("expectedRevision", "7");
+  submit.set("feedback", "This must not affect a submit action.");
+  assert.deepEqual(
+    parseKnowledgeCmsWorkflowForm(submit, "submit_for_review"),
+    { expectedRevision: 7 },
+  );
+
+  const request = new FormData();
+  request.set("expectedRevision", "8");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(request, "request_changes"),
+    /feedback is required/i,
+  );
+  request.set("feedback", " Clarify which enrollment period applies. ");
+  assert.deepEqual(
+    parseKnowledgeCmsWorkflowForm(request, "request_changes"),
+    {
+      expectedRevision: 8,
+      decisionNote: "Clarify which enrollment period applies.",
+    },
+  );
+  request.set("feedback", "x".repeat(2_001));
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(request, "request_changes"),
+    /feedback is too long/i,
+  );
+});
+
 test("admin DTOs omit ownership and audit internals while preserving access decisions", () => {
   const author: KnowledgeCmsActor = {
     id: "author-user",
@@ -424,15 +455,56 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
   assert.equal("review" in detail, false);
   assert.equal("publication" in detail, false);
   assert.equal(detail.revision, 1);
+  assert.deepEqual(detail.workflowActions, {
+    submitForReview: true,
+    requestChanges: false,
+  });
 
   const readOnly = toKnowledgeCmsAdminRecordDto(
     articleRecord({ status: "in_review" }),
     author,
   );
   assert.equal(readOnly.editable, false);
+
+  const reviewer: KnowledgeCmsActor = {
+    id: "reviewer-user",
+    roles: ["reviewer"],
+    agentSlug: "lynn-wold",
+  };
+  const requested = toKnowledgeCmsAdminRecordDto(
+    articleRecord({
+      status: "draft",
+      changeRequest: {
+        requestedByAgentSlug: "lynn-wold",
+        reviewerVerificationId: "wa-license-check-1",
+        requestedAt: NOW.toISOString(),
+        feedback: "Clarify the enrollment example.",
+      },
+    }),
+    author,
+  );
+  assert.deepEqual(requested.changeRequest, {
+    requestedAt: NOW.toISOString(),
+    feedback: "Clarify the enrollment example.",
+  });
+  assert.equal(
+    "reviewerVerificationId" in requested.changeRequest!,
+    false,
+  );
+  assert.deepEqual(
+    toKnowledgeCmsAdminRecordDto(
+      articleRecord({ status: "in_review" }),
+      reviewer,
+      { reviewerVerified: true },
+    ).workflowActions,
+    {
+      submitForReview: false,
+      requestChanges: true,
+    },
+  );
 });
 
-test("admin routes remain default-off, noindex, and draft-only", () => {
+test("admin routes remain default-off, noindex, and limited to early review transitions", () => {
   const layout = readFileSync(
     join(root, "app/admin/knowledge/layout.tsx"),
     "utf8",
@@ -467,7 +539,9 @@ test("admin routes remain default-off, noindex, and draft-only", () => {
     assert.match(page, /notFound/);
   }
   assert.match(dataAccess, /requireKnowledgeCmsActor/);
-  assert.doesNotMatch(actions, /\.transition\(/);
+  assert.match(actions, /submitKnowledgeCmsForReviewAction/);
+  assert.match(actions, /requestKnowledgeCmsChangesAction/);
+  assert.doesNotMatch(actions, /approveKnowledge/i);
   assert.doesNotMatch(actions, /publishKnowledge/i);
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);

@@ -35,7 +35,16 @@ function addUtcDays(date: Date, days: number): Date {
 }
 
 function resolveAsOfDate(asOf: string | Date): Date {
-  return typeof asOf === "string" ? parseDateOnly(asOf) : asOf;
+  const parsed =
+    asOf instanceof Date
+      ? asOf
+      : /^\d{4}-\d{2}-\d{2}$/.test(asOf)
+        ? parseDateOnly(asOf)
+        : new Date(asOf);
+  if (Number.isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  return parseDateOnly(parsed.toISOString().slice(0, 10));
 }
 
 function isValidDateOnly(value: string): boolean {
@@ -83,6 +92,27 @@ export function resolveVerifiedEditorialReviewer(
 
   const member = getTeamMemberBySlug(agentSlug);
   return member && isLicensedTeamMember(member) ? member : undefined;
+}
+
+export function resolveCurrentEditorialReviewerVerification(
+  agentSlug: string,
+  asOf: string | Date = new Date(),
+  verifications: EditorialReviewerVerification[] = editorialReviewerVerifications,
+): EditorialReviewerVerification | undefined {
+  const matches = verifications.filter(
+    (verification) =>
+      verification.agentSlug === agentSlug &&
+      Boolean(
+        resolveVerifiedEditorialReviewer(
+          agentSlug,
+          verification.id,
+          asOf,
+          verifications,
+        ),
+      ),
+  );
+
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 export function validateEditorialReviewerVerifications(
