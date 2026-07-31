@@ -8,6 +8,7 @@ import {
   isKnowledgeCmsRecordId,
   isKnowledgeCmsRecordKind,
   parseKnowledgeCmsArticleMigrationExecutionForm,
+  parseKnowledgeCmsSupportingMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
   parseKnowledgeCmsWorkflowForm,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/knowledgeCmsAdminDal";
 import {
   executeKnowledgeCmsAdminArticleMigrationDraft,
+  executeKnowledgeCmsAdminSupportingMigrationDraft,
 } from "@/lib/knowledgeCmsMigrationDal";
 import { KnowledgeCmsAuthenticationError } from "@/lib/knowledgeCmsAdminAuth";
 import {
@@ -34,6 +36,9 @@ import {
 import {
   KnowledgeCmsArticleMigrationExecutionError,
 } from "@/lib/knowledgeCmsArticleMigrationExecution";
+import {
+  KnowledgeCmsSupportingMigrationExecutionError,
+} from "@/lib/knowledgeCmsSupportingMigrationExecution";
 import {
   KnowledgeCmsReviewerVerificationError,
   KnowledgeCmsStateError,
@@ -77,6 +82,27 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message:
         "This migration control changed or is no longer valid. Reload the migration preview before continuing.",
+      conflict: true,
+    };
+  }
+  if (error instanceof KnowledgeCmsSupportingMigrationExecutionError) {
+    if (error.reason === "execution_disabled") {
+      return {
+        ok: false,
+        message: "Topic and FAQ private-draft migration is not enabled.",
+      };
+    }
+    if (error.reason === "confirmation_mismatch") {
+      return {
+        ok: false,
+        message:
+          "The confirmation phrase did not exactly match this private draft.",
+      };
+    }
+    return {
+      ok: false,
+      message:
+        "This topic or FAQ control changed or is no longer valid. Reload the migration preview before continuing.",
       conflict: true,
     };
   }
@@ -377,6 +403,33 @@ export async function createKnowledgeCmsArticleMigrationDraftAction(
     const created =
       await executeKnowledgeCmsAdminArticleMigrationDraft(request);
     destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview/${encodeURIComponent(created.id)}`;
+  } catch (error) {
+    return errorState(error);
+  }
+
+  revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview`);
+  redirect(destination);
+}
+
+export async function createKnowledgeCmsSupportingMigrationDraftAction(
+  kind: "topic" | "faq",
+  controlId: string,
+  controlFingerprint: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  let destination: string;
+  try {
+    const request = parseKnowledgeCmsSupportingMigrationExecutionForm(
+      kind,
+      controlId,
+      controlFingerprint,
+      formData,
+    );
+    const created =
+      await executeKnowledgeCmsAdminSupportingMigrationDraft(request);
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview/supporting/${created.kind}/${encodeURIComponent(created.id)}`;
   } catch (error) {
     return errorState(error);
   }

@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import KnowledgeArticleMigrationExecutionControl from "../components/KnowledgeArticleMigrationExecutionControl";
+import KnowledgeSupportingMigrationExecutionControl from "../components/KnowledgeSupportingMigrationExecutionControl";
 import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
 import {
   getKnowledgeCmsArticleMigrationConfirmationPhrase,
   isKnowledgeCmsArticleMigrationExecutionEnabled,
 } from "@/lib/knowledgeCmsArticleMigrationExecution";
+import {
+  getKnowledgeCmsSupportingMigrationConfirmationPhrase,
+  isKnowledgeCmsSupportingMigrationExecutionEnabled,
+} from "@/lib/knowledgeCmsSupportingMigrationExecution";
 import {
   getKnowledgeCmsAdminMigrationWorkspacePreview,
 } from "@/lib/knowledgeCmsMigrationDal";
@@ -47,6 +52,7 @@ export default async function KnowledgeMigrationPreviewPage() {
     preview,
     articleMaterializationDryRun,
     executionHistory,
+    supportingExecutionHistory: supportingExecutionHistoryResult,
   } =
     await getKnowledgeCmsAdminMigrationWorkspacePreview();
   const materializationByTargetId = new Map(
@@ -57,6 +63,22 @@ export default async function KnowledgeMigrationPreviewPage() {
   );
   const executionEnabled =
     isKnowledgeCmsArticleMigrationExecutionEnabled();
+  const supportingExecutionEnabled =
+    isKnowledgeCmsSupportingMigrationExecutionEnabled();
+  const supportingExecutionHistory = supportingExecutionHistoryResult ?? {
+    mode: "authenticated_supporting_execution_history" as const,
+    summary: {
+      eventsObserved: 0,
+      validEvents: 0,
+      invalidEvents: 0,
+      controlsVerified: 0,
+      controlsMismatched: 0,
+      truncated: false,
+      collectionReads: 1 as const,
+      writeCount: 0 as const,
+    },
+    entries: [],
+  };
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -95,7 +117,7 @@ export default async function KnowledgeMigrationPreviewPage() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           {[
             ["Candidates", preview.summary.total],
             [
@@ -109,6 +131,10 @@ export default async function KnowledgeMigrationPreviewPage() {
             [
               "Article controls",
               preview.summary.articleControls.controlsDefined,
+            ],
+            [
+              "Topic/FAQ controls",
+              preview.summary.supportingControls.controlsDefined,
             ],
             ["Ready records", preview.summary.ready],
             ["Blocked", preview.summary.blocked],
@@ -263,6 +289,82 @@ export default async function KnowledgeMigrationPreviewPage() {
             Bulk execution: blocked · overwrite: blocked · indexing: blocked ·
             public source: verified static route
           </p>
+        </section>
+
+        <section
+          className={`mt-8 rounded-2xl border p-6 shadow-sm md:p-8 ${
+            supportingExecutionEnabled
+              ? "border-violet-300 bg-violet-50"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-violet-800">
+            Separate supporting-record boundary
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            Topic and FAQ private-draft execution
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">
+            {supportingExecutionEnabled
+              ? "One explicitly confirmed topic or FAQ may be created per transaction. The server reconstructs its governed control and rechecks the target, slug, optional canonical path, search projection, and revision-one audit event before any write."
+              : "The separate topic/FAQ execution gate is disabled. Controls remain deterministic, private, and zero-write until the beta operator enables this exact server-only gate."}
+          </p>
+          <p className="mt-4 text-sm font-semibold text-slate-900">
+            Controls: {preview.summary.supportingControls.controlsDefined} /{" "}
+            {preview.summary.supportingControls.total} · recorded executions:{" "}
+            {supportingExecutionHistory.summary.validEvents} · invalid events:{" "}
+            {supportingExecutionHistory.summary.invalidEvents} · bulk: blocked ·
+            overwrite: blocked · public change: none
+          </p>
+          {supportingExecutionHistory.entries.length > 0 ? (
+            <div className="mt-6 overflow-x-auto rounded-xl border border-violet-200 bg-white">
+              <table className="min-w-full divide-y divide-violet-100 text-left text-sm">
+                <thead className="bg-violet-100 text-xs font-bold uppercase tracking-wider text-violet-900">
+                  <tr>
+                    <th className="px-5 py-4">Record</th>
+                    <th className="px-5 py-4">Execution evidence</th>
+                    <th className="px-5 py-4">Verification</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-violet-100">
+                  {supportingExecutionHistory.entries.map((entry) => (
+                    <tr className="align-top" key={entry.auditEventId}>
+                      <td className="px-5 py-5">
+                        <p className="font-semibold text-slate-950">
+                          {entry.title ?? entry.slug}
+                        </p>
+                        <p className="mt-1 font-mono text-xs text-slate-500">
+                          {entry.kind}:{entry.recordId}
+                        </p>
+                      </td>
+                      <td className="min-w-80 px-5 py-5 text-xs leading-6 text-slate-700">
+                        <p>
+                          {new Date(entry.occurredAt).toLocaleString("en-US", {
+                            timeZone: "America/Los_Angeles",
+                          })}
+                        </p>
+                        <p>
+                          {entry.writeCount} atomic writes · control{" "}
+                          {entry.controlValidation}
+                        </p>
+                        <p className="break-all font-mono">
+                          sha256:{entry.evidenceFingerprint}
+                        </p>
+                      </td>
+                      <td className="px-5 py-5">
+                        <Link
+                          className="inline-flex rounded-lg bg-violet-700 px-4 py-2 text-xs font-bold text-white hover:bg-violet-800"
+                          href={`/admin/knowledge/migration-preview/supporting/${entry.kind}/${encodeURIComponent(entry.recordId)}`}
+                        >
+                          Verify artifacts
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </section>
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -424,6 +526,14 @@ export default async function KnowledgeMigrationPreviewPage() {
               {preview.summary.articleControls.writeCount}.
             </li>
             <li>
+              {preview.summary.supportingControls.controlsDefined} of{" "}
+              {preview.summary.supportingControls.total} topic/FAQ controls are
+              defined and {preview.summary.supportingControls.fingerprinted} are
+              fingerprinted. Their control write count is{" "}
+              {preview.summary.supportingControls.writeCount}; each execution
+              remains separately gated and one-record only.
+            </li>
+            <li>
               Requested renderer mode:{" "}
               {preview.summary.renderer.mode.requestedMode}. Effective public
               mode: {preview.summary.renderer.mode.effectiveMode}.{" "}
@@ -462,7 +572,7 @@ export default async function KnowledgeMigrationPreviewPage() {
             <p className="mt-2 text-sm text-slate-600">
               Every target stays a private, indexing-blocked draft. Preview
               evidence is informational; a separate control appears only for
-              an eligible article when one-record execution is enabled.
+              an eligible record when its one-record execution gate is enabled.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -482,18 +592,28 @@ export default async function KnowledgeMigrationPreviewPage() {
                   const receipt = materializationByTargetId.get(
                     candidate.target.id,
                   );
-                  const control =
+                  const articleControl =
                     candidate.target.kind === "article"
                       ? candidate.target.controlRecord
                       : undefined;
-                  const executionAvailable = Boolean(
+                  const supportingControl =
+                    candidate.target.kind === "topic" ||
+                    candidate.target.kind === "faq"
+                      ? candidate.target.controlRecord
+                      : undefined;
+                  const articleExecutionAvailable = Boolean(
                     executionEnabled &&
-                      control &&
+                      articleControl &&
                       receipt?.control.validation === "verified" &&
                       receipt.materialization.status ===
                         "verified_in_memory" &&
                       receipt.target.observedState === "absent" &&
                       receipt.target.conflictCodes.length === 0,
+                  );
+                  const supportingExecutionAvailable = Boolean(
+                    supportingExecutionEnabled &&
+                      supportingControl &&
+                      candidate.state === "ready",
                   );
 
                   return (
@@ -522,6 +642,24 @@ export default async function KnowledgeMigrationPreviewPage() {
                               {candidate.target.routeParity.sourceFile}
                             </p>
                           ) : null}
+                        </>
+                      ) : null}
+                      {supportingControl ? (
+                        <>
+                          <p className="mt-2 font-semibold text-slate-800">
+                            Control: {supportingControl.controlId}
+                          </p>
+                          <p>
+                            Operation: create one private{" "}
+                            {candidate.target.kind} draft · fail if present
+                          </p>
+                          <p className="break-all font-mono">
+                            sha256:{supportingControl.fingerprint.value}
+                          </p>
+                          <p className="font-semibold text-red-700">
+                            Control alone is non-executable · 0 writes · no
+                            public experience or indexing change
+                          </p>
                         </>
                       ) : null}
                     </td>
@@ -698,22 +836,43 @@ export default async function KnowledgeMigrationPreviewPage() {
                       )}
                     </td>
                     <td className="min-w-80 px-5 py-5">
-                      {executionAvailable && control ? (
+                      {articleExecutionAvailable && articleControl ? (
                         <KnowledgeArticleMigrationExecutionControl
                           confirmationPhrase={
                             getKnowledgeCmsArticleMigrationConfirmationPhrase(
                               candidate.target.slug,
                             )
                           }
-                          controlFingerprint={control.fingerprint.value}
-                          controlId={control.controlId}
+                          controlFingerprint={articleControl.fingerprint.value}
+                          controlId={articleControl.controlId}
+                          targetTitle={candidate.target.title}
+                        />
+                      ) : supportingExecutionAvailable &&
+                        supportingControl &&
+                        candidate.target.kind !== "article" ? (
+                        <KnowledgeSupportingMigrationExecutionControl
+                          confirmationPhrase={
+                            getKnowledgeCmsSupportingMigrationConfirmationPhrase(
+                              candidate.target.kind,
+                              candidate.target.slug,
+                            )
+                          }
+                          controlFingerprint={
+                            supportingControl.fingerprint.value
+                          }
+                          controlId={supportingControl.controlId}
+                          kind={candidate.target.kind}
                           targetTitle={candidate.target.title}
                         />
                       ) : (
                         <p className="text-xs font-semibold leading-5 text-slate-600">
-                          {executionEnabled
-                            ? "Unavailable: the current dry run is blocked or this target already exists."
-                            : "Execution gate disabled."}
+                          {candidate.target.kind === "article"
+                            ? executionEnabled
+                              ? "Unavailable: the current dry run is blocked or this target already exists."
+                              : "Article execution gate disabled."
+                            : supportingExecutionEnabled
+                              ? "Unavailable: this governed target is blocked or already exists."
+                              : "Topic/FAQ execution gate disabled."}
                         </p>
                       )}
                     </td>

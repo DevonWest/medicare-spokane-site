@@ -33,6 +33,7 @@ export type KnowledgeCmsAction =
   | "read"
   | "preview_migration"
   | "execute_article_migration"
+  | "execute_supporting_migration"
   | "preview_shadow_rendering"
   | "update"
   | "submit_for_review"
@@ -1086,6 +1087,7 @@ export function getKnowledgeCmsAuthorizationDecision(
   if (
     action === "preview_migration" ||
     action === "execute_article_migration" ||
+    action === "execute_supporting_migration" ||
     action === "preview_shadow_rendering"
   ) {
     return hasAnyRole(actor, ["publisher", "admin"])

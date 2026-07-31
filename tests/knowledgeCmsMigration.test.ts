@@ -104,7 +104,7 @@ function topicRecordFromCandidate(
 test("migration preview deterministically inventories the complete static registry", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
 
-  assert.equal(preview.version, 6);
+  assert.equal(preview.version, 7);
   assert.equal(preview.mode, "read_only");
   assert.equal(preview.writeCount, 0);
   assert.equal(preview.readyToExecute, false);
@@ -141,10 +141,19 @@ test("migration preview deterministically inventories the complete static regist
     representationBlocked: 22,
   });
   assert.deepEqual(preview.summary.articleControls, {
-      version: 2,
+    version: 2,
     controlsDefined: 22,
     fingerprinted: 22,
     privateDrafts: 22,
+    executionEligible: 0,
+    writeCount: 0,
+  });
+  assert.deepEqual(preview.summary.supportingControls, {
+    version: 1,
+    total: 23,
+    controlsDefined: 23,
+    fingerprinted: 23,
+    privateDrafts: 23,
     executionEligible: 0,
     writeCount: 0,
   });
