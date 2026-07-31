@@ -4,6 +4,14 @@ import {
   resolveVerifiedEditorialReviewer,
   validateEditorialReviewerVerifications,
 } from "@/lib/editorial";
+import {
+  getKnowledgeFactSourceIds,
+  isKnowledgeFactExpired,
+  knowledgeFacts,
+  knowledgeFaqs,
+  type KnowledgeFact,
+  type KnowledgeFaq,
+} from "@/lib/knowledgeRecords";
 import { siteConfig } from "@/lib/site";
 import {
   getActiveTeamMembers,
@@ -15,6 +23,22 @@ import {
   type TeamMember,
 } from "@/lib/team";
 import { getTopicBySlug, medicareTopics, type Topic } from "@/lib/topics";
+
+export {
+  buildKnowledgeRecordSearchDocuments,
+  getPublishedKnowledgeFacts,
+  getPublishedKnowledgeFaqs,
+  isKnowledgeFactExpired,
+  knowledgeFacts,
+  knowledgeFaqs,
+} from "@/lib/knowledgeRecords";
+export type {
+  KnowledgeFact,
+  KnowledgeFaq,
+  KnowledgeFaqCategoryId,
+  KnowledgeRecordStatus,
+  KnowledgeSearchDocument,
+} from "@/lib/knowledgeRecords";
 
 export type KnowledgeCategoryId =
   | "getting-started"
@@ -55,14 +79,6 @@ export interface KnowledgeSource {
 export const KNOWLEDGE_SOURCE_MAX_AGE_DAYS = 180;
 export const KNOWLEDGE_REVIEW_MAX_AGE_DAYS = 365;
 
-export interface KnowledgeFaq {
-  id: string;
-  question: string;
-  answer: string;
-  topicSlugs: string[];
-  answeredByAgentSlug?: string;
-}
-
 export interface KnowledgeVideo {
   id: string;
   title: string;
@@ -83,6 +99,7 @@ export interface KnowledgeRelationships {
   citySlugs?: string[];
   downloadIds?: string[];
   entryPaths?: string[];
+  factIds?: string[];
   faqIds?: string[];
   videoIds?: string[];
 }
@@ -123,6 +140,7 @@ export interface KnowledgeGraph {
   agents: TeamMember[];
   carriers: Carrier[];
   cities: City[];
+  facts: KnowledgeFact[];
   faqs: KnowledgeFaq[];
   videos: KnowledgeVideo[];
   downloads: KnowledgeDownload[];
@@ -224,6 +242,60 @@ export const knowledgeSources: KnowledgeSource[] = [
     publisher: "Medicare.gov",
     url: "https://www.medicare.gov/health-drug-plans/part-d",
     summary: "Official information about Medicare prescription drug coverage.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-how-it-works",
+    title: "How does Medicare work?",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/get-started-with-medicare/medicare-basics/how-does-medicare-work",
+    summary:
+      "Official guidance about individual Medicare coverage and the main ways to receive benefits.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-parts",
+    title: "Parts of Medicare",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/get-started-with-medicare/medicare-basics/parts-of-medicare",
+    summary:
+      "Official descriptions of Original Medicare, Medicare Advantage, and Part D.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-costs",
+    title: "Medicare costs",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/costs/medicare-costs",
+    summary:
+      "Official information about Part A and Part B premiums and other Medicare costs.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-nursing-home-care",
+    title: "Nursing home care",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/coverage/nursing-home-care",
+    summary:
+      "Official information about skilled nursing and long-term custodial care coverage.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-coverage-start",
+    title: "When does Medicare coverage start?",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/basics/get-started-with-medicare/sign-up/when-does-medicare-coverage-start",
+    summary:
+      "Official guidance about enrollment windows, coverage timing, and possible late penalties.",
+    lastChecked: "2026-07-30",
+  },
+  {
+    id: "medicare-creditable-coverage",
+    title: "Creditable prescription drug coverage",
+    publisher: "Medicare.gov",
+    url: "https://www.medicare.gov/health-drug-plans/part-d/basics/creditable-coverage",
+    summary:
+      "Official definition of creditable prescription drug coverage and why it matters.",
     lastChecked: "2026-07-30",
   },
   {
@@ -361,37 +433,6 @@ export const knowledgeSources: KnowledgeSource[] = [
       "Apply for Medicare and learn about enrollment timelines through the Social Security Administration.",
     lastChecked: "2026-07-30",
     featuredInLibrary: true,
-  },
-];
-
-export const knowledgeFaqs: KnowledgeFaq[] = [
-  {
-    id: "initial-enrollment-period",
-    question: "When am I eligible to enroll in Medicare?",
-    answer:
-      "Most people first become eligible during the seven-month Initial Enrollment Period around the month they turn 65. Some people qualify earlier because of disability or certain conditions.",
-    topicSlugs: ["medicare-enrollment", "medicare-for-seniors"],
-  },
-  {
-    id: "employer-coverage",
-    question: "Can I keep employer coverage after I become eligible for Medicare?",
-    answer:
-      "Sometimes. The right timing depends on the job-based coverage, who is actively employed, and how that coverage works with Medicare.",
-    topicSlugs: ["medicare-enrollment", "medicare-for-seniors"],
-  },
-  {
-    id: "provider-access",
-    question: "Can I keep my doctors after switching to Medicare?",
-    answer:
-      "Provider access depends on the coverage path and plan. Original Medicare and Medicare Advantage plans use different provider-access rules.",
-    topicSlugs: ["medicare-advantage", "medicare-supplement"],
-  },
-  {
-    id: "part-d-basics",
-    question: "What is Medicare Part D?",
-    answer:
-      "Part D is Medicare prescription drug coverage. It is available through private companies approved by Medicare, either as a standalone plan or within many Medicare Advantage plans.",
-    topicSlugs: ["medicare-part-d"],
   },
 ];
 
@@ -764,6 +805,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     review: { status: "needs-review" },
     relationships: {
       citySlugs: ["spokane"],
+      factIds: knowledgeFacts.map((fact) => fact.id),
       faqIds: knowledgeFaqs.map((faq) => faq.id),
     },
   },
@@ -811,6 +853,7 @@ export const knowledgeEntries: KnowledgeEntry[] = [
 
 const entryByPath = new Map(knowledgeEntries.map((entry) => [entry.path, entry]));
 const sourceById = new Map(knowledgeSources.map((source) => [source.id, source]));
+const factById = new Map(knowledgeFacts.map((fact) => [fact.id, fact]));
 const faqById = new Map(knowledgeFaqs.map((faq) => [faq.id, faq]));
 const videoById = new Map(knowledgeVideos.map((video) => [video.id, video]));
 const downloadById = new Map(
@@ -1051,12 +1094,47 @@ function getRelatedAgents(entry: KnowledgeEntry): TeamMember[] {
 function getRelatedFaqs(entry: KnowledgeEntry): KnowledgeFaq[] {
   const explicitFaqs = (entry.relationships?.faqIds ?? [])
     .map((id) => faqById.get(id))
-    .filter((faq): faq is KnowledgeFaq => Boolean(faq));
+    .filter(
+      (faq): faq is KnowledgeFaq =>
+        Boolean(faq) && faq?.status === "published",
+    );
   const topicFaqs = knowledgeFaqs.filter(
-    (faq) => intersectCount(entry.topicSlugs, faq.topicSlugs) > 0,
+    (faq) =>
+      faq.status === "published" &&
+      intersectCount(entry.topicSlugs, faq.topicSlugs) > 0,
   );
 
   return dedupeBy([...explicitFaqs, ...topicFaqs], (faq) => faq.id);
+}
+
+function getRelatedFacts(entry: KnowledgeEntry): KnowledgeFact[] {
+  const directFacts = (entry.relationships?.factIds ?? [])
+    .map((id) => factById.get(id))
+    .filter(
+      (fact): fact is KnowledgeFact =>
+        Boolean(fact) && fact?.status === "published",
+    );
+  const faqFacts = (entry.relationships?.faqIds ?? [])
+    .map((id) => faqById.get(id))
+    .filter(
+      (faq): faq is KnowledgeFaq =>
+        Boolean(faq) && faq?.status === "published",
+    )
+    .flatMap((faq) =>
+      faq.factIds
+        .map((id) => factById.get(id))
+        .filter(
+          (fact): fact is KnowledgeFact =>
+            Boolean(fact) && fact?.status === "published",
+        ),
+    );
+
+  return dedupeBy([...directFacts, ...faqFacts], (fact) => fact.id);
+}
+
+export function getKnowledgeFaqsForPath(path: string): KnowledgeFaq[] {
+  const entry = getKnowledgeEntryByPath(path);
+  return entry ? getRelatedFaqs(entry) : [];
 }
 
 export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
@@ -1084,6 +1162,11 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
           agent.authority?.authoredKnowledgePaths?.includes(entry.path),
       )
     : undefined;
+  const facts = getRelatedFacts(entry);
+  const resolvedSourceIds = [
+    ...(entry.sourceIds ?? []),
+    ...facts.flatMap(getKnowledgeFactSourceIds),
+  ];
 
   return {
     entry,
@@ -1092,6 +1175,7 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
     agents: getRelatedAgents(entry),
     carriers: getRelatedCarriers(entry),
     cities: getRelatedCities(entry),
+    facts,
     faqs: getRelatedFaqs(entry),
     videos: (entry.relationships?.videoIds ?? [])
       .map((id) => videoById.get(id))
@@ -1099,7 +1183,7 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
     downloads: (entry.relationships?.downloadIds ?? [])
       .map((id) => downloadById.get(id))
       .filter((download): download is KnowledgeDownload => Boolean(download)),
-    sources: (entry.sourceIds ?? [])
+    sources: [...new Set(resolvedSourceIds)]
       .map((id) => sourceById.get(id))
       .filter((source): source is KnowledgeSource => Boolean(source)),
     author,
@@ -1192,6 +1276,10 @@ export function validateKnowledgeCenter(
   const entryPaths = new Set<string>();
   const sourceIds = new Set(knowledgeSources.map((source) => source.id));
   const faqIds = new Set(knowledgeFaqs.map((faq) => faq.id));
+  const seenSourceIds = new Set<string>();
+  const seenFactIds = new Set<string>();
+  const seenFaqIds = new Set<string>();
+  const seenFaqQuestions = new Set<string>();
   const videoIds = new Set(knowledgeVideos.map((video) => video.id));
   const downloadIds = new Set(
     knowledgeDownloads.map((download) => download.id),
@@ -1202,12 +1290,22 @@ export function validateKnowledgeCenter(
   );
 
   for (const source of knowledgeSources) {
+    if (seenSourceIds.has(source.id)) {
+      errors.push(`Duplicate source id: ${source.id}.`);
+    }
+    seenSourceIds.add(source.id);
+
     if (!source.url.startsWith("https://")) {
       errors.push(`Source ${source.id} must use HTTPS.`);
     }
 
     if (Number.isNaN(Date.parse(source.lastChecked))) {
       errors.push(`Source ${source.id} has an invalid lastChecked date.`);
+    } else if (
+      parseDateOnly(source.lastChecked).getTime() >
+      resolveAsOfDate(asOf).getTime()
+    ) {
+      errors.push(`Source ${source.id} has a future lastChecked date.`);
     } else if (isKnowledgeSourceExpired(source, asOf)) {
       errors.push(
         `Source ${source.id} is overdue for its official-link and accuracy check.`,
@@ -1215,7 +1313,115 @@ export function validateKnowledgeCenter(
     }
   }
 
+  for (const fact of knowledgeFacts) {
+    if (seenFactIds.has(fact.id)) {
+      errors.push(`Duplicate fact id: ${fact.id}.`);
+    }
+    seenFactIds.add(fact.id);
+
+    if (!fact.statement.trim()) {
+      errors.push(`Fact ${fact.id} must include a statement.`);
+    }
+
+    for (const topicSlug of fact.topicSlugs) {
+      if (!getTopicBySlug(topicSlug)) {
+        errors.push(`Fact ${fact.id} references unknown topic ${topicSlug}.`);
+      }
+    }
+
+    const checkedAtDate = parseDateOnly(fact.checkedAt);
+    if (Number.isNaN(checkedAtDate.getTime())) {
+      errors.push(`Fact ${fact.id} has an invalid checkedAt date.`);
+    } else if (
+      checkedAtDate.getTime() > resolveAsOfDate(asOf).getTime()
+    ) {
+      errors.push(`Fact ${fact.id} has a future checkedAt date.`);
+    } else if (
+      fact.status === "published" &&
+      isKnowledgeFactExpired(fact, asOf)
+    ) {
+      errors.push(`Fact ${fact.id} is overdue for its accuracy check.`);
+    }
+
+    if (fact.reviewDueAt) {
+      const reviewDueAtDate = parseDateOnly(fact.reviewDueAt);
+      if (Number.isNaN(reviewDueAtDate.getTime())) {
+        errors.push(`Fact ${fact.id} has an invalid reviewDueAt date.`);
+      } else if (
+        !Number.isNaN(checkedAtDate.getTime()) &&
+        reviewDueAtDate.getTime() < checkedAtDate.getTime()
+      ) {
+        errors.push(`Fact ${fact.id} is due before it was checked.`);
+      }
+    }
+
+    if (fact.evidence.kind === "official-sources") {
+      if (fact.evidence.sourceIds.length === 0) {
+        errors.push(`Fact ${fact.id} must include an official source.`);
+      }
+
+      for (const sourceId of fact.evidence.sourceIds) {
+        if (!sourceIds.has(sourceId)) {
+          errors.push(
+            `Fact ${fact.id} references unknown source ${sourceId}.`,
+          );
+        }
+      }
+    } else if (fact.evidence.owner !== siteConfig.legalName) {
+      errors.push(
+        `First-party fact ${fact.id} must identify ${siteConfig.legalName} as its owner.`,
+      );
+    }
+  }
+
   for (const faq of knowledgeFaqs) {
+    if (seenFaqIds.has(faq.id)) {
+      errors.push(`Duplicate FAQ id: ${faq.id}.`);
+    }
+    seenFaqIds.add(faq.id);
+
+    const normalizedQuestion = faq.question.trim().toLocaleLowerCase();
+    if (!normalizedQuestion || !faq.answer.trim()) {
+      errors.push(`FAQ ${faq.id} must include a question and answer.`);
+    } else if (seenFaqQuestions.has(normalizedQuestion)) {
+      errors.push(`Duplicate FAQ question: ${faq.question}.`);
+    }
+    seenFaqQuestions.add(normalizedQuestion);
+
+    if (faq.status === "published" && faq.factIds.length === 0) {
+      errors.push(`Published FAQ ${faq.id} must reference a governed fact.`);
+    }
+
+    if (faq.status !== "published" && faq.schemaEligible) {
+      errors.push(`Unpublished FAQ ${faq.id} cannot be schema eligible.`);
+    }
+
+    const updatedAtDate = parseDateOnly(faq.updatedAt);
+    if (Number.isNaN(updatedAtDate.getTime())) {
+      errors.push(`FAQ ${faq.id} has an invalid updatedAt date.`);
+    } else if (
+      updatedAtDate.getTime() > resolveAsOfDate(asOf).getTime()
+    ) {
+      errors.push(`FAQ ${faq.id} has a future updatedAt date.`);
+    }
+
+    for (const topicSlug of faq.topicSlugs) {
+      if (!getTopicBySlug(topicSlug)) {
+        errors.push(`FAQ ${faq.id} references unknown topic ${topicSlug}.`);
+      }
+    }
+
+    for (const factId of faq.factIds) {
+      const fact = factById.get(factId);
+      if (!fact) {
+        errors.push(`FAQ ${faq.id} references unknown fact ${factId}.`);
+      } else if (faq.status === "published" && fact.status !== "published") {
+        errors.push(
+          `Published FAQ ${faq.id} references unpublished fact ${factId}.`,
+        );
+      }
+    }
+
     if (!faq.answeredByAgentSlug) {
       continue;
     }
@@ -1321,9 +1527,25 @@ export function validateKnowledgeCenter(
       }
     }
 
+    for (const factId of entry.relationships?.factIds ?? []) {
+      const fact = factById.get(factId);
+      if (!fact) {
+        errors.push(`Entry ${entry.id} references unknown fact ${factId}.`);
+      } else if (fact.status !== "published") {
+        errors.push(
+          `Entry ${entry.id} references unpublished fact ${factId}.`,
+        );
+      }
+    }
+
     for (const faqId of entry.relationships?.faqIds ?? []) {
-      if (!faqIds.has(faqId)) {
+      const faq = faqById.get(faqId);
+      if (!faqIds.has(faqId) || !faq) {
         errors.push(`Entry ${entry.id} references unknown FAQ ${faqId}.`);
+      } else if (faq.status !== "published") {
+        errors.push(
+          `Entry ${entry.id} references unpublished FAQ ${faqId}.`,
+        );
       }
     }
 
@@ -1371,7 +1593,7 @@ export function validateKnowledgeCenter(
         );
       }
 
-      if ((entry.sourceIds ?? []).length === 0) {
+      if ((getKnowledgeGraph(entry.path)?.sources.length ?? 0) === 0) {
         errors.push(`Reviewed entry ${entry.id} must include a source.`);
       }
     }
