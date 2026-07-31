@@ -578,13 +578,19 @@ export class KnowledgeCmsWorkflow {
         ) {
           throw new KnowledgeCmsReviewerVerificationError();
         }
+        const decisionNote = cleanOptional(input.decisionNote);
+        if (!decisionNote) {
+          throw new KnowledgeCmsValidationError([
+            "Approval decision note is required.",
+          ]);
+        }
 
         const review: KnowledgeCmsReview = {
           reviewerAgentSlug: agentSlug,
           reviewerVerificationId: verificationId,
           reviewedAt: nowIso,
           reviewDueAt,
-          decisionNote: cleanOptional(input.decisionNote),
+          decisionNote,
         };
         next = { ...current, status: "approved", review };
         break;

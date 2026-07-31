@@ -98,6 +98,7 @@ export default async function KnowledgeRecordPage({
         </div>
         <KnowledgeWorkflowControls
           key={`${kind}:${id}:${record.revision}`}
+          canApprove={record.workflowActions.approve}
           canRequestChanges={record.workflowActions.requestChanges}
           canSubmitForReview={record.workflowActions.submitForReview}
           id={id}

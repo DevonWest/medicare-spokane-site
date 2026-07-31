@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  approveKnowledgeCmsRecordAction,
   requestKnowledgeCmsChangesAction,
   submitKnowledgeCmsForReviewAction,
 } from "../actions";
@@ -17,6 +18,7 @@ type WorkflowAction = (
 ) => Promise<KnowledgeCmsAdminActionState>;
 
 interface KnowledgeWorkflowControlsProps {
+  canApprove: boolean;
   canRequestChanges: boolean;
   canSubmitForReview: boolean;
   id: string;
@@ -138,14 +140,68 @@ function RequestChangesControl({
   );
 }
 
+function ApproveControl({
+  id,
+  kind,
+  revision,
+}: Pick<KnowledgeWorkflowControlsProps, "id" | "kind" | "revision">) {
+  const action: WorkflowAction = approveKnowledgeCmsRecordAction.bind(
+    null,
+    kind,
+    id,
+  );
+  const [state, formAction, pending] = useActionState(
+    action,
+    initialKnowledgeCmsAdminActionState,
+  );
+
+  return (
+    <form action={formAction}>
+      <label className="block text-sm font-semibold text-slate-800">
+        Required approval note
+        <span className="mt-1 block font-normal leading-5 text-slate-500">
+          Summarize what you verified against the listed sources. Your verified
+          identity and this note are recorded in the private audit history.
+        </span>
+        <textarea
+          className="mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          disabled={pending || state.conflict}
+          maxLength={2_000}
+          name="approvalNote"
+          required
+          rows={5}
+        />
+      </label>
+      <input
+        name="expectedRevision"
+        type="hidden"
+        value={state.revision ?? revision}
+      />
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        Approval does not publish this record or make it visible on the public
+        website. A separate publisher decision is still required.
+      </p>
+      <button
+        className="mt-4 min-h-12 rounded-lg bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={pending || state.conflict}
+        type="submit"
+      >
+        {pending ? "Approving…" : "Approve for publisher review"}
+      </button>
+      <ActionMessage state={state} />
+    </form>
+  );
+}
+
 export default function KnowledgeWorkflowControls({
+  canApprove,
   canRequestChanges,
   canSubmitForReview,
   id,
   kind,
   revision,
 }: KnowledgeWorkflowControlsProps) {
-  if (!canRequestChanges && !canSubmitForReview) {
+  if (!canApprove && !canRequestChanges && !canSubmitForReview) {
     return null;
   }
 
@@ -157,9 +213,12 @@ export default function KnowledgeWorkflowControls({
       <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
         {canSubmitForReview ? "Ready for review?" : "Review decision"}
       </h2>
-      <div className="mt-5">
+      <div className="mt-5 space-y-8">
         {canSubmitForReview ? (
           <SubmitForReviewControl id={id} kind={kind} revision={revision} />
+        ) : null}
+        {canApprove ? (
+          <ApproveControl id={id} kind={kind} revision={revision} />
         ) : null}
         {canRequestChanges ? (
           <RequestChangesControl id={id} kind={kind} revision={revision} />

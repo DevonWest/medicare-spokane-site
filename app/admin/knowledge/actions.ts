@@ -13,6 +13,7 @@ import {
   type KnowledgeCmsAdminActionState,
 } from "@/lib/knowledgeCmsAdmin";
 import {
+  approveKnowledgeCmsAdminRecord,
   createKnowledgeCmsAdminRecord,
   requestKnowledgeCmsAdminRecordChanges,
   submitKnowledgeCmsAdminRecordForReview,
@@ -214,6 +215,37 @@ export async function requestKnowledgeCmsChangesAction(
     return {
       ok: true,
       message: "Changes requested and returned to draft.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function approveKnowledgeCmsRecordAction(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    assertValidRecordTarget(kind, id);
+    const { expectedRevision, decisionNote } =
+      parseKnowledgeCmsWorkflowForm(formData, "approve");
+    const updated = await approveKnowledgeCmsAdminRecord(
+      kind,
+      id,
+      expectedRevision,
+      decisionNote!,
+    );
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/${kind}/${encodeURIComponent(id)}`,
+    );
+    return {
+      ok: true,
+      message:
+        "Approved for publisher review. This record is still private and unpublished.",
       revision: updated.revision,
     };
   } catch (error) {

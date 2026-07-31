@@ -138,6 +138,47 @@ test("reviewer verification expires after its explicit or default verification w
     isEditorialReviewerVerificationExpired(defaultWindow, "2027-01-02"),
     true,
   );
+
+  const impossibleCalendarDate = {
+    ...currentReviewerVerification,
+    id: "test-impossible-date",
+    validThrough: "2026-02-31",
+  };
+  assert.equal(
+    isEditorialReviewerVerificationExpired(
+      impossibleCalendarDate,
+      "2026-02-01",
+    ),
+    true,
+  );
+  assert.match(
+    validateEditorialReviewerVerifications(
+      "2026-02-01",
+      [impossibleCalendarDate],
+    ).join(" "),
+    /invalid validThrough date/i,
+  );
+
+  const overlongWindow = {
+    ...currentReviewerVerification,
+    id: "test-overlong-window",
+    validThrough: "2027-01-02",
+  };
+  assert.equal(
+    resolveCurrentEditorialReviewerVerification(
+      "lynn-wold",
+      "2026-06-30",
+      [overlongWindow],
+    ),
+    undefined,
+  );
+  assert.match(
+    validateEditorialReviewerVerifications(
+      "2026-06-30",
+      [overlongWindow],
+    ).join(" "),
+    /cannot exceed 365 days/i,
+  );
 });
 
 test("team authority uses explicit licensing and stable Person identifiers", () => {

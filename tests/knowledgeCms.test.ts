@@ -17,6 +17,7 @@ import {
   getKnowledgeCmsAuthorizationDecision,
   isKnowledgeCmsSourceExpired,
   parseKnowledgeCmsRecord,
+  resolveKnowledgeCmsApprovalDueAt,
   validateKnowledgeCmsRecord,
   type KnowledgeCmsActor,
   type KnowledgeCmsArticleInput,
@@ -368,6 +369,42 @@ test("source expiration remains valid through the final UTC calendar day", () =>
   );
 });
 
+test("approval dates cannot outlive policy, reviewer, or source evidence", () => {
+  assert.equal(
+    resolveKnowledgeCmsApprovalDueAt(
+      NOW,
+      "2027-07-30",
+      [officialSource({ reviewDueAt: "2026-12-30" })],
+    ),
+    "2026-12-30",
+  );
+  assert.equal(
+    resolveKnowledgeCmsApprovalDueAt(
+      NOW,
+      "2026-11-15",
+      [],
+    ),
+    "2026-11-15",
+  );
+  assert.equal(
+    resolveKnowledgeCmsApprovalDueAt(
+      NOW,
+      "2028-07-30",
+      [],
+    ),
+    "2027-07-30",
+  );
+  assert.throws(
+    () =>
+      resolveKnowledgeCmsApprovalDueAt(
+        NOW,
+        "2026-07-29",
+        [],
+      ),
+    /expired reviewer or source/i,
+  );
+});
+
 test("record validation rejects stale schedules and malformed stored data", () => {
   const malformed = {
     kind: "article",
@@ -514,6 +551,21 @@ test("the workflow requires a different verified reviewer before publishing", as
       reviewer,
     ),
     KnowledgeCmsReviewerVerificationError,
+  );
+
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "approve",
+        expectedRevision: 2,
+        reviewerVerificationId: "wa-license-check-1",
+        reviewDueAt: "2027-07-30",
+      },
+      reviewer,
+    ),
+    /approval decision note is required/i,
   );
 
   const approved = await workflow.transition(
@@ -714,6 +766,7 @@ test("drafts do not produce search documents and unpublishing blocks indexing", 
       expectedRevision: submitted.audit.revision,
       reviewerVerificationId: "verification-1",
       reviewDueAt: "2027-07-30",
+      decisionNote: "Current source evidence verified.",
     },
     reviewer,
   );
@@ -895,6 +948,7 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
       expectedRevision: 2,
       reviewerVerificationId: "verification-1",
       reviewDueAt: "2027-07-30",
+      decisionNote: "Current source evidence verified.",
     },
     reviewer,
   );

@@ -101,6 +101,9 @@ request instead of trusting claims supplied by a form or browser state.
 - submit-for-review controls for authorized draft owners and editors;
 - request-changes controls for verified reviewers who are not the record
   owner, with required feedback visible on the returned draft;
+- verified approval controls for reviewers who are not the record owner, with
+  a required private decision note and a server-calculated review deadline
+  bounded by source, reviewer-verification, and policy dates;
 - safe DTOs that omit canonical ownership and audit internals from client
   components; and
 - articles, topics, FAQs, relationships, source records, search terms, and
@@ -112,8 +115,9 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-This release intentionally has no approve, publish, unpublish, archive,
-restore, public-rendering, or migration controls.
+This release intentionally has no publish, unpublish, archive, restore,
+public-rendering, or migration controls. Approval leaves the record private and
+requires a separate publisher decision before any future publication.
 
 ## Authentication rollout prerequisites
 
@@ -162,16 +166,16 @@ browser never receives a way to assign or elevate roles.
 - Public Knowledge Center rendering
 - Migration of the existing static registry
 - Hosted search service or embeddings
-- Approval and publication workflow controls
+- Publication workflow controls
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
 
 ## Next release gate
 
-A later independently reviewed workflow release may add approval controls. It
-must preserve per-action authentication, reviewer separation, source currency,
-verified reviewer identity, bounded review dates, revision checks, and minimal
-DTOs. Publication must remain separate from approval and cannot make a CMS
-record public until the static-registry migration and public-rendering work are
+A later independently reviewed workflow release may add publisher controls. It
+must preserve per-action authentication, reviewer/publisher separation, source
+currency, current verified-review metadata, revision checks, explicit indexing
+decisions, and minimal DTOs. Publication cannot make a CMS record publicly
+renderable until the static-registry migration and public-rendering work are
 reviewed independently.

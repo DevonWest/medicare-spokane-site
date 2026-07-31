@@ -33,6 +33,7 @@ export interface KnowledgeCmsAdminChangeRequestDto {
 }
 
 export interface KnowledgeCmsAdminWorkflowActionsDto {
+  approve: boolean;
   submitForReview: boolean;
   requestChanges: boolean;
 }
@@ -138,6 +139,11 @@ export function toKnowledgeCmsAdminRecordDto(
     createdAt: audit.createdAt,
     updatedAt: audit.updatedAt,
     workflowActions: {
+      approve:
+        record.status === "in_review" &&
+        options.reviewerVerified === true &&
+        getKnowledgeCmsAuthorizationDecision(actor, "approve", record)
+          .allowed,
       submitForReview:
         record.status === "draft" &&
         getKnowledgeCmsAuthorizationDecision(
@@ -401,6 +407,7 @@ export function parseKnowledgeCmsUpdateForm(
 
 export type KnowledgeCmsAdminWorkflowAction =
   | "submit_for_review"
+  | "approve"
   | "request_changes";
 
 export function parseKnowledgeCmsWorkflowForm(
@@ -412,13 +419,17 @@ export function parseKnowledgeCmsWorkflowForm(
     min: 1,
   })!;
 
-  if (action === "request_changes") {
+  if (action === "approve" || action === "request_changes") {
     return {
       expectedRevision,
-      decisionNote: readString(formData, "feedback", {
-        required: true,
-        maxLength: 2_000,
-      }),
+      decisionNote: readString(
+        formData,
+        action === "approve" ? "approvalNote" : "feedback",
+        {
+          required: true,
+          maxLength: 2_000,
+        },
+      ),
     };
   }
 

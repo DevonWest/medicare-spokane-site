@@ -896,6 +896,43 @@ export function isKnowledgeCmsReviewExpired(
   );
 }
 
+export function resolveKnowledgeCmsApprovalDueAt(
+  reviewedAt: Date,
+  reviewerVerificationValidThrough: string,
+  sources: ReadonlyArray<Pick<KnowledgeCmsSource, "reviewDueAt">>,
+): string {
+  if (
+    Number.isNaN(reviewedAt.getTime()) ||
+    !isDateOnly(reviewerVerificationValidThrough) ||
+    sources.some((source) => !isDateOnly(source.reviewDueAt))
+  ) {
+    throw new KnowledgeCmsValidationError([
+      "Approval requires valid reviewer and source review dates.",
+    ]);
+  }
+
+  const reviewedOn = getUtcDateOnly(reviewedAt);
+  const policyMaximum = addUtcDays(
+    parseDateOnly(reviewedOn),
+    KNOWLEDGE_CMS_MAX_REVIEW_AGE_DAYS,
+  )
+    .toISOString()
+    .slice(0, 10);
+  const reviewDueAt = [
+    policyMaximum,
+    reviewerVerificationValidThrough,
+    ...sources.map((source) => source.reviewDueAt),
+  ].sort()[0];
+
+  if (reviewDueAt < reviewedOn) {
+    throw new KnowledgeCmsValidationError([
+      "Approval cannot use an expired reviewer or source review window.",
+    ]);
+  }
+
+  return reviewDueAt;
+}
+
 export function validateKnowledgeCmsSubmissionReadiness(
   record: KnowledgeCmsRecord,
   asOf: string | Date = new Date(),
