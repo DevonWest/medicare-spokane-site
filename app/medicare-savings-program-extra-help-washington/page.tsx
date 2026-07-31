@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -90,34 +91,6 @@ const faqs: FAQItem[] = [
     question: "What if I am not sure whether I might qualify?",
     answer:
       "It is okay to be unsure. Income and resource limits change, and program rules can be detailed. The official agencies listed on this page can review your specific situation. We can talk you through general information and help you understand the questions to ask.",
-  },
-];
-
-const internalLinks = [
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Learn how Medicare prescription drug coverage works, including formularies and preferred pharmacies.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "Prescription Drug Review",
-    body: "Bring your medication list to review how prescriptions and pharmacies may affect your coverage.",
-  },
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "Review Medicare Advantage, Medicare Supplement, Part D, and other coverage paths through the plans we represent.",
-  },
-  {
-    href: "/medicare-plan-review-spokane",
-    title: "Annual Medicare Plan Review",
-    body: "Review your current Medicare coverage with a local licensed agent before the next plan year.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Request an in-person or phone consultation with a local licensed insurance agent.",
   },
 ];
 
@@ -298,33 +271,7 @@ export default function MedicareSavingsProgramExtraHelpWashingtonPage() {
 
       <FAQ items={faqs} heading="Medicare Savings Program & Extra Help FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Related Spokane Medicare pages</h2>
-            <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              Continue reviewing your Medicare options with these related Spokane resources.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <KnowledgePageEnhancements currentPath="/medicare-savings-program-extra-help-washington" />
     </>
   );
 }

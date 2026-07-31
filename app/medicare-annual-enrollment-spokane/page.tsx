@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -101,34 +102,6 @@ const faqs: FAQItem[] = [
     question: "Is there a cost for an AEP review?",
     answer:
       "No. Consultations with our local licensed independent insurance agency are no-cost and no-obligation. We explain your current coverage and the options from the plans we represent so you can decide what fits your situation.",
-  },
-];
-
-const internalLinks = [
-  {
-    href: "/medicare-plan-review-spokane",
-    title: "Annual Medicare Plan Review",
-    body: "Walk through prescriptions, doctors, pharmacies, premiums, copays, and benefit changes with a local licensed agent.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "Prescription Drug Review",
-    body: "Bring your medication list to compare how prescriptions and pharmacies may be covered.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Learn how Medicare prescription drug coverage works and what to look at each year.",
-  },
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "See an overview of Medicare Advantage, Medicare Supplement, Part D, and other coverage paths.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Schedule an in-person or phone consultation with a local licensed insurance agent.",
   },
 ];
 
@@ -340,33 +313,7 @@ export default function MedicareAnnualEnrollmentSpokanePage() {
 
       <FAQ items={faqs} heading="Medicare Annual Enrollment FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Related Spokane Medicare pages</h2>
-            <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              Continue reviewing your Medicare options with these related Spokane resources.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <KnowledgePageEnhancements currentPath="/medicare-annual-enrollment-spokane" />
     </>
   );
 }

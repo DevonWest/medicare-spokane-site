@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -87,34 +88,6 @@ const faqs: FAQItem[] = [
     question: "Is there a cost for the consultation?",
     answer:
       "No. Your consultation is no cost and no obligation. You can ask questions, review your situation, and decide what feels right for you.",
-  },
-];
-
-const relatedLinks = [
-  {
-    href: "/rx-drug-review",
-    title: "RX Drug Review",
-    body: "Visit our prescription review page if you want extra help organizing medications and pharmacy details before your appointment.",
-  },
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "See how doctors, prescriptions, budget, and coverage preferences can shape your Medicare review.",
-  },
-  {
-    href: "/turning-65-medicare-spokane",
-    title: "Turning 65 Medicare Spokane",
-    body: "Read more if you are preparing for Medicare for the first time and want Spokane-focused planning help.",
-  },
-  {
-    href: "/working-past-65-medicare",
-    title: "Working Past 65 Medicare",
-    body: "Review employer coverage questions if you are still working and want to understand how Medicare timing may apply.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Reach out if you would rather schedule directly or ask a quick question before your appointment.",
   },
 ];
 
@@ -257,39 +230,13 @@ export default function MedicareAppointmentChecklistPage() {
 
       <FAQ items={faqs} heading="Medicare Appointment Checklist FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Use these related pages if you want to prepare before your appointment or keep researching afterward.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {relatedLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="bg-white px-4 pb-12">
         <div className="mx-auto max-w-3xl">
           <Disclaimer />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/medicare-appointment-checklist" />
     </>
   );
 }

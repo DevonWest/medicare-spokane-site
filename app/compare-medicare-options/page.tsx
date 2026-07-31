@@ -4,6 +4,7 @@ import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
@@ -43,39 +44,6 @@ const steps: string[] = [
   "Review doctors, prescriptions, and budget",
   "Compare options from the plans we represent",
   "Enroll with confidence if you choose",
-];
-
-const internalLinks = [
-  {
-    href: "/medicare-advantage",
-    title: "Medicare Advantage",
-    body: "Review plan types, provider networks, and extra benefits available through the plans we represent.",
-  },
-  {
-    href: "/medicare-supplements",
-    title: "Medicare Supplements",
-    body: "Compare Medigap options that work alongside Original Medicare to help with out-of-pocket costs.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "See how prescription drug coverage works and what to bring to a drug review.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "RX Drug Review",
-    body: "Bring your medication list and compare how the plans we represent may cover your prescriptions.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Talk with a licensed local agent in person or by phone.",
-  },
-  {
-    href: "/resources",
-    title: "Medicare Resources",
-    body: "Browse additional Medicare guides, comparisons, and official resource links.",
-  },
 ];
 
 const faqs: FAQItem[] = [
@@ -263,39 +231,13 @@ export default function CompareMedicareOptionsPage() {
 
       <FAQ items={faqs} heading="Compare Medicare Options FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Explore related Medicare pages for Spokane-area residents.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="bg-white px-4 pb-12">
         <div className="mx-auto max-w-3xl">
           <Disclaimer />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/compare-medicare-options" />
 
       <CTASection
         heading="Need help comparing Medicare coverage in Spokane?"

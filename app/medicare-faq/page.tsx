@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import PageHero from "@/components/PageHero";
 import { siteConfig } from "@/lib/site";
 
@@ -92,6 +93,8 @@ export default function MedicareFaqPage() {
           <Disclaimer />
         </div>
       </section>
+
+      <KnowledgePageEnhancements currentPath="/medicare-faq" />
 
       <CTASection
         heading="Have a Question We Did Not Cover?"

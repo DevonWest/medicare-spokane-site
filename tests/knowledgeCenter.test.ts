@@ -7,16 +7,31 @@ import {
   getKnowledgeGraph,
   getKnowledgeSections,
   getRelatedKnowledgeEntries,
+  isKnowledgeReviewExpired,
+  isKnowledgeSourceExpired,
   knowledgeEntries,
   validateKnowledgeCenter,
 } from "../lib/knowledgeCenter";
 import { siteConfig } from "../lib/site";
 
 test("knowledge center registry has valid references and canonical paths", () => {
-  assert.deepEqual(validateKnowledgeCenter(), []);
+  assert.deepEqual(validateKnowledgeCenter("2026-07-30"), []);
   assert.equal(
     new Set(knowledgeEntries.map((entry) => entry.path)).size,
     knowledgeEntries.length,
+  );
+});
+
+test("every public resource guide has at least one official source", () => {
+  const listedEntries = getKnowledgeSections().flatMap(
+    (section) => section.items,
+  );
+
+  assert.deepEqual(
+    listedEntries
+      .filter((entry) => (entry.sourceIds ?? []).length === 0)
+      .map((entry) => entry.path),
+    [],
   );
 });
 
@@ -123,6 +138,46 @@ test("featured official sources retain the existing public resource links", () =
       "https://www.insurance.wa.gov/statewide-health-insurance-benefits-advisors-shiba",
       "https://www.ssa.gov/medicare/",
     ],
+  );
+});
+
+test("official sources expire after the six-month verification window", () => {
+  const source = { lastChecked: "2026-01-01" };
+
+  assert.equal(isKnowledgeSourceExpired(source, "2026-06-30"), false);
+  assert.equal(isKnowledgeSourceExpired(source, "2026-07-01"), true);
+});
+
+test("licensed-review claims stop resolving after their review date", () => {
+  const review = {
+    status: "reviewed" as const,
+    reviewedAt: "2026-01-01",
+    reviewedByAgentSlug: "lynn-wold",
+    reviewDueAt: "2026-06-30",
+  };
+
+  assert.equal(isKnowledgeReviewExpired(review, "2026-06-30"), false);
+  assert.equal(isKnowledgeReviewExpired(review, "2026-07-01"), true);
+
+  const reviewWithoutExplicitDueDate = {
+    status: "reviewed" as const,
+    reviewedAt: "2026-01-01",
+    reviewedByAgentSlug: "lynn-wold",
+  };
+
+  assert.equal(
+    isKnowledgeReviewExpired(
+      reviewWithoutExplicitDueDate,
+      "2027-01-01",
+    ),
+    false,
+  );
+  assert.equal(
+    isKnowledgeReviewExpired(
+      reviewWithoutExplicitDueDate,
+      "2027-01-02",
+    ),
+    true,
   );
 });
 
