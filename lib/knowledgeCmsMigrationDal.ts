@@ -14,6 +14,9 @@ import {
   type KnowledgeCmsMigrationPreview,
 } from "./knowledgeCmsMigration";
 import {
+  KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
+} from "./knowledgeCmsRendererContract";
+import {
   createKnowledgeCmsRepository,
   type KnowledgeCmsRepository,
 } from "./knowledgeCmsRepository";
@@ -41,6 +44,8 @@ export async function previewKnowledgeCmsMigration(
   return buildKnowledgeCmsMigrationPreview({
     asOf,
     existingRecords,
+    rendererMode:
+      process.env[KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV],
   });
 }
 

@@ -125,6 +125,7 @@ function articleRecord(
 
 afterEach(() => {
   delete process.env.KNOWLEDGE_CMS_ENABLED;
+  delete process.env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE;
   delete process.env.NEXT_PUBLIC_SITE_URL;
 });
 
@@ -724,6 +725,14 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);
+  assert.match(
+    deployWorkflow,
+    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static/,
+  );
+  assert.match(
+    deployWorkflow,
+    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=\$\{\{ env\.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE \}\}/,
+  );
   assert.match(deployWorkflow, /NEXT_PUBLIC_FIREBASE_API_KEY is required/);
   assert.match(dockerfile, /ARG NEXT_PUBLIC_FIREBASE_API_KEY/);
   assert.match(dockerfile, /ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN/);

@@ -533,7 +533,7 @@ export const knowledgeCmsRouteParityManifest: ReadonlyArray<KnowledgeCmsRoutePar
             snapshot,
           ),
           reason:
-            "The current CMS article body stores Markdown only, and no public CMS renderer yet preserves this route's verified React structure and required features.",
+            "The lossless renderer contract is defined, but no public CMS renderer implementation or shadow-parity evidence yet preserves this route's verified React structure and required features.",
         },
       }),
     ];

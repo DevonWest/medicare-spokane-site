@@ -28,9 +28,17 @@ import {
   validateKnowledgeCmsRouteParityManifest,
   type KnowledgeCmsRouteParityManifestEntry,
 } from "./knowledgeCmsRouteParity";
+import {
+  KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
+  getKnowledgeCmsRendererContract,
+  resolveKnowledgeCmsPublicRendererMode,
+  validateKnowledgeCmsRendererContracts,
+  type KnowledgeCmsRendererContractEntry,
+  type KnowledgeCmsRendererModeResolution,
+} from "./knowledgeCmsRendererContract";
 import { medicareTopics, type Topic } from "./topics";
 
-export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 2 as const;
+export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 3 as const;
 export const KNOWLEDGE_CMS_MIGRATION_WRITE_COUNT = 0 as const;
 
 const FIRST_PARTY_ABOUT_URL =
@@ -64,6 +72,9 @@ export type KnowledgeCmsMigrationIssueCode =
   | "missing_topic_relationship"
   | "parity_manifest_invalid"
   | "parity_manifest_missing"
+  | "renderer_contract_defined"
+  | "renderer_contract_invalid"
+  | "renderer_contract_missing"
   | "source_due_for_review"
   | "static_registry_invalid"
   | "static_fact_reference_preserved"
@@ -118,6 +129,7 @@ export interface KnowledgeCmsMigrationArticleTarget
   pageTitle?: string;
   description?: string;
   routeParity?: KnowledgeCmsRouteParityManifestEntry;
+  rendererContract?: KnowledgeCmsRendererContractEntry;
 }
 
 export interface KnowledgeCmsMigrationTopicTarget
@@ -183,6 +195,14 @@ export interface KnowledgeCmsMigrationPreview {
       metadataVerified: number;
       representationBlocked: number;
     };
+    renderer: {
+      contractVersion: typeof KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION;
+      mode: KnowledgeCmsRendererModeResolution;
+      contractsDefined: number;
+      rollbackContractsDefined: number;
+      shadowEligible: number;
+      cutoverEligible: number;
+    };
     byKind: Record<KnowledgeCmsRecordKind, KnowledgeCmsMigrationKindSummary>;
   };
   issues: KnowledgeCmsMigrationIssue[];
@@ -199,6 +219,7 @@ interface MutableMigrationCandidate {
 export interface BuildKnowledgeCmsMigrationPreviewOptions {
   asOf?: string | Date;
   existingRecords?: KnowledgeCmsRecord[];
+  rendererMode?: string;
 }
 
 function parseDateOnly(value: string): Date {
@@ -506,6 +527,7 @@ function buildArticleCandidate(
   asOf: string,
 ): MutableMigrationCandidate {
   const routeParity = getKnowledgeCmsRouteParity(entry.id);
+  const rendererContract = getKnowledgeCmsRendererContract(entry.id);
   const candidate: MutableMigrationCandidate = {
     key: `article:${migrationArticleId(entry.id)}`,
     origin: {
@@ -525,6 +547,7 @@ function buildArticleCandidate(
             pageTitle: routeParity.metadata.pageTitle,
             description: routeParity.metadata.description,
             routeParity,
+            ...(rendererContract ? { rendererContract } : {}),
           }
         : {}),
       searchTerms: unique([...entry.tags, ...entry.topicSlugs]),
@@ -562,6 +585,25 @@ function buildArticleCandidate(
         "The page title, description, canonical, Open Graph metadata, H1, and structured-data types match the route parity manifest.",
       ),
     );
+    if (rendererContract) {
+      addIssue(
+        candidate,
+        issue(
+          "renderer_contract_defined",
+          "info",
+          `Lossless renderer contract v${rendererContract.version} defines ${rendererContract.candidate.capabilities.length} required capabilities and a verified static rollback.`,
+        ),
+      );
+    } else {
+      addIssue(
+        candidate,
+        issue(
+          "renderer_contract_missing",
+          "blocker",
+          `The public route at "${entry.path}" has no lossless renderer contract.`,
+        ),
+      );
+    }
     if (routeParity.cmsRepresentation.status === "blocked") {
       addIssue(
         candidate,
@@ -1140,6 +1182,9 @@ export function buildKnowledgeCmsMigrationPreview(
     ...validateKnowledgeCmsRouteParityManifest().map((message) =>
       issue("parity_manifest_invalid", "blocker", message),
     ),
+    ...validateKnowledgeCmsRendererContracts().map((message) =>
+      issue("renderer_contract_invalid", "blocker", message),
+    ),
   ];
   const byKind: Record<
     KnowledgeCmsRecordKind,
@@ -1174,6 +1219,9 @@ export function buildKnowledgeCmsMigrationPreview(
     ): candidate is KnowledgeCmsMigrationCandidate & {
       target: KnowledgeCmsMigrationArticleTarget;
     } => candidate.target.kind === "article",
+  );
+  const rendererMode = resolveKnowledgeCmsPublicRendererMode(
+    options.rendererMode,
   );
 
   return {
@@ -1213,6 +1261,26 @@ export function buildKnowledgeCmsMigrationPreview(
           (candidate) =>
             candidate.target.routeParity?.cmsRepresentation.status ===
             "blocked",
+        ).length,
+      },
+      renderer: {
+        contractVersion: KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
+        mode: rendererMode,
+        contractsDefined: articleCandidates.filter(
+          (candidate) => Boolean(candidate.target.rendererContract),
+        ).length,
+        rollbackContractsDefined: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.rendererContract?.rollback.status ===
+            "contract_defined",
+        ).length,
+        shadowEligible: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.rendererContract?.rollout.shadowEligible,
+        ).length,
+        cutoverEligible: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.rendererContract?.rollout.cutoverEligible,
         ).length,
       },
       byKind,

@@ -104,7 +104,7 @@ function topicRecordFromCandidate(
 test("migration preview deterministically inventories the complete static registry", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
 
-  assert.equal(preview.version, 2);
+  assert.equal(preview.version, 3);
   assert.equal(preview.mode, "read_only");
   assert.equal(preview.writeCount, 0);
   assert.equal(preview.readyToExecute, false);
@@ -139,6 +139,21 @@ test("migration preview deterministically inventories the complete static regist
     snapshotsVerified: 22,
     metadataVerified: 22,
     representationBlocked: 22,
+  });
+  assert.deepEqual(preview.summary.renderer, {
+    contractVersion: 1,
+    mode: {
+      configuredValue: undefined,
+      requestedMode: "static",
+      effectiveMode: "static",
+      configurationValid: true,
+      activationAllowed: false,
+      reason: "default_static",
+    },
+    contractsDefined: 22,
+    rollbackContractsDefined: 22,
+    shadowEligible: 0,
+    cutoverEligible: 0,
   });
 });
 
@@ -224,7 +239,9 @@ test("article snapshots verify body and metadata while lossless rendering stays 
       candidate.target.kind === "article" &&
       candidate.target.bodyStatus === "snapshot_verified" &&
       candidate.target.routeParity?.metadata.status === "verified" &&
-      candidate.target.routeParity.renderedBody.status === "verified",
+      candidate.target.routeParity.renderedBody.status === "verified" &&
+      candidate.target.rendererContract?.rollback.status ===
+        "contract_defined",
     ),
   );
   assert.ok(
@@ -247,9 +264,37 @@ test("article snapshots verify body and metadata while lossless rendering stays 
         (item) =>
           item.code === "metadata_parity_verified" &&
           item.severity === "info",
+      ) &&
+      candidate.issues.some(
+        (item) =>
+          item.code === "renderer_contract_defined" &&
+          item.severity === "info",
       ),
     ),
   );
+});
+
+test("requested shadow and cutover modes remain globally fail-closed", () => {
+  for (const rendererMode of ["shadow", "cutover"]) {
+    const preview = buildKnowledgeCmsMigrationPreview({
+      asOf: AS_OF,
+      rendererMode,
+    });
+    assert.equal(
+      preview.summary.renderer.mode.requestedMode,
+      rendererMode,
+    );
+    assert.equal(
+      preview.summary.renderer.mode.effectiveMode,
+      "static",
+    );
+    assert.equal(
+      preview.summary.renderer.mode.reason,
+      "activation_not_implemented",
+    );
+    assert.equal(preview.summary.renderer.cutoverEligible, 0);
+    assert.equal(preview.readyToExecute, false);
+  }
 });
 
 test("FAQ candidates preserve factual lineage and first-party disclosures", () => {
