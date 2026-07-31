@@ -162,6 +162,7 @@ lib/
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
 | `CRM_API_BASE_URL` | Base URL for the CRM public form submission endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
 | `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
+| `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS data-access layer. Only the exact value `true` enables it. Keep disabled until the authenticated admin surface is deployed. | `false` |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -187,6 +188,18 @@ If the same normalized email **or** phone submits again within 10 minutes, the e
 The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and the CRM client lives in the server-only `lib/crm.ts`. Both are only called from the Node.js route handler, so the Firestore credentials and CRM API key are never exposed to the browser.
 
 `POST /api/review-feedback` follows the same backup-first pattern for the review funnel: validate the request, save the feedback to the `review_feedback` collection, then attempt the CRM public form sync without blocking a successful response after the Firestore write.
+
+## Knowledge CMS foundation
+
+The default-off editorial foundation defines governed `knowledge_articles`,
+`knowledge_topics`, and `knowledge_faqs` records, along with unique slug locks,
+search projections, and append-only audit events. It is implemented as a
+server-only data-access layer and has no route, page, action, or client import.
+See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
+workflow, collection, permission, and rollout contract.
+
+Do not enable `KNOWLEDGE_CMS_ENABLED` yet. The authenticated admin surface and
+per-request identity verification are intentionally a separate release.
 
 ### Suggested Firestore index
 
