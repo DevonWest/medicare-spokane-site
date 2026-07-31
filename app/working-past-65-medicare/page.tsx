@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
+import KnowledgeAuthority from "@/components/KnowledgeAuthority";
+import KnowledgePageSchema from "@/components/KnowledgePageSchema";
 import LeadForm from "@/components/LeadForm";
 import CTASection from "@/components/CTASection";
+import RelatedKnowledge from "@/components/RelatedKnowledge";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -45,34 +48,6 @@ const helpSteps = [
   "Provide year-round support",
 ];
 
-const internalLinks = [
-  {
-    href: "/turning-65-medicare-spokane",
-    title: "Turning 65 in Spokane",
-    body: "Review a simple Medicare checklist for the months around your 65th birthday.",
-  },
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "See how local licensed agents help Spokane-area residents compare Medicare coverage options.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Learn how prescription drug coverage works and what questions to ask before you enroll.",
-  },
-  {
-    href: "/medicare-supplements",
-    title: "Medicare Supplements",
-    body: "Understand how Medigap works alongside Original Medicare.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Schedule an in-person or phone consultation with a licensed local insurance agent.",
-  },
-];
-
 const faqs: FAQItem[] = [
   {
     question: "Do I have to enroll in Medicare if I am still working?",
@@ -104,6 +79,8 @@ const faqs: FAQItem[] = [
 export default function WorkingPastSixtyFivePage() {
   return (
     <>
+      <KnowledgePageSchema currentPath="/working-past-65-medicare" />
+
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">
         <div className="mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="mb-4 text-sm text-blue-200">
@@ -248,6 +225,10 @@ export default function WorkingPastSixtyFivePage() {
               Medicare plan options and the questions to bring to your HR/benefits department.
             </p>
             <Disclaimer className="mt-6" />
+            <KnowledgeAuthority
+              currentPath="/working-past-65-medicare"
+              className="mt-6"
+            />
           </div>
           <LeadForm
             source="working-past-65-medicare"
@@ -260,33 +241,13 @@ export default function WorkingPastSixtyFivePage() {
 
       <FAQ items={faqs} heading="Working Past 65 Medicare FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Explore related Medicare pages for Spokane-area residents.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <RelatedKnowledge
+        currentPath="/working-past-65-medicare"
+        heading="Helpful Medicare links"
+        intro="Explore related Medicare pages for Spokane-area residents."
+        limit={4}
+        tone="white"
+      />
 
       <CTASection
         heading="Need help sorting out Medicare while still working?"

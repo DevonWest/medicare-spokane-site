@@ -4,7 +4,10 @@ import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgeAuthority from "@/components/KnowledgeAuthority";
+import KnowledgePageSchema from "@/components/KnowledgePageSchema";
 import LeadForm from "@/components/LeadForm";
+import RelatedKnowledge from "@/components/RelatedKnowledge";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -75,42 +78,11 @@ const faqs: FAQItem[] = [
   },
 ];
 
-const internalLinks = [
-  {
-    href: "/compare-medicare-options",
-    title: "Compare Medicare Options",
-    body: "Review plan types, coverage trade-offs, and next steps with local Spokane guidance.",
-  },
-  {
-    href: "/rx-drug-review",
-    title: "RX Drug Review",
-    body: "See how prescriptions and pharmacy preferences can affect Medicare coverage choices.",
-  },
-  {
-    href: "/medicare-advantage",
-    title: "Medicare Advantage",
-    body: "Learn how Medicare Advantage options work, including networks and extra benefits.",
-  },
-  {
-    href: "/medicare-supplements",
-    title: "Medicare Supplements",
-    body: "Understand how Medigap plans work with Original Medicare to help with out-of-pocket costs.",
-  },
-  {
-    href: "/medicare-part-d",
-    title: "Medicare Part D",
-    body: "Get a plain-English overview of standalone prescription drug coverage.",
-  },
-  {
-    href: "/contact",
-    title: "Contact Our Spokane Office",
-    body: "Schedule an in-person or phone consultation with our local licensed agents.",
-  },
-];
-
 export default function HelpingParentWithMedicarePage() {
   return (
     <>
+      <KnowledgePageSchema currentPath="/helping-parent-with-medicare" />
+
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">
         <div className="mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="mb-4 text-sm text-blue-200">
@@ -263,6 +235,7 @@ export default function HelpingParentWithMedicarePage() {
             </div>
 
             <Disclaimer />
+            <KnowledgeAuthority currentPath="/helping-parent-with-medicare" />
           </div>
 
           <LeadForm
@@ -277,33 +250,13 @@ export default function HelpingParentWithMedicarePage() {
 
       <FAQ items={faqs} heading="Helping a Parent with Medicare FAQ" />
 
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Explore related Spokane Medicare pages for plan comparisons, drug reviews, and next steps.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-gray-700">{item.body}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <RelatedKnowledge
+        currentPath="/helping-parent-with-medicare"
+        heading="Helpful Medicare links"
+        intro="Explore related Spokane Medicare pages for plan comparisons, drug reviews, and next steps."
+        limit={5}
+        tone="white"
+      />
 
       <CTASection
         heading="Need Medicare help for a parent or loved one?"
