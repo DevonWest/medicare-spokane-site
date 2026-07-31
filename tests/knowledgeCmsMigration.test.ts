@@ -104,7 +104,7 @@ function topicRecordFromCandidate(
 test("migration preview deterministically inventories the complete static registry", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
 
-  assert.equal(preview.version, 1);
+  assert.equal(preview.version, 2);
   assert.equal(preview.mode, "read_only");
   assert.equal(preview.writeCount, 0);
   assert.equal(preview.readyToExecute, false);
@@ -134,6 +134,12 @@ test("migration preview deterministically inventories the complete static regist
   assert.equal(preview.summary.blocked, 22);
   assert.equal(preview.summary.alreadyPresent, 0);
   assert.equal(preview.summary.sourceRecords, 28);
+  assert.deepEqual(preview.summary.articleParity, {
+    total: 22,
+    snapshotsVerified: 22,
+    metadataVerified: 22,
+    representationBlocked: 22,
+  });
 });
 
 test("every proposed record remains a private indexing-blocked target", () => {
@@ -205,7 +211,7 @@ test("public entries preserve canonical paths, governed entities, and source dat
   );
 });
 
-test("article candidates fail closed until body and metadata parity are mapped", () => {
+test("article snapshots verify body and metadata while lossless rendering stays blocked", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
   const articles = preview.candidates.filter(
     (candidate) => candidate.target.kind === "article",
@@ -215,9 +221,17 @@ test("article candidates fail closed until body and metadata parity are mapped",
   assert.ok(articles.every((candidate) => candidate.state === "blocked"));
   assert.ok(
     articles.every((candidate) =>
+      candidate.target.kind === "article" &&
+      candidate.target.bodyStatus === "snapshot_verified" &&
+      candidate.target.routeParity?.metadata.status === "verified" &&
+      candidate.target.routeParity.renderedBody.status === "verified",
+    ),
+  );
+  assert.ok(
+    articles.every((candidate) =>
       candidate.issues.some(
         (item) =>
-          item.code === "article_body_unmapped" &&
+          item.code === "article_body_representation_blocked" &&
           item.severity === "blocker",
       ),
     ),
@@ -225,7 +239,14 @@ test("article candidates fail closed until body and metadata parity are mapped",
   assert.ok(
     articles.every((candidate) =>
       candidate.issues.some(
-        (item) => item.code === "metadata_parity_unverified",
+        (item) =>
+          item.code === "content_parity_snapshot_verified" &&
+          item.severity === "info",
+      ) &&
+      candidate.issues.some(
+        (item) =>
+          item.code === "metadata_parity_verified" &&
+          item.severity === "info",
       ),
     ),
   );

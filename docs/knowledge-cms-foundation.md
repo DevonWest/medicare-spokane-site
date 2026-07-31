@@ -121,7 +121,11 @@ request instead of trusting claims supplied by a form or browser state.
 - a publisher/admin-only Resource Library migration preview that reads all
   three CMS collections, maps the static registry into deterministic target
   IDs, and reports source, slug, canonical, relationship, and existing-record
-  conflicts without creating or changing a record.
+  conflicts without creating or changing a record; and
+- a deterministic route-parity manifest for all 22 article targets that pins
+  the exported page metadata, canonical and Open Graph values, H1, rendered
+  byte count, page-specific structured-data types, form/FAQ counts, and the
+  SHA-256 of each server-rendered route body.
 
 Session exchange requires a sign-in from the preceding five minutes. Every
 read and mutation verifies the Firebase session with revocation checking and
@@ -129,11 +133,14 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-The migration preview is intentionally not an import control. It has no
-Server Action, repository `save`, workflow transition, upload, or execute
-path. Its output always reports a write count of zero and keeps every proposed
-target indexing-blocked. Article candidates fail closed until the corresponding
-public route body and live metadata have explicit parity mappings.
+The migration preview is intentionally not an import control. It has no Server
+Action, repository `save`, workflow transition, upload, or execute path. Its
+output always reports a write count of zero and keeps every proposed target
+indexing-blocked. Article route bodies and metadata now have explicit,
+test-enforced parity snapshots. Article migration still fails closed because a
+Markdown-only CMS article cannot preserve the current React component tree,
+forms, FAQ disclosures, relationship cards, structured data, and dynamic
+registries without a separately reviewed public renderer.
 
 This release intentionally has no archive, restore, public rendering, or
 migration execution. CMS publication remains private: it writes the governed
@@ -186,7 +193,7 @@ browser never receives a way to assign or elevate roles.
 
 - Public Knowledge Center rendering
 - Migration execution for the existing static registry
-- Automated extraction or import of public route bodies
+- CMS conversion or import of public route bodies
 - Hosted search service or embeddings
 - Static-registry migration or import controls
 - Firebase role-assignment tooling
@@ -207,20 +214,22 @@ role. It:
 - compares proposed IDs, per-kind slugs, canonical paths, governed content,
   and relationships with existing CMS records;
 - recognizes equivalent topic and FAQ records without proposing an overwrite;
-  and
-- blocks all article candidates until their route bodies and metadata are
-  explicitly mapped and compared.
+- verifies all 22 article route bodies and metadata against deterministic
+  snapshots; and
+- blocks all article candidates until a public CMS renderer can preserve every
+  listed route capability losslessly.
 
 The preview does not claim the migration is executable. `readyToExecute` is
 always false, `writeCount` is always zero, and the page contains no mutation
-control.
+control. The parity manifest deliberately excludes the homepage and
+`/medicare-spokane`.
 
 ## Next release gate
 
-The next independently reviewed release may add a deterministic content-parity
-manifest for existing Resource Library route bodies and metadata. It must
-produce reviewable snapshots or hashes without writing CMS records, preserve
-all current public copy and structured data, and identify any route that cannot
-be represented losslessly. Migration execution and public CMS rendering must
-remain separate until that output, a rollback plan, and protected-ranking-page
-invariants are reviewed independently.
+The next independently reviewed release may define a lossless public-renderer
+contract for the parity manifest's required React features and a deterministic
+rollback plan. It must remain feature-gated and non-public, keep migration
+execution separate, and prove that rendered copy, forms, FAQ disclosures,
+relationship cards, structured data, metadata, and canonical URLs remain
+identical. No cutover should be proposed until that contract, rollback output,
+and protected-ranking-page invariants are reviewed independently.

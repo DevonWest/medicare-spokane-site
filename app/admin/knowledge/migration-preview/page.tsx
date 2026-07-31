@@ -68,10 +68,14 @@ export default async function KnowledgeMigrationPreviewPage() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
             ["Candidates", preview.summary.total],
-            ["Ready metadata", preview.summary.ready],
+            [
+              "Body snapshots",
+              preview.summary.articleParity.snapshotsVerified,
+            ],
+            ["Ready records", preview.summary.ready],
             ["Blocked", preview.summary.blocked],
             ["Already present", preview.summary.alreadyPresent],
           ].map(([label, value]) => (
@@ -142,8 +146,16 @@ export default async function KnowledgeMigrationPreviewPage() {
               with explicit review dates.
             </li>
             <li>
-              Article bodies must be extracted and compared to rendered public
-              pages before any import can be proposed.
+              {preview.summary.articleParity.snapshotsVerified} of{" "}
+              {preview.summary.articleParity.total} article bodies and{" "}
+              {preview.summary.articleParity.metadataVerified} metadata sets
+              have verified route snapshots.
+            </li>
+            <li>
+              {preview.summary.articleParity.representationBlocked} article
+              migrations remain blocked because the current Markdown-only CMS
+              renderer cannot yet preserve the verified React structure
+              losslessly.
             </li>
             <li>
               Public rendering, URL cutover, sitemap changes, and migration
@@ -205,9 +217,17 @@ export default async function KnowledgeMigrationPreviewPage() {
                     <td className="px-5 py-5 text-slate-700">
                       <p>{candidate.origin.kind.replaceAll("_", " ")}</p>
                       {"path" in candidate.origin ? (
-                        <p className="mt-1 font-mono text-xs text-slate-500">
-                          {candidate.origin.path}
-                        </p>
+                        <>
+                          <p className="mt-1 font-mono text-xs text-slate-500">
+                            {candidate.origin.path}
+                          </p>
+                          {candidate.target.kind === "article" &&
+                          candidate.target.routeParity ? (
+                            <p className="mt-1 font-mono text-xs text-slate-500">
+                              {candidate.target.routeParity.sourceFile}
+                            </p>
+                          ) : null}
+                        </>
                       ) : null}
                     </td>
                     <td className="px-5 py-5">
@@ -229,6 +249,52 @@ export default async function KnowledgeMigrationPreviewPage() {
                         {candidate.target.relationships.topicIds.length} · FAQs:{" "}
                         {candidate.target.relationships.faqIds.length}
                       </p>
+                      {candidate.target.kind === "article" &&
+                      candidate.target.routeParity ? (
+                        <>
+                          <p>
+                            Body snapshot ·{" "}
+                            {candidate.target.routeParity.renderedBody.bytes.toLocaleString()}{" "}
+                            bytes
+                          </p>
+                          <p className="break-all font-mono">
+                            sha256:
+                            {
+                              candidate.target.routeParity.renderedBody
+                                .sha256
+                            }
+                          </p>
+                          <p>
+                            H1:{" "}
+                            {candidate.target.routeParity.renderedBody.h1}
+                          </p>
+                          <p>
+                            Page title:{" "}
+                            {candidate.target.routeParity.metadata.pageTitle}
+                          </p>
+                          <p>
+                            Description:{" "}
+                            {candidate.target.routeParity.metadata.description}
+                          </p>
+                          <p>
+                            Open Graph title:{" "}
+                            {
+                              candidate.target.routeParity.metadata
+                                .openGraphTitle
+                            }
+                          </p>
+                          <p>
+                            Schema:{" "}
+                            {candidate.target.routeParity.renderedBody.schemaTypes.join(
+                              ", ",
+                            ) || "none"}
+                          </p>
+                          <p className="font-semibold text-red-700">
+                            CMS representation:{" "}
+                            {candidate.target.routeParity.cmsRepresentation.status}
+                          </p>
+                        </>
+                      ) : null}
                     </td>
                     <td className="min-w-80 px-5 py-5">
                       {candidate.issues.length === 0 ? (
