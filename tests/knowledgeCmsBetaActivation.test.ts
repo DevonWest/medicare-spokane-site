@@ -34,6 +34,7 @@ async function loadModules() {
     import("../lib/knowledgeCmsBetaActivationDal"),
     import("../lib/knowledgeCmsOperationalReadiness"),
     import("../lib/knowledgeCmsArticleMigrationVerification"),
+    import("../lib/knowledgeCmsSupportingMigrationVerification"),
   ]);
 }
 
@@ -68,7 +69,8 @@ function roleDirectory() {
 async function operationalReadiness(
   rendererMode: "cutover" | "shadow" | "static" = "static",
 ) {
-  const [, , readiness, verification] = await loadModules();
+  const [, , readiness, verification, supportingVerification] =
+    await loadModules();
   const preview = buildKnowledgeCmsMigrationPreview({
     asOf: NOW,
     rendererMode: "static",
@@ -85,6 +87,8 @@ async function operationalReadiness(
       }),
     executionHistory:
       verification.buildKnowledgeCmsArticleMigrationExecutionHistory([]),
+    supportingExecutionHistory:
+      supportingVerification.buildKnowledgeCmsSupportingMigrationExecutionHistory([]),
   };
   return readiness.buildKnowledgeCmsOperationalReadinessReport({
     actor: ACTOR,
@@ -92,6 +96,7 @@ async function operationalReadiness(
     configuration: {
       cmsGate: "enabled",
       articleMigrationExecutionGate: "enabled",
+      supportingMigrationExecutionGate: "enabled",
       renderer: resolveKnowledgeCmsPublicRendererMode(rendererMode),
       firebase: {
         adminConfigured: true,
@@ -103,7 +108,8 @@ async function operationalReadiness(
     workspaceEvidence: {
       status: "available",
       workspace,
-      verifications: [],
+      articleVerifications: [],
+      supportingVerifications: [],
     },
   });
 }
@@ -156,6 +162,12 @@ test("a fresh ready receipt at the exact beta identity produces a zero-mutation 
       ["KNOWLEDGE_CMS_ENABLED", "true", "true", "beta_only"],
       [
         "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
+        "true",
+        "true",
+        "beta_only",
+      ],
+      [
+        "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
         "true",
         "true",
         "beta_only",

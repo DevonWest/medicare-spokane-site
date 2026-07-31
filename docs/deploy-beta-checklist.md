@@ -460,13 +460,21 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A publisher/admin can open `/admin/knowledge/readiness`; the report shows
   aggregate role coverage without user identities, verifies every recorded
   migration receipt, reports zero writes, and keeps public cutover prohibited.
+- [ ] The readiness report classifies exactly 45 targets (22 articles, 12 topics,
+  11 FAQs), reads both execution histories, verifies each current four- or
+  five-artifact receipt, and reports no duplicate, unexpected, malformed, or
+  truncated event.
+- [ ] The operator sequence is topics → FAQs → articles, exposes no bulk action,
+  authorizes no execution itself, and requires a fresh report after every
+  separately confirmed one-record transaction.
 - [ ] A publisher/admin can open `/admin/knowledge/beta-activation`; it reports
   exact `staging` and the canonical beta origin, binds a fresh valid readiness
   SHA-256, and shows no blocked activation check.
-- [ ] The beta activation preview proposes only the three beta-scoped CMS
+- [ ] The beta activation preview proposes only the four beta-scoped CMS
   values, reports zero variables/deployments/traffic/roles/records changed, and
   explicitly denies execution, production, and cutover authority.
-- [ ] The preview's rollback checklist starts by disabling one-record execution,
+- [ ] The preview's rollback checklist starts by disabling both one-record
+  execution gates,
   restores `static` before broader CMS disable or beta revision recovery,
   preserves every CMS record, and includes all public/SEO verification checks.
 - [ ] Opening the same build with a production, unknown, or malformed deployment
