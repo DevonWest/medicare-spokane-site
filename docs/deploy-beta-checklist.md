@@ -189,7 +189,7 @@ Firebase Auth role:
 gcloud iam roles create knowledgeCmsAuthRuntime \
   --project=PROJECT_ID \
   --title="Knowledge CMS Auth Runtime" \
-  --description="Read current Firebase users and exchange verified ID tokens for CMS sessions" \
+  --description="Read current Firebase users, aggregate CMS role readiness, and exchange verified ID tokens for CMS sessions" \
   --permissions="firebaseauth.users.get,firebaseauth.users.createSession" \
   --stage=GA
 
@@ -412,6 +412,9 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 
 ### 8g. Private Knowledge CMS (only when intentionally enabled)
 - [ ] Firebase Google sign-in is enabled and the beta hostname is an authorized domain.
+- [ ] The Cloud Run runtime service account has `firebaseauth.users.get` and
+  `firebaseauth.users.createSession`; Auth user reads are used only for
+  identity-suppressed readiness counts and current-session validation.
 - [ ] `/admin/knowledge/login` returns 200 with `X-Robots-Tag: noindex, nofollow, noarchive`.
 - [ ] An account without `knowledgeCmsRoles` cannot enter.
 - [ ] An approved author can create and edit only a private draft it owns.
@@ -441,6 +444,9 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
   phrase fails without another write.
 - [ ] The created migration record is a draft with indexing blocked, no search
   projection, and the existing Resource Library route still renders unchanged.
+- [ ] A publisher/admin can open `/admin/knowledge/readiness`; the report shows
+  aggregate role coverage without user identities, verifies every recorded
+  migration receipt, reports zero writes, and keeps public cutover prohibited.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally

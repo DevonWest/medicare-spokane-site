@@ -189,9 +189,10 @@ Before changing `KNOWLEDGE_CMS_ENABLED` to `true`:
    agent authority record.
 7. Verify the Cloud Run service account can access the CMS Firestore
    collections and has `firebaseauth.users.get` plus
-   `firebaseauth.users.createSession`. Prefer a custom least-privilege role;
-   `roles/firebaseauth.admin` also contains both but grants broader Auth
-   administration.
+   `firebaseauth.users.createSession`. The Auth `users.get` permission covers
+   the aggregate, identity-suppressed user listing used by readiness. Prefer a
+   custom least-privilege role; `roles/firebaseauth.admin` also contains both
+   but grants broader Auth administration.
 8. Test sign-in, unauthorized access, author ownership, and a revision conflict
    in a non-production environment.
 
@@ -377,6 +378,49 @@ fingerprinted but not stored. A successful create redirects to this fresh
 verification view instead of treating the transaction response as sufficient
 proof.
 
+## Operational readiness report contract
+
+`/admin/knowledge/readiness` is available only when the CMS gate is exact true,
+the Firebase session is current, and the server-refreshed actor has `publisher`
+or `admin`. Authorization is checked before any report read. The route is
+covered by the private admin noindex/noarchive/no-store headers and never enters
+the public sitemap.
+
+The report evaluates separate capabilities rather than collapsing unlike
+risks into one ambiguous status:
+
+- private workspace configuration and Firebase browser/Admin project alignment;
+- aggregate authoring, currently verified reviewer, publisher, and
+  reviewer-publisher separation coverage;
+- one-record article migration readiness or verified completion;
+- private shadow availability while the effective public renderer stays
+  `static`; and
+- the unconditional prohibition on public cutover.
+
+The Auth scan paginates up to 1,000 accounts per read and returns counts only.
+It does not expose UIDs, email addresses, claims, or account records. Malformed
+claims, incomplete pagination, duplicate users, missing list permission, no
+current licensed reviewer, or no distinct publisher fail closed. Disabled or
+unverified accounts with CMS claims are reported but cannot count as active
+coverage.
+
+The Firestore portion reuses the three-collection migration inventory and
+one-query execution history. Each valid execution event then receives its
+existing five-artifact read-only verification transaction. A target is
+classified as `prepared_absent` only when its current deterministic control,
+fingerprint, in-memory private draft, source/route evidence, and absence checks
+pass with no execution event. A present target is ready only when exactly one
+valid execution event and one current passing artifact receipt agree. Invalid
+or truncated history, stale sources, duplicate events, an unexpected target,
+missing locks, a search projection for a private draft, or any failed receipt
+blocks readiness.
+
+Every report is immutable and SHA-256 fingerprinted in memory. It records its
+successful read boundary and always reports zero writes and no repair. The
+receipt is operational evidence only: it cannot assign roles, change a flag,
+authorize a migration request, publish a record, enable indexing, or approve a
+public renderer.
+
 ## Lossless renderer and rollback contract
 
 Every one of the 22 article routes has a contract that:
@@ -429,9 +473,10 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may add a read-only operational
-readiness report for the private CMS, authentication roles, execution flag,
-and migration evidence before any production activation is proposed. Bulk
-execution, public cutover, indexing changes, and CMS-native public bodies must
-remain separate. No cutover should be proposed until governed records exist
-and route-by-route shadow evidence plus rollback verification are reviewed.
+The next independently reviewed release may add a non-mutating, environment-
+scoped beta activation preview that consumes—but never overrides—the readiness
+findings and produces an explicit rollback checklist. Changing deployment
+variables, assigning roles, executing migrations, bulk execution, public
+cutover, indexing changes, and CMS-native public bodies remain separate. No
+cutover should be proposed until governed records exist and route-by-route
+shadow evidence plus rollback verification are reviewed.

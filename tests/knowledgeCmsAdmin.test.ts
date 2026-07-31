@@ -749,6 +749,7 @@ test("admin routes remain default-off and publication stays private and server-a
     "app/admin/knowledge/[kind]/[id]/page.tsx",
     "app/admin/knowledge/migration-preview/page.tsx",
     "app/admin/knowledge/migration-preview/[recordId]/page.tsx",
+    "app/admin/knowledge/readiness/page.tsx",
   ].map((path) => readFileSync(join(root, path), "utf8"));
   const dataAccess = readFileSync(
     join(root, "lib/knowledgeCmsAdminDal.ts"),
@@ -756,6 +757,10 @@ test("admin routes remain default-off and publication stays private and server-a
   );
   const migrationDataAccess = readFileSync(
     join(root, "lib/knowledgeCmsMigrationDal.ts"),
+    "utf8",
+  );
+  const readinessDataAccess = readFileSync(
+    join(root, "lib/knowledgeCmsOperationalReadinessDal.ts"),
     "utf8",
   );
   const nextConfig = readFileSync(join(root, "next.config.ts"), "utf8");
@@ -793,6 +798,10 @@ test("admin routes remain default-off and publication stays private and server-a
     migrationDataAccess,
     /verifyArticleMigrationExecution\(actor, recordId\)/,
   );
+  assert.match(readinessDataAccess, /requireKnowledgeCmsActor/);
+  assert.match(readinessDataAccess, /scanKnowledgeCmsRoleDirectory/);
+  assert.match(readinessDataAccess, /verifyArticleMigrationExecution/);
+  assert.doesNotMatch(readinessDataAccess, /createArticleMigrationDraft/);
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);
