@@ -2,14 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import sitemap from "../app/sitemap";
 import {
+  buildKnowledgeRecordSearchDocuments,
   buildKnowledgePageSchema,
   getFeaturedKnowledgeSources,
+  getKnowledgeFaqsForPath,
   getKnowledgeGraph,
   getKnowledgeSections,
+  getPublishedKnowledgeFaqs,
   getRelatedKnowledgeEntries,
+  isKnowledgeFactExpired,
   isKnowledgeReviewExpired,
   isKnowledgeSourceExpired,
   knowledgeEntries,
+  knowledgeFacts,
+  knowledgeFaqs,
   validateKnowledgeCenter,
 } from "../lib/knowledgeCenter";
 import { siteConfig } from "../lib/site";
@@ -20,6 +26,10 @@ test("knowledge center registry has valid references and canonical paths", () =>
     new Set(knowledgeEntries.map((entry) => entry.path)).size,
     knowledgeEntries.length,
   );
+});
+
+test("published sources, facts, and review records are current on the test date", () => {
+  assert.deepEqual(validateKnowledgeCenter(new Date()), []);
 });
 
 test("every public resource guide has at least one official source", () => {
@@ -112,6 +122,80 @@ test("knowledge graph resolves topics, agents, carriers, cities, FAQs, and sourc
   assert.equal(graph.reviewer, undefined);
 });
 
+test("Medicare FAQ resolves governed facts and their official source lineage", () => {
+  const graph = getKnowledgeGraph("/medicare-faq");
+
+  assert.ok(graph);
+  assert.equal(graph.faqs.length, 11);
+  assert.equal(graph.facts.length, 11);
+  assert.ok(
+    graph.sources.some(
+      (source) => source.id === "medicare-creditable-coverage",
+    ),
+  );
+  assert.ok(
+    graph.sources.some(
+      (source) => source.id === "medicare-nursing-home-care",
+    ),
+  );
+});
+
+test("published FAQ registry preserves the existing public questions and answer order", () => {
+  const faqs = getKnowledgeFaqsForPath("/medicare-faq");
+
+  assert.deepEqual(
+    faqs.map((faq) => faq.id),
+    [
+      "initial-enrollment-period",
+      "dependent-spouse",
+      "employer-coverage",
+      "parts-a-and-b",
+      "provider-access",
+      "nursing-home-care",
+      "missed-enrollment-window",
+      "part-c-basics",
+      "part-d-basics",
+      "creditable-coverage",
+      "government-affiliation",
+    ],
+  );
+  assert.equal(
+    faqs[0]?.answer,
+    "Most people first become eligible during their Initial Enrollment Period — the seven-month window that begins three months before the month you turn 65 and ends three months after. People who qualify due to disability or certain conditions may become eligible earlier.",
+  );
+});
+
+test("draft FAQs stay out of public relationships and search-ready documents", () => {
+  const draftFaq = {
+    ...knowledgeFaqs[0]!,
+    id: "draft-test-faq",
+    status: "draft" as const,
+    schemaEligible: false,
+  };
+
+  assert.deepEqual(getPublishedKnowledgeFaqs([draftFaq]), []);
+
+  const searchDocuments = buildKnowledgeRecordSearchDocuments(
+    knowledgeFacts,
+    [...knowledgeFaqs, draftFaq],
+  );
+
+  assert.equal(
+    searchDocuments.some(
+      (document) => document.id === "faq:draft-test-faq",
+    ),
+    false,
+  );
+  assert.equal(
+    searchDocuments.filter((document) => document.kind === "faq").length,
+    11,
+  );
+  assert.equal(
+    searchDocuments.filter((document) => document.kind === "fact").length,
+    11,
+  );
+});
+
 test("unreviewed pages expose citations without making a reviewer claim", () => {
   const schema = buildKnowledgePageSchema(
     "/turning-65-medicare-spokane",
@@ -153,6 +237,13 @@ test("official sources expire after the six-month verification window", () => {
 
   assert.equal(isKnowledgeSourceExpired(source, "2026-06-30"), false);
   assert.equal(isKnowledgeSourceExpired(source, "2026-07-01"), true);
+});
+
+test("governed facts expire after the six-month accuracy window", () => {
+  const fact = { checkedAt: "2026-01-01" };
+
+  assert.equal(isKnowledgeFactExpired(fact, "2026-06-30"), false);
+  assert.equal(isKnowledgeFactExpired(fact, "2026-07-01"), true);
 });
 
 test("licensed-review claims stop resolving after their review date", () => {

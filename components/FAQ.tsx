@@ -1,20 +1,32 @@
 export interface FAQItem {
+  id?: string;
   question: string;
   answer: string;
+  schemaEligible?: boolean;
 }
 
 interface FAQProps {
   heading?: string;
-  items: FAQItem[];
+  items: readonly FAQItem[];
   /** When true, emit a FAQPage JSON-LD script. */
   includeSchema?: boolean;
 }
 
-export default function FAQ({ heading = "Frequently Asked Questions", items, includeSchema = true }: FAQProps) {
-  const schema = {
+export function buildFaqPageSchema(
+  items: readonly FAQItem[],
+): Record<string, unknown> | undefined {
+  const schemaItems = items.filter(
+    (item) => item.schemaEligible !== false,
+  );
+
+  if (schemaItems.length === 0) {
+    return undefined;
+  }
+
+  return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: items.map((item) => ({
+    mainEntity: schemaItems.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: {
@@ -23,7 +35,17 @@ export default function FAQ({ heading = "Frequently Asked Questions", items, inc
       },
     })),
   };
-  const schemaJson = JSON.stringify(schema).replace(/</g, "\\u003c");
+}
+
+export default function FAQ({
+  heading = "Frequently Asked Questions",
+  items,
+  includeSchema = true,
+}: FAQProps) {
+  const schema = buildFaqPageSchema(items);
+  const schemaJson = schema
+    ? JSON.stringify(schema).replace(/</g, "\\u003c")
+    : undefined;
 
   return (
     <section className="py-16 px-4 bg-gray-50">
@@ -32,7 +54,7 @@ export default function FAQ({ heading = "Frequently Asked Questions", items, inc
         <div className="space-y-3">
           {items.map((item, idx) => (
             <details
-              key={item.question}
+              key={item.id ?? item.question}
               className="group bg-white rounded-lg border border-gray-200 overflow-hidden"
               open={idx === 0}
             >
@@ -53,12 +75,12 @@ export default function FAQ({ heading = "Frequently Asked Questions", items, inc
         </div>
       </div>
 
-      {includeSchema && (
+      {includeSchema && schemaJson ? (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: schemaJson }}
         />
-      )}
+      ) : null}
     </section>
   );
 }
