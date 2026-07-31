@@ -8,8 +8,10 @@ import {
   getKnowledgeFaqsForPath,
   getKnowledgeGraph,
   getKnowledgeSections,
+  getPublishedKnowledgeFacts,
   getPublishedKnowledgeFaqs,
   getRelatedKnowledgeEntries,
+  getRelatedKnowledgeLinks,
   isKnowledgeFactExpired,
   isKnowledgeReviewExpired,
   isKnowledgeSourceExpired,
@@ -17,6 +19,7 @@ import {
   knowledgeFacts,
   knowledgeFaqs,
   validateKnowledgeCenter,
+  validateKnowledgeLinks,
 } from "../lib/knowledgeCenter";
 import { siteConfig } from "../lib/site";
 
@@ -97,6 +100,101 @@ test("automatic relationships connect entries that share topics and tags", () =>
   assert.ok(relatedPaths.includes("/rx-drug-review"));
   assert.ok(relatedPaths.includes("/medicare-plan-review-spokane"));
   assert.ok(relatedPaths.includes("/compare-medicare-options"));
+});
+
+test("related links expose deterministic editorial and entity reasons", () => {
+  const links = getRelatedKnowledgeLinks(
+    "/turning-65-medicare-spokane",
+    5,
+  );
+
+  assert.deepEqual(
+    links.map((link) => ({
+      path: link.entry.path,
+      mode: link.mode,
+      firstReason: link.reasons[0]?.kind,
+    })),
+    [
+      {
+        path: "/compare-medicare-options",
+        mode: "curated",
+        firstReason: "curated",
+      },
+      {
+        path: "/medicare-advantage",
+        mode: "curated",
+        firstReason: "curated",
+      },
+      {
+        path: "/medicare-supplements",
+        mode: "curated",
+        firstReason: "curated",
+      },
+      {
+        path: "/medicare-part-d",
+        mode: "curated",
+        firstReason: "curated",
+      },
+      {
+        path: "/rx-drug-review",
+        mode: "curated",
+        firstReason: "curated",
+      },
+    ],
+  );
+  assert.ok(
+    links.every(
+      (link) => link.reasons.length > 0 && link.score > 0,
+    ),
+  );
+});
+
+test("automatic links stay inside their governed content silo", () => {
+  const healthInsuranceLinks = getRelatedKnowledgeLinks(
+    "/health-insurance-spokane",
+    50,
+  );
+  const medicareLinks = getRelatedKnowledgeLinks("/medicare-part-d", 50);
+
+  assert.ok(
+    healthInsuranceLinks.every(
+      (link) => link.entry.categoryId === "health-insurance",
+    ),
+  );
+  assert.ok(
+    medicareLinks.every(
+      (link) => link.entry.categoryId !== "health-insurance",
+    ),
+  );
+});
+
+test("automatic link explanations include shared topic, city, carrier, and agent entities", () => {
+  const link = getRelatedKnowledgeLinks("/medicare-part-d", 8).find(
+    (candidate) => candidate.entry.path === "/rx-drug-review",
+  );
+
+  assert.ok(link);
+  assert.equal(link.mode, "automatic");
+  const reasonKinds = new Set(link.reasons.map((reason) => reason.kind));
+  assert.ok(reasonKinds.has("topic"));
+  assert.ok(reasonKinds.has("city"));
+  assert.ok(reasonKinds.has("carrier"));
+  assert.ok(reasonKinds.has("agent"));
+});
+
+test("related-link budget is capped and never returns self or duplicates", () => {
+  for (const entry of knowledgeEntries) {
+    const links = getRelatedKnowledgeLinks(entry.path, 100);
+    const paths = links.map((link) => link.entry.path);
+
+    assert.ok(links.length <= 8);
+    assert.equal(paths.includes(entry.path), false);
+    assert.equal(new Set(paths).size, paths.length);
+  }
+});
+
+test("the complete internal-link graph passes governance checks", () => {
+  assert.deepEqual(validateKnowledgeLinks(), []);
 });
 
 test("knowledge graph resolves topics, agents, carriers, cities, FAQs, and sources", () => {
@@ -196,6 +294,41 @@ test("draft FAQs stay out of public relationships and search-ready documents", (
   );
 });
 
+test("public FAQ relationships are assembled from published records only", () => {
+  const entry = knowledgeEntries.find(
+    (candidate) => candidate.path === "/medicare-faq",
+  );
+
+  assert.ok(entry);
+  assert.deepEqual(
+    entry.relationships?.factIds,
+    getPublishedKnowledgeFacts().map((fact) => fact.id),
+  );
+  assert.deepEqual(
+    entry.relationships?.faqIds,
+    getPublishedKnowledgeFaqs().map((faq) => faq.id),
+  );
+});
+
+test("search documents cannot mutate canonical source evidence", () => {
+  const fact = knowledgeFacts.find(
+    (candidate) =>
+      candidate.evidence.kind === "official-sources" &&
+      candidate.evidence.sourceIds.length > 0,
+  );
+
+  assert.ok(fact);
+  assert.equal(fact.evidence.kind, "official-sources");
+  const originalSourceIds = [...fact.evidence.sourceIds];
+  const document = buildKnowledgeRecordSearchDocuments().find(
+    (candidate) => candidate.id === `fact:${fact.id}`,
+  );
+
+  assert.ok(document);
+  document.sourceIds.push("index-only-source");
+  assert.deepEqual(fact.evidence.sourceIds, originalSourceIds);
+});
+
 test("unreviewed pages expose citations without making a reviewer claim", () => {
   const schema = buildKnowledgePageSchema(
     "/turning-65-medicare-spokane",
@@ -244,6 +377,13 @@ test("governed facts expire after the six-month accuracy window", () => {
 
   assert.equal(isKnowledgeFactExpired(fact, "2026-06-30"), false);
   assert.equal(isKnowledgeFactExpired(fact, "2026-07-01"), true);
+  assert.equal(
+    isKnowledgeFactExpired(
+      fact,
+      new Date("2026-06-30T23:59:59.999Z"),
+    ),
+    false,
+  );
 });
 
 test("licensed-review claims stop resolving after their review date", () => {

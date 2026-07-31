@@ -5,6 +5,8 @@ import {
   validateEditorialReviewerVerifications,
 } from "@/lib/editorial";
 import {
+  getPublishedKnowledgeFacts,
+  getPublishedKnowledgeFaqs,
   getKnowledgeFactSourceIds,
   isKnowledgeFactExpired,
   knowledgeFacts,
@@ -148,6 +150,30 @@ export interface KnowledgeGraph {
   author?: TeamMember;
   reviewer?: TeamMember;
 }
+
+export type KnowledgeLinkReasonKind =
+  | "agent"
+  | "carrier"
+  | "category"
+  | "city"
+  | "curated"
+  | "tag"
+  | "topic";
+
+export interface KnowledgeLinkReason {
+  kind: KnowledgeLinkReasonKind;
+  values: string[];
+  weight: number;
+}
+
+export interface KnowledgeRelatedLink {
+  entry: KnowledgeEntry;
+  mode: "automatic" | "curated";
+  reasons: KnowledgeLinkReason[];
+  score: number;
+}
+
+export const KNOWLEDGE_RELATED_LINK_MAX = 8;
 
 export const knowledgeCategories: KnowledgeCategory[] = [
   {
@@ -805,8 +831,8 @@ export const knowledgeEntries: KnowledgeEntry[] = [
     review: { status: "needs-review" },
     relationships: {
       citySlugs: ["spokane"],
-      factIds: knowledgeFacts.map((fact) => fact.id),
-      faqIds: knowledgeFaqs.map((faq) => faq.id),
+      factIds: getPublishedKnowledgeFacts().map((fact) => fact.id),
+      faqIds: getPublishedKnowledgeFaqs().map((faq) => faq.id),
     },
   },
   {
@@ -891,7 +917,9 @@ function addUtcDays(date: Date, days: number): Date {
 }
 
 function resolveAsOfDate(asOf: string | Date): Date {
-  return typeof asOf === "string" ? parseDateOnly(asOf) : asOf;
+  return typeof asOf === "string"
+    ? parseDateOnly(asOf)
+    : parseDateOnly(asOf.toISOString().slice(0, 10));
 }
 
 export function isKnowledgeSourceExpired(
@@ -959,25 +987,100 @@ function getExplicitRelatedIndex(
   return entry.relationships?.entryPaths?.indexOf(candidate.path) ?? -1;
 }
 
-function getRelationshipScore(
+function intersectValues(left: string[], right: string[]): string[] {
+  const rightSet = new Set(right);
+  return [...new Set(left.filter((value) => rightSet.has(value)))];
+}
+
+function getKnowledgeSilo(
+  entry: KnowledgeEntry,
+): "health-insurance" | "medicare" {
+  return entry.categoryId === "health-insurance"
+    ? "health-insurance"
+    : "medicare";
+}
+
+function buildKnowledgeLinkReasons(
   entry: KnowledgeEntry,
   candidate: KnowledgeEntry,
-): number {
-  let score = 0;
+  explicitIndex: number,
+): KnowledgeLinkReason[] {
+  const reasons: KnowledgeLinkReason[] = [];
 
-  if (entry.categoryId === candidate.categoryId) {
-    score += 100;
+  if (explicitIndex >= 0) {
+    reasons.push({
+      kind: "curated",
+      values: [candidate.path],
+      weight: 1_000 - explicitIndex,
+    });
   }
 
-  score += intersectCount(entry.topicSlugs, candidate.topicSlugs) * 40;
-  score += intersectCount(entry.tags, candidate.tags) * 10;
-  score +=
-    intersectCount(
-      entry.relationships?.citySlugs ?? [],
-      candidate.relationships?.citySlugs ?? [],
-    ) * 4;
+  if (entry.categoryId === candidate.categoryId) {
+    reasons.push({
+      kind: "category",
+      values: [entry.categoryId],
+      weight: 100,
+    });
+  }
 
-  return score;
+  const sharedTopics = intersectValues(
+    entry.topicSlugs,
+    candidate.topicSlugs,
+  );
+  if (sharedTopics.length > 0) {
+    reasons.push({
+      kind: "topic",
+      values: sharedTopics,
+      weight: sharedTopics.length * 40,
+    });
+  }
+
+  const sharedTags = intersectValues(entry.tags, candidate.tags);
+  if (sharedTags.length > 0) {
+    reasons.push({
+      kind: "tag",
+      values: sharedTags,
+      weight: sharedTags.length * 10,
+    });
+  }
+
+  const sharedCities = intersectValues(
+    entry.relationships?.citySlugs ?? [],
+    candidate.relationships?.citySlugs ?? [],
+  );
+  if (sharedCities.length > 0) {
+    reasons.push({
+      kind: "city",
+      values: sharedCities,
+      weight: sharedCities.length * 4,
+    });
+  }
+
+  const sharedCarriers = intersectValues(
+    getRelatedCarriers(entry).map((carrier) => carrier.name),
+    getRelatedCarriers(candidate).map((carrier) => carrier.name),
+  );
+  if (sharedCarriers.length > 0) {
+    reasons.push({
+      kind: "carrier",
+      values: sharedCarriers,
+      weight: sharedCarriers.length * 2,
+    });
+  }
+
+  const sharedAgents = intersectValues(
+    getRelatedAgents(entry).map((agent) => getTeamMemberSlug(agent)),
+    getRelatedAgents(candidate).map((agent) => getTeamMemberSlug(agent)),
+  );
+  if (sharedAgents.length > 0) {
+    reasons.push({
+      kind: "agent",
+      values: sharedAgents,
+      weight: sharedAgents.length,
+    });
+  }
+
+  return reasons;
 }
 
 export function getKnowledgeEntryByPath(
@@ -1004,23 +1107,50 @@ export function getFeaturedKnowledgeSources(): KnowledgeSource[] {
   return knowledgeSources.filter((source) => source.featuredInLibrary);
 }
 
-export function getRelatedKnowledgeEntries(
+export function getRelatedKnowledgeLinks(
   path: string,
   limit = 6,
-): KnowledgeEntry[] {
+): KnowledgeRelatedLink[] {
   const entry = getKnowledgeEntryByPath(path);
-  if (!entry || limit <= 0) {
+  if (!entry || !Number.isFinite(limit) || limit <= 0) {
     return [];
   }
+
+  const resolvedLimit = Math.min(
+    Math.floor(limit),
+    KNOWLEDGE_RELATED_LINK_MAX,
+  );
 
   return knowledgeEntries
     .filter((candidate) => candidate.path !== entry.path)
     .map((candidate) => ({
       candidate,
       explicitIndex: getExplicitRelatedIndex(entry, candidate),
-      score: getRelationshipScore(entry, candidate),
+      sameSilo: getKnowledgeSilo(entry) === getKnowledgeSilo(candidate),
     }))
-    .filter(({ explicitIndex, score }) => explicitIndex >= 0 || score > 0)
+    .map(({ candidate, explicitIndex, sameSilo }) => {
+      const reasons = buildKnowledgeLinkReasons(
+        entry,
+        candidate,
+        explicitIndex,
+      );
+      const score = reasons.reduce(
+        (total, reason) => total + reason.weight,
+        0,
+      );
+
+      return {
+        candidate,
+        explicitIndex,
+        reasons,
+        sameSilo,
+        score,
+      };
+    })
+    .filter(
+      ({ explicitIndex, reasons, sameSilo }) =>
+        explicitIndex >= 0 || (sameSilo && reasons.length > 0),
+    )
     .sort((left, right) => {
       const leftIsExplicit = left.explicitIndex >= 0;
       const rightIsExplicit = right.explicitIndex >= 0;
@@ -1039,8 +1169,81 @@ export function getRelatedKnowledgeEntries(
         left.candidate.title.localeCompare(right.candidate.title)
       );
     })
-    .slice(0, limit)
-    .map(({ candidate }) => candidate);
+    .slice(0, resolvedLimit)
+    .map(({ candidate, explicitIndex, reasons, score }) => ({
+      entry: candidate,
+      mode: explicitIndex >= 0 ? "curated" : "automatic",
+      reasons,
+      score,
+    }));
+}
+
+export function getRelatedKnowledgeEntries(
+  path: string,
+  limit = 6,
+): KnowledgeEntry[] {
+  return getRelatedKnowledgeLinks(path, limit).map(({ entry }) => entry);
+}
+
+export function validateKnowledgeLinks(): string[] {
+  const errors: string[] = [];
+
+  for (const entry of knowledgeEntries) {
+    const explicitPaths = entry.relationships?.entryPaths ?? [];
+    const duplicateExplicitPaths = explicitPaths.filter(
+      (path, index) => explicitPaths.indexOf(path) !== index,
+    );
+
+    for (const path of new Set(duplicateExplicitPaths)) {
+      errors.push(`Entry ${entry.id} repeats curated related path ${path}.`);
+    }
+
+    if (explicitPaths.length > KNOWLEDGE_RELATED_LINK_MAX) {
+      errors.push(
+        `Entry ${entry.id} exceeds the ${KNOWLEDGE_RELATED_LINK_MAX}-link curated budget.`,
+      );
+    }
+
+    const links = getRelatedKnowledgeLinks(
+      entry.path,
+      KNOWLEDGE_RELATED_LINK_MAX,
+    );
+    const linkedPaths = new Set<string>();
+
+    if (entry.listed !== false && links.length === 0) {
+      errors.push(`Listed entry ${entry.id} has no governed related links.`);
+    }
+
+    for (const link of links) {
+      if (link.entry.path === entry.path) {
+        errors.push(`Entry ${entry.id} links to itself.`);
+      }
+
+      if (linkedPaths.has(link.entry.path)) {
+        errors.push(
+          `Entry ${entry.id} repeats related path ${link.entry.path}.`,
+        );
+      }
+      linkedPaths.add(link.entry.path);
+
+      if (link.reasons.length === 0 || link.score <= 0) {
+        errors.push(
+          `Entry ${entry.id} has an unexplained link to ${link.entry.path}.`,
+        );
+      }
+
+      if (
+        link.mode === "automatic" &&
+        getKnowledgeSilo(entry) !== getKnowledgeSilo(link.entry)
+      ) {
+        errors.push(
+          `Entry ${entry.id} automatically crosses into the ${getKnowledgeSilo(link.entry)} content silo.`,
+        );
+      }
+    }
+  }
+
+  return errors;
 }
 
 function getRelatedTopics(entry: KnowledgeEntry): Topic[] {
@@ -1267,6 +1470,7 @@ export function validateKnowledgeCenter(
 ): string[] {
   const errors: string[] = [
     ...validateEditorialReviewerVerifications(asOf),
+    ...validateKnowledgeLinks(),
     ...validateTeamAuthorityProfiles(asOf),
   ];
   const categoryIds = new Set(
