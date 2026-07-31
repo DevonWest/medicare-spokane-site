@@ -58,6 +58,12 @@ export default async function KnowledgeCmsReadinessPage() {
           >
             Migration preview
           </Link>
+          <Link
+            className="text-sm font-semibold text-blue-700 hover:underline"
+            href="/admin/knowledge/beta-activation"
+          >
+            Beta activation preview
+          </Link>
         </div>
 
         <header

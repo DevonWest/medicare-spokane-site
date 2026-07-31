@@ -421,6 +421,66 @@ receipt is operational evidence only: it cannot assign roles, change a flag,
 authorize a migration request, publish a record, enable indexing, or approve a
 public renderer.
 
+## Beta activation preview and rollback contract
+
+`/admin/knowledge/beta-activation` is a publisher/admin-only, read-only planning
+surface. It is covered by the same authentication, noindex/noarchive, and
+private no-store boundary as the rest of the admin workspace. The preview
+performs no additional repository read beyond obtaining a fresh operational
+readiness report and performs no write, repair, role assignment, deployment,
+traffic shift, environment-variable change, or CMS action.
+
+The preview is eligible only when all of the following are true:
+
+- `NEXT_PUBLIC_SITE_ENV` is exact `staging`;
+- `NEXT_PUBLIC_SITE_URL` resolves to the clean canonical origin
+  `https://beta.medicareinspokane.com` with no credentials, path, query, or
+  fragment;
+- the operational-readiness receipt is valid, no more than five minutes old,
+  not future-dated, and ready for guarded private operations;
+- all 22 article targets have prepared or verified one-record evidence with no
+  blocked target;
+- the current renderer request is exact `static` or `shadow`; and
+- the proposed exact `shadow` value continues to resolve to an effective public
+  mode of `static`, with CMS bodies, indexing, sitemap output, and cutover
+  unchanged.
+
+Production, unknown hosts, malformed or whitespace-padded environment values,
+invalid or stale receipts, `cutover`, and contradictory migration evidence fail
+closed. Raw malformed URLs are classified rather than reflected, so accidental
+credentials or query values do not enter the preview receipt or UI.
+
+The immutable preview binds the current readiness SHA-256 and shows—but never
+applies—the three beta-only settings:
+
+| Variable | Proposed private-beta value | Effect |
+|---|---|---|
+| `KNOWLEDGE_CMS_ENABLED` | `true` | Keep the authenticated private workspace available |
+| `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `true` until all article targets are verified; otherwise `false` | Preserve only the explicit one-record migration boundary |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `shadow` | Enable private comparison while public output remains static |
+
+The activation checklist requires new readiness/preview receipts immediately
+before a separately approved beta configuration change, one isolated beta
+revision, private authorization checks, and complete static-route parity. The
+preview explicitly carries no execution, deployment, production, or cutover
+authority.
+
+Rollback triggers include evidence drift, authorization failure, any private
+shadow mismatch, a migration-boundary violation, protected-route drift, or an
+SEO/indexing change. The ordered rollback is:
+
+1. set the beta article-execution gate to `false`;
+2. set the beta renderer mode to `static` while preserving CMS records;
+3. deploy only the beta rollback configuration and verify static parity;
+4. set the beta CMS gate to `false` if the broader private workspace remains
+   unsafe; and
+5. route only beta traffic to its last known-good beta revision if configuration
+   rollback is insufficient.
+
+Rollback never deletes CMS records, locks, audit history, or evidence. It must
+reverify all 22 governed routes, `/`, `/medicare-spokane`, `/resources`,
+redirects, sitemap output, and the beta robots policy.
+
 ## Lossless renderer and rollback contract
 
 Every one of the 22 article routes has a contract that:
@@ -473,10 +533,10 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may add a non-mutating, environment-
-scoped beta activation preview that consumes—but never overrides—the readiness
-findings and produces an explicit rollback checklist. Changing deployment
-variables, assigning roles, executing migrations, bulk execution, public
-cutover, indexing changes, and CMS-native public bodies remain separate. No
-cutover should be proposed until governed records exist and route-by-route
-shadow evidence plus rollback verification are reviewed.
+The next independently reviewed release may define deterministic private-draft
+migration controls and verification for the 12 topics and 11 FAQs. It must keep
+topic/FAQ execution separate from the article boundary, remain one-record and
+create-only, preserve all public routes, and add no bulk action, publication,
+indexing, renderer cutover, or production activation. No cutover should be
+proposed until all 45 governed records exist and route-by-route shadow evidence
+plus rollback verification are reviewed.

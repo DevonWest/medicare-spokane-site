@@ -80,6 +80,12 @@ export default async function KnowledgeAdminPage() {
                   Readiness report
                 </Link>
                 <Link
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                  href="/admin/knowledge/beta-activation"
+                >
+                  Beta activation preview
+                </Link>
+                <Link
                   className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
                   href="/admin/knowledge/migration-preview"
                 >
