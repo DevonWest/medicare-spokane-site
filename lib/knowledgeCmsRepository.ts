@@ -10,6 +10,7 @@ import type {
 import { getFirestoreAdmin } from "./firebase-admin";
 import {
   KNOWLEDGE_CMS_COLLECTIONS,
+  assertKnowledgeCmsActionAllowed,
   buildKnowledgeCmsSearchDocument,
   cloneKnowledgeCmsRecord,
   parseKnowledgeCmsRecord,
@@ -24,6 +25,15 @@ import {
   buildKnowledgeCmsArticleMigrationExecutionPlan,
   type KnowledgeCmsArticleMigrationExecutionRequest,
 } from "./knowledgeCmsArticleMigrationExecution";
+import {
+  buildKnowledgeCmsArticleMigrationExecutionHistory,
+  buildKnowledgeCmsArticleMigrationPostCreateVerification,
+  fingerprintKnowledgeCmsArticleMigrationRecord,
+  getKnowledgeCmsArticleMigrationAuditDocumentId,
+  parseKnowledgeCmsArticleMigrationAuditEvidence,
+  type KnowledgeCmsArticleMigrationExecutionHistory,
+  type KnowledgeCmsArticleMigrationPostCreateVerification,
+} from "./knowledgeCmsArticleMigrationVerification";
 
 export type KnowledgeCmsAuditEvent =
   | "create"
@@ -66,6 +76,13 @@ export interface KnowledgeCmsArticleMigrationRepository {
     actor: KnowledgeCmsActor,
     request: KnowledgeCmsArticleMigrationExecutionRequest,
   ): Promise<KnowledgeCmsArticle>;
+  listArticleMigrationExecutions(
+    actor: KnowledgeCmsActor,
+  ): Promise<KnowledgeCmsArticleMigrationExecutionHistory>;
+  verifyArticleMigrationExecution(
+    actor: KnowledgeCmsActor,
+    recordId: string,
+  ): Promise<KnowledgeCmsArticleMigrationPostCreateVerification | undefined>;
 }
 
 export class KnowledgeCmsDisabledError extends Error {
@@ -599,12 +616,116 @@ export class FirestoreKnowledgeCmsRepository
         occurredAt: plan.transaction.serverTimestamp,
         migrationControlId: plan.control.id,
         migrationControlFingerprint: plan.control.fingerprint,
+        migrationExecutionVersion: plan.version,
+        migrationWriteCount: plan.transaction.writeCount,
+        migrationRecordFingerprint:
+          fingerprintKnowledgeCmsArticleMigrationRecord(record),
+        canonicalPath: plan.target.canonicalPath,
         publicSource: plan.rollout.publicSource,
         note:
           "Created one private, indexing-blocked draft from the deterministic Resource Library migration control. The verified static route remains public.",
       });
 
       return cloneKnowledgeCmsRecord(record) as KnowledgeCmsArticle;
+    });
+  }
+
+  async listArticleMigrationExecutions(
+    actor: KnowledgeCmsActor,
+  ): Promise<KnowledgeCmsArticleMigrationExecutionHistory> {
+    assertKnowledgeCmsActionAllowed(actor, "preview_migration");
+    const snapshot = await this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.audit)
+      .where("event", "==", "migration_create_private_draft")
+      .get();
+    return buildKnowledgeCmsArticleMigrationExecutionHistory(
+      snapshot.docs.map((document) => ({
+        id: document.id,
+        data: document.data(),
+      })),
+    );
+  }
+
+  async verifyArticleMigrationExecution(
+    actor: KnowledgeCmsActor,
+    recordId: string,
+  ): Promise<KnowledgeCmsArticleMigrationPostCreateVerification | undefined> {
+    assertKnowledgeCmsActionAllowed(actor, "preview_migration");
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(recordId)) {
+      return undefined;
+    }
+
+    const auditDocumentId =
+      getKnowledgeCmsArticleMigrationAuditDocumentId(recordId);
+    const auditRef = this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.audit)
+      .doc(auditDocumentId);
+    const recordRef = this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.article)
+      .doc(recordId);
+
+    return this.db.runTransaction(async (transaction) => {
+      const auditSnapshot = await transaction.get(auditRef);
+      if (!auditSnapshot.exists) {
+        return undefined;
+      }
+      const auditData = auditSnapshot.data();
+      if (auditData?.event !== "migration_create_private_draft") {
+        return undefined;
+      }
+
+      const recordSnapshot = await transaction.get(recordRef);
+      const recordData = recordSnapshot.data();
+      let record: KnowledgeCmsArticle | undefined;
+      try {
+        const parsed = recordData
+          ? parseKnowledgeCmsRecord(recordData)
+          : undefined;
+        record = parsed?.kind === "article" ? parsed : undefined;
+      } catch {
+        record = undefined;
+      }
+      const evidence =
+        parseKnowledgeCmsArticleMigrationAuditEvidence(
+          auditDocumentId,
+          auditData,
+        );
+      const fallbackKey = createHash("sha256")
+        .update(recordId)
+        .digest("hex");
+      const slug = record?.slug ?? evidence?.slug ?? fallbackKey;
+      const canonicalPath =
+        record?.discoverability.canonicalPath ??
+        evidence?.canonicalPath ??
+        `/invalid-${fallbackKey}`;
+      const slugRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.slugs)
+        .doc(`article--${slug}`);
+      const canonicalRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths)
+        .doc(canonicalPathLockId(canonicalPath));
+      const searchRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.search)
+        .doc(`article--${recordId}`);
+      const slugSnapshot = await transaction.get(slugRef);
+      const canonicalSnapshot = await transaction.get(canonicalRef);
+      const searchSnapshot = await transaction.get(searchRef);
+
+      return buildKnowledgeCmsArticleMigrationPostCreateVerification({
+        auditDocumentId,
+        auditData,
+        recordData,
+        slugLockData: slugSnapshot.exists
+          ? slugSnapshot.data()
+          : undefined,
+        canonicalLockData: canonicalSnapshot.exists
+          ? canonicalSnapshot.data()
+          : undefined,
+        searchData: searchSnapshot.exists
+          ? searchSnapshot.data()
+          : undefined,
+        observedAt: this.now(),
+      });
     });
   }
 }

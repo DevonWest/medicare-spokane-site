@@ -20,11 +20,16 @@ import {
 import type {
   KnowledgeCmsArticleMigrationExecutionRequest,
 } from "./knowledgeCmsArticleMigrationExecution";
+import type {
+  KnowledgeCmsArticleMigrationExecutionHistory,
+  KnowledgeCmsArticleMigrationPostCreateVerification,
+} from "./knowledgeCmsArticleMigrationVerification";
 import {
   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
 } from "./knowledgeCmsRendererContract";
 import {
   createKnowledgeCmsRepository,
+  type KnowledgeCmsArticleMigrationRepository,
   type KnowledgeCmsRepository,
 } from "./knowledgeCmsRepository";
 
@@ -59,16 +64,23 @@ export async function previewKnowledgeCmsMigration(
 export interface KnowledgeCmsMigrationWorkspacePreview {
   preview: KnowledgeCmsMigrationPreview;
   articleMaterializationDryRun: KnowledgeCmsArticleMaterializationDryRun;
+  executionHistory: KnowledgeCmsArticleMigrationExecutionHistory;
 }
 
 export async function previewKnowledgeCmsArticleMaterialization(
-  repository: Pick<KnowledgeCmsRepository, "list">,
+  repository: Pick<KnowledgeCmsRepository, "list"> &
+    Pick<
+      KnowledgeCmsArticleMigrationRepository,
+      "listArticleMigrationExecutions"
+    >,
   actor: KnowledgeCmsActor,
   now: Date = new Date(),
 ): Promise<KnowledgeCmsMigrationWorkspacePreview> {
   assertKnowledgeCmsActionAllowed(actor, "preview_migration");
-  const existingRecords =
-    await readKnowledgeCmsMigrationInventory(repository);
+  const [existingRecords, executionHistory] = await Promise.all([
+    readKnowledgeCmsMigrationInventory(repository),
+    repository.listArticleMigrationExecutions(actor),
+  ]);
   const preview = buildKnowledgeCmsMigrationPreview({
     asOf: now,
     existingRecords,
@@ -84,6 +96,7 @@ export async function previewKnowledgeCmsArticleMaterialization(
         actor,
         now,
       }),
+    executionHistory,
   };
 }
 
@@ -120,4 +133,12 @@ export async function executeKnowledgeCmsAdminArticleMigrationDraft(
     revision: 1,
     status: "draft",
   };
+}
+
+export async function getKnowledgeCmsAdminArticleMigrationVerification(
+  recordId: string,
+): Promise<KnowledgeCmsArticleMigrationPostCreateVerification | undefined> {
+  const actor = await requireKnowledgeCmsActor();
+  return createKnowledgeCmsRepository()
+    .verifyArticleMigrationExecution(actor, recordId);
 }
