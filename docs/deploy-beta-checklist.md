@@ -47,6 +47,7 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `medicareinspokane-prod.firebaseapp.com` | Required only before enabling the private Knowledge CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | **Optional.** Leave absent or set to `false` until the full Auth checklist passes. |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record topic/FAQ private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** Exact `static` hides shadow comparison. Exact `shadow` enables only the authenticated publisher/admin comparison workspace; public routes remain static. `cutover` is rejected. |
 
 ### 1b. Authentication — pick ONE of these two options
@@ -359,6 +360,9 @@ What happens:
   - `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false` unless the exact
     GitHub variable is set to `true`; the workflow rejects `true` while the CMS
     gate is false
+  - `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false` unless the exact
+    GitHub variable is set to `true`; the workflow rejects `true` while the CMS
+    gate is false
   - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact `shadow` is set
     for authenticated private comparison; both values keep public routes
     static, while `cutover` and malformed values fail before image build
@@ -438,12 +442,21 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
 - [ ] With the separate article-migration gate false, no execution form is
   available on the migration preview.
+- [ ] With the separate topic/FAQ migration gate false, none of the 12 topic or
+  11 FAQ controls exposes an execution form.
 - [ ] With the gate intentionally true, a publisher/admin can create exactly
   one selected private article draft only after typing the exact phrase; a
   second attempt, stale fingerprint, existing slug/canonical owner, or wrong
   phrase fails without another write.
 - [ ] The created migration record is a draft with indexing blocked, no search
   projection, and the existing Resource Library route still renders unchanged.
+- [ ] With the topic/FAQ gate intentionally true, a publisher/admin can create
+  exactly one selected topic or FAQ private draft after the exact typed phrase;
+  document, slug, optional canonical, search, and audit conflicts all fail
+  without overwrite or another record mutation.
+- [ ] The topic/FAQ verification receipt checks four artifacts when no canonical
+  is proposed and five when a canonical lock is required, always with zero
+  repair writes and no public or indexing change.
 - [ ] A publisher/admin can open `/admin/knowledge/readiness`; the report shows
   aggregate role coverage without user identities, verifies every recorded
   migration receipt, reports zero writes, and keeps public cutover prohibited.

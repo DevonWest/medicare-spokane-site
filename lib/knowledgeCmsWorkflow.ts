@@ -37,7 +37,10 @@ import {
 
 export type KnowledgeCmsTransitionAction = Exclude<
   KnowledgeCmsAuditEvent,
-  "create" | "migration_create_private_draft" | "update"
+  | "create"
+  | "migration_create_private_draft"
+  | "migration_create_private_supporting_draft"
+  | "update"
 >;
 
 export interface KnowledgeCmsTransitionInput {

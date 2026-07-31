@@ -11,6 +11,9 @@ import {
 import type {
   KnowledgeCmsArticleMigrationExecutionRequest,
 } from "./knowledgeCmsArticleMigrationExecution";
+import type {
+  KnowledgeCmsSupportingMigrationExecutionRequest,
+} from "./knowledgeCmsSupportingMigrationExecution";
 
 export const KNOWLEDGE_CMS_ADMIN_PATH = "/admin/knowledge";
 export const KNOWLEDGE_CMS_RECORD_KINDS: KnowledgeCmsRecordKind[] = [
@@ -392,6 +395,37 @@ export function parseKnowledgeCmsArticleMigrationExecutionForm(
     controlFingerprint,
     confirmation,
   };
+}
+
+export function parseKnowledgeCmsSupportingMigrationExecutionForm(
+  kindValue: unknown,
+  controlIdValue: unknown,
+  controlFingerprintValue: unknown,
+  formData: FormData,
+): KnowledgeCmsSupportingMigrationExecutionRequest {
+  const kind = kindValue === "topic" || kindValue === "faq" ? kindValue : "";
+  const controlId =
+    typeof controlIdValue === "string" ? controlIdValue.trim() : "";
+  const controlFingerprint =
+    typeof controlFingerprintValue === "string"
+      ? controlFingerprintValue.trim()
+      : "";
+  const confirmation = readString(formData, "confirmation", {
+    required: true,
+    maxLength: 300,
+  })!;
+  if (
+    !kind ||
+    !new RegExp(
+      `^resource-library-${kind}-control--[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$`,
+    ).test(controlId) ||
+    !/^[a-f0-9]{64}$/.test(controlFingerprint)
+  ) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected topic or FAQ migration control is invalid.",
+    ]);
+  }
+  return { kind, controlId, controlFingerprint, confirmation };
 }
 
 export function parseKnowledgeCmsCreateForm(

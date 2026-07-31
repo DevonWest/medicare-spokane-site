@@ -346,6 +346,27 @@ Executions created by the immediately preceding release remain readable as
 legacy events; they are verified directly against their current artifacts and
 are never silently upgraded or rewritten.
 
+## Topic and FAQ private-draft execution contract
+
+All 12 topic targets and 11 FAQ targets have deterministic SHA-256 controls
+derived from the governed static registries. Controls contain complete
+schema-valid private-draft payloads but omit owner and audit fields, remain
+zero-write and non-executable, and keep indexing and public rendering blocked.
+
+`KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` is a separate
+server-only, exact-`true` gate. A publisher or admin must type the exact
+kind-and-slug phrase for one selected control. The server reloads the actor,
+reconstructs and verifies the control, and transactionally rechecks the target
+document, same-kind slug ownership, optional cross-kind canonical ownership,
+absent search projection, and absent revision-one audit event. A target without
+a canonical creates three atomic documents; a routed topic creates four. Each
+execution redirects to a fresh four- or five-artifact, zero-write receipt.
+
+The supporting-record boundary has no bulk, retry, overwrite, update,
+publication, indexing, public-render, cutover, or production behavior. Its
+append-only history is separate from article migration evidence, and rollback
+disables both execution gates before restoring static renderer mode.
+
 ## Execution history and post-create verification contract
 
 The publisher/admin migration workspace reads authenticated execution history
@@ -533,10 +554,17 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may define deterministic private-draft
-migration controls and verification for the 12 topics and 11 FAQs. It must keep
-topic/FAQ execution separate from the article boundary, remain one-record and
-create-only, preserve all public routes, and add no bulk action, publication,
-indexing, renderer cutover, or production activation. No cutover should be
-proposed until all 45 governed records exist and route-by-route shadow evidence
-plus rollback verification are reviewed.
+The 12 topics and 11 FAQs now have deterministic, fingerprinted, zero-write
+controls. Their separate
+`KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` gate permits only one
+explicitly confirmed private draft per create-only transaction. The transaction
+reconstructs the governed control server-side and rechecks the target, slug,
+optional canonical path, absent search projection, and revision-one audit event.
+Each result has a four- or five-artifact zero-write verification receipt. Bulk,
+overwrite, publication, indexing, rendering, cutover, and production activation
+remain blocked.
+
+The next independently reviewed release may add a complete 45-record migration
+completion report and operator sequence. No cutover should be proposed until all
+45 governed records exist and route-by-route shadow evidence plus rollback
+verification are reviewed.

@@ -351,7 +351,7 @@ const rollbackSteps: KnowledgeCmsBetaRollbackStep[] = [
     order: 1,
     code: "disable_article_execution",
     action:
-      "Set KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false in beta so no further migration draft can be created.",
+      "Set KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false and KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false in beta so no further migration draft can be created.",
     expectedEvidence:
       "Migration preview remains readable to authorized operators, but every execution control is absent.",
   },
@@ -391,6 +391,7 @@ const rollbackSteps: KnowledgeCmsBetaRollbackStep[] = [
 
 const rollbackVerification = Object.freeze([
   "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED is exact false.",
+  "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED is exact false.",
   "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE is exact static.",
   "All 22 governed routes still match their verified static rendering, metadata, and indexing evidence.",
   "The homepage, /medicare-spokane, /resources, redirects, sitemap, and beta robots policy are unchanged.",
@@ -461,7 +462,7 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
   const rollbackContractReady = Boolean(
     rollbackSteps.length === 5 &&
       rollbackTriggers.length === 6 &&
-      rollbackVerification.length === 6,
+      rollbackVerification.length === 7,
   );
 
   const checks: KnowledgeCmsBetaActivationCheck[] = [
@@ -783,7 +784,7 @@ export function validateKnowledgeCmsBetaActivationPreview(
     !rollbackCodes.has("deploy_beta_rollback_configuration") ||
     !rollbackCodes.has("disable_private_cms_if_needed") ||
     !rollbackCodes.has("restore_known_good_beta_revision") ||
-    preview.rollback.verification.length !== 6
+    preview.rollback.verification.length !== 7
   ) {
     errors.push("The beta rollback contract is incomplete.");
   }

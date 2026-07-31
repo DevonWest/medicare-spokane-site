@@ -31,6 +31,15 @@ import {
   type KnowledgeCmsArticleMigrationControlRecord,
 } from "./knowledgeCmsArticleMigrationControl";
 import {
+  KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_VERSION,
+  KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_WRITE_COUNT,
+  buildKnowledgeCmsSupportingMigrationControl,
+  validateKnowledgeCmsSupportingMigrationControl,
+  type KnowledgeCmsSupportingMigrationControlRecord,
+  type KnowledgeCmsSupportingMigrationOrigin,
+  type KnowledgeCmsSupportingMigrationTarget,
+} from "./knowledgeCmsSupportingMigrationControl";
+import {
   getKnowledgeCmsRouteParity,
   validateKnowledgeCmsRouteParityManifest,
   type KnowledgeCmsRouteParityManifestEntry,
@@ -45,7 +54,7 @@ import {
 } from "./knowledgeCmsRendererContract";
 import { medicareTopics, type Topic } from "./topics";
 
-export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 6 as const;
+export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 7 as const;
 export const KNOWLEDGE_CMS_MIGRATION_WRITE_COUNT = 0 as const;
 
 const FIRST_PARTY_ABOUT_URL =
@@ -88,6 +97,8 @@ export type KnowledgeCmsMigrationIssueCode =
   | "static_registry_invalid"
   | "static_fact_reference_preserved"
   | "static_record_not_published"
+  | "supporting_control_defined"
+  | "supporting_control_invalid"
   | "unsupported_relationship";
 
 export interface KnowledgeCmsMigrationIssue {
@@ -148,6 +159,7 @@ export interface KnowledgeCmsMigrationTopicTarget
   description: string;
   order: number;
   parentTopicId?: string;
+  controlRecord?: KnowledgeCmsSupportingMigrationControlRecord;
 }
 
 export interface KnowledgeCmsMigrationFaqTarget
@@ -158,6 +170,7 @@ export interface KnowledgeCmsMigrationFaqTarget
   categoryId: string;
   factIds: string[];
   schemaEligible: boolean;
+  controlRecord?: KnowledgeCmsSupportingMigrationControlRecord;
 }
 
 export type KnowledgeCmsMigrationTarget =
@@ -214,6 +227,16 @@ export interface KnowledgeCmsMigrationPreview {
       executionEligible: number;
       writeCount:
         typeof KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT;
+    };
+    supportingControls: {
+      version: typeof KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_VERSION;
+      total: number;
+      controlsDefined: number;
+      fingerprinted: number;
+      privateDrafts: number;
+      executionEligible: number;
+      writeCount:
+        typeof KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_WRITE_COUNT;
     };
     renderer: {
       contractVersion: typeof KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION;
@@ -892,6 +915,85 @@ function buildFaqCandidate(
   return candidate;
 }
 
+function defineSupportingControl(candidate: MutableMigrationCandidate): void {
+  if (candidate.target.kind === "article") {
+    return;
+  }
+  const origin = candidate.origin as KnowledgeCmsSupportingMigrationOrigin;
+  const target: KnowledgeCmsSupportingMigrationTarget =
+    candidate.target.kind === "topic"
+      ? {
+          id: candidate.target.id,
+          kind: "topic",
+          slug: candidate.target.slug,
+          title: candidate.target.title,
+          description: candidate.target.description,
+          order: candidate.target.order,
+          ...(candidate.target.parentTopicId
+            ? { parentTopicId: candidate.target.parentTopicId }
+            : {}),
+          searchTerms: [...candidate.target.searchTerms],
+          relationships: candidate.target.relationships,
+          sources: candidate.target.sources,
+          ...(candidate.target.canonicalPath
+            ? { canonicalPath: candidate.target.canonicalPath }
+            : {}),
+        }
+      : {
+          id: candidate.target.id,
+          kind: "faq",
+          slug: candidate.target.slug,
+          question: candidate.target.question,
+          answer: candidate.target.answer,
+          categoryId: candidate.target.categoryId,
+          factIds: [...candidate.target.factIds],
+          schemaEligible: candidate.target.schemaEligible,
+          searchTerms: [...candidate.target.searchTerms],
+          relationships: candidate.target.relationships,
+          sources: candidate.target.sources,
+          ...(candidate.target.canonicalPath
+            ? { canonicalPath: candidate.target.canonicalPath }
+            : {}),
+        };
+  try {
+    const input = { origin, target };
+    const control = buildKnowledgeCmsSupportingMigrationControl(input);
+    candidate.target.controlRecord = control;
+    const errors = validateKnowledgeCmsSupportingMigrationControl(
+      control,
+      input,
+    );
+    if (errors.length > 0) {
+      for (const message of errors) {
+        addIssue(
+          candidate,
+          issue("supporting_control_invalid", "blocker", message),
+        );
+      }
+      return;
+    }
+    addIssue(
+      candidate,
+      issue(
+        "supporting_control_defined",
+        "info",
+        `Deterministic ${target.kind} private-draft control "${control.controlId}" is pinned to sha256:${control.fingerprint.value} with execution disabled.`,
+      ),
+    );
+  } catch (error) {
+    addIssue(
+      candidate,
+      issue(
+        "supporting_control_invalid",
+        "blocker",
+        error instanceof Error
+          ? error.message
+          : "The supporting migration control could not be built.",
+      ),
+    );
+  }
+}
+
 function validateRelationships(
   candidates: MutableMigrationCandidate[],
 ): void {
@@ -1246,6 +1348,10 @@ export function buildKnowledgeCmsMigrationPreview(
     ),
   ];
 
+  for (const candidate of mutableCandidates) {
+    defineSupportingControl(candidate);
+  }
+
   validateRelationships(mutableCandidates);
   validateCandidateCollisions(mutableCandidates);
   compareExistingRecords(
@@ -1309,6 +1415,13 @@ export function buildKnowledgeCmsMigrationPreview(
     ): candidate is KnowledgeCmsMigrationCandidate & {
       target: KnowledgeCmsMigrationArticleTarget;
     } => candidate.target.kind === "article",
+  );
+  const supportingCandidates = candidates.filter(
+    (
+      candidate,
+    ): candidate is KnowledgeCmsMigrationCandidate & {
+      target: KnowledgeCmsMigrationTopicTarget | KnowledgeCmsMigrationFaqTarget;
+    } => candidate.target.kind === "topic" || candidate.target.kind === "faq",
   );
   const rendererMode = resolveKnowledgeCmsPublicRendererMode(
     options.rendererMode,
@@ -1380,6 +1493,30 @@ export function buildKnowledgeCmsMigrationPreview(
         ).length,
         writeCount:
           KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT,
+      },
+      supportingControls: {
+        version: KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_VERSION,
+        total: supportingCandidates.length,
+        controlsDefined: supportingCandidates.filter(
+          (candidate) => Boolean(candidate.target.controlRecord),
+        ).length,
+        fingerprinted: supportingCandidates.filter((candidate) =>
+          /^[a-f0-9]{64}$/.test(
+            candidate.target.controlRecord?.fingerprint.value ?? "",
+          ),
+        ).length,
+        privateDrafts: supportingCandidates.filter(
+          (candidate) =>
+            candidate.target.controlRecord?.target.payload.status === "draft" &&
+            candidate.target.controlRecord.target.payload.discoverability
+              .indexing === "blocked" &&
+            !candidate.target.controlRecord.rollout.cmsRecordPubliclyRendered,
+        ).length,
+        executionEligible: supportingCandidates.filter(
+          (candidate) =>
+            candidate.target.controlRecord?.execution.readyToExecute,
+        ).length,
+        writeCount: KNOWLEDGE_CMS_SUPPORTING_MIGRATION_CONTROL_WRITE_COUNT,
       },
       renderer: {
         contractVersion: KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,

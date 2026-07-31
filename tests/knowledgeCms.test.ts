@@ -54,12 +54,18 @@ function enableKnowledgeCmsForTest() {
 
 async function loadServerModules() {
   mockServerOnlyModule();
-  const [repository, workflow, migrationExecution] = await Promise.all([
+  const [repository, workflow, migrationExecution, supportingExecution] = await Promise.all([
     import("../lib/knowledgeCmsRepository"),
     import("../lib/knowledgeCmsWorkflow"),
     import("../lib/knowledgeCmsArticleMigrationExecution"),
+    import("../lib/knowledgeCmsSupportingMigrationExecution"),
   ]);
-  return { ...repository, ...workflow, ...migrationExecution };
+  return {
+    ...repository,
+    ...workflow,
+    ...migrationExecution,
+    ...supportingExecution,
+  };
 }
 
 class MemoryKnowledgeCmsRepository implements KnowledgeCmsRepository {
@@ -320,6 +326,7 @@ const publisher: KnowledgeCmsActor = {
 afterEach(() => {
   delete process.env.KNOWLEDGE_CMS_ENABLED;
   delete process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED;
+  delete process.env.KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED;
 });
 
 test("CMS collection names preserve the promised article, topic, and FAQ objects", () => {
@@ -1376,6 +1383,119 @@ test("one confirmed article control creates one private draft transaction", asyn
     /target already exists/i,
   );
   assert.equal(firestore.documents.size, 4);
+});
+
+test("one confirmed topic or FAQ control creates and verifies only its private draft", async () => {
+  const {
+    FirestoreKnowledgeCmsRepository,
+    getKnowledgeCmsSupportingMigrationConfirmationPhrase,
+  } = await loadServerModules();
+  enableKnowledgeCmsForTest();
+  process.env.KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED = "true";
+  const candidates = buildKnowledgeCmsMigrationPreview({ asOf: NOW }).candidates
+    .filter(
+      (candidate) =>
+        (candidate.target.kind === "topic" ||
+          candidate.target.kind === "faq") &&
+        candidate.target.controlRecord,
+    );
+  const selected = [
+    candidates.find(
+      (candidate) =>
+        candidate.target.kind === "topic" &&
+        Boolean(candidate.target.canonicalPath),
+    ),
+    candidates.find((candidate) => candidate.target.kind === "faq"),
+  ];
+  assert.ok(selected.every(Boolean));
+
+  for (const candidate of selected) {
+    assert.ok(
+      candidate &&
+        (candidate.target.kind === "topic" ||
+          candidate.target.kind === "faq"),
+    );
+    const control = candidate.target.controlRecord;
+    assert.ok(control);
+    const firestore = new FakeFirestore();
+    const storage = new FirestoreKnowledgeCmsRepository({
+      db: firestore as never,
+      now: () => NOW,
+    });
+    const created = await storage.createSupportingMigrationDraft(publisher, {
+      kind: candidate.target.kind,
+      controlId: control.controlId,
+      controlFingerprint: control.fingerprint.value,
+      confirmation: getKnowledgeCmsSupportingMigrationConfirmationPhrase(
+        candidate.target.kind,
+        candidate.target.slug,
+      ),
+    });
+
+    assert.equal(created.kind, candidate.target.kind);
+    assert.equal(created.status, "draft");
+    assert.equal(created.discoverability.indexing, "blocked");
+    assert.equal(
+      firestore.documents.has(
+        `${KNOWLEDGE_CMS_COLLECTIONS[created.kind]}/${created.id}`,
+      ),
+      true,
+    );
+    assert.equal(
+      firestore.documents.has(
+        `knowledge_cms_slugs/${created.kind}--${created.slug}`,
+      ),
+      true,
+    );
+    assert.equal(
+      firestore.documents.has(
+        `knowledge_search_documents/${created.kind}--${created.id}`,
+      ),
+      false,
+    );
+    const audit = firestore.documents.get(
+      `knowledge_cms_audit_events/${created.kind}--${created.id}--0000000001`,
+    );
+    assert.equal(
+      audit?.event,
+      "migration_create_private_supporting_draft",
+    );
+    assert.equal(
+      audit?.migrationWriteCount,
+      created.discoverability.canonicalPath ? 4 : 3,
+    );
+    assert.equal(
+      firestore.documents.size,
+      created.discoverability.canonicalPath ? 4 : 3,
+    );
+
+    const history = await storage.listSupportingMigrationExecutions(publisher);
+    assert.equal(history.summary.validEvents, 1);
+    assert.equal(history.summary.controlsVerified, 1);
+    const verification = await storage.verifySupportingMigrationExecution(
+      publisher,
+      created.kind,
+      created.id,
+    );
+    assert.equal(verification?.status, "verified_private_draft");
+    assert.equal(
+      verification?.artifacts.readCount,
+      created.discoverability.canonicalPath ? 5 : 4,
+    );
+    assert.equal(verification?.artifacts.writeCount, 0);
+    await assert.rejects(
+      storage.createSupportingMigrationDraft(publisher, {
+        kind: candidate.target.kind,
+        controlId: control.controlId,
+        controlFingerprint: control.fingerprint.value,
+        confirmation: getKnowledgeCmsSupportingMigrationConfirmationPhrase(
+          candidate.target.kind,
+          candidate.target.slug,
+        ),
+      }),
+      /target already exists/i,
+    );
+  }
 });
 
 test("migration execution fails closed on every orphaned transactional artifact", async () => {
