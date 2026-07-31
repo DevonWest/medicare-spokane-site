@@ -14,6 +14,7 @@ import {
   KnowledgeCmsValidationError,
   type KnowledgeCmsActor,
   type KnowledgeCmsArticle,
+  type KnowledgeCmsChangeRequest,
   type KnowledgeCmsCreateInput,
   type KnowledgeCmsDiscoverability,
   type KnowledgeCmsFaq,
@@ -514,14 +515,40 @@ export class KnowledgeCmsWorkflow {
         if (errors.length > 0) {
           throw new KnowledgeCmsValidationError(errors);
         }
-        next = { ...current, status: "in_review" };
+        next = {
+          ...current,
+          status: "in_review",
+          changeRequest: undefined,
+        };
         break;
       }
       case "request_changes": {
         assertStatus(current, ["in_review", "approved"], input.action);
+        const feedback = cleanOptional(input.decisionNote);
+        if (!feedback) {
+          throw new KnowledgeCmsValidationError([
+            "Request-changes feedback is required.",
+          ]);
+        }
+        const agentSlug = cleanOptional(actor.agentSlug);
+        const verificationId = cleanOptional(input.reviewerVerificationId);
+        if (
+          !agentSlug ||
+          !verificationId ||
+          !this.reviewerVerifier(agentSlug, verificationId, now)
+        ) {
+          throw new KnowledgeCmsReviewerVerificationError();
+        }
+        const changeRequest: KnowledgeCmsChangeRequest = {
+          requestedByAgentSlug: agentSlug,
+          reviewerVerificationId: verificationId,
+          requestedAt: nowIso,
+          feedback,
+        };
         next = {
           ...current,
           status: "draft",
+          changeRequest,
           review: undefined,
           publication: undefined,
           discoverability: {

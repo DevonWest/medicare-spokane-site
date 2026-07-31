@@ -407,7 +407,14 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] `/admin/knowledge/login` returns 200 with `X-Robots-Tag: noindex, nofollow, noarchive`.
 - [ ] An account without `knowledgeCmsRoles` cannot enter.
 - [ ] An approved author can create and edit only a private draft it owns.
+- [ ] An author can submit only its own valid, current-source draft for review.
+- [ ] A reviewer without one current licensed-reviewer verification cannot
+  return a record for changes.
+- [ ] A verified reviewer who is not the owner can request changes only with
+  required feedback, and the returned draft shows that feedback without
+  exposing the verification identifier.
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
+- [ ] No approve or publish control is present.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally

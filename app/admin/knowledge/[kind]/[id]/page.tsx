@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import KnowledgeRecordForm from "@/app/admin/knowledge/components/KnowledgeRecordForm";
+import KnowledgeWorkflowControls from "@/app/admin/knowledge/components/KnowledgeWorkflowControls";
 import {
+  isKnowledgeCmsRecordId,
   isKnowledgeCmsRecordKind,
 } from "@/lib/knowledgeCmsAdmin";
 import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
@@ -10,8 +12,6 @@ import {
   isKnowledgeCmsEnabled,
   KnowledgeCmsNotFoundError,
 } from "@/lib/knowledgeCmsRepository";
-
-const recordIdPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
 
 export default async function KnowledgeRecordPage({
   params,
@@ -26,7 +26,7 @@ export default async function KnowledgeRecordPage({
     redirect("/admin/knowledge/login");
   }
   const { kind, id } = await params;
-  if (!isKnowledgeCmsRecordKind(kind) || !recordIdPattern.test(id)) {
+  if (!isKnowledgeCmsRecordKind(kind) || !isKnowledgeCmsRecordId(id)) {
     notFound();
   }
 
@@ -69,6 +69,25 @@ export default async function KnowledgeRecordPage({
             })}
           </p>
         </header>
+        {record.changeRequest ? (
+          <aside className="mt-8 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-950 shadow-sm md:p-8">
+            <p className="text-sm font-bold uppercase tracking-[0.18em]">
+              Changes requested
+            </p>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-7">
+              {record.changeRequest.feedback}
+            </p>
+            <p className="mt-4 text-xs font-semibold text-amber-800">
+              Returned{" "}
+              {new Date(record.changeRequest.requestedAt).toLocaleString(
+                "en-US",
+                {
+                  timeZone: "America/Los_Angeles",
+                },
+              )}
+            </p>
+          </aside>
+        ) : null}
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <KnowledgeRecordForm
             key={`${kind}:${id}`}
@@ -77,6 +96,14 @@ export default async function KnowledgeRecordPage({
             record={record}
           />
         </div>
+        <KnowledgeWorkflowControls
+          key={`${kind}:${id}:${record.revision}`}
+          canRequestChanges={record.workflowActions.requestChanges}
+          canSubmitForReview={record.workflowActions.submitForReview}
+          id={id}
+          kind={kind}
+          revision={record.revision}
+        />
       </div>
     </section>
   );

@@ -62,6 +62,13 @@ windows cannot exceed 180 days. An approval requires a distinct reviewer with
 an active licensed-agent verification, and its review window cannot exceed 365
 days. Verification is checked again at publication.
 
+Submitting uses the latest saved revision and clears any prior active change
+request. Requesting changes requires a current, unambiguous licensed-reviewer
+verification plus non-empty feedback. The returned draft exposes only the
+feedback and request time to the editor; the canonical reviewer verification
+and the same feedback remain in the governed record and append-only audit
+event.
+
 Published records create a search projection. Draft, review, approved,
 archived, and unpublished records remove it. A publisher must explicitly
 choose whether a published record is eligible for indexing; eligibility also
@@ -91,6 +98,9 @@ request instead of trusting claims supplied by a form or browser state.
 - private draft creation for authors, editors, and admins;
 - draft editing under the workflow's owner and role rules;
 - current-revision checks that stop stale tabs from overwriting newer edits;
+- submit-for-review controls for authorized draft owners and editors;
+- request-changes controls for verified reviewers who are not the record
+  owner, with required feedback visible on the returned draft;
 - safe DTOs that omit canonical ownership and audit internals from client
   components; and
 - articles, topics, FAQs, relationships, source records, search terms, and
@@ -102,8 +112,8 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-This release intentionally has no submit, approve, request-changes, publish,
-unpublish, archive, restore, public-rendering, or migration controls.
+This release intentionally has no approve, publish, unpublish, archive,
+restore, public-rendering, or migration controls.
 
 ## Authentication rollout prerequisites
 
@@ -152,15 +162,16 @@ browser never receives a way to assign or elevate roles.
 - Public Knowledge Center rendering
 - Migration of the existing static registry
 - Hosted search service or embeddings
-- Editorial workflow transition controls
+- Approval and publication workflow controls
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
 
 ## Next release gate
 
-The next workflow-interface release may add submit-for-review and
-request-changes controls. It must preserve per-action authentication,
-ownership, reviewer separation, source currency, verified reviewer identity,
-revision checks, and minimal DTOs. Approval and publication should remain a
-later independently reviewed release.
+A later independently reviewed workflow release may add approval controls. It
+must preserve per-action authentication, reviewer separation, source currency,
+verified reviewer identity, bounded review dates, revision checks, and minimal
+DTOs. Publication must remain separate from approval and cannot make a CMS
+record public until the static-registry migration and public-rendering work are
+reviewed independently.
