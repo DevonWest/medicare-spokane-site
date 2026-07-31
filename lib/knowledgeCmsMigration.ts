@@ -23,9 +23,14 @@ import {
   type KnowledgeCmsRelationships,
   type KnowledgeCmsSource,
 } from "./knowledgeCms";
+import {
+  getKnowledgeCmsRouteParity,
+  validateKnowledgeCmsRouteParityManifest,
+  type KnowledgeCmsRouteParityManifestEntry,
+} from "./knowledgeCmsRouteParity";
 import { medicareTopics, type Topic } from "./topics";
 
-export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_MIGRATION_WRITE_COUNT = 0 as const;
 
 const FIRST_PARTY_ABOUT_URL =
@@ -38,7 +43,7 @@ export type KnowledgeCmsMigrationIssueSeverity =
   | "info";
 
 export type KnowledgeCmsMigrationIssueCode =
-  | "article_body_unmapped"
+  | "article_body_representation_blocked"
   | "candidate_canonical_conflict"
   | "candidate_id_conflict"
   | "candidate_slug_conflict"
@@ -48,13 +53,17 @@ export type KnowledgeCmsMigrationIssueCode =
   | "existing_match"
   | "existing_record_requires_content_comparison"
   | "existing_slug_conflict"
+  | "content_parity_snapshot_verified"
   | "legacy_review_required"
+  | "metadata_parity_verified"
   | "metadata_parity_unverified"
   | "missing_article_relationship"
   | "missing_fact_reference"
   | "missing_faq_relationship"
   | "missing_source"
   | "missing_topic_relationship"
+  | "parity_manifest_invalid"
+  | "parity_manifest_missing"
   | "source_due_for_review"
   | "static_registry_invalid"
   | "static_fact_reference_preserved"
@@ -105,7 +114,10 @@ export interface KnowledgeCmsMigrationArticleTarget
   extends KnowledgeCmsMigrationTargetBase {
   kind: "article";
   summary: string;
-  bodyStatus: "unmapped";
+  bodyStatus: "missing" | "snapshot_verified";
+  pageTitle?: string;
+  description?: string;
+  routeParity?: KnowledgeCmsRouteParityManifestEntry;
 }
 
 export interface KnowledgeCmsMigrationTopicTarget
@@ -165,6 +177,12 @@ export interface KnowledgeCmsMigrationPreview {
     blockers: number;
     warnings: number;
     sourceRecords: number;
+    articleParity: {
+      total: number;
+      snapshotsVerified: number;
+      metadataVerified: number;
+      representationBlocked: number;
+    };
     byKind: Record<KnowledgeCmsRecordKind, KnowledgeCmsMigrationKindSummary>;
   };
   issues: KnowledgeCmsMigrationIssue[];
@@ -487,6 +505,7 @@ function buildArticleCandidate(
   faqById: ReadonlyMap<string, KnowledgeFaq>,
   asOf: string,
 ): MutableMigrationCandidate {
+  const routeParity = getKnowledgeCmsRouteParity(entry.id);
   const candidate: MutableMigrationCandidate = {
     key: `article:${migrationArticleId(entry.id)}`,
     origin: {
@@ -500,7 +519,14 @@ function buildArticleCandidate(
       slug: slugFromPath(entry.path),
       title: entry.title,
       summary: entry.summary,
-      bodyStatus: "unmapped",
+      bodyStatus: routeParity ? "snapshot_verified" : "missing",
+      ...(routeParity
+        ? {
+            pageTitle: routeParity.metadata.pageTitle,
+            description: routeParity.metadata.description,
+            routeParity,
+          }
+        : {}),
       searchTerms: unique([...entry.tags, ...entry.topicSlugs]),
       relationships: normalizeKnowledgeCmsRelationships(undefined),
       sources: [],
@@ -508,19 +534,45 @@ function buildArticleCandidate(
       status: "draft",
       indexing: "blocked",
     },
-    issues: [
-      issue(
-        "article_body_unmapped",
-        "blocker",
-        `The public route body at "${entry.path}" must be mapped and content-parity checked before import.`,
-      ),
-      issue(
-        "metadata_parity_unverified",
-        "warning",
-        "The current public title, description, H1, schema, and canonical must be compared before import.",
-      ),
-    ],
+    issues: [],
   };
+  if (!routeParity) {
+    addIssue(
+      candidate,
+      issue(
+        "parity_manifest_missing",
+        "blocker",
+        `The public route body and metadata at "${entry.path}" have no parity snapshot.`,
+      ),
+    );
+  } else {
+    addIssue(
+      candidate,
+      issue(
+        "content_parity_snapshot_verified",
+        "info",
+        `The rendered route body is pinned to ${routeParity.renderedBody.hashAlgorithm}:${routeParity.renderedBody.sha256}.`,
+      ),
+    );
+    addIssue(
+      candidate,
+      issue(
+        "metadata_parity_verified",
+        "info",
+        "The page title, description, canonical, Open Graph metadata, H1, and structured-data types match the route parity manifest.",
+      ),
+    );
+    if (routeParity.cmsRepresentation.status === "blocked") {
+      addIssue(
+        candidate,
+        issue(
+          "article_body_representation_blocked",
+          "blocker",
+          routeParity.cmsRepresentation.reason,
+        ),
+      );
+    }
+  }
   if (entry.review?.status !== "reviewed") {
     addIssue(
       candidate,
@@ -1081,9 +1133,14 @@ export function buildKnowledgeCmsMigrationPreview(
         kindOrder[left.target.kind] - kindOrder[right.target.kind] ||
         left.target.title.localeCompare(right.target.title),
     );
-  const registryIssues = validateKnowledgeCenter(asOf).map((message) =>
-    issue("static_registry_invalid", "blocker", message),
-  );
+  const registryIssues = [
+    ...validateKnowledgeCenter(asOf).map((message) =>
+      issue("static_registry_invalid", "blocker", message),
+    ),
+    ...validateKnowledgeCmsRouteParityManifest().map((message) =>
+      issue("parity_manifest_invalid", "blocker", message),
+    ),
+  ];
   const byKind: Record<
     KnowledgeCmsRecordKind,
     KnowledgeCmsMigrationKindSummary
@@ -1111,6 +1168,13 @@ export function buildKnowledgeCmsMigrationPreview(
   const candidateIssues = candidates.flatMap(
     (candidate) => candidate.issues,
   );
+  const articleCandidates = candidates.filter(
+    (
+      candidate,
+    ): candidate is KnowledgeCmsMigrationCandidate & {
+      target: KnowledgeCmsMigrationArticleTarget;
+    } => candidate.target.kind === "article",
+  );
 
   return {
     version: KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION,
@@ -1135,6 +1199,22 @@ export function buildKnowledgeCmsMigrationPreview(
         (item) => item.severity === "warning",
       ).length,
       sourceRecords,
+      articleParity: {
+        total: articleCandidates.length,
+        snapshotsVerified: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.bodyStatus === "snapshot_verified",
+        ).length,
+        metadataVerified: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.routeParity?.metadata.status === "verified",
+        ).length,
+        representationBlocked: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.routeParity?.cmsRepresentation.status ===
+            "blocked",
+        ).length,
+      },
       byKind,
     },
     issues: registryIssues,
