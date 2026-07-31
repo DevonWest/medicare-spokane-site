@@ -690,6 +690,7 @@ test("admin routes remain default-off and publication stays private and server-a
     "app/admin/knowledge/login/page.tsx",
     "app/admin/knowledge/new/page.tsx",
     "app/admin/knowledge/[kind]/[id]/page.tsx",
+    "app/admin/knowledge/migration-preview/page.tsx",
   ].map((path) => readFileSync(join(root, path), "utf8"));
   const dataAccess = readFileSync(
     join(root, "lib/knowledgeCmsAdminDal.ts"),

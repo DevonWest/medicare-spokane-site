@@ -1,0 +1,53 @@
+import "server-only";
+
+import {
+  KNOWLEDGE_CMS_RECORD_KINDS,
+} from "./knowledgeCmsAdmin";
+import { requireKnowledgeCmsActor } from "./knowledgeCmsAdminAuth";
+import {
+  assertKnowledgeCmsActionAllowed,
+  type KnowledgeCmsActor,
+  type KnowledgeCmsRecord,
+} from "./knowledgeCms";
+import {
+  buildKnowledgeCmsMigrationPreview,
+  type KnowledgeCmsMigrationPreview,
+} from "./knowledgeCmsMigration";
+import {
+  createKnowledgeCmsRepository,
+  type KnowledgeCmsRepository,
+} from "./knowledgeCmsRepository";
+
+export async function readKnowledgeCmsMigrationInventory(
+  repository: Pick<KnowledgeCmsRepository, "list">,
+): Promise<KnowledgeCmsRecord[]> {
+  return (
+    await Promise.all(
+      KNOWLEDGE_CMS_RECORD_KINDS.map((kind) =>
+        repository.list({ kind }),
+      ),
+    )
+  ).flat();
+}
+
+export async function previewKnowledgeCmsMigration(
+  repository: Pick<KnowledgeCmsRepository, "list">,
+  actor: KnowledgeCmsActor,
+  asOf: Date = new Date(),
+): Promise<KnowledgeCmsMigrationPreview> {
+  assertKnowledgeCmsActionAllowed(actor, "preview_migration");
+  const existingRecords =
+    await readKnowledgeCmsMigrationInventory(repository);
+  return buildKnowledgeCmsMigrationPreview({
+    asOf,
+    existingRecords,
+  });
+}
+
+export async function getKnowledgeCmsAdminMigrationPreview(): Promise<KnowledgeCmsMigrationPreview> {
+  const actor = await requireKnowledgeCmsActor();
+  return previewKnowledgeCmsMigration(
+    createKnowledgeCmsRepository(),
+    actor,
+  );
+}
