@@ -24,6 +24,13 @@ import {
   type KnowledgeCmsSource,
 } from "./knowledgeCms";
 import {
+  KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION,
+  KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT,
+  buildKnowledgeCmsArticleMigrationControl,
+  validateKnowledgeCmsArticleMigrationControl,
+  type KnowledgeCmsArticleMigrationControlRecord,
+} from "./knowledgeCmsArticleMigrationControl";
+import {
   getKnowledgeCmsRouteParity,
   validateKnowledgeCmsRouteParityManifest,
   type KnowledgeCmsRouteParityManifestEntry,
@@ -38,7 +45,7 @@ import {
 } from "./knowledgeCmsRendererContract";
 import { medicareTopics, type Topic } from "./topics";
 
-export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 4 as const;
+export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 5 as const;
 export const KNOWLEDGE_CMS_MIGRATION_WRITE_COUNT = 0 as const;
 
 const FIRST_PARTY_ABOUT_URL =
@@ -51,6 +58,8 @@ export type KnowledgeCmsMigrationIssueSeverity =
   | "info";
 
 export type KnowledgeCmsMigrationIssueCode =
+  | "article_control_defined"
+  | "article_control_invalid"
   | "article_body_representation_blocked"
   | "candidate_canonical_conflict"
   | "candidate_id_conflict"
@@ -130,6 +139,7 @@ export interface KnowledgeCmsMigrationArticleTarget
   description?: string;
   routeParity?: KnowledgeCmsRouteParityManifestEntry;
   rendererContract?: KnowledgeCmsRendererContractEntry;
+  controlRecord?: KnowledgeCmsArticleMigrationControlRecord;
 }
 
 export interface KnowledgeCmsMigrationTopicTarget
@@ -194,6 +204,16 @@ export interface KnowledgeCmsMigrationPreview {
       snapshotsVerified: number;
       metadataVerified: number;
       representationBlocked: number;
+    };
+    articleControls: {
+      version:
+        typeof KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION;
+      controlsDefined: number;
+      fingerprinted: number;
+      privateDrafts: number;
+      executionEligible: number;
+      writeCount:
+        typeof KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT;
     };
     renderer: {
       contractVersion: typeof KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION;
@@ -637,6 +657,76 @@ function buildArticleCandidate(
     sourceById,
     asOf,
   );
+  if (
+    candidate.target.kind === "article" &&
+    routeParity &&
+    rendererContract
+  ) {
+    try {
+      const controlInput = {
+        target: {
+          id: candidate.target.id,
+          kind: "article" as const,
+          slug: candidate.target.slug,
+          title: candidate.target.title,
+          summary: candidate.target.summary,
+          searchTerms: [...candidate.target.searchTerms],
+          relationships: candidate.target.relationships,
+          sources: candidate.target.sources,
+          canonicalPath: entry.path,
+          pageTitle: routeParity.metadata.pageTitle,
+          description: routeParity.metadata.description,
+        },
+        routeParity,
+        rendererContract,
+      };
+      const controlRecord =
+        buildKnowledgeCmsArticleMigrationControl(controlInput);
+      candidate.target.controlRecord = controlRecord;
+      const controlErrors =
+        validateKnowledgeCmsArticleMigrationControl(
+          controlRecord,
+          controlInput,
+        );
+      if (controlErrors.length === 0) {
+        addIssue(
+          candidate,
+          issue(
+            "article_control_defined",
+            "info",
+            `Deterministic private-draft control "${controlRecord.controlId}" is pinned to ${controlRecord.fingerprint.algorithm}:${controlRecord.fingerprint.value} with execution disabled.`,
+          ),
+        );
+      } else {
+        for (const message of controlErrors) {
+          addIssue(
+            candidate,
+            issue("article_control_invalid", "blocker", message),
+          );
+        }
+      }
+    } catch (error) {
+      addIssue(
+        candidate,
+        issue(
+          "article_control_invalid",
+          "blocker",
+          error instanceof Error
+            ? error.message
+            : "The article migration control could not be built.",
+        ),
+      );
+    }
+  } else {
+    addIssue(
+      candidate,
+      issue(
+        "article_control_invalid",
+        "blocker",
+        `The public route at "${entry.path}" cannot define a migration control without route parity and a renderer contract.`,
+      ),
+    );
+  }
   return candidate;
 }
 
@@ -1262,6 +1352,34 @@ export function buildKnowledgeCmsMigrationPreview(
             candidate.target.routeParity?.cmsRepresentation.status ===
             "blocked",
         ).length,
+      },
+      articleControls: {
+        version:
+          KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION,
+        controlsDefined: articleCandidates.filter(
+          (candidate) => Boolean(candidate.target.controlRecord),
+        ).length,
+        fingerprinted: articleCandidates.filter(
+          (candidate) =>
+            /^[a-f0-9]{64}$/.test(
+              candidate.target.controlRecord?.fingerprint.value ?? "",
+            ),
+        ).length,
+        privateDrafts: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.controlRecord?.target.payload.status ===
+              "draft" &&
+            candidate.target.controlRecord.target.payload
+              .discoverability.indexing === "blocked" &&
+            !candidate.target.controlRecord.rollout
+              .cmsBodyPubliclyRendered,
+        ).length,
+        executionEligible: articleCandidates.filter(
+          (candidate) =>
+            candidate.target.controlRecord?.execution.readyToExecute,
+        ).length,
+        writeCount:
+          KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT,
       },
       renderer: {
         contractVersion: KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,

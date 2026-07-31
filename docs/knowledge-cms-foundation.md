@@ -130,6 +130,10 @@ request instead of trusting claims supplied by a form or browser state.
   the exported page metadata, canonical and Open Graph values, H1, rendered
   byte count, page-specific structured-data types, form/FAQ counts, and the
   SHA-256 of each server-rendered route body; and
+- an immutable, deterministic private-draft control record for every article
+  target, including fail-if-present semantics, server-owned actor/audit field
+  requirements, a canonical SHA-256 fingerprint, and an explicit zero-write
+  execution block; and
 - a versioned lossless-renderer contract for every article route that maps
   required React capabilities to adapters and parity evidence, plus a
   route-specific verified-static rollback; and
@@ -145,16 +149,17 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-The migration preview is intentionally not an import control. It has no Server
+The migration preview is intentionally not an import action. It has no Server
 Action, repository `save`, workflow transition, upload, or execute path. Its
 output always reports a write count of zero and keeps every proposed target
-indexing-blocked. Article route bodies and metadata now have explicit,
-test-enforced parity snapshots. Article migration still fails closed because
-the CMS Markdown body is not used for public rendering and no reviewed
-route-level shadow evidence exists yet. The private shadow adapter preserves
-the current React component tree, forms, FAQ disclosures, relationship cards,
-structured data, and dynamic registries for comparison only. It cannot
-authorize public cutover.
+indexing-blocked. The displayed article controls are immutable
+representations, not buttons or stored Firestore documents. Article route
+bodies and metadata have explicit, test-enforced parity snapshots. Article
+migration still fails closed because the CMS Markdown body is not used for
+public rendering and no reviewed route-level shadow evidence exists yet. The
+private shadow adapter preserves the current React component tree, forms, FAQ
+disclosures, relationship cards, structured data, and dynamic registries for
+comparison only. It cannot authorize public cutover.
 
 This release intentionally has no archive, restore, public rendering, or
 migration execution. CMS publication remains private: it writes the governed
@@ -216,7 +221,7 @@ browser never receives a way to assign or elevate roles.
 - Migration execution for the existing static registry
 - CMS conversion or import of public route bodies
 - Hosted search service or embeddings
-- Static-registry migration or import controls
+- Static-registry migration executors or mutation controls
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
@@ -236,7 +241,9 @@ role. It:
   and relationships with existing CMS records;
 - recognizes equivalent topic and FAQ records without proposing an overwrite;
 - verifies all 22 article route bodies and metadata against deterministic
-  snapshots; and
+  snapshots;
+- defines and fingerprints all 22 create-private-draft article controls while
+  leaving their execution disabled; and
 - identifies private-shadow adapters for all 22 article routes while keeping
   every article migration and public cutover blocked.
 
@@ -244,6 +251,31 @@ The preview does not claim the migration is executable. `readyToExecute` is
 always false, `writeCount` is always zero, and the page contains no mutation
 control. The parity manifest deliberately excludes the homepage and
 `/medicare-spokane`.
+
+## Article migration control-record contract
+
+Each of the 22 article targets has a versioned control record that:
+
+- uses the deterministic `resource-entry--*` document ID and canonical slug;
+- carries the exact title, summary, metadata, sources, relationships, and
+  indexing-blocked discoverability needed for a future private draft;
+- contains a private Markdown control note that names the verified static
+  route and rendered SHA-256 and explicitly states that it is not the public
+  page body;
+- excludes `ownerId`, audit timestamps, review, and publication fields so a
+  future server boundary must resolve the authenticated actor and server
+  clock;
+- requires `expectedRevision=null` and fails if the target record already
+  exists rather than overwriting it;
+- is canonically serialized with recursively sorted object keys and pinned by
+  a SHA-256 fingerprint; and
+- reports `status=disabled`, `readyToExecute=false`, `writeCount=0`,
+  `indexing=blocked`, `cmsBodyPubliclyRendered=false`, and
+  `cutoverEligible=false`.
+
+The control record is a reviewable creation contract only. No repository
+method accepts it, no Server Action exposes it, and no control record is stored
+by this release.
 
 ## Lossless renderer and rollback contract
 
@@ -297,9 +329,10 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may define the deterministic private
-article control-record representation needed to create draft migration
-records without claiming that Markdown is the public page body. It must remain
-non-mutating, preserve static public output, and keep execution and cutover
-separate. No cutover should be proposed until governed records exist and
-route-by-route shadow evidence plus rollback verification are reviewed.
+The next independently reviewed release may add a non-mutating materialization
+dry run that binds these control fingerprints to current expected-absent
+Firestore state, an authenticated server actor, and server-clock fields
+without saving anything. Draft creation, public cutover, indexing changes, and
+bulk execution must remain separate. No cutover should be proposed until
+governed records exist and route-by-route shadow evidence plus rollback
+verification are reviewed.

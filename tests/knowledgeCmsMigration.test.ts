@@ -104,7 +104,7 @@ function topicRecordFromCandidate(
 test("migration preview deterministically inventories the complete static registry", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
 
-  assert.equal(preview.version, 4);
+  assert.equal(preview.version, 5);
   assert.equal(preview.mode, "read_only");
   assert.equal(preview.writeCount, 0);
   assert.equal(preview.readyToExecute, false);
@@ -139,6 +139,14 @@ test("migration preview deterministically inventories the complete static regist
     snapshotsVerified: 22,
     metadataVerified: 22,
     representationBlocked: 22,
+  });
+  assert.deepEqual(preview.summary.articleControls, {
+    version: 1,
+    controlsDefined: 22,
+    fingerprinted: 22,
+    privateDrafts: 22,
+    executionEligible: 0,
+    writeCount: 0,
   });
   assert.deepEqual(preview.summary.renderer, {
     contractVersion: 2,
@@ -242,7 +250,9 @@ test("article snapshots verify body and metadata while lossless rendering stays 
       candidate.target.routeParity?.metadata.status === "verified" &&
       candidate.target.routeParity.renderedBody.status === "verified" &&
       candidate.target.rendererContract?.rollback.status ===
-        "contract_defined",
+        "contract_defined" &&
+      candidate.target.controlRecord?.execution.status === "disabled" &&
+      candidate.target.controlRecord.execution.writeCount === 0,
     ),
   );
   assert.ok(
@@ -271,6 +281,19 @@ test("article snapshots verify body and metadata while lossless rendering stays 
           item.code === "renderer_contract_defined" &&
           item.severity === "info",
       ),
+    ),
+  );
+  assert.ok(
+    articles.every(
+      (candidate) =>
+        candidate.issues.some(
+          (item) =>
+            item.code === "article_control_defined" &&
+            item.severity === "info",
+        ) &&
+        !candidate.issues.some(
+          (item) => item.code === "article_control_invalid",
+        ),
     ),
   );
 });
