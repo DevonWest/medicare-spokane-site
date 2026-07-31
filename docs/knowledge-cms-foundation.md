@@ -115,9 +115,13 @@ request instead of trusting claims supplied by a form or browser state.
 - publisher-only unpublish controls that require a reason and atomically
   remove the search projection before returning the record to draft;
 - safe DTOs that omit canonical ownership and audit internals from client
-  components; and
+  components;
 - articles, topics, FAQs, relationships, source records, search terms, and
-  future discoverability metadata.
+  future discoverability metadata; and
+- a publisher/admin-only Resource Library migration preview that reads all
+  three CMS collections, maps the static registry into deterministic target
+  IDs, and reports source, slug, canonical, relationship, and existing-record
+  conflicts without creating or changing a record.
 
 Session exchange requires a sign-in from the preceding five minutes. Every
 read and mutation verifies the Firebase session with revocation checking and
@@ -125,8 +129,14 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-This release intentionally has no archive, restore, public-rendering, or
-migration controls. CMS publication remains private: it writes the governed
+The migration preview is intentionally not an import control. It has no
+Server Action, repository `save`, workflow transition, upload, or execute
+path. Its output always reports a write count of zero and keeps every proposed
+target indexing-blocked. Article candidates fail closed until the corresponding
+public route body and live metadata have explicit parity mappings.
+
+This release intentionally has no archive, restore, public rendering, or
+migration execution. CMS publication remains private: it writes the governed
 record and search projection but does not add a route, sitemap entry, public
 card, schema block, or visible content to the existing site.
 
@@ -175,18 +185,42 @@ browser never receives a way to assign or elevate roles.
 ## Not included in this release
 
 - Public Knowledge Center rendering
-- Migration of the existing static registry
+- Migration execution for the existing static registry
+- Automated extraction or import of public route bodies
 - Hosted search service or embeddings
 - Static-registry migration or import controls
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
 
+## Migration preview contract
+
+`/admin/knowledge/migration-preview` is available only when the CMS flag is
+enabled and the current verified Firebase user has a `publisher` or `admin`
+role. It:
+
+- maps 22 Resource Library entries to article targets;
+- maps six library categories and six Medicare topics to topic targets;
+- maps the 11 governed FAQs and their factual-source lineage;
+- preserves current canonical paths, curated relationships, entities, source
+  check dates, and source review deadlines;
+- compares proposed IDs, per-kind slugs, canonical paths, governed content,
+  and relationships with existing CMS records;
+- recognizes equivalent topic and FAQ records without proposing an overwrite;
+  and
+- blocks all article candidates until their route bodies and metadata are
+  explicitly mapped and compared.
+
+The preview does not claim the migration is executable. `readyToExecute` is
+always false, `writeCount` is always zero, and the page contains no mutation
+control.
+
 ## Next release gate
 
-A later independently reviewed release may add a dry-run migration planner for
-the existing static Knowledge Center registry. It must detect slug, canonical,
-relationship, source, and content conflicts without mutating Firestore or
-changing a public route. Public CMS rendering must remain separate until the
-migration output, rollback path, metadata parity, and protected-ranking-page
+The next independently reviewed release may add a deterministic content-parity
+manifest for existing Resource Library route bodies and metadata. It must
+produce reviewable snapshots or hashes without writing CMS records, preserve
+all current public copy and structured data, and identify any route that cannot
+be represented losslessly. Migration execution and public CMS rendering must
+remain separate until that output, a rollback plan, and protected-ranking-page
 invariants are reviewed independently.

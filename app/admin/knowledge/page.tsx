@@ -25,6 +25,9 @@ export default async function KnowledgeAdminPage() {
   const canCreate = actor.roles.some((role) =>
     ["author", "editor", "admin"].includes(role),
   );
+  const canPreviewMigration = actor.roles.some((role) =>
+    ["publisher", "admin"].includes(role),
+  );
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -64,6 +67,14 @@ export default async function KnowledgeAdminPage() {
                   New FAQ
                 </Link>
               </>
+            ) : null}
+            {canPreviewMigration ? (
+              <Link
+                className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+                href="/admin/knowledge/migration-preview"
+              >
+                Migration preview
+              </Link>
             ) : null}
             <LogoutButton />
           </div>

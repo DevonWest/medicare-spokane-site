@@ -30,6 +30,7 @@ export type KnowledgeCmsRole =
 export type KnowledgeCmsAction =
   | "create"
   | "read"
+  | "preview_migration"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -1077,6 +1078,12 @@ export function getKnowledgeCmsAuthorizationDecision(
 
   if (action === "read") {
     return { allowed: true, reason: "allowed" };
+  }
+
+  if (action === "preview_migration") {
+    return hasAnyRole(actor, ["publisher", "admin"])
+      ? { allowed: true, reason: "allowed" }
+      : { allowed: false, reason: "role_required" };
   }
 
   if (action === "approve" || action === "request_changes") {
