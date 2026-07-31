@@ -38,7 +38,7 @@ import {
 } from "./knowledgeCmsRendererContract";
 import { medicareTopics, type Topic } from "./topics";
 
-export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 3 as const;
+export const KNOWLEDGE_CMS_MIGRATION_PREVIEW_VERSION = 4 as const;
 export const KNOWLEDGE_CMS_MIGRATION_WRITE_COUNT = 0 as const;
 
 const FIRST_PARTY_ABOUT_URL =

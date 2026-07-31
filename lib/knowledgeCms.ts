@@ -31,6 +31,7 @@ export type KnowledgeCmsAction =
   | "create"
   | "read"
   | "preview_migration"
+  | "preview_shadow_rendering"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -1080,7 +1081,10 @@ export function getKnowledgeCmsAuthorizationDecision(
     return { allowed: true, reason: "allowed" };
   }
 
-  if (action === "preview_migration") {
+  if (
+    action === "preview_migration" ||
+    action === "preview_shadow_rendering"
+  ) {
     return hasAnyRole(actor, ["publisher", "admin"])
       ? { allowed: true, reason: "allowed" }
       : { allowed: false, reason: "role_required" };

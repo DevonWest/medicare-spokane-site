@@ -157,8 +157,9 @@ export default async function KnowledgeMigrationPreviewPage() {
             </li>
             <li>
               {preview.summary.articleParity.representationBlocked} article
-              migrations remain blocked until a CMS renderer implementation
-              passes the lossless contract in shadow mode.
+              migrations remain blocked until governed published records pass
+              private shadow comparison and a separately reviewed CMS-native
+              body/cutover design exists.
             </li>
             <li>
               Requested renderer mode:{" "}
@@ -317,7 +318,12 @@ export default async function KnowledgeMigrationPreviewPage() {
                                 capabilities
                               </p>
                               <p>
-                                Shadow / cutover: blocked / blocked
+                                Shadow / cutover:{" "}
+                                {candidate.target.rendererContract.rollout
+                                  .shadowEligible
+                                  ? "private ready"
+                                  : "blocked"}{" "}
+                                / blocked
                               </p>
                               <p className="font-semibold text-emerald-700">
                                 Rollback: verified static route · no CMS data

@@ -9,6 +9,7 @@ import { dirname, join, relative } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
+  KNOWLEDGE_CMS_PRIVATE_SHADOW_ACTIVATION_ALLOWED,
   KNOWLEDGE_CMS_PUBLIC_RENDERER_ACTIVATION_ALLOWED,
   KNOWLEDGE_CMS_PUBLIC_RENDERER_DEFAULT_MODE,
   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
@@ -53,6 +54,11 @@ function matchingArtifact(entryId: string): KnowledgeCmsRendererArtifact {
       id: contract.record.id,
       revision: 1,
       status: "published",
+    },
+    rendering: {
+      mode: "private_shadow",
+      bodySource: "verified_static_component_adapter",
+      cmsBodyPubliclyRendered: false,
     },
     metadata: {
       pageTitle: parity.metadata.pageTitle,
@@ -101,9 +107,19 @@ test("lossless renderer contracts cover every parity route with a static rollbac
       KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
     );
     assert.equal(contract.state, KNOWLEDGE_CMS_RENDERER_CONTRACT_STATE);
-    assert.equal(contract.candidate.implementationStatus, "not_implemented");
-    assert.equal(contract.rollout.shadowEligible, false);
+    assert.equal(contract.candidate.implementationStatus, "private_shadow");
+    assert.equal(
+      contract.candidate.bodySource,
+      "verified_static_component_adapter",
+    );
+    assert.equal(contract.candidate.cmsBodyPubliclyRendered, false);
+    assert.equal(contract.rollout.shadowEligible, true);
     assert.equal(contract.rollout.cutoverEligible, false);
+    assert.ok(
+      contract.rollout.blockers.includes(
+        "candidate_body_not_cms_native",
+      ),
+    );
     assert.equal(contract.rollback.mode, "static");
     assert.equal(contract.rollback.dataMutation, "none");
     assert.equal(contract.rollback.preservesCmsRecords, true);
@@ -146,8 +162,9 @@ test("every required React capability has an explicit adapter and evidence gate"
       assert.ok(capability.evidence.length > 0);
       assert.equal(
         capability.implementationStatus,
-        "required_not_implemented",
+        "implemented_private_shadow",
       );
+      assert.ok(capability.sourceFiles.includes(contract.legacy.sourceFile));
       for (const sourceFile of capability.sourceFiles) {
         assert.ok(
           existsSync(join(root, sourceFile)),
@@ -175,34 +192,42 @@ test("every required React capability has an explicit adapter and evidence gate"
   );
 });
 
-test("renderer modes fail closed to static until activation is implemented", () => {
+test("public rendering stays static while private shadow is separately gated", () => {
   assert.equal(KNOWLEDGE_CMS_PUBLIC_RENDERER_ACTIVATION_ALLOWED, false);
+  assert.equal(KNOWLEDGE_CMS_PRIVATE_SHADOW_ACTIVATION_ALLOWED, true);
   assert.deepEqual(resolveKnowledgeCmsPublicRendererMode(undefined), {
     configuredValue: undefined,
     requestedMode: "static",
     effectiveMode: "static",
     configurationValid: true,
     activationAllowed: false,
+    privateShadowEnabled: false,
     reason: "default_static",
   });
   assert.equal(
     resolveKnowledgeCmsPublicRendererMode("static").reason,
     "explicit_static",
   );
-  for (const requested of ["shadow", "cutover"] as const) {
-    const resolution =
-      resolveKnowledgeCmsPublicRendererMode(requested);
-    assert.equal(resolution.requestedMode, requested);
-    assert.equal(resolution.effectiveMode, "static");
-    assert.equal(resolution.activationAllowed, false);
-    assert.equal(resolution.reason, "activation_not_implemented");
-  }
+  const shadow = resolveKnowledgeCmsPublicRendererMode("shadow");
+  assert.equal(shadow.requestedMode, "shadow");
+  assert.equal(shadow.effectiveMode, "static");
+  assert.equal(shadow.activationAllowed, false);
+  assert.equal(shadow.privateShadowEnabled, true);
+  assert.equal(shadow.reason, "private_shadow");
+
+  const cutover = resolveKnowledgeCmsPublicRendererMode("cutover");
+  assert.equal(cutover.requestedMode, "cutover");
+  assert.equal(cutover.effectiveMode, "static");
+  assert.equal(cutover.activationAllowed, false);
+  assert.equal(cutover.privateShadowEnabled, false);
+  assert.equal(cutover.reason, "cutover_not_implemented");
   for (const invalid of ["", "false", "true", " shadow ", "STATIC"]) {
     const resolution =
       resolveKnowledgeCmsPublicRendererMode(invalid);
     assert.equal(resolution.requestedMode, "invalid");
     assert.equal(resolution.effectiveMode, "static");
     assert.equal(resolution.configurationValid, false);
+    assert.equal(resolution.privateShadowEnabled, false);
     assert.equal(resolution.reason, "invalid_value");
   }
 });

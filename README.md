@@ -86,6 +86,7 @@ Set these in **Settings → Secrets and variables → Actions**.
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web API key | Public browser identifier for the private CMS sign-in; required only before enabling the CMS |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `<project>.firebaseapp.com` | Firebase Auth domain for the private CMS sign-in; required only before enabling the CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | Server-only feature gate; absence and every value except exact `true` keep the CMS hidden |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | Server-only renderer gate. Exact `shadow` enables authenticated private comparison while public routes remain static; `cutover` is rejected. |
 
 #### Authentication — pick **one**
 
@@ -171,6 +172,7 @@ lib/
 | `CRM_API_BASE_URL` | Base URL for the CRM public form submission endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
 | `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
 | `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS and private workspace. Only the exact value `true` enables it. Keep disabled until Firebase Auth, authorized domains, and explicit CMS role claims are configured. | `false` |
+| `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. Exact `shadow` enables the publisher/admin comparison workspace but never changes the public renderer; `cutover` and malformed values are rejected. | `static` |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -220,6 +222,11 @@ reviewer. A different authenticated publisher can record an explicit
 blocked-or-eligible indexing decision, publish into the private CMS search
 projection, and unpublish back to draft with an audited reason. Neither action
 creates a public route or changes the existing Resource Library.
+Exact private `shadow` mode adds a read-only publisher/admin workspace that
+checks governed published article records against all 22 immutable React and
+SEO parity contracts. It performs no writes, renders previews inertly, keeps
+the CMS Markdown body non-public, and leaves every public route on its existing
+static source.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 

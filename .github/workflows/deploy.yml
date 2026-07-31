@@ -18,7 +18,7 @@
 #   NEXT_PUBLIC_FIREBASE_API_KEY required before enabling Knowledge CMS
 #   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN required before enabling Knowledge CMS
 #   KNOWLEDGE_CMS_ENABLED optional; defaults to false
-#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; defaults to static
+#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static or private shadow
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
@@ -134,14 +134,14 @@ jobs:
               ;;
           esac
           case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
-            static)
+            static|shadow)
               ;;
-            shadow|cutover)
-              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE is reserved but cannot be activated until a lossless renderer implementation and shadow evidence are merged"
+            cutover)
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover cannot be activated until reviewed private shadow evidence and a CMS-native public body renderer are merged"
               exit 1
               ;;
             *)
-              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static in this contract-only release"
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static or shadow"
               exit 1
               ;;
           esac
