@@ -1,6 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { TeamMember } from "@/lib/team";
+import {
+  getLicensedYears,
+  getTeamMemberSlug,
+  type TeamMember,
+} from "@/lib/team";
 
 interface TeamSectionProps {
   members: TeamMember[];
@@ -13,11 +17,18 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {members.map((member) => {
+          const licensedYears = getLicensedYears(member);
           const supportText = member.retired
             ? "Retired — contact our office for assistance"
-            : `Helping Spokane residents with Medicare${
-                typeof member.yearsHelping === "number" ? ` for ${member.yearsHelping}+ years` : ""
-              }`;
+            : member.licensed
+              ? `Helping Spokane residents with Medicare${
+                  licensedYears !== undefined
+                    ? ` as a licensed agent for ${licensedYears}+ years`
+                    : typeof member.yearsHelping === "number"
+                      ? ` for ${member.yearsHelping}+ years`
+                      : ""
+                }`
+              : "Supporting Spokane-area clients and agents";
           const initials = member.name
             .split(" ")
             .map((part) => part[0])
@@ -27,7 +38,8 @@ export default function TeamSection({ members, showContactCTA = false }: TeamSec
           return (
             <div
               key={member.name}
-              className="group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-blue-300"
+              id={getTeamMemberSlug(member)}
+              className="group scroll-mt-28 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-blue-300"
             >
               <div className="aspect-[3/4] overflow-hidden rounded-lg bg-blue-50">
                 {member.image ? (
