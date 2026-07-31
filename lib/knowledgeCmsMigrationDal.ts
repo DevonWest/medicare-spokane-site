@@ -14,6 +14,10 @@ import {
   type KnowledgeCmsMigrationPreview,
 } from "./knowledgeCmsMigration";
 import {
+  buildKnowledgeCmsArticleMaterializationDryRun,
+  type KnowledgeCmsArticleMaterializationDryRun,
+} from "./knowledgeCmsArticleMigrationDryRun";
+import {
   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
 } from "./knowledgeCmsRendererContract";
 import {
@@ -49,9 +53,48 @@ export async function previewKnowledgeCmsMigration(
   });
 }
 
+export interface KnowledgeCmsMigrationWorkspacePreview {
+  preview: KnowledgeCmsMigrationPreview;
+  articleMaterializationDryRun: KnowledgeCmsArticleMaterializationDryRun;
+}
+
+export async function previewKnowledgeCmsArticleMaterialization(
+  repository: Pick<KnowledgeCmsRepository, "list">,
+  actor: KnowledgeCmsActor,
+  now: Date = new Date(),
+): Promise<KnowledgeCmsMigrationWorkspacePreview> {
+  assertKnowledgeCmsActionAllowed(actor, "preview_migration");
+  const existingRecords =
+    await readKnowledgeCmsMigrationInventory(repository);
+  const preview = buildKnowledgeCmsMigrationPreview({
+    asOf: now,
+    existingRecords,
+    rendererMode:
+      process.env[KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV],
+  });
+  return {
+    preview,
+    articleMaterializationDryRun:
+      buildKnowledgeCmsArticleMaterializationDryRun({
+        preview,
+        existingRecords,
+        actor,
+        now,
+      }),
+  };
+}
+
 export async function getKnowledgeCmsAdminMigrationPreview(): Promise<KnowledgeCmsMigrationPreview> {
   const actor = await requireKnowledgeCmsActor();
   return previewKnowledgeCmsMigration(
+    createKnowledgeCmsRepository(),
+    actor,
+  );
+}
+
+export async function getKnowledgeCmsAdminMigrationWorkspacePreview(): Promise<KnowledgeCmsMigrationWorkspacePreview> {
+  const actor = await requireKnowledgeCmsActor();
+  return previewKnowledgeCmsArticleMaterialization(
     createKnowledgeCmsRepository(),
     actor,
   );

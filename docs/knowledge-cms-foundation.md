@@ -243,7 +243,9 @@ role. It:
 - verifies all 22 article route bodies and metadata against deterministic
   snapshots;
 - defines and fingerprints all 22 create-private-draft article controls while
-  leaving their execution disabled; and
+  leaving their execution disabled;
+- compiles those controls into authenticated, server-clocked, zero-write
+  materialization receipts against the current Firestore inventory; and
 - identifies private-shadow adapters for all 22 article routes while keeping
   every article migration and public cutover blocked.
 
@@ -276,6 +278,32 @@ Each of the 22 article targets has a versioned control record that:
 The control record is a reviewable creation contract only. No repository
 method accepts it, no Server Action exposes it, and no control record is stored
 by this release.
+
+## Article materialization dry-run contract
+
+The authenticated migration preview also performs a non-mutating dry run for
+the 22 article controls. On each request it:
+
+- resolves the current Firebase actor again on the server and permits only a
+  `publisher` or `admin`;
+- uses one server-clock timestamp for the owner and revision-one audit fields;
+- reads the same complete article, topic, and FAQ inventory used by the
+  migration preview and confirms whether every create-only article target is
+  currently absent;
+- blocks a target when its document already exists or a current record owns
+  its slug or canonical path;
+- revalidates the deterministic control fingerprint and compiles a
+  schema-valid, indexing-blocked private draft in memory only when those
+  preconditions pass; and
+- fingerprints each receipt and the complete batch so the control, observed
+  state, actor, timestamp, and in-memory result are bound together.
+
+The observation is not a lock and every receipt requires a future
+transactional recheck. `readyToExecute` remains false, execution eligibility
+and write count remain zero, and there is no form, Server Action, repository
+save, workflow transition, audit write, search projection, or public import.
+Reloading the page performs a fresh read and creates new timestamped receipts;
+it does not store them.
 
 ## Lossless renderer and rollback contract
 
@@ -329,10 +357,10 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may add a non-mutating materialization
-dry run that binds these control fingerprints to current expected-absent
-Firestore state, an authenticated server actor, and server-clock fields
-without saving anything. Draft creation, public cutover, indexing changes, and
-bulk execution must remain separate. No cutover should be proposed until
-governed records exist and route-by-route shadow evidence plus rollback
-verification are reviewed.
+The next independently reviewed release may define a one-record-at-a-time,
+explicitly confirmed private-draft execution boundary that revalidates the
+actor, control fingerprint, expected-absent document, slug lock, canonical
+ownership, and server clock inside the write transaction. Bulk execution,
+public cutover, indexing changes, and CMS-native public bodies must remain
+separate. No cutover should be proposed until governed records exist and
+route-by-route shadow evidence plus rollback verification are reviewed.
