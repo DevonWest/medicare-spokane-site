@@ -128,6 +128,13 @@ test("unreviewed pages expose citations without making a reviewer claim", () => 
   ]);
   assert.equal("reviewedBy" in schema, false);
   assert.equal("dateModified" in schema, false);
+  assert.deepEqual(schema.author, {
+    "@id": `${siteConfig.url}#organization`,
+  });
+  assert.equal(
+    schema.publishingPrinciples,
+    `${siteConfig.url}${siteConfig.editorialStandardsPath}`,
+  );
 });
 
 test("featured official sources retain the existing public resource links", () => {
@@ -153,6 +160,7 @@ test("licensed-review claims stop resolving after their review date", () => {
     status: "reviewed" as const,
     reviewedAt: "2026-01-01",
     reviewedByAgentSlug: "lynn-wold",
+    reviewerVerificationId: "test-lynn-wold-verification",
     reviewDueAt: "2026-06-30",
   };
 
@@ -163,6 +171,7 @@ test("licensed-review claims stop resolving after their review date", () => {
     status: "reviewed" as const,
     reviewedAt: "2026-01-01",
     reviewedByAgentSlug: "lynn-wold",
+    reviewerVerificationId: "test-lynn-wold-verification",
   };
 
   assert.equal(

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getKnowledgeGraph } from "@/lib/knowledgeCenter";
+import { siteConfig } from "@/lib/site";
+import { getTeamMemberProfilePath } from "@/lib/team";
 
 interface KnowledgeAuthorityProps {
   currentPath: string;
@@ -47,7 +49,7 @@ export default function KnowledgeAuthority({
           <p className="mt-2 text-base text-gray-700">
             Reviewed by{" "}
             <Link
-              href="/our-team"
+              href={getTeamMemberProfilePath(graph.reviewer)}
               className="font-semibold text-blue-700 hover:underline"
             >
               {graph.reviewer.name}
@@ -89,6 +91,15 @@ export default function KnowledgeAuthority({
           </ul>
         </div>
       ) : null}
+
+      <div className="mt-5 border-t border-slate-200 pt-5">
+        <Link
+          href={siteConfig.editorialStandardsPath}
+          className="text-sm font-semibold text-blue-700 hover:underline"
+        >
+          How we research, review, and correct our educational pages
+        </Link>
+      </div>
     </aside>
   );
 }

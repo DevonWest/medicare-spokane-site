@@ -24,6 +24,8 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.medicareinspokane.com",
   phone: "509-353-0476",
   email: "info@medicareinspokane.com",
+  /** Public explanation of how educational pages are sourced, reviewed, and corrected. */
+  editorialStandardsPath: "/editorial-standards",
   hours: "Mon – Fri, 9:00 AM – 5:00 PM Pacific",
   address: {
     buildingName: "Providence Medical Building",

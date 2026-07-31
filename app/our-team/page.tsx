@@ -4,7 +4,7 @@ import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
 import TeamSection from "@/components/TeamSection";
 import { siteConfig } from "@/lib/site";
-import { getPublicTeamMembers } from "@/lib/team";
+import { buildTeamListSchema, getPublicTeamMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: "Meet Our Spokane Medicare Team | Health Insurance Options",
@@ -19,38 +19,18 @@ export const metadata: Metadata = {
   },
 };
 
-const teamSchema = {
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  name: "Health Insurance Options LLC — Medicare Team",
-  itemListElement: getPublicTeamMembers().map((member, index) => ({
-    "@type": "ListItem",
-    position: index + 1,
-    item: {
-      "@type": "Person",
-      name: member.name,
-      jobTitle: member.title,
-      worksFor: {
-        "@type": "InsuranceAgency",
-        name: siteConfig.legalName,
-        url: siteConfig.url,
-      },
-      image: member.image ? `${siteConfig.url}${member.image}` : undefined,
-      ...(member.email ? { email: member.email } : {}),
-      ...(member.phone ? { telephone: member.phone } : {}),
-    },
-  })),
-};
-
 export default function OurTeamPage() {
   const members = getPublicTeamMembers();
+  const teamSchema = buildTeamListSchema();
 
   return (
     <>
       {/* Person schema */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(teamSchema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(teamSchema).replace(/</g, "\\u003c"),
+        }}
       />
 
       <PageHero

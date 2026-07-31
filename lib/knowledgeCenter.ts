@@ -1,10 +1,17 @@
 import { carriers, type Carrier } from "@/lib/carriers";
 import { getCityBySlug, spokaneAreaCities, type City } from "@/lib/cities";
+import {
+  resolveVerifiedEditorialReviewer,
+  validateEditorialReviewerVerifications,
+} from "@/lib/editorial";
 import { siteConfig } from "@/lib/site";
 import {
   getActiveTeamMembers,
+  getTeamMemberPersonId,
   getTeamMemberSlug,
   isLicensedTeamMember,
+  isTeamAuthorityProfileVerified,
+  validateTeamAuthorityProfiles,
   type TeamMember,
 } from "@/lib/team";
 import { getTopicBySlug, medicareTopics, type Topic } from "@/lib/topics";
@@ -31,6 +38,7 @@ export type KnowledgeReview =
       status: "reviewed";
       reviewedAt: string;
       reviewedByAgentSlug: string;
+      reviewerVerificationId: string;
       reviewDueAt?: string;
     };
 
@@ -52,6 +60,7 @@ export interface KnowledgeFaq {
   question: string;
   answer: string;
   topicSlugs: string[];
+  answeredByAgentSlug?: string;
 }
 
 export interface KnowledgeVideo {
@@ -90,6 +99,7 @@ export interface KnowledgeEntry {
   ctaLabel?: string;
   tags: string[];
   topicSlugs: string[];
+  authorAgentSlug?: string;
   sourceIds?: string[];
   review?: KnowledgeReview;
   relationships?: KnowledgeRelationships;
@@ -117,6 +127,7 @@ export interface KnowledgeGraph {
   videos: KnowledgeVideo[];
   downloads: KnowledgeDownload[];
   sources: KnowledgeSource[];
+  author?: TeamMember;
   reviewer?: TeamMember;
 }
 
@@ -1054,14 +1065,23 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
     return undefined;
   }
 
-  const reviewerSlug =
+  const review =
     entry.review?.status === "reviewed" &&
     !isKnowledgeReviewExpired(entry.review)
-      ? entry.review.reviewedByAgentSlug
+      ? entry.review
       : undefined;
-  const reviewer = reviewerSlug
+  const reviewer = review
+    ? resolveVerifiedEditorialReviewer(
+        review.reviewedByAgentSlug,
+        review.reviewerVerificationId,
+      )
+    : undefined;
+  const author = entry.authorAgentSlug
     ? getActiveTeamMembers().find(
-        (agent) => getTeamMemberSlug(agent) === reviewerSlug,
+        (agent) =>
+          getTeamMemberSlug(agent) === entry.authorAgentSlug &&
+          isTeamAuthorityProfileVerified(agent) &&
+          agent.authority?.authoredKnowledgePaths?.includes(entry.path),
       )
     : undefined;
 
@@ -1082,6 +1102,7 @@ export function getKnowledgeGraph(path: string): KnowledgeGraph | undefined {
     sources: (entry.sourceIds ?? [])
       .map((id) => sourceById.get(id))
       .filter((source): source is KnowledgeSource => Boolean(source)),
+    author,
     reviewer,
   };
 }
@@ -1117,6 +1138,17 @@ export function buildKnowledgePageSchema(
       "@id": `${siteConfig.url}#organization`,
       name: siteConfig.legalName,
     },
+    author: graph.author
+      ? {
+          "@type": "Person",
+          "@id": getTeamMemberPersonId(graph.author),
+          name: graph.author.name,
+          url: getTeamMemberPersonId(graph.author),
+        }
+      : {
+          "@id": `${siteConfig.url}#organization`,
+        },
+    publishingPrinciples: `${siteConfig.url}${siteConfig.editorialStandardsPath}`,
     about: [
       ...graph.topics.map((topic) => ({
         "@type": "Thing",
@@ -1133,8 +1165,10 @@ export function buildKnowledgePageSchema(
           dateModified: review.reviewedAt,
           reviewedBy: {
             "@type": "Person",
+            "@id": getTeamMemberPersonId(graph.reviewer),
             name: graph.reviewer.name,
             jobTitle: graph.reviewer.title,
+            url: getTeamMemberPersonId(graph.reviewer),
             worksFor: {
               "@id": `${siteConfig.url}#organization`,
             },
@@ -1147,7 +1181,10 @@ export function buildKnowledgePageSchema(
 export function validateKnowledgeCenter(
   asOf: string | Date = new Date(),
 ): string[] {
-  const errors: string[] = [];
+  const errors: string[] = [
+    ...validateEditorialReviewerVerifications(asOf),
+    ...validateTeamAuthorityProfiles(asOf),
+  ];
   const categoryIds = new Set(
     knowledgeCategories.map((category) => category.id),
   );
@@ -1174,6 +1211,23 @@ export function validateKnowledgeCenter(
     } else if (isKnowledgeSourceExpired(source, asOf)) {
       errors.push(
         `Source ${source.id} is overdue for its official-link and accuracy check.`,
+      );
+    }
+  }
+
+  for (const faq of knowledgeFaqs) {
+    if (!faq.answeredByAgentSlug) {
+      continue;
+    }
+
+    const answerer = agentBySlug.get(faq.answeredByAgentSlug);
+    if (!answerer) {
+      errors.push(
+        `FAQ ${faq.id} references unknown answerer ${faq.answeredByAgentSlug}.`,
+      );
+    } else if (!answerer.authority?.answeredFaqIds?.includes(faq.id)) {
+      errors.push(
+        `FAQ ${faq.id} is missing from ${answerer.name}'s verified answered-question list.`,
       );
     }
   }
@@ -1211,6 +1265,22 @@ export function validateKnowledgeCenter(
       if (!sourceIds.has(sourceId)) {
         errors.push(
           `Entry ${entry.id} references unknown source ${sourceId}.`,
+        );
+      }
+    }
+
+    if (entry.authorAgentSlug) {
+      const author = agentBySlug.get(entry.authorAgentSlug);
+
+      if (!author) {
+        errors.push(
+          `Entry ${entry.id} references unknown author ${entry.authorAgentSlug}.`,
+        );
+      } else if (
+        !author.authority?.authoredKnowledgePaths?.includes(entry.path)
+      ) {
+        errors.push(
+          `Entry ${entry.id} is missing from ${author.name}'s verified authored-page list.`,
         );
       }
     }
@@ -1272,11 +1342,15 @@ export function validateKnowledgeCenter(
     }
 
     if (entry.review?.status === "reviewed") {
-      const reviewer = agentBySlug.get(entry.review.reviewedByAgentSlug);
+      const reviewer = resolveVerifiedEditorialReviewer(
+        entry.review.reviewedByAgentSlug,
+        entry.review.reviewerVerificationId,
+        asOf,
+      );
 
-      if (!reviewer || !isLicensedTeamMember(reviewer)) {
+      if (!reviewer) {
         errors.push(
-          `Entry ${entry.id} must reference an active licensed reviewer.`,
+          `Entry ${entry.id} must reference a current verified editorial reviewer.`,
         );
       }
 
@@ -1299,6 +1373,32 @@ export function validateKnowledgeCenter(
 
       if ((entry.sourceIds ?? []).length === 0) {
         errors.push(`Reviewed entry ${entry.id} must include a source.`);
+      }
+    }
+  }
+
+  for (const [agentSlug, agent] of agentBySlug) {
+    for (const path of agent.authority?.authoredKnowledgePaths ?? []) {
+      const entry = entryByPath.get(path);
+
+      if (!entry) {
+        errors.push(`${agent.name} references unknown authored page ${path}.`);
+      } else if (entry.authorAgentSlug !== agentSlug) {
+        errors.push(
+          `${agent.name}'s authored page ${path} does not carry the matching author attribution.`,
+        );
+      }
+    }
+
+    for (const faqId of agent.authority?.answeredFaqIds ?? []) {
+      const faq = faqById.get(faqId);
+
+      if (!faq) {
+        errors.push(`${agent.name} references unknown answered FAQ ${faqId}.`);
+      } else if (faq.answeredByAgentSlug !== agentSlug) {
+        errors.push(
+          `${agent.name}'s answered FAQ ${faqId} does not carry the matching answer attribution.`,
+        );
       }
     }
   }

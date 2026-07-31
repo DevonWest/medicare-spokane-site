@@ -1,4 +1,33 @@
 import { sanitizeReviewSlug } from "./reviewFlow";
+import { siteConfig } from "./site";
+
+export type TeamCredential = {
+  name: string;
+  category: "certification" | "insurance-license";
+  issuer?: string;
+  jurisdiction?: string;
+  identifier?: string;
+  verificationUrl?: string;
+  verifiedAt?: string;
+  validThrough?: string;
+  /** Credentials are excluded from public markup unless explicitly approved. */
+  public?: boolean;
+};
+
+export type AgentAuthority = {
+  expertise?: string[];
+  /** BCP 47 language tags, such as "en" or "es". */
+  languages?: string[];
+  counties?: string[];
+  certifications?: TeamCredential[];
+  licensedSinceYear?: number;
+  authoredKnowledgePaths?: string[];
+  answeredFaqIds?: string[];
+  /** Date this authority profile was checked against agency records. */
+  lastVerifiedAt: string;
+};
+
+export const TEAM_AUTHORITY_VERIFICATION_MAX_AGE_DAYS = 365;
 
 export type TeamMember = {
   name: string;
@@ -12,7 +41,11 @@ export type TeamMember = {
   scheduleUrl?: string;
   /** Optional number of years helping Spokane-area Medicare clients. */
   yearsHelping?: number;
+  /** Explicit authority flag; never infer licensing from a job-title string. */
+  licensed?: boolean;
+  authority?: AgentAuthority;
   retired?: boolean;
+  /** Eligibility for client review requests, not educational-content review. */
   reviewable?: boolean;
   active: boolean;
   sortOrder: number;
@@ -35,6 +68,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/lynn-wold.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 1,
@@ -55,6 +89,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/craig-lenhart.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 2,
@@ -75,6 +110,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/meg-shumaker.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 3,
@@ -95,6 +131,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/rose-records.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 4,
@@ -115,6 +152,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/sheryl-manchester.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 5,
@@ -173,6 +211,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/devon-west.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 8,
@@ -194,6 +233,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/denise-chan.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 9,
@@ -215,6 +255,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/kristi-wright.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 10,
@@ -236,6 +277,7 @@ export const teamMembers: TeamMember[] = [
     phone: "509-353-0476",
     email: "info@medicareinspokane.com",
     image: "/team/cathy-franklin.jpg",
+    licensed: true,
     active: true,
     reviewable: true,
     sortOrder: 11,
@@ -267,7 +309,7 @@ export function getActiveReviewableTeamMembers(): TeamMember[] {
 }
 
 export function isLicensedTeamMember(member: TeamMember): boolean {
-  return member.active && !member.retired && member.title.includes("Licensed Insurance Agent");
+  return member.active && !member.retired && member.licensed === true;
 }
 
 export function getTeamMemberLastName(name: string): string {
@@ -327,4 +369,251 @@ export function getHomepageTeamPreviewMembers(): TeamMember[] {
 export function getTeamMemberBySlug(slug: string): TeamMember | undefined {
   const normalizedSlug = sanitizeReviewSlug(slug) ?? "";
   return teamMembers.find((member) => getTeamMemberSlug(member) === normalizedSlug);
+}
+
+export function getTeamMemberProfilePath(
+  member: Pick<TeamMember, "name"> | string,
+): string {
+  return `/our-team#${getTeamMemberSlug(member)}`;
+}
+
+export function getTeamMemberPersonId(
+  member: Pick<TeamMember, "name"> | string,
+): string {
+  return `${siteConfig.url}${getTeamMemberProfilePath(member)}`;
+}
+
+function isValidDateOnly(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+}
+
+export function isTeamAuthorityProfileVerified(
+  member: TeamMember,
+  asOf: string | Date = new Date(),
+): boolean {
+  if (!member.authority || !isValidDateOnly(member.authority.lastVerifiedAt)) {
+    return false;
+  }
+
+  const verifiedAt = new Date(`${member.authority.lastVerifiedAt}T00:00:00Z`);
+  const expiresAt = new Date(verifiedAt);
+  expiresAt.setUTCDate(
+    expiresAt.getUTCDate() + TEAM_AUTHORITY_VERIFICATION_MAX_AGE_DAYS,
+  );
+  const resolvedAsOf =
+    typeof asOf === "string" ? new Date(`${asOf}T00:00:00Z`) : asOf;
+
+  return (
+    resolvedAsOf.getTime() >= verifiedAt.getTime() &&
+    resolvedAsOf.getTime() <= expiresAt.getTime()
+  );
+}
+
+export function getLicensedYears(
+  member: TeamMember,
+  asOf: string | Date = new Date(),
+): number | undefined {
+  if (
+    !isTeamAuthorityProfileVerified(member, asOf) ||
+    !member.authority?.licensedSinceYear
+  ) {
+    return undefined;
+  }
+
+  const asOfYear =
+    typeof asOf === "string"
+      ? new Date(`${asOf}T00:00:00Z`).getUTCFullYear()
+      : asOf.getUTCFullYear();
+
+  if (!Number.isInteger(asOfYear) || member.authority.licensedSinceYear > asOfYear) {
+    return undefined;
+  }
+
+  return asOfYear - member.authority.licensedSinceYear;
+}
+
+function uniqueNonEmpty(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function getPublicCredentialSchema(credential: TeamCredential): Record<string, unknown> {
+  return {
+    "@type": "EducationalOccupationalCredential",
+    name: credential.name,
+    credentialCategory:
+      credential.category === "insurance-license" ? "Insurance license" : "Certification",
+    ...(credential.issuer
+      ? {
+          recognizedBy: {
+            "@type": "Organization",
+            name: credential.issuer,
+          },
+        }
+      : {}),
+    ...(credential.jurisdiction
+      ? {
+          validIn: {
+            "@type": "AdministrativeArea",
+            name: credential.jurisdiction,
+          },
+        }
+      : {}),
+    ...(credential.identifier ? { identifier: credential.identifier } : {}),
+  };
+}
+
+export function buildTeamMemberPersonSchema(
+  member: TeamMember,
+  asOf: string | Date = new Date(),
+): Record<string, unknown> {
+  const licensed = isLicensedTeamMember(member);
+  const authority = isTeamAuthorityProfileVerified(member, asOf)
+    ? member.authority
+    : undefined;
+  const expertise = licensed
+    ? uniqueNonEmpty([
+        ...(member.specialties ?? []),
+        ...(authority?.expertise ?? []),
+      ])
+    : [];
+  const counties = licensed
+    ? uniqueNonEmpty(authority?.counties ?? ["Spokane County, Washington"])
+    : [];
+  const publicCredentials =
+    authority?.certifications?.filter((credential) => credential.public === true) ?? [];
+  const licensedYears = getLicensedYears(member, asOf);
+
+  return {
+    "@type": "Person",
+    "@id": getTeamMemberPersonId(member),
+    url: getTeamMemberPersonId(member),
+    name: member.name,
+    jobTitle: member.title,
+    description: member.longBio ?? member.shortBio,
+    worksFor: {
+      "@id": `${siteConfig.url}#organization`,
+    },
+    image: member.image ? `${siteConfig.url}${member.image}` : undefined,
+    ...(member.email ? { email: member.email } : {}),
+    ...(member.phone ? { telephone: member.phone } : {}),
+    ...(expertise.length > 0 ? { knowsAbout: expertise } : {}),
+    ...(authority?.languages?.length
+      ? { knowsLanguage: uniqueNonEmpty(authority.languages) }
+      : {}),
+    ...(counties.length > 0
+      ? {
+          areaServed: counties.map((county) => ({
+            "@type": "AdministrativeArea",
+            name: county,
+          })),
+        }
+      : {}),
+    ...(publicCredentials.length > 0
+      ? {
+          hasCredential: publicCredentials.map(getPublicCredentialSchema),
+        }
+      : {}),
+    ...(licensedYears !== undefined
+      ? {
+          hasOccupation: {
+            "@type": "Occupation",
+            name: "Licensed Insurance Agent",
+            experienceRequirements: `${licensedYears}+ years licensed`,
+          },
+        }
+      : {}),
+    ...(licensed
+      ? {
+          publishingPrinciples: `${siteConfig.url}${siteConfig.editorialStandardsPath}`,
+        }
+      : {}),
+  };
+}
+
+export function buildTeamListSchema(
+  asOf: string | Date = new Date(),
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${siteConfig.legalName} — Medicare Team`,
+    itemListElement: getPublicTeamMembers().map((member, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: buildTeamMemberPersonSchema(member, asOf),
+    })),
+  };
+}
+
+export function validateTeamAuthorityProfiles(
+  asOf: string | Date = new Date(),
+): string[] {
+  const errors: string[] = [];
+  const slugs = new Set<string>();
+  const asOfYear =
+    typeof asOf === "string"
+      ? new Date(`${asOf}T00:00:00Z`).getUTCFullYear()
+      : asOf.getUTCFullYear();
+
+  for (const member of teamMembers) {
+    const slug = getTeamMemberSlug(member);
+
+    if (!slug) {
+      errors.push(`Team member ${member.name} must have a valid profile slug.`);
+    } else if (slugs.has(slug)) {
+      errors.push(`Duplicate team member slug: ${slug}.`);
+    }
+    slugs.add(slug);
+
+    if (!member.authority) {
+      continue;
+    }
+
+    if (!isValidDateOnly(member.authority.lastVerifiedAt)) {
+      errors.push(`${member.name} has an invalid authority verification date.`);
+    } else if (!isTeamAuthorityProfileVerified(member, asOf)) {
+      errors.push(`${member.name} has an expired or future-dated authority verification.`);
+    }
+
+    if (
+      member.authority.licensedSinceYear !== undefined &&
+      (!Number.isInteger(member.authority.licensedSinceYear) ||
+        member.authority.licensedSinceYear < 1900 ||
+        member.authority.licensedSinceYear > asOfYear)
+    ) {
+      errors.push(`${member.name} has an invalid licensed-since year.`);
+    }
+
+    for (const language of member.authority.languages ?? []) {
+      if (!/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(language)) {
+        errors.push(`${member.name} has an invalid BCP 47 language tag: ${language}.`);
+      }
+    }
+
+    for (const path of member.authority.authoredKnowledgePaths ?? []) {
+      if (!path.startsWith("/") || path.endsWith("/")) {
+        errors.push(`${member.name} has an invalid authored knowledge path: ${path}.`);
+      }
+    }
+
+    for (const credential of member.authority.certifications ?? []) {
+      if (credential.verificationUrl && !credential.verificationUrl.startsWith("https://")) {
+        errors.push(`${member.name} has a non-HTTPS credential verification URL.`);
+      }
+
+      if (credential.verifiedAt && !isValidDateOnly(credential.verifiedAt)) {
+        errors.push(`${member.name} has an invalid credential verification date.`);
+      }
+
+      if (credential.validThrough && !isValidDateOnly(credential.validThrough)) {
+        errors.push(`${member.name} has an invalid credential expiration date.`);
+      }
+
+      if (credential.public && !credential.verifiedAt) {
+        errors.push(`${member.name} has a public credential without a verification date.`);
+      }
+    }
+  }
+
+  return errors;
 }
