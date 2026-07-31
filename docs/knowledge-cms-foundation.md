@@ -414,6 +414,8 @@ risks into one ambiguous status:
 - aggregate authoring, currently verified reviewer, publisher, and
   reviewer-publisher separation coverage;
 - one-record article migration readiness or verified completion;
+- one-record topic/FAQ migration readiness or verified completion;
+- complete 45-record migration readiness and deterministic operator order;
 - private shadow availability while the effective public renderer stays
   `static`; and
 - the unconditional prohibition on public cutover.
@@ -425,16 +427,24 @@ current licensed reviewer, or no distinct publisher fail closed. Disabled or
 unverified accounts with CMS claims are reported but cannot count as active
 coverage.
 
-The Firestore portion reuses the three-collection migration inventory and
-one-query execution history. Each valid execution event then receives its
-existing five-artifact read-only verification transaction. A target is
-classified as `prepared_absent` only when its current deterministic control,
-fingerprint, in-memory private draft, source/route evidence, and absence checks
-pass with no execution event. A present target is ready only when exactly one
-valid execution event and one current passing artifact receipt agree. Invalid
-or truncated history, stale sources, duplicate events, an unexpected target,
-missing locks, a search projection for a private draft, or any failed receipt
-blocks readiness.
+The Firestore portion reuses the three-collection migration inventory and two
+separate execution-history queries: articles and supporting topic/FAQ records.
+Each valid event receives its current four- or five-artifact read-only
+verification transaction. A target is classified as `prepared_absent` only when
+its deterministic control, source/route evidence, and absence checks pass with
+no execution event; articles also require their verified in-memory materialized
+draft receipt. A present target is ready only when exactly one valid event and
+one current passing artifact receipt agree. Invalid, missing, duplicate, or
+truncated history, stale sources, unexpected targets, contradictory locks or
+search projections, and failed receipts block readiness.
+
+The same immutable report emits a 45-step operator plan ordered topics, FAQs,
+then articles. Each prepared step names only its existing one-record gate and
+expected three- or four-document create boundary. Verified records become
+read-only verification steps; contradictions become blocked steps. The plan
+sets `executionAuthorized=false`, exposes no bulk action, performs zero writes,
+and requires a completely fresh readiness report after every separately typed
+and confirmed transaction.
 
 Every report is immutable and SHA-256 fingerprinted in memory. It records its
 successful read boundary and always reports zero writes and no repair. The
@@ -459,8 +469,8 @@ The preview is eligible only when all of the following are true:
   fragment;
 - the operational-readiness receipt is valid, no more than five minutes old,
   not future-dated, and ready for guarded private operations;
-- all 22 article targets have prepared or verified one-record evidence with no
-  blocked target;
+- all 22 article, 12 topic, and 11 FAQ targets have prepared or verified
+  one-record evidence with no blocked target;
 - the current renderer request is exact `static` or `shadow`; and
 - the proposed exact `shadow` value continues to resolve to an effective public
   mode of `static`, with CMS bodies, indexing, sitemap output, and cutover
@@ -472,12 +482,13 @@ closed. Raw malformed URLs are classified rather than reflected, so accidental
 credentials or query values do not enter the preview receipt or UI.
 
 The immutable preview binds the current readiness SHA-256 and shows—but never
-applies—the three beta-only settings:
+applies—the four beta-only settings:
 
 | Variable | Proposed private-beta value | Effect |
 |---|---|---|
 | `KNOWLEDGE_CMS_ENABLED` | `true` | Keep the authenticated private workspace available |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `true` until all article targets are verified; otherwise `false` | Preserve only the explicit one-record migration boundary |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `true` until all topic/FAQ targets are verified; otherwise `false` | Preserve only the separate one-record supporting migration boundary |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `shadow` | Enable private comparison while public output remains static |
 
 The activation checklist requires new readiness/preview receipts immediately
@@ -490,7 +501,7 @@ Rollback triggers include evidence drift, authorization failure, any private
 shadow mismatch, a migration-boundary violation, protected-route drift, or an
 SEO/indexing change. The ordered rollback is:
 
-1. set the beta article-execution gate to `false`;
+1. set both beta one-record execution gates to `false`;
 2. set the beta renderer mode to `static` while preserving CMS records;
 3. deploy only the beta rollback configuration and verify static parity;
 4. set the beta CMS gate to `false` if the broader private workspace remains
@@ -564,7 +575,16 @@ Each result has a four- or five-artifact zero-write verification receipt. Bulk,
 overwrite, publication, indexing, rendering, cutover, and production activation
 remain blocked.
 
-The next independently reviewed release may add a complete 45-record migration
-completion report and operator sequence. No cutover should be proposed until all
-45 governed records exist and route-by-route shadow evidence plus rollback
-verification are reviewed.
+The operational report now classifies all 45 governed records, verifies both
+append-only execution histories and every current artifact receipt, and emits a
+deterministic topics → FAQs → articles operator sequence. It performs zero
+writes, authorizes no execution, blocks bulk behavior, and requires a fresh
+receipt after every one-record transaction. Both beta execution gates are now
+part of readiness and activation planning and can resolve to `false` once their
+respective targets are complete.
+
+The next independently reviewed release may add a CMS-native lossless article
+body representation and beta-only shadow renderer that no longer imports the
+legacy page module as its candidate. Public cutover must remain blocked until
+all 45 records are verified and every one of the 22 article routes has exact
+candidate parity plus reviewed rollback evidence.

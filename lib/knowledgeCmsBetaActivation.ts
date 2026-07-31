@@ -11,7 +11,7 @@ import {
 } from "./knowledgeCmsOperationalReadiness";
 import { resolveKnowledgeCmsPublicRendererMode } from "./knowledgeCmsRendererContract";
 
-export const KNOWLEDGE_CMS_BETA_ACTIVATION_PREVIEW_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_BETA_ACTIVATION_PREVIEW_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_BETA_ACTIVATION_WRITE_COUNT = 0 as const;
 export const KNOWLEDGE_CMS_BETA_READINESS_MAX_AGE_MS = 5 * 60 * 1_000;
 export const KNOWLEDGE_CMS_BETA_SITE_ENVIRONMENT = "staging" as const;
@@ -53,7 +53,8 @@ export interface KnowledgeCmsBetaActivationVariablePlan {
   name:
     | "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED"
     | "KNOWLEDGE_CMS_ENABLED"
-    | "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE";
+    | "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE"
+    | "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED";
   current:
     | "cutover"
     | "false"
@@ -434,10 +435,15 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
     input.readiness.overall === "ready_for_guarded_private_operations";
   const migrationReady = Boolean(
     input.readiness.migration.status === "available" &&
-      input.readiness.migration.targets.total === 22 &&
+      input.readiness.migration.targets.total === 45 &&
+      input.readiness.migration.inventory.articles === 22 &&
+      input.readiness.migration.inventory.topics === 12 &&
+      input.readiness.migration.inventory.faqs === 11 &&
       input.readiness.migration.targets.blocked === 0 &&
       input.readiness.migration.evidence.ready &&
-      input.readiness.capabilities.singleRecordArticleMigration !== "blocked",
+      input.readiness.capabilities.allRecordsMigration !== "blocked" &&
+      input.readiness.capabilities.singleRecordArticleMigration !== "blocked" &&
+      input.readiness.capabilities.singleRecordSupportingMigration !== "blocked",
   );
   const targetRenderer = resolveKnowledgeCmsPublicRendererMode("shadow");
   const shadowTargetSafe = Boolean(
@@ -511,8 +517,8 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
       "readiness",
       migrationReady ? "pass" : "blocked",
       migrationReady
-        ? "All 22 article targets have prepared or verified one-record migration evidence with no blocked target."
-        : "Article inventory, migration evidence, or the one-record execution boundary is incomplete.",
+        ? "All 45 governed targets have prepared or verified one-record migration evidence with no blocked target."
+        : "Article, topic, or FAQ inventory, evidence, or one-record execution boundaries are incomplete.",
     ),
     check(
       "shadow_target",
@@ -550,8 +556,12 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
       ? "ready_for_private_beta_activation"
       : "blocked";
 
-  const executionProposed =
+  const articleExecutionProposed =
     input.readiness.capabilities.singleRecordArticleMigration === "complete"
+      ? "false" as const
+      : "true" as const;
+  const supportingExecutionProposed =
+    input.readiness.capabilities.singleRecordSupportingMigration === "complete"
       ? "false" as const
       : "true" as const;
   const variables: KnowledgeCmsBetaActivationVariablePlan[] = [
@@ -569,16 +579,32 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
       current: gateValue(
         input.readiness.configuration.articleMigrationExecutionGate,
       ),
-      proposed: executionProposed,
+      proposed: articleExecutionProposed,
       changeRequired:
         gateValue(
           input.readiness.configuration.articleMigrationExecutionGate,
-        ) !== executionProposed,
+        ) !== articleExecutionProposed,
       scope: "beta_only",
       effect:
-        executionProposed === "true"
+        articleExecutionProposed === "true"
           ? "Permit only the existing explicitly confirmed, one-record private-draft transaction."
           : "Keep article migration execution disabled because every target is already verified.",
+    },
+    {
+      name: "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
+      current: gateValue(
+        input.readiness.configuration.supportingMigrationExecutionGate,
+      ),
+      proposed: supportingExecutionProposed,
+      changeRequired:
+        gateValue(
+          input.readiness.configuration.supportingMigrationExecutionGate,
+        ) !== supportingExecutionProposed,
+      scope: "beta_only",
+      effect:
+        supportingExecutionProposed === "true"
+          ? "Permit only the explicitly confirmed, one-record topic or FAQ private-draft transaction."
+          : "Keep topic and FAQ migration execution disabled because every supporting target is already verified.",
     },
     {
       name: "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE",
@@ -757,13 +783,38 @@ export function validateKnowledgeCmsBetaActivationPreview(
         "The beta activation preview is not bound to the supplied operational-readiness receipt.",
       );
     }
+    if (
+      preview.activation.variables.find(
+        (item) =>
+          item.name ===
+          "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
+      )?.proposed !==
+        (readiness.capabilities.singleRecordArticleMigration === "complete"
+          ? "false"
+          : "true") ||
+      preview.activation.variables.find(
+        (item) =>
+          item.name ===
+          "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
+      )?.proposed !==
+        (readiness.capabilities.singleRecordSupportingMigration === "complete"
+          ? "false"
+          : "true")
+    ) {
+      errors.push(
+        "The beta activation execution gates do not match the bound 45-record completion state.",
+      );
+    }
   }
   const variableNames = preview.activation.variables.map((item) => item.name);
   if (
-    new Set(variableNames).size !== 3 ||
+    new Set(variableNames).size !== 4 ||
     !variableNames.includes("KNOWLEDGE_CMS_ENABLED") ||
     !variableNames.includes(
       "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
+    ) ||
+    !variableNames.includes(
+      "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
     ) ||
     !variableNames.includes("KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE") ||
     preview.activation.variables.some((item) => item.scope !== "beta_only") ||
@@ -772,7 +823,21 @@ export function validateKnowledgeCmsBetaActivationPreview(
     )?.proposed !== "true" ||
     preview.activation.variables.find(
       (item) => item.name === "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE",
-    )?.proposed !== "shadow"
+    )?.proposed !== "shadow" ||
+    !["true", "false"].includes(
+      preview.activation.variables.find(
+        (item) =>
+          item.name ===
+          "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
+      )?.proposed ?? "",
+    ) ||
+    !["true", "false"].includes(
+      preview.activation.variables.find(
+        (item) =>
+          item.name ===
+          "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
+      )?.proposed ?? "",
+    )
   ) {
     errors.push("The beta-only activation variable plan is incomplete.");
   }
