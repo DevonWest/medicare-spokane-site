@@ -239,6 +239,11 @@ test("execution remains private, single-record, and server-authorized", () => {
   assert.match(dal, /const actor = await requireKnowledgeCmsActor\(\)/);
   assert.match(action, /parseKnowledgeCmsArticleMigrationExecutionForm/);
   assert.match(control, /useActionState/);
+  assert.match(control, /name="confirmation"/);
+  assert.match(control, /type="hidden"/);
+  assert.match(control, /value=\{confirmationPhrase\}/);
+  assert.match(control, /disabled=\{pending\}/);
+  assert.doesNotMatch(control, /useState|type="text"|onChange=/);
   assert.doesNotMatch(control, /ownerId|audit\.createdAt|status="published"/);
 
   const publicSources = [
