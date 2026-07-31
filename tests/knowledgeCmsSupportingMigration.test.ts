@@ -423,12 +423,25 @@ test("supporting migration remains private, one-record, server-authorized, and a
     join(root, "app/admin/knowledge/actions.ts"),
     "utf8",
   );
+  const control = readFileSync(
+    join(
+      root,
+      "app/admin/knowledge/components/KnowledgeSupportingMigrationExecutionControl.tsx",
+    ),
+    "utf8",
+  );
   assert.match(execution, /^import "server-only";/);
   assert.match(verification, /^import "server-only";/);
   assert.match(execution, /execute_supporting_migration/);
   assert.match(repository, /migration_create_private_supporting_draft/);
   assert.match(repository, /runTransaction/);
   assert.match(action, /parseKnowledgeCmsSupportingMigrationExecutionForm/);
+  assert.match(control, /useActionState/);
+  assert.match(control, /name="confirmation"/);
+  assert.match(control, /type="hidden"/);
+  assert.match(control, /value=\{confirmationPhrase\}/);
+  assert.match(control, /disabled=\{pending\}/);
+  assert.doesNotMatch(control, /useState|type="text"|onChange=/);
   assert.doesNotMatch(verification, /\.save\s*\(|\.set\s*\(|\.delete\s*\(/);
 
   const publicSources = [

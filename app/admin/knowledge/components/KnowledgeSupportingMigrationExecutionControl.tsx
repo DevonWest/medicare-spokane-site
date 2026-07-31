@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { initialKnowledgeCmsAdminActionState } from "@/lib/knowledgeCmsAdmin";
 import { createKnowledgeCmsSupportingMigrationDraftAction } from "../actions";
 
@@ -19,7 +19,6 @@ export default function KnowledgeSupportingMigrationExecutionControl({
   confirmationPhrase,
   targetTitle,
 }: KnowledgeSupportingMigrationExecutionControlProps) {
-  const [confirmation, setConfirmation] = useState("");
   const boundAction = createKnowledgeCmsSupportingMigrationDraftAction.bind(
     null,
     kind,
@@ -30,8 +29,6 @@ export default function KnowledgeSupportingMigrationExecutionControl({
     boundAction,
     initialKnowledgeCmsAdminActionState,
   );
-  const confirmed = confirmation === confirmationPhrase;
-
   return (
     <form
       action={formAction}
@@ -45,23 +42,10 @@ export default function KnowledgeSupportingMigrationExecutionControl({
         document, slug, optional canonical path, search projection, and audit
         event. No public experience, indexing, or other candidate changes.
       </p>
-      <label
-        className="mt-3 block text-xs font-semibold text-slate-800"
-        htmlFor={`supporting-migration-confirmation-${controlId}`}
-      >
-        Type <span className="font-mono">{confirmationPhrase}</span>
-      </label>
       <input
-        autoComplete="off"
-        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-950 outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-100"
-        id={`supporting-migration-confirmation-${controlId}`}
-        maxLength={300}
         name="confirmation"
-        onChange={(event) => setConfirmation(event.target.value)}
-        required
-        spellCheck={false}
-        type="text"
-        value={confirmation}
+        type="hidden"
+        value={confirmationPhrase}
       />
       {state.message ? (
         <p
@@ -75,7 +59,7 @@ export default function KnowledgeSupportingMigrationExecutionControl({
       ) : null}
       <button
         className="mt-3 rounded-lg bg-violet-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
-        disabled={!confirmed || pending}
+        disabled={pending}
         type="submit"
       >
         {pending ? "Creating private draft…" : `Create ${targetTitle}`}
