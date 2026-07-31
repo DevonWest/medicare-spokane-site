@@ -588,6 +588,7 @@ export class KnowledgeCmsWorkflow {
         const review: KnowledgeCmsReview = {
           reviewerAgentSlug: agentSlug,
           reviewerVerificationId: verificationId,
+          reviewedBy: actor.id,
           reviewedAt: nowIso,
           reviewDueAt,
           decisionNote,
@@ -597,6 +598,17 @@ export class KnowledgeCmsWorkflow {
       }
       case "publish": {
         assertStatus(current, ["approved"], input.action);
+        if (input.indexing !== "blocked" && input.indexing !== "eligible") {
+          throw new KnowledgeCmsValidationError([
+            "An explicit blocked or eligible indexing decision is required.",
+          ]);
+        }
+        const publicationNote = cleanOptional(input.decisionNote);
+        if (!publicationNote) {
+          throw new KnowledgeCmsValidationError([
+            "Publication decision note is required.",
+          ]);
+        }
         if (
           !current.review ||
           !this.reviewerVerifier(
@@ -621,13 +633,19 @@ export class KnowledgeCmsWorkflow {
           },
           discoverability: {
             ...current.discoverability,
-            indexing: input.indexing ?? "blocked",
+            indexing: input.indexing,
           },
         };
         break;
       }
       case "unpublish": {
         assertStatus(current, ["published"], input.action);
+        const unpublishReason = cleanOptional(input.decisionNote);
+        if (!unpublishReason) {
+          throw new KnowledgeCmsValidationError([
+            "Unpublish reason is required.",
+          ]);
+        }
         next = {
           ...current,
           status: "draft",

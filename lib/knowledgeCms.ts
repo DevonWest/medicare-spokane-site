@@ -77,6 +77,7 @@ export interface KnowledgeCmsDiscoverability {
 export interface KnowledgeCmsReview {
   reviewerAgentSlug: string;
   reviewerVerificationId: string;
+  reviewedBy?: string;
   reviewedAt: string;
   reviewDueAt: string;
   decisionNote?: string;
@@ -222,6 +223,7 @@ export interface KnowledgeCmsAuthorizationDecision {
     | "role_required"
     | "owner_required"
     | "self_review_forbidden"
+    | "reviewer_publisher_separation_required"
     | "status_not_editable";
 }
 
@@ -525,6 +527,13 @@ function validateReview(value: unknown): string[] {
     !identifierPattern.test(value.reviewerVerificationId)
   ) {
     errors.push("review.reviewerVerificationId is invalid.");
+  }
+  if (
+    value.reviewedBy !== undefined &&
+    (!isNonEmptyString(value.reviewedBy, 200) ||
+      !identifierPattern.test(value.reviewedBy))
+  ) {
+    errors.push("review.reviewedBy is invalid.");
   }
   if (!isIsoInstant(value.reviewedAt)) {
     errors.push("review.reviewedAt must be an ISO timestamp.");
@@ -973,8 +982,15 @@ export function validateKnowledgeCmsPublishReadiness(
   }
   if (!record.review) {
     errors.push("Publication requires verified review metadata.");
-  } else if (isKnowledgeCmsReviewExpired(record.review, asOf)) {
-    errors.push("The editorial review is due for renewal.");
+  } else {
+    if (!record.review.reviewedBy) {
+      errors.push(
+        "Publication requires a server-recorded reviewer user identity. Request a new approval.",
+      );
+    }
+    if (isKnowledgeCmsReviewExpired(record.review, asOf)) {
+      errors.push("The editorial review is due for renewal.");
+    }
   }
   if (
     record.discoverability.indexing === "eligible" &&
@@ -1073,8 +1089,25 @@ export function getKnowledgeCmsAuthorizationDecision(
     return { allowed: true, reason: "allowed" };
   }
 
+  if (action === "publish") {
+    if (!hasAnyRole(actor, ["publisher", "admin"])) {
+      return { allowed: false, reason: "role_required" };
+    }
+    if (
+      record?.review &&
+      (record.review.reviewedBy === actor.id ||
+        (actor.agentSlug !== undefined &&
+          record.review.reviewerAgentSlug === actor.agentSlug))
+    ) {
+      return {
+        allowed: false,
+        reason: "reviewer_publisher_separation_required",
+      };
+    }
+    return { allowed: true, reason: "allowed" };
+  }
+
   if (
-    action === "publish" ||
     action === "unpublish" ||
     action === "archive" ||
     action === "restore"

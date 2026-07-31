@@ -216,7 +216,10 @@ search projections, and append-only audit events. The private
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records
 on the public website. Verified approval is available to a distinct licensed
-reviewer, while publication controls remain deliberately unexposed.
+reviewer. A different authenticated publisher can record an explicit
+blocked-or-eligible indexing decision, publish into the private CMS search
+projection, and unpublish back to draft with an audited reason. Neither action
+creates a public route or changes the existing Resource Library.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 
