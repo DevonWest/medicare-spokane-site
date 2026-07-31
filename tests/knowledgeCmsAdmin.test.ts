@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import type { DecodedIdToken, UserRecord } from "firebase-admin/auth";
 import {
   KnowledgeCmsAdminInputError,
+  parseKnowledgeCmsArticleMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
   parseKnowledgeCmsWorkflowForm,
@@ -125,6 +126,7 @@ function articleRecord(
 
 afterEach(() => {
   delete process.env.KNOWLEDGE_CMS_ENABLED;
+  delete process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED;
   delete process.env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE;
   delete process.env.NEXT_PUBLIC_SITE_URL;
 });
@@ -407,6 +409,60 @@ test("update parsing rejects kind changes and stale revision input", () => {
   assert.throws(
     () => parseKnowledgeCmsUpdateForm(form, "article"),
     /expectedRevision is invalid/i,
+  );
+});
+
+test("article migration parsing accepts only the bound control and typed confirmation", () => {
+  const form = new FormData();
+  form.set(
+    "confirmation",
+    " CREATE PRIVATE DRAFT turning-65-spokane ",
+  );
+  form.set("ownerId", "forged-owner");
+  form.set("status", "published");
+  form.set("payload", JSON.stringify({ indexing: "eligible" }));
+  const parsed = parseKnowledgeCmsArticleMigrationExecutionForm(
+    "resource-library-article-control--turning-65-spokane",
+    "a".repeat(64),
+    form,
+  );
+  assert.deepEqual(parsed, {
+    controlId:
+      "resource-library-article-control--turning-65-spokane",
+    controlFingerprint: "a".repeat(64),
+    confirmation: "CREATE PRIVATE DRAFT turning-65-spokane",
+  });
+  assert.equal("ownerId" in parsed, false);
+  assert.equal("status" in parsed, false);
+  assert.equal("payload" in parsed, false);
+
+  assert.throws(
+    () =>
+      parseKnowledgeCmsArticleMigrationExecutionForm(
+        "../wrong-control",
+        "a".repeat(64),
+        form,
+      ),
+    /selected article migration control is invalid/i,
+  );
+  assert.throws(
+    () =>
+      parseKnowledgeCmsArticleMigrationExecutionForm(
+        "resource-library-article-control--turning-65-spokane",
+        "A".repeat(64),
+        form,
+      ),
+    /selected article migration control is invalid/i,
+  );
+  form.delete("confirmation");
+  assert.throws(
+    () =>
+      parseKnowledgeCmsArticleMigrationExecutionForm(
+        "resource-library-article-control--turning-65-spokane",
+        "a".repeat(64),
+        form,
+      ),
+    /confirmation is required/i,
   );
 });
 
@@ -697,6 +753,10 @@ test("admin routes remain default-off and publication stays private and server-a
     join(root, "lib/knowledgeCmsAdminDal.ts"),
     "utf8",
   );
+  const migrationDataAccess = readFileSync(
+    join(root, "lib/knowledgeCmsMigrationDal.ts"),
+    "utf8",
+  );
   const nextConfig = readFileSync(join(root, "next.config.ts"), "utf8");
   const deployWorkflow = readFileSync(
     join(root, ".github/workflows/deploy.yml"),
@@ -718,10 +778,16 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(actions, /approveKnowledgeCmsRecordAction/);
   assert.match(actions, /publishKnowledgeCmsRecordAction/);
   assert.match(actions, /unpublishKnowledgeCmsRecordAction/);
+  assert.match(actions, /createKnowledgeCmsArticleMigrationDraftAction/);
   assert.match(dataAccess, /resolveCurrentEditorialReviewerVerification/);
   assert.match(dataAccess, /resolveKnowledgeCmsApprovalDueAt/);
   assert.match(dataAccess, /validateKnowledgeCmsPublicationDecision/);
   assert.match(dataAccess, /requireKnowledgeCmsActor/);
+  assert.match(migrationDataAccess, /requireKnowledgeCmsActor/);
+  assert.match(
+    migrationDataAccess,
+    /createArticleMigrationDraft\(actor, request\)/,
+  );
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);
@@ -732,6 +798,18 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(
     deployWorkflow,
     /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=\$\{\{ env\.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE \}\}/,
+  );
+  assert.match(
+    deployWorkflow,
+    /KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED must be exactly true or false/,
+  );
+  assert.match(
+    deployWorkflow,
+    /KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED requires KNOWLEDGE_CMS_ENABLED=true/,
+  );
+  assert.match(
+    deployWorkflow,
+    /KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=\$\{\{ env\.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED \}\}/,
   );
   assert.match(deployWorkflow, /NEXT_PUBLIC_FIREBASE_API_KEY is required/);
   assert.match(dockerfile, /ARG NEXT_PUBLIC_FIREBASE_API_KEY/);

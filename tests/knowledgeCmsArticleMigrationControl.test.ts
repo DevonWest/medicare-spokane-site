@@ -119,6 +119,7 @@ test("all article controls are deterministic immutable private drafts", () => {
   );
   for (const control of currentControls) {
     assert.ok(control);
+    assert.equal(control.version, 2);
     assert.equal(control.operation, "create_private_draft");
     assert.equal(control.target.expectedRevision, null);
     assert.equal(control.target.conflictPolicy, "fail_if_present");
@@ -130,6 +131,10 @@ test("all article controls are deterministic immutable private drafts", () => {
     assert.equal(control.execution.status, "disabled");
     assert.equal(control.execution.readyToExecute, false);
     assert.equal(control.execution.writeCount, 0);
+    assert.equal(
+      control.execution.reason,
+      "control_record_is_not_execution_authority",
+    );
     assert.equal(control.rollout.cmsBodyPubliclyRendered, false);
     assert.equal(control.rollout.cutoverEligible, false);
     assert.ok(Object.isFrozen(control));
@@ -164,7 +169,7 @@ test("a control pins the deterministic record identity and route evidence", () =
   );
   assert.equal(
     control.fingerprint.value,
-    "941f2ccd466c8afee63301a6c2c84533490b4f4b7f9607886a37f76d1afd81e1",
+    "cef618e106cf22a644c1dabb98c53f0206c3396052725fcea21349faf6d2c940",
   );
   assert.match(
     control.target.payload.body,
@@ -262,17 +267,13 @@ test("content, fingerprint, and execution tampering fail validation", () => {
   );
 });
 
-test("article controls have no mutation path or public import", () => {
+test("article control records remain non-mutating and private", () => {
   const controlSource = readFileSync(
     join(root, "lib/knowledgeCmsArticleMigrationControl.ts"),
     "utf8",
   );
-  const page = readFileSync(
-    join(root, "app/admin/knowledge/migration-preview/page.tsx"),
-    "utf8",
-  );
-  const dal = readFileSync(
-    join(root, "lib/knowledgeCmsMigrationDal.ts"),
+  const execution = readFileSync(
+    join(root, "lib/knowledgeCmsArticleMigrationExecution.ts"),
     "utf8",
   );
 
@@ -282,11 +283,8 @@ test("article controls have no mutation path or public import", () => {
   );
   assert.doesNotMatch(controlSource, /\.save\s*\(/);
   assert.doesNotMatch(controlSource, /\.transition\s*\(/);
-  assert.doesNotMatch(page, /["']use client["']/);
-  assert.doesNotMatch(page, /<form\b|action=\{/);
-  assert.doesNotMatch(dal, /\.save\s*\(/);
-  assert.doesNotMatch(dal, /\.transition\s*\(/);
-  assert.doesNotMatch(dal, /\.create\s*\(/);
+  assert.doesNotMatch(controlSource, /runTransaction\s*\(/);
+  assert.match(execution, /validateKnowledgeCmsArticleMigrationControl/);
 
   const publicSources = [
     ...listTypeScriptFiles(join(root, "app")),

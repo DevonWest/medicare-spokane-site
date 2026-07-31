@@ -13,7 +13,7 @@ import type {
   KnowledgeCmsRouteParityManifestEntry,
 } from "./knowledgeCmsRouteParity";
 
-export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_MODE =
   "control_only" as const;
 export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_HASH_ALGORITHM =
@@ -104,7 +104,7 @@ export interface KnowledgeCmsArticleMigrationControlRecord {
     status: "disabled";
     readyToExecute: false;
     writeCount: typeof KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT;
-    reason: "migration_executor_not_implemented";
+    reason: "control_record_is_not_execution_authority";
   };
   rollout: {
     publicSource: "verified_static_route";
@@ -328,7 +328,7 @@ function buildUnsignedControl(
       readyToExecute: false,
       writeCount:
         KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT,
-      reason: "migration_executor_not_implemented",
+      reason: "control_record_is_not_execution_authority",
     },
     rollout: {
       publicSource: "verified_static_route",

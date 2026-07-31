@@ -174,7 +174,7 @@ test("fixed server inputs produce deterministic control and batch bindings", () 
   assert.ok(turning65);
   assert.equal(
     turning65.control.fingerprint,
-    "941f2ccd466c8afee63301a6c2c84533490b4f4b7f9607886a37f76d1afd81e1",
+    "cef618e106cf22a644c1dabb98c53f0206c3396052725fcea21349faf6d2c940",
   );
   assert.equal(
     turning65.materialization.record?.audit.createdAt,
@@ -371,13 +371,9 @@ test("the server DAL reauthorizes before exactly three reads and performs no wri
   assert.equal(unauthorizedReads, 0);
 });
 
-test("the dry run has no mutation path, client action, or public import", () => {
+test("the dry-run builder remains non-mutating and private", () => {
   const moduleSource = readFileSync(
     join(root, "lib/knowledgeCmsArticleMigrationDryRun.ts"),
-    "utf8",
-  );
-  const dataAccess = readFileSync(
-    join(root, "lib/knowledgeCmsMigrationDal.ts"),
     "utf8",
   );
   const page = readFileSync(
@@ -385,18 +381,12 @@ test("the dry run has no mutation path, client action, or public import", () => 
     "utf8",
   );
 
-  for (const source of [moduleSource, dataAccess]) {
-    assert.doesNotMatch(source, /\.save\s*\(/);
-    assert.doesNotMatch(source, /\.transition\s*\(/);
-    assert.doesNotMatch(source, /\.create\s*\(/);
-    assert.doesNotMatch(source, /runTransaction\s*\(/);
-  }
-  assert.match(
-    dataAccess,
-    /const actor = await requireKnowledgeCmsActor\(\)/,
-  );
+  assert.doesNotMatch(moduleSource, /\.save\s*\(/);
+  assert.doesNotMatch(moduleSource, /\.transition\s*\(/);
+  assert.doesNotMatch(moduleSource, /\.create\s*\(/);
+  assert.doesNotMatch(moduleSource, /runTransaction\s*\(/);
   assert.doesNotMatch(page, /["']use client["']/);
-  assert.doesNotMatch(page, /<form\b|action=\{/);
+  assert.match(page, /KnowledgeArticleMigrationExecutionControl/);
 
   const publicSources = [
     ...listTypeScriptFiles(join(root, "app")),

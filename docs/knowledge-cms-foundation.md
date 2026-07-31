@@ -35,12 +35,13 @@ below are complete.
 | `knowledge_faqs` | Reusable question-and-answer records |
 | `knowledge_search_documents` | Published-record search projections |
 | `knowledge_cms_slugs` | Transactional, per-record-kind slug locks |
+| `knowledge_cms_canonical_paths` | Transactional, cross-kind canonical-path locks |
 | `knowledge_cms_audit_events` | Append-only lifecycle audit events |
 
-The repository writes the canonical record, slug lock, search projection, and
-audit event in one Firestore transaction. Updates require the caller's
-expected revision, preventing a stale editor from silently overwriting newer
-work.
+The repository writes the canonical record, slug lock, canonical-path lock,
+search projection, and audit event in one Firestore transaction. Updates
+require the caller's expected revision, preventing a stale editor from
+silently overwriting newer work.
 
 No composite index is required by the current repository implementation.
 
@@ -149,22 +150,25 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-The migration preview is intentionally not an import action. It has no Server
-Action, repository `save`, workflow transition, upload, or execute path. Its
-output always reports a write count of zero and keeps every proposed target
-indexing-blocked. The displayed article controls are immutable
-representations, not buttons or stored Firestore documents. Article route
-bodies and metadata have explicit, test-enforced parity snapshots. Article
-migration still fails closed because the CMS Markdown body is not used for
-public rendering and no reviewed route-level shadow evidence exists yet. The
-private shadow adapter preserves the current React component tree, forms, FAQ
+The migration preview and its dry-run receipts remain non-mutating and always
+report a write count of zero. Displayed article controls are immutable
+representations rather than stored Firestore documents. A separate exact-true
+gate exposes the one-record execution form described below; a dry-run receipt
+is evidence only and is never accepted as write authority. Article route bodies
+and metadata retain explicit, test-enforced parity snapshots. Public article
+cutover still fails closed because the CMS Markdown body is not used for public
+rendering and no reviewed route-level cutover evidence exists. The private
+shadow adapter preserves the current React component tree, forms, FAQ
 disclosures, relationship cards, structured data, and dynamic registries for
 comparison only. It cannot authorize public cutover.
 
-This release intentionally has no archive, restore, public rendering, or
-migration execution. CMS publication remains private: it writes the governed
-record and search projection but does not add a route, sitemap entry, public
-card, schema block, or visible content to the existing site.
+This release intentionally has no archive, restore, public rendering, bulk
+migration, overwrite, or indexing path. The only migration mutation is the
+separately gated, explicitly confirmed creation of one private article draft
+plus its transactional locks and audit event. CMS publication remains private:
+it writes the governed record and search projection but does not add a route,
+sitemap entry, public card, schema block, or visible content to the existing
+site.
 
 ## Authentication rollout prerequisites
 
@@ -218,10 +222,9 @@ browser never receives a way to assign or elevate roles.
 ## Not included in this release
 
 - Public Knowledge Center rendering
-- Migration execution for the existing static registry
 - CMS conversion or import of public route bodies
 - Hosted search service or embeddings
-- Static-registry migration executors or mutation controls
+- Bulk, overwrite, update, publish, or indexing migration executors
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
@@ -275,9 +278,11 @@ Each of the 22 article targets has a versioned control record that:
   `indexing=blocked`, `cmsBodyPubliclyRendered=false`, and
   `cutoverEligible=false`.
 
-The control record is a reviewable creation contract only. No repository
-method accepts it, no Server Action exposes it, and no control record is stored
-by this release.
+The control record is a reviewable creation contract only. No browser request
+can submit its payload, no repository method accepts a client-supplied control,
+and no control record is stored. The separately gated execution boundary
+accepts only its ID and fingerprint, then reconstructs and revalidates the
+complete control on the server inside the transaction.
 
 ## Article materialization dry-run contract
 
@@ -298,12 +303,41 @@ the 22 article controls. On each request it:
 - fingerprints each receipt and the complete batch so the control, observed
   state, actor, timestamp, and in-memory result are bound together.
 
-The observation is not a lock and every receipt requires a future
-transactional recheck. `readyToExecute` remains false, execution eligibility
-and write count remain zero, and there is no form, Server Action, repository
-save, workflow transition, audit write, search projection, or public import.
-Reloading the page performs a fresh read and creates new timestamped receipts;
-it does not store them.
+The observation is not a lock and every receipt requires a transactional
+recheck. `readyToExecute` remains false, execution eligibility and write count
+remain zero, and the receipt itself is never submitted to a Server Action or
+repository. Reloading the page performs a fresh read and creates new
+timestamped receipts; it does not store them. The separate execution form uses
+only the immutable control ID/fingerprint and performs an independent
+transactional validation.
+
+## Single-article private-draft execution contract
+
+`KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` is a separate server-only,
+exact-`true` gate and cannot be enabled by the deployment workflow unless
+`KNOWLEDGE_CMS_ENABLED=true`. When both gates are enabled, a publisher or admin
+may create one Resource Library article draft from the private migration page
+only after typing the exact control-specific confirmation phrase.
+
+The Server Action accepts only the selected control ID, its SHA-256, and the
+typed phrase. The mutation DAL reloads the current authenticated actor, and
+the Firestore transaction reconstructs the control from the immutable static
+registry, revalidates its fingerprint, supplies one transaction server-clock
+timestamp, and fails closed unless all of the following remain absent or
+available:
+
+- the expected-absent article document;
+- the per-kind slug lock and any legacy same-slug article;
+- the cross-kind canonical-path lock and any legacy canonical owner;
+- the target's private search projection; and
+- the revision-one append-only audit event.
+
+One successful execution creates four Firestore documents atomically: the
+private article draft, slug lock, canonical-path lock, and revision-one audit
+event. The draft stays indexing-blocked, has no review or publication state,
+and contains only the private migration control note. The writer has no update,
+overwrite, bulk, public-render, sitemap, indexing, or cutover behavior. The
+existing verified React route remains the public source.
 
 ## Lossless renderer and rollback contract
 
@@ -357,10 +391,8 @@ global mode back to `static`, performs no CMS data mutation, and keeps `/` and
 
 ## Next release gate
 
-The next independently reviewed release may define a one-record-at-a-time,
-explicitly confirmed private-draft execution boundary that revalidates the
-actor, control fingerprint, expected-absent document, slug lock, canonical
-ownership, and server clock inside the write transaction. Bulk execution,
-public cutover, indexing changes, and CMS-native public bodies must remain
-separate. No cutover should be proposed until governed records exist and
-route-by-route shadow evidence plus rollback verification are reviewed.
+The next independently reviewed release may add an authenticated execution
+history and per-record post-create verification view without adding bulk
+execution. Public cutover, indexing changes, and CMS-native public bodies must
+remain separate. No cutover should be proposed until governed records exist
+and route-by-route shadow evidence plus rollback verification are reviewed.

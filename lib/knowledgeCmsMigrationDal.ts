@@ -17,6 +17,9 @@ import {
   buildKnowledgeCmsArticleMaterializationDryRun,
   type KnowledgeCmsArticleMaterializationDryRun,
 } from "./knowledgeCmsArticleMigrationDryRun";
+import type {
+  KnowledgeCmsArticleMigrationExecutionRequest,
+} from "./knowledgeCmsArticleMigrationExecution";
 import {
   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV,
 } from "./knowledgeCmsRendererContract";
@@ -98,4 +101,23 @@ export async function getKnowledgeCmsAdminMigrationWorkspacePreview(): Promise<K
     createKnowledgeCmsRepository(),
     actor,
   );
+}
+
+export async function executeKnowledgeCmsAdminArticleMigrationDraft(
+  request: KnowledgeCmsArticleMigrationExecutionRequest,
+): Promise<{
+  id: string;
+  kind: "article";
+  revision: 1;
+  status: "draft";
+}> {
+  const actor = await requireKnowledgeCmsActor();
+  const record = await createKnowledgeCmsRepository()
+    .createArticleMigrationDraft(actor, request);
+  return {
+    id: record.id,
+    kind: "article",
+    revision: 1,
+    status: "draft",
+  };
 }

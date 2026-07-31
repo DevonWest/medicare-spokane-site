@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import type {
   DocumentData,
   DocumentReference,
@@ -12,13 +13,21 @@ import {
   buildKnowledgeCmsSearchDocument,
   cloneKnowledgeCmsRecord,
   parseKnowledgeCmsRecord,
+  type KnowledgeCmsActor,
+  type KnowledgeCmsArticle,
   type KnowledgeCmsRecord,
   type KnowledgeCmsRecordKind,
   type KnowledgeCmsStatus,
 } from "./knowledgeCms";
+import {
+  assertKnowledgeCmsArticleMigrationExecutionEnabled,
+  buildKnowledgeCmsArticleMigrationExecutionPlan,
+  type KnowledgeCmsArticleMigrationExecutionRequest,
+} from "./knowledgeCmsArticleMigrationExecution";
 
 export type KnowledgeCmsAuditEvent =
   | "create"
+  | "migration_create_private_draft"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -50,6 +59,13 @@ export interface KnowledgeCmsRepository {
     record: KnowledgeCmsRecord,
     options: KnowledgeCmsSaveOptions,
   ): Promise<void>;
+}
+
+export interface KnowledgeCmsArticleMigrationRepository {
+  createArticleMigrationDraft(
+    actor: KnowledgeCmsActor,
+    request: KnowledgeCmsArticleMigrationExecutionRequest,
+  ): Promise<KnowledgeCmsArticle>;
 }
 
 export class KnowledgeCmsDisabledError extends Error {
@@ -101,6 +117,10 @@ function collectionForKind(kind: KnowledgeCmsRecordKind): string {
 
 function slugLockId(record: Pick<KnowledgeCmsRecord, "kind" | "slug">): string {
   return `${record.kind}--${record.slug}`;
+}
+
+function canonicalPathLockId(canonicalPath: string): string {
+  return createHash("sha256").update(canonicalPath).digest("hex");
 }
 
 function searchDocumentId(
@@ -183,6 +203,69 @@ function assertSlugAvailable(
   }
 }
 
+function assertCanonicalPathAvailable(
+  lockData: DocumentData | undefined,
+  record: KnowledgeCmsRecord,
+): void {
+  const canonicalPath = record.discoverability.canonicalPath;
+  if (
+    canonicalPath &&
+    lockData &&
+    (lockData.recordId !== record.id || lockData.kind !== record.kind)
+  ) {
+    throw new KnowledgeCmsConflictError(
+      `Canonical path "${canonicalPath}" is already assigned to another Knowledge CMS record.`,
+    );
+  }
+}
+
+const knowledgeCmsRecordKinds: KnowledgeCmsRecordKind[] = [
+  "article",
+  "topic",
+  "faq",
+];
+
+async function queryRecordsByField(
+  transaction: Transaction,
+  db: Firestore,
+  kinds: ReadonlyArray<KnowledgeCmsRecordKind>,
+  fieldPath: string,
+  value: string,
+): Promise<KnowledgeCmsRecord[]> {
+  const records: KnowledgeCmsRecord[] = [];
+  for (const kind of kinds) {
+    const snapshot = await transaction.get(
+      db.collection(collectionForKind(kind)).where(fieldPath, "==", value),
+    );
+    for (const document of snapshot.docs) {
+      const record = parseSnapshotData(
+        document.exists,
+        () => document.data(),
+      );
+      if (record) {
+        records.push(record);
+      }
+    }
+  }
+  return records;
+}
+
+function assertOnlyExpectedOwner(
+  records: ReadonlyArray<KnowledgeCmsRecord>,
+  nextRecord: KnowledgeCmsRecord,
+  fieldLabel: "slug" | "canonical path",
+): void {
+  const conflicting = records.find(
+    (record) =>
+      record.kind !== nextRecord.kind || record.id !== nextRecord.id,
+  );
+  if (conflicting) {
+    throw new KnowledgeCmsConflictError(
+      `Knowledge CMS ${fieldLabel} is already owned by ${conflicting.kind} "${conflicting.id}".`,
+    );
+  }
+}
+
 function writeSearchProjection(
   transaction: Transaction,
   searchRef: DocumentReference,
@@ -198,16 +281,19 @@ function writeSearchProjection(
 
 export interface FirestoreKnowledgeCmsRepositoryOptions {
   db?: Firestore;
+  now?: () => Date;
 }
 
 export class FirestoreKnowledgeCmsRepository
-  implements KnowledgeCmsRepository
+  implements KnowledgeCmsRepository, KnowledgeCmsArticleMigrationRepository
 {
   private readonly db: Firestore;
+  private readonly now: () => Date;
 
   constructor(options: FirestoreKnowledgeCmsRepositoryOptions = {}) {
     assertKnowledgeCmsEnabled();
     this.db = options.db ?? getFirestoreAdmin();
+    this.now = options.now ?? (() => new Date());
   }
 
   async get(
@@ -292,7 +378,57 @@ export class FirestoreKnowledgeCmsRepository
       assertSequentialRevision(current, nextRecord);
 
       const nextSlugSnapshot = await transaction.get(nextSlugRef);
+      if (options.expectedRevision === null && nextSlugSnapshot.exists) {
+        throw new KnowledgeCmsConflictError(
+          `Slug "${nextRecord.slug}" already has a lock and cannot be used for a new record.`,
+        );
+      }
       assertSlugAvailable(nextSlugSnapshot.data(), nextRecord);
+      const slugOwners = await queryRecordsByField(
+        transaction,
+        this.db,
+        [nextRecord.kind],
+        "slug",
+        nextRecord.slug,
+      );
+      assertOnlyExpectedOwner(slugOwners, nextRecord, "slug");
+
+      const nextCanonicalPath =
+        nextRecord.discoverability.canonicalPath;
+      const nextCanonicalRef = nextCanonicalPath
+        ? this.db
+            .collection(KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths)
+            .doc(canonicalPathLockId(nextCanonicalPath))
+        : undefined;
+      const nextCanonicalSnapshot = nextCanonicalRef
+        ? await transaction.get(nextCanonicalRef)
+        : undefined;
+      if (
+        options.expectedRevision === null &&
+        nextCanonicalSnapshot?.exists
+      ) {
+        throw new KnowledgeCmsConflictError(
+          `Canonical path "${nextCanonicalPath}" already has a lock and cannot be used for a new record.`,
+        );
+      }
+      assertCanonicalPathAvailable(
+        nextCanonicalSnapshot?.data(),
+        nextRecord,
+      );
+      const canonicalOwners = nextCanonicalPath
+        ? await queryRecordsByField(
+            transaction,
+            this.db,
+            knowledgeCmsRecordKinds,
+            "discoverability.canonicalPath",
+            nextCanonicalPath,
+          )
+        : [];
+      assertOnlyExpectedOwner(
+        canonicalOwners,
+        nextRecord,
+        "canonical path",
+      );
 
       const priorSlugRef =
         current && current.slug !== nextRecord.slug
@@ -303,6 +439,17 @@ export class FirestoreKnowledgeCmsRepository
       const priorSlugSnapshot = priorSlugRef
         ? await transaction.get(priorSlugRef)
         : undefined;
+      const priorCanonicalPath =
+        current?.discoverability.canonicalPath;
+      const priorCanonicalRef =
+        priorCanonicalPath && priorCanonicalPath !== nextCanonicalPath
+          ? this.db
+              .collection(KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths)
+              .doc(canonicalPathLockId(priorCanonicalPath))
+          : undefined;
+      const priorCanonicalSnapshot = priorCanonicalRef
+        ? await transaction.get(priorCanonicalRef)
+        : undefined;
 
       transaction.set(recordRef, toFirestoreData(nextRecord));
       transaction.set(nextSlugRef, {
@@ -311,12 +458,27 @@ export class FirestoreKnowledgeCmsRepository
         slug: nextRecord.slug,
         updatedAt: nextRecord.audit.updatedAt,
       });
+      if (nextCanonicalRef && nextCanonicalPath) {
+        transaction.set(nextCanonicalRef, {
+          canonicalPath: nextCanonicalPath,
+          kind: nextRecord.kind,
+          recordId: nextRecord.id,
+          updatedAt: nextRecord.audit.updatedAt,
+        });
+      }
 
       if (
         priorSlugRef &&
         priorSlugSnapshot?.data()?.recordId === nextRecord.id
       ) {
         transaction.delete(priorSlugRef);
+      }
+      if (
+        priorCanonicalRef &&
+        priorCanonicalSnapshot?.data()?.recordId === nextRecord.id &&
+        priorCanonicalSnapshot.data()?.kind === nextRecord.kind
+      ) {
+        transaction.delete(priorCanonicalRef);
       }
 
       writeSearchProjection(transaction, searchRef, nextRecord);
@@ -333,10 +495,122 @@ export class FirestoreKnowledgeCmsRepository
       });
     });
   }
+
+  async createArticleMigrationDraft(
+    actor: KnowledgeCmsActor,
+    request: KnowledgeCmsArticleMigrationExecutionRequest,
+  ): Promise<KnowledgeCmsArticle> {
+    assertKnowledgeCmsArticleMigrationExecutionEnabled();
+
+    return this.db.runTransaction(async (transaction) => {
+      const plan = buildKnowledgeCmsArticleMigrationExecutionPlan({
+        actor,
+        request,
+        now: this.now(),
+      });
+      const record = plan.record;
+      const recordRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.article)
+        .doc(record.id);
+      const slugRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.slugs)
+        .doc(slugLockId(record));
+      const canonicalRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths)
+        .doc(canonicalPathLockId(plan.target.canonicalPath));
+      const searchRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.search)
+        .doc(searchDocumentId(record));
+      const auditRef = this.db
+        .collection(KNOWLEDGE_CMS_COLLECTIONS.audit)
+        .doc(auditDocumentId(record));
+
+      const currentSnapshot = await transaction.get(recordRef);
+      const slugSnapshot = await transaction.get(slugRef);
+      const canonicalSnapshot = await transaction.get(canonicalRef);
+      const searchSnapshot = await transaction.get(searchRef);
+      const auditSnapshot = await transaction.get(auditRef);
+      const slugOwners = await queryRecordsByField(
+        transaction,
+        this.db,
+        ["article"],
+        "slug",
+        record.slug,
+      );
+      const canonicalOwners = await queryRecordsByField(
+        transaction,
+        this.db,
+        knowledgeCmsRecordKinds,
+        "discoverability.canonicalPath",
+        plan.target.canonicalPath,
+      );
+
+      if (currentSnapshot.exists) {
+        const current = parseSnapshotData(
+          currentSnapshot.exists,
+          () => currentSnapshot.data(),
+        );
+        throw new KnowledgeCmsConflictError(
+          `Article migration target already exists at revision ${current?.audit.revision ?? "unknown"}.`,
+        );
+      }
+      if (slugSnapshot.exists || slugOwners.length > 0) {
+        throw new KnowledgeCmsConflictError(
+          `Article migration slug "${record.slug}" is no longer available.`,
+        );
+      }
+      if (canonicalSnapshot.exists || canonicalOwners.length > 0) {
+        throw new KnowledgeCmsConflictError(
+          `Article migration canonical path "${plan.target.canonicalPath}" is no longer available.`,
+        );
+      }
+      if (searchSnapshot.exists) {
+        throw new KnowledgeCmsConflictError(
+          "An unexpected private search projection already exists for the migration target.",
+        );
+      }
+      if (auditSnapshot.exists) {
+        throw new KnowledgeCmsConflictError(
+          "An unexpected revision-one audit event already exists for the migration target.",
+        );
+      }
+
+      transaction.set(recordRef, toFirestoreData(record));
+      transaction.set(slugRef, {
+        kind: record.kind,
+        recordId: record.id,
+        slug: record.slug,
+        updatedAt: plan.transaction.serverTimestamp,
+      });
+      transaction.set(canonicalRef, {
+        canonicalPath: plan.target.canonicalPath,
+        kind: record.kind,
+        recordId: record.id,
+        updatedAt: plan.transaction.serverTimestamp,
+      });
+      transaction.set(auditRef, {
+        event: "migration_create_private_draft",
+        actorId: actor.id,
+        kind: record.kind,
+        recordId: record.id,
+        revision: record.audit.revision,
+        status: record.status,
+        slug: record.slug,
+        occurredAt: plan.transaction.serverTimestamp,
+        migrationControlId: plan.control.id,
+        migrationControlFingerprint: plan.control.fingerprint,
+        publicSource: plan.rollout.publicSource,
+        note:
+          "Created one private, indexing-blocked draft from the deterministic Resource Library migration control. The verified static route remains public.",
+      });
+
+      return cloneKnowledgeCmsRecord(record) as KnowledgeCmsArticle;
+    });
+  }
 }
 
 export function createKnowledgeCmsRepository(
   options: FirestoreKnowledgeCmsRepositoryOptions = {},
-): KnowledgeCmsRepository {
+): KnowledgeCmsRepository & KnowledgeCmsArticleMigrationRepository {
   return new FirestoreKnowledgeCmsRepository(options);
 }

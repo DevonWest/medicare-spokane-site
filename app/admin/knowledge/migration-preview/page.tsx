@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import KnowledgeArticleMigrationExecutionControl from "../components/KnowledgeArticleMigrationExecutionControl";
 import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
+import {
+  getKnowledgeCmsArticleMigrationConfirmationPhrase,
+  isKnowledgeCmsArticleMigrationExecutionEnabled,
+} from "@/lib/knowledgeCmsArticleMigrationExecution";
 import {
   getKnowledgeCmsAdminMigrationWorkspacePreview,
 } from "@/lib/knowledgeCmsMigrationDal";
@@ -46,6 +51,8 @@ export default async function KnowledgeMigrationPreviewPage() {
       receipt,
     ]),
   );
+  const executionEnabled =
+    isKnowledgeCmsArticleMigrationExecutionEnabled();
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -59,19 +66,20 @@ export default async function KnowledgeMigrationPreviewPage() {
 
         <header className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-700">
-            Read-only migration planner
+            Migration planner and guarded execution
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
             Resource Library migration preview
           </h1>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
-            This inventory compares the static Resource Library with existing
-            Knowledge CMS records. It never writes Firestore data, changes a
-            public route, or enables CMS rendering.
+            The preview compares the static Resource Library with existing
+            Knowledge CMS records without writing. A separately gated control
+            can create one confirmed private draft at a time; it never changes
+            a public route or enables CMS rendering.
           </p>
           <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-            Write count: {preview.writeCount}. Closing this page leaves every
-            system unchanged.
+            Preview write count: {preview.writeCount}. Viewing or refreshing
+            this page leaves every system unchanged.
           </div>
         </header>
 
@@ -221,6 +229,30 @@ export default async function KnowledgeMigrationPreviewPage() {
           </p>
         </section>
 
+        <section
+          className={`mt-8 rounded-2xl border p-6 shadow-sm md:p-8 ${
+            executionEnabled
+              ? "border-amber-300 bg-amber-50"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-800">
+            Single-record execution boundary
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            Private article draft creation
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">
+            {executionEnabled
+              ? "Execution is enabled for explicitly confirmed article controls. Each request reconstructs the selected control on the server and rechecks the document, slug, canonical path, search projection, audit event, actor, fingerprint, and server clock inside one Firestore transaction."
+              : "Execution is disabled. Set the separate server-only migration execution gate only after the private CMS authentication and role prerequisites are verified."}
+          </p>
+          <p className="mt-4 text-sm font-semibold text-slate-900">
+            Bulk execution: blocked · overwrite: blocked · indexing: blocked ·
+            public source: verified static route
+          </p>
+        </section>
+
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <h2 className="text-xl font-bold text-slate-950">Release gates</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
@@ -266,8 +298,8 @@ export default async function KnowledgeMigrationPreviewPage() {
               for cutover.
             </li>
             <li>
-              Public rendering, URL cutover, sitemap changes, and migration
-              execution remain outside this preview.
+              Public rendering, URL cutover, sitemap changes, bulk execution,
+              and CMS-native public bodies remain outside this release.
             </li>
           </ul>
           {preview.issues.length > 0 ? (
@@ -293,8 +325,9 @@ export default async function KnowledgeMigrationPreviewPage() {
               Proposed record inventory
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Every target stays a private, indexing-blocked draft. Rows are
-              informational only.
+              Every target stays a private, indexing-blocked draft. Preview
+              evidence is informational; a separate control appears only for
+              an eligible article when one-record execution is enabled.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -306,10 +339,29 @@ export default async function KnowledgeMigrationPreviewPage() {
                   <th className="px-5 py-4">State</th>
                   <th className="px-5 py-4">Canonical / relationships</th>
                   <th className="px-5 py-4">Findings</th>
+                  <th className="px-5 py-4">Execution</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {preview.candidates.map((candidate) => (
+                {preview.candidates.map((candidate) => {
+                  const receipt = materializationByTargetId.get(
+                    candidate.target.id,
+                  );
+                  const control =
+                    candidate.target.kind === "article"
+                      ? candidate.target.controlRecord
+                      : undefined;
+                  const executionAvailable = Boolean(
+                    executionEnabled &&
+                      control &&
+                      receipt?.control.validation === "verified" &&
+                      receipt.materialization.status ===
+                        "verified_in_memory" &&
+                      receipt.target.observedState === "absent" &&
+                      receipt.target.conflictCodes.length === 0,
+                  );
+
+                  return (
                   <tr className="align-top" key={candidate.key}>
                     <td className="px-5 py-5">
                       <p className="font-semibold text-slate-950">
@@ -451,8 +503,8 @@ export default async function KnowledgeMigrationPreviewPage() {
                                 server-clock audit
                               </p>
                               <p className="font-semibold text-red-700">
-                                Execution disabled · 0 writes · Markdown is
-                                not the public page body
+                                Control alone is non-executable · 0 writes ·
+                                Markdown is not the public page body
                               </p>
                               {materializationByTargetId.get(
                                 candidate.target.id,
@@ -510,8 +562,29 @@ export default async function KnowledgeMigrationPreviewPage() {
                         </ul>
                       )}
                     </td>
+                    <td className="min-w-80 px-5 py-5">
+                      {executionAvailable && control ? (
+                        <KnowledgeArticleMigrationExecutionControl
+                          confirmationPhrase={
+                            getKnowledgeCmsArticleMigrationConfirmationPhrase(
+                              candidate.target.slug,
+                            )
+                          }
+                          controlFingerprint={control.fingerprint.value}
+                          controlId={control.controlId}
+                          targetTitle={candidate.target.title}
+                        />
+                      ) : (
+                        <p className="text-xs font-semibold leading-5 text-slate-600">
+                          {executionEnabled
+                            ? "Unavailable: the current dry run is blocked or this target already exists."
+                            : "Execution gate disabled."}
+                        </p>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
