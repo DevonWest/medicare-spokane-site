@@ -158,7 +158,7 @@ test("migration preview deterministically inventories the complete static regist
     writeCount: 0,
   });
   assert.deepEqual(preview.summary.renderer, {
-    contractVersion: 2,
+      contractVersion: 3,
     mode: {
       configuredValue: undefined,
       requestedMode: "static",

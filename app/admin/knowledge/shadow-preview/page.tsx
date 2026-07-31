@@ -4,18 +4,29 @@ import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
 import { getKnowledgeCmsAdminShadowPreview } from "@/lib/knowledgeCmsShadowDal";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
 import {
-  getKnowledgeCmsShadowRouteAdapter,
   isKnowledgeCmsPrivateShadowEnabled,
   type KnowledgeCmsShadowResultStatus,
 } from "@/lib/knowledgeCmsShadowRenderer";
+import KnowledgeCmsNativeRepresentationRenderer from "@/lib/knowledgeCmsNativeRepresentationRenderer";
+import {
+  getKnowledgeCmsNativeRepresentationControl,
+} from "@/lib/knowledgeCmsNativeRepresentation";
+import {
+  getKnowledgeCmsNativeRepresentationConfirmationPhrase,
+  isKnowledgeCmsNativeRepresentationExecutionEnabled,
+} from "@/lib/knowledgeCmsNativeRepresentationExecution";
+import KnowledgeNativeRepresentationExecutionControl from "../components/KnowledgeNativeRepresentationExecutionControl";
 
 const statusStyles: Record<KnowledgeCmsShadowResultStatus, string> = {
-  adapter_invalid: "bg-red-100 text-red-800",
   candidate_missing: "bg-slate-100 text-slate-700",
   candidate_not_published: "bg-amber-100 text-amber-800",
   parity_failed: "bg-red-100 text-red-800",
   parity_passed: "bg-emerald-100 text-emerald-800",
   record_contract_mismatch: "bg-amber-100 text-amber-800",
+  representation_control_invalid: "bg-red-100 text-red-800",
+  representation_invalid: "bg-red-100 text-red-800",
+  representation_missing: "bg-slate-100 text-slate-700",
+  representation_stale: "bg-amber-100 text-amber-800",
 };
 
 function formatStatus(value: KnowledgeCmsShadowResultStatus): string {
@@ -54,11 +65,11 @@ export default async function KnowledgeShadowPreviewPage({
   if (requestedEntry && !selected) {
     notFound();
   }
-  const adapter =
-    selected?.status === "parity_passed"
-      ? getKnowledgeCmsShadowRouteAdapter(selected.entryId)
-      : undefined;
-  const ShadowComponent = adapter?.Component;
+  const representationControl = selected
+    ? getKnowledgeCmsNativeRepresentationControl(selected.entryId)
+    : undefined;
+  const representationExecutionEnabled =
+    isKnowledgeCmsNativeRepresentationExecutionEnabled();
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -79,22 +90,26 @@ export default async function KnowledgeShadowPreviewPage({
           </h1>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
             This workspace checks governed published CMS records against the
-            exact React, metadata, canonical, schema, form, FAQ, and body-hash
-            contracts for the existing Resource Library. Public requests
-            continue to use the verified static routes.
+            exact CMS-owned lossless artifact, metadata, canonical, schema,
+            form, FAQ, and body-hash contracts for the existing Resource
+            Library. The candidate no longer imports a legacy page module.
+            Public requests continue to use the verified static routes.
           </p>
           <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-            Write count: {preview.writeCount}. Effective public renderer:{" "}
-            {preview.rendererMode.effectiveMode}. CMS Markdown rendered
-            publicly: no. Cutover eligible: no.
+            Preview write count: {preview.writeCount}. Effective public
+            renderer: {preview.rendererMode.effectiveMode}. Candidate body:{" "}
+            {preview.bodySource}. CMS content rendered publicly: no. Cutover
+            eligible: no.
           </div>
         </header>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           {[
             ["Routes", preview.summary.total],
-            ["Adapters ready", preview.summary.adaptersReady],
+            ["Controls ready", preview.summary.controlsReady],
             ["CMS records", preview.summary.candidatesPresent],
+            ["Artifacts", preview.summary.representationsPresent],
+            ["Unexpected", preview.summary.unexpectedRepresentations],
             ["Compared", preview.summary.compared],
             ["Exact passes", preview.summary.passed],
             ["Blocked", preview.summary.blocked],
@@ -110,6 +125,30 @@ export default async function KnowledgeShadowPreviewPage({
             </div>
           ))}
         </div>
+
+        <section
+          className={`mt-8 rounded-2xl border p-6 shadow-sm md:p-8 ${
+            preview.betaParityApproval.status === "verified"
+              ? "border-emerald-300 bg-emerald-50"
+              : "border-amber-300 bg-amber-50"
+          }`}
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-700">
+            Beta shadow-parity approval
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            {preview.betaParityApproval.status === "verified"
+              ? "All 22 CMS-native candidates match"
+              : `${preview.betaParityApproval.exactPasses} of ${preview.betaParityApproval.routeCount} candidates match`}
+          </h2>
+          <p className="mt-3 break-all font-mono text-xs text-slate-700">
+            sha256:{preview.betaParityApproval.fingerprint}
+          </p>
+          <p className="mt-3 text-sm font-semibold text-slate-800">
+            Execution authority: no · public cutover authority: no · static
+            rollback retained
+          </p>
+        </section>
 
         {selected ? (
           <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -174,10 +213,44 @@ export default async function KnowledgeShadowPreviewPage({
                     {selected.artifact.renderedBody.sha256}
                   </dd>
                 </div>
+                <div className="sm:col-span-2 lg:col-span-4">
+                  <dt className="text-slate-500">CMS artifact</dt>
+                  <dd className="mt-1 break-all font-mono text-xs text-slate-900">
+                    {selected.representationId} · sha256:
+                    {selected.representationArtifact?.fingerprint.value}
+                  </dd>
+                </div>
               </dl>
             ) : null}
 
-            {ShadowComponent ? (
+            {["representation_missing", "representation_stale"].includes(
+              selected.status,
+            ) &&
+            selected.recordRevision &&
+            representationControl ? (
+              representationExecutionEnabled ? (
+                <KnowledgeNativeRepresentationExecutionControl
+                  confirmationPhrase={getKnowledgeCmsNativeRepresentationConfirmationPhrase(
+                    selected.path.slice(1),
+                  )}
+                  controlFingerprint={
+                    representationControl.fingerprint.value
+                  }
+                  controlId={representationControl.controlId}
+                  expectedArticleRevision={selected.recordRevision}
+                  targetTitle={selected.title}
+                />
+              ) : (
+                <p className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                  Private rendering artifact execution is disabled. The
+                  deterministic control remains zero-write until the separate
+                  server-only gate is enabled for beta.
+                </p>
+              )
+            ) : null}
+
+            {selected.status === "parity_passed" &&
+            selected.representationArtifact ? (
               <div className="mt-8">
                 <div className="rounded-t-xl border border-slate-300 bg-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600">
                   Inert private render · links and forms disabled
@@ -186,7 +259,9 @@ export default async function KnowledgeShadowPreviewPage({
                   className="max-h-[70vh] overflow-auto rounded-b-xl border-x border-b border-slate-300 bg-white"
                   inert
                 >
-                  <ShadowComponent />
+                  <KnowledgeCmsNativeRepresentationRenderer
+                    artifact={selected.representationArtifact}
+                  />
                 </div>
               </div>
             ) : null}
@@ -199,9 +274,9 @@ export default async function KnowledgeShadowPreviewPage({
               Route-by-route evidence
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              A comparison runs only for a matching published CMS article.
-              Missing, stale, or mismatched records fail closed without a
-              write.
+              A comparison runs only for a matching published CMS article and
+              immutable rendering artifact. Missing, stale, malformed, or
+              mismatched evidence fails closed without a write.
             </p>
           </div>
           <div className="overflow-x-auto">

@@ -8,6 +8,7 @@ import {
 } from "./knowledgeCms";
 import {
   createKnowledgeCmsRepository,
+  type KnowledgeCmsNativeRepresentationRepository,
   type KnowledgeCmsRepository,
 } from "./knowledgeCmsRepository";
 import {
@@ -28,7 +29,11 @@ export class KnowledgeCmsPrivateShadowDisabledError extends Error {
 }
 
 export async function previewKnowledgeCmsShadow(
-  repository: Pick<KnowledgeCmsRepository, "list">,
+  repository: Pick<KnowledgeCmsRepository, "list"> &
+    Pick<
+      KnowledgeCmsNativeRepresentationRepository,
+      "listArticleRenderings"
+    >,
   actor: KnowledgeCmsActor,
   options: {
     asOf?: Date;
@@ -46,17 +51,22 @@ export async function previewKnowledgeCmsShadow(
     throw new KnowledgeCmsPrivateShadowDisabledError();
   }
 
-  const records = await repository.list({
-    kind: "article",
-  });
+  const [records, representationDocuments] = await Promise.all([
+    repository.list({ kind: "article" }),
+    repository.listArticleRenderings(actor),
+  ]);
   const articles = records.filter(
     (record): record is KnowledgeCmsArticle =>
       record.kind === "article",
   );
-  return buildKnowledgeCmsShadowPreview(articles, {
-    asOf: options.asOf,
-    rendererMode,
-  });
+  return buildKnowledgeCmsShadowPreview(
+    articles,
+    representationDocuments,
+    {
+      asOf: options.asOf,
+      rendererMode,
+    },
+  );
 }
 
 export async function getKnowledgeCmsAdminShadowPreview(): Promise<KnowledgeCmsShadowPreview> {

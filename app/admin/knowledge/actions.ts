@@ -8,6 +8,7 @@ import {
   isKnowledgeCmsRecordId,
   isKnowledgeCmsRecordKind,
   parseKnowledgeCmsArticleMigrationExecutionForm,
+  parseKnowledgeCmsNativeRepresentationExecutionForm,
   parseKnowledgeCmsSupportingMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
@@ -39,6 +40,12 @@ import {
 import {
   KnowledgeCmsSupportingMigrationExecutionError,
 } from "@/lib/knowledgeCmsSupportingMigrationExecution";
+import {
+  KnowledgeCmsNativeRepresentationExecutionError,
+} from "@/lib/knowledgeCmsNativeRepresentationExecution";
+import {
+  executeKnowledgeCmsAdminNativeRepresentation,
+} from "@/lib/knowledgeCmsNativeRepresentationDal";
 import {
   KnowledgeCmsReviewerVerificationError,
   KnowledgeCmsStateError,
@@ -103,6 +110,27 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message:
         "This topic or FAQ control changed or is no longer valid. Reload the migration preview before continuing.",
+      conflict: true,
+    };
+  }
+  if (error instanceof KnowledgeCmsNativeRepresentationExecutionError) {
+    if (error.reason === "execution_disabled") {
+      return {
+        ok: false,
+        message: "Private rendering artifact execution is not enabled.",
+      };
+    }
+    if (error.reason === "confirmation_mismatch") {
+      return {
+        ok: false,
+        message:
+          "The confirmation phrase did not exactly match this private rendering.",
+      };
+    }
+    return {
+      ok: false,
+      message:
+        "This rendering control or published article changed. Reload the shadow workspace before continuing.",
       conflict: true,
     };
   }
@@ -436,5 +464,32 @@ export async function createKnowledgeCmsSupportingMigrationDraftAction(
 
   revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
   revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview`);
+  redirect(destination);
+}
+
+export async function createKnowledgeCmsNativeRepresentationAction(
+  controlId: string,
+  controlFingerprint: string,
+  expectedArticleRevision: number,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  let destination: string;
+  try {
+    const request = parseKnowledgeCmsNativeRepresentationExecutionForm(
+      controlId,
+      controlFingerprint,
+      expectedArticleRevision,
+      formData,
+    );
+    const created =
+      await executeKnowledgeCmsAdminNativeRepresentation(request);
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/shadow-preview?entry=${encodeURIComponent(created.entryId)}`;
+  } catch (error) {
+    return errorState(error);
+  }
+
+  revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/shadow-preview`);
   redirect(destination);
 }

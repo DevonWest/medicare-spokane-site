@@ -27,7 +27,7 @@ import type {
 } from "./knowledgeCmsSupportingMigrationVerification";
 import type { KnowledgeCmsRendererModeResolution } from "./knowledgeCmsRendererContract";
 
-export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_VERSION = 2 as const;
+export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_VERSION = 3 as const;
 export const KNOWLEDGE_CMS_OPERATIONAL_READINESS_WRITE_COUNT = 0 as const;
 export const KNOWLEDGE_CMS_ROLE_DIRECTORY_PAGE_SIZE = 1_000 as const;
 export const KNOWLEDGE_CMS_ROLE_DIRECTORY_MAX_PAGES = 100 as const;
@@ -53,6 +53,7 @@ export interface KnowledgeCmsOperationalConfiguration {
   cmsGate: KnowledgeCmsBooleanGateState;
   articleMigrationExecutionGate: KnowledgeCmsBooleanGateState;
   supportingMigrationExecutionGate: KnowledgeCmsBooleanGateState;
+  nativeRepresentationExecutionGate: KnowledgeCmsBooleanGateState;
   renderer: KnowledgeCmsRendererModeResolution;
   firebase: {
     adminConfigured: boolean;
@@ -155,6 +156,7 @@ export interface KnowledgeCmsOperationalReadinessCheck {
     | "source_and_route_evidence"
     | "supporting_controls"
     | "supporting_execution_gate"
+    | "native_representation_execution_gate"
     | "supporting_migration_evidence"
     | "zero_write_boundary";
   area: "authentication" | "configuration" | "migration" | "public_safety";
@@ -1159,7 +1161,10 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
         input.configuration.renderer.requestedMode,
       ) &&
       input.configuration.renderer.effectiveMode === "static" &&
-      !input.configuration.renderer.activationAllowed,
+      !input.configuration.renderer.activationAllowed &&
+      input.configuration.nativeRepresentationExecutionGate !== "invalid" &&
+      (input.configuration.nativeRepresentationExecutionGate !== "enabled" ||
+        input.configuration.renderer.requestedMode === "shadow"),
   );
   const privateShadow: KnowledgeCmsOperationalReadinessReport["capabilities"]["privateShadow"] = !workspaceReady || !rendererSafe
     ? "blocked"
@@ -1269,6 +1274,18 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       allSupportingTargetsVerified
         ? "All topic and FAQ targets already have verified creation evidence; the supporting execution gate is no longer required for completion."
         : `The one-record topic/FAQ migration execution gate is ${input.configuration.supportingMigrationExecutionGate}.`,
+    ),
+    check(
+      "native_representation_execution_gate",
+      "configuration",
+      input.configuration.nativeRepresentationExecutionGate === "invalid"
+        ? "blocked"
+        : input.configuration.nativeRepresentationExecutionGate === "enabled"
+          ? "pass"
+          : "not_applicable",
+      input.configuration.nativeRepresentationExecutionGate === "enabled"
+        ? "The one-artifact CMS-native rendering gate is enabled only with private shadow mode."
+        : `The one-artifact CMS-native rendering gate is ${input.configuration.nativeRepresentationExecutionGate}.`,
     ),
     check(
       "renderer_configuration",
@@ -1482,6 +1499,7 @@ export function validateKnowledgeCmsOperationalReadinessReport(
     report.publicSafety.effectiveRendererMode !== "static" ||
     report.capabilities.publicCutover !== "prohibited" ||
     !report.configuration.renderer.configurationValid ||
+    report.configuration.nativeRepresentationExecutionGate === "invalid" ||
     !["static", "shadow"].includes(
       report.configuration.renderer.requestedMode,
     )

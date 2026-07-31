@@ -87,6 +87,8 @@ Set these in **Settings → Secrets and variables → Actions**.
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `<project>.firebaseapp.com` | Firebase Auth domain for the private CMS sign-in; required only before enabling the CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | Server-only feature gate; absence and every value except exact `true` keep the CMS hidden |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for explicitly confirmed, one-article-at-a-time private-draft creation; requires the CMS gate |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for one explicitly confirmed topic/FAQ private draft; requires the CMS gate |
+| `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | `false` | Separate server-only gate for one immutable article rendering artifact; requires the CMS gate and exact `shadow` mode |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | Server-only renderer gate. Exact `shadow` enables authenticated private comparison while public routes remain static; `cutover` is rejected. |
 
 #### Authentication — pick **one**
@@ -174,6 +176,8 @@ lib/
 | `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
 | `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS and private workspace. Only the exact value `true` enables it. Keep disabled until Firebase Auth, authorized domains, and explicit CMS role claims are configured. | `false` |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | Server-only gate for publisher/admin creation of one explicitly confirmed Resource Library article draft per transaction. It cannot activate unless `KNOWLEDGE_CMS_ENABLED=true`; bulk execution remains unavailable. | `false` |
+| `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | Server-only gate for one explicitly confirmed topic or FAQ private draft per transaction. It requires the CMS gate and has no bulk path. | `false` |
+| `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | Server-only gate for one revision-bound immutable rendering artifact plus audit event. It requires exact CMS and private-shadow activation. | `false` |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. Exact `shadow` enables the publisher/admin comparison workspace but never changes the public renderer; `cutover` and malformed values are rejected. | `static` |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
@@ -214,8 +218,9 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 ## Knowledge CMS foundation
 
 The default-off editorial foundation defines governed `knowledge_articles`,
-`knowledge_topics`, and `knowledge_faqs` records, along with unique slug locks,
-search projections, and append-only audit events. The private
+`knowledge_topics`, and `knowledge_faqs` records, plus revision-bound
+`knowledge_cms_article_renderings`, unique slug locks, search projections, and
+append-only audit events. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records
@@ -224,11 +229,13 @@ reviewer. A different authenticated publisher can record an explicit
 blocked-or-eligible indexing decision, publish into the private CMS search
 projection, and unpublish back to draft with an audited reason. Neither action
 creates a public route or changes the existing Resource Library.
-Exact private `shadow` mode adds a read-only publisher/admin workspace that
-checks governed published article records against all 22 immutable React and
-SEO parity contracts. It performs no writes, renders previews inertly, keeps
-the CMS Markdown body non-public, and leaves every public route on its existing
-static source.
+Exact private `shadow` mode adds a publisher/admin workspace that checks
+governed published articles and immutable CMS rendering artifacts against all
+22 React and metadata parity contracts. The preview performs no writes,
+reconstructs candidate React output without importing legacy page modules,
+renders it inertly, and leaves every public route on its existing static
+source. A separate default-off control may create one revision-bound artifact
+and one audit event; it cannot overwrite, bulk-execute, or authorize cutover.
 The authenticated operational readiness report independently checks deployment
 flags, browser/Admin Firebase project alignment, aggregate role coverage,
 reviewer-publisher separation, deterministic article controls, execution

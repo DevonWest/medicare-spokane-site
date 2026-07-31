@@ -7,9 +7,9 @@ import {
   type KnowledgeCmsRouteSchemaType,
 } from "./knowledgeCmsRouteParity";
 
-export const KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION = 2 as const;
+export const KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION = 3 as const;
 export const KNOWLEDGE_CMS_RENDERER_CONTRACT_STATE =
-  "private_shadow_implemented" as const;
+  "cms_native_private_shadow_implemented" as const;
 export const KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE_ENV =
   "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" as const;
 export const KNOWLEDGE_CMS_PUBLIC_RENDERER_DEFAULT_MODE =
@@ -40,7 +40,7 @@ export type KnowledgeCmsRendererEvidenceKind =
   | "shadow_comparison_verified";
 
 export type KnowledgeCmsRendererBlockerCode =
-  | "candidate_body_not_cms_native"
+  | "cms_native_artifact_not_verified"
   | "candidate_snapshot_missing"
   | "migration_not_executed"
   | "protected_route_verification_missing"
@@ -60,7 +60,7 @@ export interface KnowledgeCmsRendererCapabilityContract {
   requiredAdapter: string;
   sourceFiles: readonly string[];
   evidence: readonly KnowledgeCmsRendererEvidenceKind[];
-  implementationStatus: "implemented_private_shadow";
+  implementationStatus: "implemented_cms_native_private_shadow";
 }
 
 export interface KnowledgeCmsRendererContractEntry {
@@ -83,8 +83,8 @@ export interface KnowledgeCmsRendererContractEntry {
   };
   candidate: {
     source: "knowledge_cms";
-    implementationStatus: "private_shadow";
-    bodySource: "verified_static_component_adapter";
+    implementationStatus: "cms_native_private_shadow";
+    bodySource: "cms_native_lossless_artifact";
     cmsBodyPubliclyRendered: false;
     capabilities: readonly KnowledgeCmsRendererCapabilityContract[];
     requiredEvidence: readonly KnowledgeCmsRendererEvidenceKind[];
@@ -117,7 +117,7 @@ export interface KnowledgeCmsRendererArtifact {
   };
   rendering: {
     mode: "private_shadow";
-    bodySource: "verified_static_component_adapter";
+    bodySource: "cms_native_lossless_artifact";
     cmsBodyPubliclyRendered: false;
   };
   metadata: {
@@ -174,7 +174,7 @@ const requiredEvidence: readonly KnowledgeCmsRendererEvidenceKind[] =
 
 const rolloutBlockers: readonly KnowledgeCmsRendererBlockerCode[] =
   Object.freeze([
-    "candidate_body_not_cms_native",
+    "cms_native_artifact_not_verified",
     "candidate_snapshot_missing",
     "migration_not_executed",
     "protected_route_verification_missing",
@@ -196,7 +196,7 @@ const capabilityContracts: Readonly<
         "rendered_body_sha256_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   governed_faq_registry: Object.freeze({
     requiredAdapter: "governed_faq_registry_resolver",
@@ -211,7 +211,7 @@ const capabilityContracts: Readonly<
         "schema_types_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   lead_form: Object.freeze({
     requiredAdapter: "lead_form_component_adapter",
@@ -225,11 +225,13 @@ const capabilityContracts: Readonly<
         "rendered_body_sha256_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   react_component_tree: Object.freeze({
-    requiredAdapter: "typed_route_component_renderer",
-    sourceFiles: Object.freeze([]),
+    requiredAdapter: "cms_lossless_html_to_react_renderer",
+    sourceFiles: Object.freeze([
+      "lib/knowledgeCmsNativeRepresentationRenderer.tsx",
+    ]),
     evidence: Object.freeze(
       [
         "h1_match",
@@ -237,7 +239,7 @@ const capabilityContracts: Readonly<
         "rendered_byte_count_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   related_content: Object.freeze({
     requiredAdapter: "governed_related_content_renderer",
@@ -251,7 +253,7 @@ const capabilityContracts: Readonly<
         "rendered_body_sha256_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   represented_carrier_registry: Object.freeze({
     requiredAdapter: "represented_carrier_registry_resolver",
@@ -262,7 +264,7 @@ const capabilityContracts: Readonly<
         "rendered_body_sha256_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
   structured_data: Object.freeze({
     requiredAdapter: "governed_structured_data_renderer",
@@ -276,7 +278,7 @@ const capabilityContracts: Readonly<
         "rendered_body_sha256_match",
       ] satisfies KnowledgeCmsRendererEvidenceKind[],
     ),
-    implementationStatus: "implemented_private_shadow",
+    implementationStatus: "implemented_cms_native_private_shadow",
   }),
 });
 
@@ -323,8 +325,8 @@ function freezeRendererContract(
   });
   const candidate = Object.freeze({
     source: "knowledge_cms" as const,
-    implementationStatus: "private_shadow" as const,
-    bodySource: "verified_static_component_adapter" as const,
+    implementationStatus: "cms_native_private_shadow" as const,
+    bodySource: "cms_native_lossless_artifact" as const,
     cmsBodyPubliclyRendered: false as const,
     capabilities,
     requiredEvidence,
@@ -496,7 +498,7 @@ export function verifyKnowledgeCmsRendererArtifact(
     contract.candidate.cmsBodyPubliclyRendered
   ) {
     errors.push(
-      "Candidate rendering must remain private and use the verified static component adapter.",
+      "Candidate rendering must remain private and use the CMS-native lossless artifact.",
     );
   }
   if (
@@ -614,14 +616,15 @@ export function validateKnowledgeCmsRendererContracts(): string[] {
     }
     if (
       contract.record.id !== migrationArticleId(contract.entryId) ||
-      contract.candidate.implementationStatus !== "private_shadow" ||
+      contract.candidate.implementationStatus !==
+        "cms_native_private_shadow" ||
       contract.candidate.bodySource !==
-        "verified_static_component_adapter" ||
+        "cms_native_lossless_artifact" ||
       contract.candidate.cmsBodyPubliclyRendered ||
       !contract.rollout.shadowEligible ||
       contract.rollout.cutoverEligible ||
       !contract.rollout.blockers.includes(
-        "candidate_body_not_cms_native",
+        "cms_native_artifact_not_verified",
       ) ||
       contract.rollback.mode !== "static" ||
       contract.rollback.dataMutation !== "none"
@@ -646,7 +649,7 @@ export function validateKnowledgeCmsRendererContracts(): string[] {
     for (const capability of contract.candidate.capabilities) {
       if (
         capability.implementationStatus !==
-          "implemented_private_shadow" ||
+          "implemented_cms_native_private_shadow" ||
         !capability.requiredAdapter ||
         capability.evidence.length === 0
       ) {

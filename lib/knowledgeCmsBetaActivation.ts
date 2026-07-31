@@ -11,7 +11,7 @@ import {
 } from "./knowledgeCmsOperationalReadiness";
 import { resolveKnowledgeCmsPublicRendererMode } from "./knowledgeCmsRendererContract";
 
-export const KNOWLEDGE_CMS_BETA_ACTIVATION_PREVIEW_VERSION = 2 as const;
+export const KNOWLEDGE_CMS_BETA_ACTIVATION_PREVIEW_VERSION = 3 as const;
 export const KNOWLEDGE_CMS_BETA_ACTIVATION_WRITE_COUNT = 0 as const;
 export const KNOWLEDGE_CMS_BETA_READINESS_MAX_AGE_MS = 5 * 60 * 1_000;
 export const KNOWLEDGE_CMS_BETA_SITE_ENVIRONMENT = "staging" as const;
@@ -53,6 +53,7 @@ export interface KnowledgeCmsBetaActivationVariablePlan {
   name:
     | "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED"
     | "KNOWLEDGE_CMS_ENABLED"
+    | "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED"
     | "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE"
     | "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED";
   current:
@@ -352,7 +353,7 @@ const rollbackSteps: KnowledgeCmsBetaRollbackStep[] = [
     order: 1,
     code: "disable_article_execution",
     action:
-      "Set KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false and KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false in beta so no further migration draft can be created.",
+      "Set KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false, KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false, and KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false in beta so no further migration draft or rendering artifact can be created.",
     expectedEvidence:
       "Migration preview remains readable to authorized operators, but every execution control is absent.",
   },
@@ -607,6 +608,20 @@ export function buildKnowledgeCmsBetaActivationPreview(input: {
           : "Keep topic and FAQ migration execution disabled because every supporting target is already verified.",
     },
     {
+      name: "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
+      current: gateValue(
+        input.readiness.configuration.nativeRepresentationExecutionGate,
+      ),
+      proposed: "true",
+      changeRequired:
+        gateValue(
+          input.readiness.configuration.nativeRepresentationExecutionGate,
+        ) !== "true",
+      scope: "beta_only",
+      effect:
+        "Permit only one explicitly confirmed, immutable private rendering artifact for a matching published article revision.",
+    },
+    {
       name: "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE",
       current: input.readiness.configuration.renderer.requestedMode,
       proposed: "shadow",
@@ -808,13 +823,16 @@ export function validateKnowledgeCmsBetaActivationPreview(
   }
   const variableNames = preview.activation.variables.map((item) => item.name);
   if (
-    new Set(variableNames).size !== 4 ||
+    new Set(variableNames).size !== 5 ||
     !variableNames.includes("KNOWLEDGE_CMS_ENABLED") ||
     !variableNames.includes(
       "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
     ) ||
     !variableNames.includes(
       "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
+    ) ||
+    !variableNames.includes(
+      "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
     ) ||
     !variableNames.includes("KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE") ||
     preview.activation.variables.some((item) => item.scope !== "beta_only") ||
@@ -824,6 +842,11 @@ export function validateKnowledgeCmsBetaActivationPreview(
     preview.activation.variables.find(
       (item) => item.name === "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE",
     )?.proposed !== "shadow" ||
+    preview.activation.variables.find(
+      (item) =>
+        item.name ===
+        "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
+    )?.proposed !== "true" ||
     !["true", "false"].includes(
       preview.activation.variables.find(
         (item) =>

@@ -109,6 +109,7 @@ function configuration(execution = true) {
     supportingMigrationExecutionGate: execution
       ? "enabled" as const
       : "disabled" as const,
+    nativeRepresentationExecutionGate: "disabled" as const,
     renderer: resolveKnowledgeCmsPublicRendererMode("static"),
     firebase: {
       adminConfigured: true,

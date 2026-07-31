@@ -4,6 +4,7 @@ export const KNOWLEDGE_CMS_COLLECTIONS = {
   article: "knowledge_articles",
   topic: "knowledge_topics",
   faq: "knowledge_faqs",
+  articleRenderings: "knowledge_cms_article_renderings",
   search: "knowledge_search_documents",
   slugs: "knowledge_cms_slugs",
   canonicalPaths: "knowledge_cms_canonical_paths",
@@ -34,6 +35,7 @@ export type KnowledgeCmsAction =
   | "preview_migration"
   | "execute_article_migration"
   | "execute_supporting_migration"
+  | "execute_article_rendering"
   | "preview_shadow_rendering"
   | "update"
   | "submit_for_review"
@@ -1088,6 +1090,7 @@ export function getKnowledgeCmsAuthorizationDecision(
     action === "preview_migration" ||
     action === "execute_article_migration" ||
     action === "execute_supporting_migration" ||
+    action === "execute_article_rendering" ||
     action === "preview_shadow_rendering"
   ) {
     return hasAnyRole(actor, ["publisher", "admin"])
