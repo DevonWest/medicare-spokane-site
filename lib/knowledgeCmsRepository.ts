@@ -57,7 +57,7 @@ export class KnowledgeCmsDisabledError extends Error {
 
   constructor() {
     super(
-      "The Knowledge CMS is disabled. Set KNOWLEDGE_CMS_ENABLED=true only after the authenticated admin surface is ready.",
+      "The Knowledge CMS is disabled. Set KNOWLEDGE_CMS_ENABLED=true only after Firebase Auth, authorized domains, and explicit CMS roles are configured.",
     );
     this.name = "KnowledgeCmsDisabledError";
   }
@@ -84,7 +84,7 @@ export class KnowledgeCmsNotFoundError extends Error {
 export function isKnowledgeCmsEnabled(
   value: string | undefined = process.env.KNOWLEDGE_CMS_ENABLED,
 ): boolean {
-  return value?.trim() === "true";
+  return value === "true";
 }
 
 export function assertKnowledgeCmsEnabled(

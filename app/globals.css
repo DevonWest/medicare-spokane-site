@@ -41,4 +41,12 @@ body {
     pointer-events: none;
     transform: translateY(calc(100% + env(safe-area-inset-bottom)));
   }
+
+  body:has(.knowledge-admin-route) .mobile-sticky-cta {
+    display: none;
+  }
+
+  body:has(.knowledge-admin-route) main {
+    padding-bottom: 0;
+  }
 }

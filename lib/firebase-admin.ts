@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cert, getApps, initializeApp, applicationDefault, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { env } from "./runtimeValues";
 
@@ -21,6 +22,7 @@ import { env } from "./runtimeValues";
 const APP_NAME = "medicareinspokane-admin";
 
 let cachedDb: Firestore | null = null;
+let cachedAuth: Auth | null = null;
 
 function resolveProjectId(): string | undefined {
   return env("FIREBASE_PROJECT_ID") ?? env("GOOGLE_CLOUD_PROJECT") ?? env("GCLOUD_PROJECT") ?? env("GCP_PROJECT");
@@ -97,6 +99,16 @@ export function getFirestoreAdmin(): Firestore {
   cachedDb = getFirestore(app);
   cachedDb.settings({ ignoreUndefinedProperties: true });
   return cachedDb;
+}
+
+/**
+ * Returns the Firebase Admin Auth client that shares the same named app and
+ * credential resolution as Firestore.
+ */
+export function getFirebaseAuthAdmin(): Auth {
+  if (cachedAuth) return cachedAuth;
+  cachedAuth = getAuth(buildApp());
+  return cachedAuth;
 }
 
 /**

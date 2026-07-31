@@ -15,6 +15,9 @@
 #   GCP_WORKLOAD_IDENTITY_PROVIDER
 #   GCP_DEPLOY_SERVICE_ACCOUNT
 #   NEXT_PUBLIC_GTM_ID optional
+#   NEXT_PUBLIC_FIREBASE_API_KEY required before enabling Knowledge CMS
+#   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN required before enabling Knowledge CMS
+#   KNOWLEDGE_CMS_ENABLED optional; defaults to false
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
@@ -83,6 +86,9 @@ jobs:
       AR_REPO: ${{ vars.ARTIFACT_REGISTRY_REPO }}
       RUNTIME_SA: ${{ vars.RUNTIME_SERVICE_ACCOUNT }}
       FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      KNOWLEDGE_CMS_ENABLED: ${{ vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
     steps:
@@ -113,6 +119,18 @@ jobs:
           test -n "${{ steps.cfg.outputs.service }}" || (echo "::error::Cloud Run service variable is missing" && exit 1)
           test -n "${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}" || (echo "::error::GCP_WORKLOAD_IDENTITY_PROVIDER is missing" && exit 1)
           test -n "${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}" || (echo "::error::GCP_DEPLOY_SERVICE_ACCOUNT is missing" && exit 1)
+          case "$KNOWLEDGE_CMS_ENABLED" in
+            false)
+              ;;
+            true)
+              test -n "$NEXT_PUBLIC_FIREBASE_API_KEY" || (echo "::error::NEXT_PUBLIC_FIREBASE_API_KEY is required when Knowledge CMS is enabled" && exit 1)
+              test -n "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" || (echo "::error::NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is required when Knowledge CMS is enabled" && exit 1)
+              ;;
+            *)
+              echo "::error::KNOWLEDGE_CMS_ENABLED must be exactly true or false"
+              exit 1
+              ;;
+          esac
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -134,6 +152,9 @@ jobs:
             --build-arg NEXT_PUBLIC_SITE_URL='${{ steps.cfg.outputs.site_url }}' \
             --build-arg NEXT_PUBLIC_SITE_ENV='${{ steps.cfg.outputs.site_env }}' \
             --build-arg NEXT_PUBLIC_GTM_ID='${{ vars.NEXT_PUBLIC_GTM_ID }}' \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="$NEXT_PUBLIC_FIREBASE_API_KEY" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
             -t "${{ steps.cfg.outputs.image }}" \
             .
 
@@ -159,6 +180,7 @@ jobs:
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
             NEXT_PUBLIC_GTM_ID=${{ vars.NEXT_PUBLIC_GTM_ID }}
             FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }}
+            KNOWLEDGE_CMS_ENABLED=${{ env.KNOWLEDGE_CMS_ENABLED }}
             NODE_ENV=production
 
       - name: Show service URL
