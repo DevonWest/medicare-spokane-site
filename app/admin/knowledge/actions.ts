@@ -7,6 +7,7 @@ import {
   KnowledgeCmsAdminInputError,
   isKnowledgeCmsRecordId,
   isKnowledgeCmsRecordKind,
+  parseKnowledgeCmsArticleMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
   parseKnowledgeCmsWorkflowForm,
@@ -21,12 +22,18 @@ import {
   unpublishKnowledgeCmsAdminRecord,
   updateKnowledgeCmsAdminRecord,
 } from "@/lib/knowledgeCmsAdminDal";
+import {
+  executeKnowledgeCmsAdminArticleMigrationDraft,
+} from "@/lib/knowledgeCmsMigrationDal";
 import { KnowledgeCmsAuthenticationError } from "@/lib/knowledgeCmsAdminAuth";
 import {
   KnowledgeCmsAuthorizationError,
   KnowledgeCmsValidationError,
   type KnowledgeCmsRecordKind,
 } from "@/lib/knowledgeCms";
+import {
+  KnowledgeCmsArticleMigrationExecutionError,
+} from "@/lib/knowledgeCmsArticleMigrationExecution";
 import {
   KnowledgeCmsReviewerVerificationError,
   KnowledgeCmsStateError,
@@ -50,6 +57,27 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message: "This record is not ready for that action.",
       errors: error.errors,
+    };
+  }
+  if (error instanceof KnowledgeCmsArticleMigrationExecutionError) {
+    if (error.reason === "execution_disabled") {
+      return {
+        ok: false,
+        message: "Private-draft migration execution is not enabled.",
+      };
+    }
+    if (error.reason === "confirmation_mismatch") {
+      return {
+        ok: false,
+        message:
+          "The confirmation phrase did not exactly match this private draft.",
+      };
+    }
+    return {
+      ok: false,
+      message:
+        "This migration control changed or is no longer valid. Reload the migration preview before continuing.",
+      conflict: true,
     };
   }
   if (error instanceof KnowledgeCmsConflictError) {
@@ -331,4 +359,29 @@ export async function unpublishKnowledgeCmsRecordAction(
   } catch (error) {
     return errorState(error);
   }
+}
+
+export async function createKnowledgeCmsArticleMigrationDraftAction(
+  controlId: string,
+  controlFingerprint: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  let destination: string;
+  try {
+    const request = parseKnowledgeCmsArticleMigrationExecutionForm(
+      controlId,
+      controlFingerprint,
+      formData,
+    );
+    const created =
+      await executeKnowledgeCmsAdminArticleMigrationDraft(request);
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/${created.kind}/${encodeURIComponent(created.id)}`;
+  } catch (error) {
+    return errorState(error);
+  }
+
+  revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/migration-preview`);
+  redirect(destination);
 }

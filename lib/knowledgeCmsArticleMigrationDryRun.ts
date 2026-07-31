@@ -183,7 +183,7 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-function controlInputForTarget(
+export function getKnowledgeCmsArticleMigrationControlInput(
   target: KnowledgeCmsMigrationArticleTarget,
 ): KnowledgeCmsArticleMigrationControlInput | undefined {
   if (
@@ -215,7 +215,7 @@ function controlInputForTarget(
   };
 }
 
-function materializeRecord(
+export function materializeKnowledgeCmsArticleMigrationRecord(
   target: KnowledgeCmsMigrationArticleTarget,
   actorId: string,
   serverTimestamp: string,
@@ -291,7 +291,7 @@ function buildReceipt(
 ): KnowledgeCmsArticleMaterializationReceipt {
   const findings: string[] = [];
   const controlFindings: string[] = [];
-  const controlInput = controlInputForTarget(target);
+  const controlInput = getKnowledgeCmsArticleMigrationControlInput(target);
   if (!target.controlRecord || !controlInput) {
     controlFindings.push(
       "The deterministic control, route parity, or renderer contract is missing.",
@@ -319,7 +319,11 @@ function buildReceipt(
   let record: KnowledgeCmsArticle | undefined;
   if (findings.length === 0) {
     try {
-      record = materializeRecord(target, actorId, serverTimestamp);
+      record = materializeKnowledgeCmsArticleMigrationRecord(
+        target,
+        actorId,
+        serverTimestamp,
+      );
     } catch (error) {
       findings.push(
         error instanceof Error

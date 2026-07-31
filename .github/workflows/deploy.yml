@@ -18,6 +18,7 @@
 #   NEXT_PUBLIC_FIREBASE_API_KEY required before enabling Knowledge CMS
 #   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN required before enabling Knowledge CMS
 #   KNOWLEDGE_CMS_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static or private shadow
 #
 # Required Google Cloud setup:
@@ -90,6 +91,7 @@ jobs:
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       KNOWLEDGE_CMS_ENABLED: ${{ vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED || 'false' }}
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
@@ -145,6 +147,17 @@ jobs:
               exit 1
               ;;
           esac
+          case "$KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED" in
+            false)
+              ;;
+            true)
+              test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
+              ;;
+            *)
+              echo "::error::KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED must be exactly true or false"
+              exit 1
+              ;;
+          esac
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -195,6 +208,7 @@ jobs:
             NEXT_PUBLIC_GTM_ID=${{ vars.NEXT_PUBLIC_GTM_ID }}
             FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }}
             KNOWLEDGE_CMS_ENABLED=${{ env.KNOWLEDGE_CMS_ENABLED }}
+            KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
             NODE_ENV=production
 

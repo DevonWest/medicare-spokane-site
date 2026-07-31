@@ -8,6 +8,9 @@ import {
   type KnowledgeCmsSource,
   type KnowledgeCmsUpdateInput,
 } from "./knowledgeCms";
+import type {
+  KnowledgeCmsArticleMigrationExecutionRequest,
+} from "./knowledgeCmsArticleMigrationExecution";
 
 export const KNOWLEDGE_CMS_ADMIN_PATH = "/admin/knowledge";
 export const KNOWLEDGE_CMS_RECORD_KINDS: KnowledgeCmsRecordKind[] = [
@@ -354,6 +357,40 @@ function readCommonInput(formData: FormData) {
       description: readString(formData, "description", { maxLength: 1_000 }),
       canonicalPath: readString(formData, "canonicalPath", { maxLength: 500 }),
     },
+  };
+}
+
+export function parseKnowledgeCmsArticleMigrationExecutionForm(
+  controlIdValue: unknown,
+  controlFingerprintValue: unknown,
+  formData: FormData,
+): KnowledgeCmsArticleMigrationExecutionRequest {
+  const controlId =
+    typeof controlIdValue === "string" ? controlIdValue.trim() : "";
+  const controlFingerprint =
+    typeof controlFingerprintValue === "string"
+      ? controlFingerprintValue.trim()
+      : "";
+  const confirmation = readString(formData, "confirmation", {
+    required: true,
+    maxLength: 300,
+  })!;
+
+  if (
+    !/^resource-library-article-control--[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
+      controlId,
+    ) ||
+    !/^[a-f0-9]{64}$/.test(controlFingerprint)
+  ) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected article migration control is invalid.",
+    ]);
+  }
+
+  return {
+    controlId,
+    controlFingerprint,
+    confirmation,
   };
 }
 

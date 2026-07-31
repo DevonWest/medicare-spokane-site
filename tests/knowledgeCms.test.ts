@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   readdirSync,
   readFileSync,
@@ -31,6 +32,7 @@ import type {
   KnowledgeCmsRepository,
   KnowledgeCmsSaveOptions,
 } from "../lib/knowledgeCmsRepository";
+import { buildKnowledgeCmsMigrationPreview } from "../lib/knowledgeCmsMigration";
 
 const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -52,11 +54,12 @@ function enableKnowledgeCmsForTest() {
 
 async function loadServerModules() {
   mockServerOnlyModule();
-  const [repository, workflow] = await Promise.all([
+  const [repository, workflow, migrationExecution] = await Promise.all([
     import("../lib/knowledgeCmsRepository"),
     import("../lib/knowledgeCmsWorkflow"),
+    import("../lib/knowledgeCmsArticleMigrationExecution"),
   ]);
-  return { ...repository, ...workflow };
+  return { ...repository, ...workflow, ...migrationExecution };
 }
 
 class MemoryKnowledgeCmsRepository implements KnowledgeCmsRepository {
@@ -124,12 +127,36 @@ class FakeDocumentReference {
   constructor(readonly path: string) {}
 }
 
+class FakeQuery {
+  constructor(
+    readonly collectionName: string,
+    readonly fieldPath: string,
+    readonly value: unknown,
+  ) {}
+}
+
+function readFakeField(
+  value: Record<string, unknown>,
+  fieldPath: string,
+): unknown {
+  return fieldPath.split(".").reduce<unknown>((current, field) => {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return undefined;
+    }
+    return (current as Record<string, unknown>)[field];
+  }, value);
+}
+
 class FakeFirestore {
   readonly documents = new Map<string, Record<string, unknown>>();
 
   collection(name: string) {
     return {
       doc: (id: string) => new FakeDocumentReference(`${name}/${id}`),
+      where: (fieldPath: string, operator: string, value: unknown) => {
+        assert.equal(operator, "==");
+        return new FakeQuery(name, fieldPath, value);
+      },
       get: async () => ({
         docs: [...this.documents.entries()]
           .filter(([path]) => path.startsWith(`${name}/`))
@@ -145,11 +172,8 @@ class FakeFirestore {
   async runTransaction<T>(
     callback: (transaction: {
       get: (
-        reference: FakeDocumentReference,
-      ) => Promise<{
-        exists: boolean;
-        data: () => Record<string, unknown> | undefined;
-      }>;
+        reference: FakeDocumentReference | FakeQuery,
+      ) => Promise<unknown>;
       set: (
         reference: FakeDocumentReference,
         data: Record<string, unknown>,
@@ -159,7 +183,27 @@ class FakeFirestore {
   ): Promise<T> {
     const writes = new Map<string, Record<string, unknown> | null>();
     const transaction = {
-      get: async (reference: FakeDocumentReference) => {
+      get: async (reference: FakeDocumentReference | FakeQuery) => {
+        if (reference instanceof FakeQuery) {
+          return {
+            docs: [...this.documents.entries()]
+              .filter(
+                ([path, data]) =>
+                  path.startsWith(`${reference.collectionName}/`) &&
+                  readFakeField(data, reference.fieldPath) ===
+                    reference.value,
+              )
+              .map(([path, data]) => ({
+                id: path.slice(reference.collectionName.length + 1),
+                exists: true,
+                data: () =>
+                  JSON.parse(JSON.stringify(data)) as Record<
+                    string,
+                    unknown
+                  >,
+              })),
+          };
+        }
         const data = this.documents.get(reference.path);
         return {
           exists: Boolean(data),
@@ -255,6 +299,7 @@ const publisher: KnowledgeCmsActor = {
 
 afterEach(() => {
   delete process.env.KNOWLEDGE_CMS_ENABLED;
+  delete process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED;
 });
 
 test("CMS collection names preserve the promised article, topic, and FAQ objects", () => {
@@ -264,6 +309,10 @@ test("CMS collection names preserve the promised article, topic, and FAQ objects
   assert.equal(
     KNOWLEDGE_CMS_COLLECTIONS.search,
     "knowledge_search_documents",
+  );
+  assert.equal(
+    KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths,
+    "knowledge_cms_canonical_paths",
   );
 });
 
@@ -1018,6 +1067,12 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
     ),
   );
   assert.equal(
+    [...firestore.documents.keys()].filter((path) =>
+      path.startsWith("knowledge_cms_canonical_paths/"),
+    ).length,
+    1,
+  );
+  assert.equal(
     firestore.documents.has(
       "knowledge_search_documents/article--article-1",
     ),
@@ -1129,6 +1184,214 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
     )?.note,
     "Withdraw while source evidence is rechecked.",
   );
+});
+
+test("canonical locks reject legacy cross-kind ownership without overwriting", async () => {
+  const {
+    FirestoreKnowledgeCmsRepository,
+    KnowledgeCmsWorkflow,
+  } = await loadServerModules();
+  enableKnowledgeCmsForTest();
+  const canonicalPath = "/resources/medicare-enrollment-in-spokane";
+  const memory = new MemoryKnowledgeCmsRepository();
+  const topicWorkflow = new KnowledgeCmsWorkflow(memory, {
+    now: () => NOW,
+    idFactory: () => "legacy-topic",
+  });
+  const topic = await topicWorkflow.create(
+    {
+      kind: "topic",
+      title: "Legacy enrollment topic",
+      description: "A pre-lock topic record.",
+      discoverability: { canonicalPath },
+    },
+    editor,
+  );
+  const articleWorkflow = new KnowledgeCmsWorkflow(
+    new MemoryKnowledgeCmsRepository(),
+    {
+      now: () => NOW,
+      idFactory: () => "new-article",
+    },
+  );
+  const article = await articleWorkflow.create(
+    articleInput({
+      discoverability: {
+        pageTitle: "Medicare Enrollment in Spokane",
+        description: "Review Medicare enrollment timing in Spokane.",
+        canonicalPath,
+      },
+    }),
+    author,
+  );
+  const firestore = new FakeFirestore();
+  firestore.documents.set(
+    "knowledge_topics/legacy-topic",
+    JSON.parse(JSON.stringify(topic)) as Record<string, unknown>,
+  );
+  const storage = new FirestoreKnowledgeCmsRepository({
+    db: firestore as never,
+  });
+
+  await assert.rejects(
+    storage.save(article, {
+      expectedRevision: null,
+      event: "create",
+      actorId: author.id,
+    }),
+    /canonical path.*legacy-topic/i,
+  );
+  assert.equal(
+    firestore.documents.has("knowledge_articles/new-article"),
+    false,
+  );
+});
+
+test("one confirmed article control creates one private draft transaction", async () => {
+  const {
+    FirestoreKnowledgeCmsRepository,
+    getKnowledgeCmsArticleMigrationConfirmationPhrase,
+  } = await loadServerModules();
+  enableKnowledgeCmsForTest();
+  process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED = "true";
+  const preview = buildKnowledgeCmsMigrationPreview({ asOf: NOW });
+  const candidate = preview.candidates.find(
+    (item) =>
+      item.target.kind === "article" &&
+      item.target.controlRecord,
+  );
+  assert.ok(candidate?.target.kind === "article");
+  const control = candidate.target.controlRecord;
+  assert.ok(control);
+  const firestore = new FakeFirestore();
+  const storage = new FirestoreKnowledgeCmsRepository({
+    db: firestore as never,
+    now: () => NOW,
+  });
+
+  const created = await storage.createArticleMigrationDraft(
+    publisher,
+    {
+      controlId: control.controlId,
+      controlFingerprint: control.fingerprint.value,
+      confirmation:
+        getKnowledgeCmsArticleMigrationConfirmationPhrase(
+          candidate.target.slug,
+        ),
+    },
+  );
+
+  assert.equal(created.status, "draft");
+  assert.equal(created.ownerId, publisher.id);
+  assert.equal(created.audit.createdAt, NOW.toISOString());
+  assert.equal(created.discoverability.indexing, "blocked");
+  assert.equal(
+    firestore.documents.has(`knowledge_articles/${created.id}`),
+    true,
+  );
+  assert.equal(
+    firestore.documents.has(
+      `knowledge_cms_slugs/article--${created.slug}`,
+    ),
+    true,
+  );
+  assert.equal(
+    [...firestore.documents.keys()].filter((path) =>
+      path.startsWith("knowledge_cms_canonical_paths/"),
+    ).length,
+    1,
+  );
+  assert.equal(
+    firestore.documents.has(
+      `knowledge_search_documents/article--${created.id}`,
+    ),
+    false,
+  );
+  const audit = firestore.documents.get(
+    `knowledge_cms_audit_events/article--${created.id}--0000000001`,
+  );
+  assert.equal(audit?.event, "migration_create_private_draft");
+  assert.equal(audit?.migrationControlId, control.controlId);
+  assert.equal(audit?.migrationControlFingerprint, control.fingerprint.value);
+  assert.equal(firestore.documents.size, 4);
+
+  await assert.rejects(
+    storage.createArticleMigrationDraft(publisher, {
+      controlId: control.controlId,
+      controlFingerprint: control.fingerprint.value,
+      confirmation:
+        getKnowledgeCmsArticleMigrationConfirmationPhrase(
+          candidate.target.slug,
+        ),
+    }),
+    /target already exists/i,
+  );
+  assert.equal(firestore.documents.size, 4);
+});
+
+test("migration execution fails closed on every orphaned transactional artifact", async () => {
+  const {
+    FirestoreKnowledgeCmsRepository,
+    getKnowledgeCmsArticleMigrationConfirmationPhrase,
+  } = await loadServerModules();
+  enableKnowledgeCmsForTest();
+  process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED = "true";
+  const preview = buildKnowledgeCmsMigrationPreview({ asOf: NOW });
+  const candidate = preview.candidates.find(
+    (item) =>
+      item.target.kind === "article" &&
+      item.target.controlRecord,
+  );
+  assert.ok(candidate?.target.kind === "article");
+  const control = candidate.target.controlRecord;
+  const canonicalPath = candidate.target.canonicalPath;
+  assert.ok(control && canonicalPath);
+  const request = {
+    controlId: control.controlId,
+    controlFingerprint: control.fingerprint.value,
+    confirmation:
+      getKnowledgeCmsArticleMigrationConfirmationPhrase(
+        candidate.target.slug,
+      ),
+  };
+  const conflicts = [
+    {
+      path: `knowledge_cms_slugs/article--${candidate.target.slug}`,
+      pattern: /slug.*no longer available/i,
+    },
+    {
+      path: `knowledge_cms_canonical_paths/${createHash("sha256").update(canonicalPath).digest("hex")}`,
+      pattern: /canonical path.*no longer available/i,
+    },
+    {
+      path: `knowledge_search_documents/article--${candidate.target.id}`,
+      pattern: /unexpected private search projection/i,
+    },
+    {
+      path: `knowledge_cms_audit_events/article--${candidate.target.id}--0000000001`,
+      pattern: /unexpected revision-one audit event/i,
+    },
+  ];
+
+  for (const conflict of conflicts) {
+    const firestore = new FakeFirestore();
+    firestore.documents.set(conflict.path, { orphaned: true });
+    const storage = new FirestoreKnowledgeCmsRepository({
+      db: firestore as never,
+      now: () => NOW,
+    });
+    await assert.rejects(
+      storage.createArticleMigrationDraft(publisher, request),
+      conflict.pattern,
+    );
+    assert.equal(firestore.documents.size, 1);
+    assert.equal(
+      firestore.documents.has(
+        `knowledge_articles/${candidate.target.id}`,
+      ),
+      false,
+    );
+  }
 });
 
 function listTypeScriptFiles(directory: string): string[] {

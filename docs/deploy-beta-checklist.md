@@ -46,6 +46,7 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web API key | Required only before enabling the private Knowledge CMS |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `medicareinspokane-prod.firebaseapp.com` | Required only before enabling the private Knowledge CMS |
 | `KNOWLEDGE_CMS_ENABLED` | `false` | **Optional.** Leave absent or set to `false` until the full Auth checklist passes. |
+| `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** Exact `static` hides shadow comparison. Exact `shadow` enables only the authenticated publisher/admin comparison workspace; public routes remain static. `cutover` is rejected. |
 
 ### 1b. Authentication — pick ONE of these two options
@@ -355,6 +356,9 @@ What happens:
   - `FIREBASE_PROJECT_ID=PROJECT_ID`
   - `KNOWLEDGE_CMS_ENABLED=false` unless the exact GitHub variable is set to
     `true`
+  - `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false` unless the exact
+    GitHub variable is set to `true`; the workflow rejects `true` while the CMS
+    gate is false
   - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact `shadow` is set
     for authenticated private comparison; both values keep public routes
     static, while `cutover` and malformed values fail before image build
@@ -429,6 +433,14 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A publisher can unpublish only with a required reason; the record returns
   to draft and its search projection is removed.
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
+- [ ] With the separate article-migration gate false, no execution form is
+  available on the migration preview.
+- [ ] With the gate intentionally true, a publisher/admin can create exactly
+  one selected private article draft only after typing the exact phrase; a
+  second attempt, stale fingerprint, existing slug/canonical owner, or wrong
+  phrase fails without another write.
+- [ ] The created migration record is a draft with indexing blocked, no search
+  projection, and the existing Resource Library route still renders unchanged.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally

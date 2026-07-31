@@ -104,7 +104,7 @@ function topicRecordFromCandidate(
 test("migration preview deterministically inventories the complete static registry", () => {
   const preview = buildKnowledgeCmsMigrationPreview({ asOf: AS_OF });
 
-  assert.equal(preview.version, 5);
+  assert.equal(preview.version, 6);
   assert.equal(preview.mode, "read_only");
   assert.equal(preview.writeCount, 0);
   assert.equal(preview.readyToExecute, false);
@@ -141,7 +141,7 @@ test("migration preview deterministically inventories the complete static regist
     representationBlocked: 22,
   });
   assert.deepEqual(preview.summary.articleControls, {
-    version: 1,
+      version: 2,
     controlsDefined: 22,
     fingerprinted: 22,
     privateDrafts: 22,
@@ -495,7 +495,7 @@ test("migration preview requires publisher or admin authority", async () => {
   );
 });
 
-test("admin preview route is feature-gated, authenticated, and contains no mutation action", () => {
+test("admin migration route gates preview and single-record execution separately", () => {
   const page = readFileSync(
     join(
       root,
@@ -512,8 +512,11 @@ test("admin preview route is feature-gated, authenticated, and contains no mutat
   assert.match(page, /getCurrentKnowledgeCmsActor/);
   assert.match(page, /publisher/);
   assert.match(page, /admin/);
+  assert.match(page, /isKnowledgeCmsArticleMigrationExecutionEnabled/);
+  assert.match(page, /KnowledgeArticleMigrationExecutionControl/);
   assert.doesNotMatch(page, /["']use client["']/);
+  assert.match(dataAccess, /requireKnowledgeCmsActor/);
+  assert.match(dataAccess, /createArticleMigrationDraft/);
   assert.doesNotMatch(dataAccess, /\.save\s*\(/);
   assert.doesNotMatch(dataAccess, /\.transition\s*\(/);
-  assert.doesNotMatch(dataAccess, /\.create\s*\(/);
 });
