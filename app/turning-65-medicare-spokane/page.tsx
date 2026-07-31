@@ -3,7 +3,10 @@ import Link from "next/link";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
+import KnowledgeAuthority from "@/components/KnowledgeAuthority";
+import KnowledgePageSchema from "@/components/KnowledgePageSchema";
 import LeadForm from "@/components/LeadForm";
+import RelatedKnowledge from "@/components/RelatedKnowledge";
 import { siteConfig, telHref } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -87,18 +90,11 @@ const faqs: FAQItem[] = [
   },
 ];
 
-const internalLinks = [
-  { href: "/compare-medicare-options", label: "Compare Medicare Options" },
-  { href: "/medicare-advantage", label: "Medicare Advantage" },
-  { href: "/medicare-supplements", label: "Medicare Supplements" },
-  { href: "/medicare-part-d", label: "Medicare Part D" },
-  { href: "/rx-drug-review", label: "RX Drug Review" },
-  { href: "/contact", label: "Contact Our Spokane Office" },
-];
-
 export default function TurningSixtyFivePage() {
   return (
     <>
+      <KnowledgePageSchema currentPath="/turning-65-medicare-spokane" />
+
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 landscape-mobile:py-5 text-white">
         <div className="mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="mb-4 landscape-mobile:mb-2 text-sm text-blue-200">
@@ -239,32 +235,12 @@ export default function TurningSixtyFivePage() {
         </div>
       </section>
 
-      <section className="border-y border-slate-100 bg-slate-50 px-4 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Helpful Medicare links</h2>
-            <p className="mt-3 text-lg text-gray-600">
-              Review related Spokane Medicare pages before or after your consultation.
-            </p>
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {internalLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700">
-                  {item.label}
-                </h3>
-                <span className="mt-4 inline-block text-sm font-medium text-blue-700 group-hover:underline">
-                  Visit page →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <RelatedKnowledge
+        currentPath="/turning-65-medicare-spokane"
+        heading="Helpful Medicare links"
+        intro="Review related Spokane Medicare pages before or after your consultation."
+        limit={5}
+      />
 
       <section className="bg-white px-4 py-12">
         <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:p-8">
@@ -319,6 +295,10 @@ export default function TurningSixtyFivePage() {
 
       <section className="bg-white px-4 py-12">
         <div className="mx-auto max-w-3xl">
+          <KnowledgeAuthority
+            currentPath="/turning-65-medicare-spokane"
+            className="mb-6"
+          />
           <Disclaimer />
         </div>
       </section>
