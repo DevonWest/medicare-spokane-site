@@ -164,6 +164,14 @@ export default async function KnowledgeCmsReadinessPage() {
               </div>
               <div>
                 <dt className="font-semibold text-slate-500">
+                  Rendering-artifact gate
+                </dt>
+                <dd className="mt-1 font-bold capitalize text-slate-900">
+                  {report.configuration.nativeRepresentationExecutionGate}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">
                   Requested renderer
                 </dt>
                 <dd className="mt-1 font-bold capitalize text-slate-900">

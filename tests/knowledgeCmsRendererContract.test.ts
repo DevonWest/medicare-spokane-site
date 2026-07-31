@@ -57,7 +57,7 @@ function matchingArtifact(entryId: string): KnowledgeCmsRendererArtifact {
     },
     rendering: {
       mode: "private_shadow",
-      bodySource: "verified_static_component_adapter",
+      bodySource: "cms_native_lossless_artifact",
       cmsBodyPubliclyRendered: false,
     },
     metadata: {
@@ -107,17 +107,20 @@ test("lossless renderer contracts cover every parity route with a static rollbac
       KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
     );
     assert.equal(contract.state, KNOWLEDGE_CMS_RENDERER_CONTRACT_STATE);
-    assert.equal(contract.candidate.implementationStatus, "private_shadow");
+    assert.equal(
+      contract.candidate.implementationStatus,
+      "cms_native_private_shadow",
+    );
     assert.equal(
       contract.candidate.bodySource,
-      "verified_static_component_adapter",
+      "cms_native_lossless_artifact",
     );
     assert.equal(contract.candidate.cmsBodyPubliclyRendered, false);
     assert.equal(contract.rollout.shadowEligible, true);
     assert.equal(contract.rollout.cutoverEligible, false);
     assert.ok(
       contract.rollout.blockers.includes(
-        "candidate_body_not_cms_native",
+        "cms_native_artifact_not_verified",
       ),
     );
     assert.equal(contract.rollback.mode, "static");
@@ -162,7 +165,7 @@ test("every required React capability has an explicit adapter and evidence gate"
       assert.ok(capability.evidence.length > 0);
       assert.equal(
         capability.implementationStatus,
-        "implemented_private_shadow",
+        "implemented_cms_native_private_shadow",
       );
       assert.ok(capability.sourceFiles.includes(contract.legacy.sourceFile));
       for (const sourceFile of capability.sourceFiles) {

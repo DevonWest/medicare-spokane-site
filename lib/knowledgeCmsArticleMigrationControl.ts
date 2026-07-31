@@ -21,6 +21,8 @@ export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_HASH_ALGORITHM =
 export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_CANONICALIZATION =
   "recursive_sorted_keys" as const;
 export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_WRITE_COUNT = 0 as const;
+export const KNOWLEDGE_CMS_ARTICLE_MIGRATION_PINNED_RENDERER_CONTRACT_VERSION =
+  2 as const;
 
 export interface KnowledgeCmsArticleMigrationControlTarget {
   id: string;
@@ -237,6 +239,8 @@ function validateInputAlignment(
   }
   if (
     routeParity.entryId !== rendererContract.entryId ||
+    rendererContract.version <
+      KNOWLEDGE_CMS_ARTICLE_MIGRATION_PINNED_RENDERER_CONTRACT_VERSION ||
     rendererContract.legacy.renderedSha256 !==
       routeParity.renderedBody.sha256 ||
     rendererContract.rollback.renderedSha256 !==
@@ -266,7 +270,7 @@ function buildUnsignedControl(
     throw new Error(alignmentErrors.join(" "));
   }
 
-  const { rendererContract, routeParity, target } = input;
+  const { routeParity, target } = input;
   return {
     version: KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_VERSION,
     mode: KNOWLEDGE_CMS_ARTICLE_MIGRATION_CONTROL_MODE,
@@ -317,7 +321,8 @@ function buildUnsignedControl(
     },
     provenance: {
       routeParityVersion: routeParity.version,
-      rendererContractVersion: rendererContract.version,
+      rendererContractVersion:
+        KNOWLEDGE_CMS_ARTICLE_MIGRATION_PINNED_RENDERER_CONTRACT_VERSION,
       renderedBodySha256: routeParity.renderedBody.sha256,
       renderedBodyBytes: routeParity.renderedBody.bytes,
       publicBodySource: "verified_static_route",

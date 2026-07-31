@@ -48,6 +48,7 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_ENABLED` | `false` | **Optional.** Leave absent or set to `false` until the full Auth checklist passes. |
 | `KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
 | `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED` | `false` | **Optional.** Separate one-record topic/FAQ private-draft gate; requires `KNOWLEDGE_CMS_ENABLED=true`. |
+| `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED` | `false` | **Optional.** One immutable article-rendering artifact per transaction; requires the CMS gate and exact `shadow` mode. |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** Exact `static` hides shadow comparison. Exact `shadow` enables only the authenticated publisher/admin comparison workspace; public routes remain static. `cutover` is rejected. |
 
 ### 1b. Authentication — pick ONE of these two options
@@ -363,6 +364,9 @@ What happens:
   - `KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false` unless the exact
     GitHub variable is set to `true`; the workflow rejects `true` while the CMS
     gate is false
+  - `KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false` unless the
+    exact GitHub variable is set to `true`; the workflow rejects `true` unless
+    the CMS gate is true and renderer mode is exact `shadow`
   - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact `shadow` is set
     for authenticated private comparison; both values keep public routes
     static, while `cutover` and malformed values fail before image build
@@ -470,10 +474,10 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A publisher/admin can open `/admin/knowledge/beta-activation`; it reports
   exact `staging` and the canonical beta origin, binds a fresh valid readiness
   SHA-256, and shows no blocked activation check.
-- [ ] The beta activation preview proposes only the four beta-scoped CMS
+- [ ] The beta activation preview proposes only the five beta-scoped CMS
   values, reports zero variables/deployments/traffic/roles/records changed, and
   explicitly denies execution, production, and cutover authority.
-- [ ] The preview's rollback checklist starts by disabling both one-record
+- [ ] The preview's rollback checklist starts by disabling all three one-record
   execution gates,
   restores `static` before broader CMS disable or beta revision recovery,
   preserves every CMS record, and includes all public/SEO verification checks.

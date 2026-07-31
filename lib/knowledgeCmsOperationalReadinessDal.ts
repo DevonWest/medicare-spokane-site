@@ -16,6 +16,9 @@ import {
   KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED_ENV,
 } from "./knowledgeCmsSupportingMigrationExecution";
 import {
+  KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED_ENV,
+} from "./knowledgeCmsNativeRepresentationExecution";
+import {
   previewKnowledgeCmsArticleMaterialization,
 } from "./knowledgeCmsMigrationDal";
 import {
@@ -89,6 +92,11 @@ export function getKnowledgeCmsOperationalConfiguration(): KnowledgeCmsOperation
     supportingMigrationExecutionGate: booleanGateState(
       process.env[
         KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED_ENV
+      ],
+    ),
+    nativeRepresentationExecutionGate: booleanGateState(
+      process.env[
+        KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED_ENV
       ],
     ),
     renderer: resolveKnowledgeCmsPublicRendererMode(

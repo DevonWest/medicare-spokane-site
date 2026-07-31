@@ -97,6 +97,7 @@ async function operationalReadiness(
       cmsGate: "enabled",
       articleMigrationExecutionGate: "enabled",
       supportingMigrationExecutionGate: "enabled",
+      nativeRepresentationExecutionGate: "disabled",
       renderer: resolveKnowledgeCmsPublicRendererMode(rendererMode),
       firebase: {
         adminConfigured: true,
@@ -150,7 +151,7 @@ test("a fresh ready receipt at the exact beta identity produces a zero-mutation 
   assert.equal(preview.readinessBinding.fingerprint, readiness.fingerprint.value);
   assert.equal(preview.readinessBinding.ageMilliseconds, 0);
   assert.equal(preview.checks.every((item) => item.status === "pass"), true);
-  assert.equal(preview.activation.changesRequired, 1);
+  assert.equal(preview.activation.changesRequired, 2);
   assert.deepEqual(
     preview.activation.variables.map((item) => [
       item.name,
@@ -169,6 +170,12 @@ test("a fresh ready receipt at the exact beta identity produces a zero-mutation 
       [
         "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
         "true",
+        "true",
+        "beta_only",
+      ],
+      [
+        "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
+        "false",
         "true",
         "beta_only",
       ],

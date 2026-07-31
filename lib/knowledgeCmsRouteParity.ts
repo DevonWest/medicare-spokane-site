@@ -533,7 +533,7 @@ export const knowledgeCmsRouteParityManifest: ReadonlyArray<KnowledgeCmsRoutePar
             snapshot,
           ),
           reason:
-            "A private shadow adapter can reproduce the verified React route, but the CMS Markdown body is not publicly rendered and no reviewed shadow evidence or cutover approval exists.",
+            "The editable CMS Markdown field is not a public body source. A separate revision-bound CMS-native artifact may reproduce this verified route privately, but public cutover still requires fresh all-route parity and reviewed rollback evidence.",
         },
       }),
     ];
