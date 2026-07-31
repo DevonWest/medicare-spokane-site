@@ -413,8 +413,18 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A verified reviewer who is not the owner can request changes only with
   required feedback, and the returned draft shows that feedback without
   exposing the verification identifier.
+- [ ] A verified reviewer who is not the owner can approve only with a required
+  decision note and a server-calculated review deadline.
+- [ ] A different user with `publisher` or `admin` can publish an approved
+  record only after choosing blocked or eligible indexing and entering a
+  required audit note.
+- [ ] Eligible indexing requires an approved canonical path and exact
+  confirmation; a missing or mismatched confirmation fails closed.
+- [ ] The approving reviewer, including another account carrying the same
+  reviewer agent identity, cannot publish that record.
+- [ ] A publisher can unpublish only with a required reason; the record returns
+  to draft and its search projection is removed.
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
-- [ ] No approve or publish control is present.
 - [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
 
 If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally

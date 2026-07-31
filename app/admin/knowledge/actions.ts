@@ -15,8 +15,10 @@ import {
 import {
   approveKnowledgeCmsAdminRecord,
   createKnowledgeCmsAdminRecord,
+  publishKnowledgeCmsAdminRecord,
   requestKnowledgeCmsAdminRecordChanges,
   submitKnowledgeCmsAdminRecordForReview,
+  unpublishKnowledgeCmsAdminRecord,
   updateKnowledgeCmsAdminRecord,
 } from "@/lib/knowledgeCmsAdminDal";
 import { KnowledgeCmsAuthenticationError } from "@/lib/knowledgeCmsAdminAuth";
@@ -46,14 +48,14 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
   if (error instanceof KnowledgeCmsValidationError) {
     return {
       ok: false,
-      message: "This draft is not valid yet.",
+      message: "This record is not ready for that action.",
       errors: error.errors,
     };
   }
   if (error instanceof KnowledgeCmsConflictError) {
     return {
       ok: false,
-      message: "This draft changed in another session. Reload before saving.",
+      message: "This record changed in another session. Reload before continuing.",
       conflict: true,
     };
   }
@@ -76,6 +78,16 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
     error instanceof KnowledgeCmsAuthenticationError ||
     error instanceof KnowledgeCmsAuthorizationError
   ) {
+    if (
+      error instanceof KnowledgeCmsAuthorizationError &&
+      error.reason === "reviewer_publisher_separation_required"
+    ) {
+      return {
+        ok: false,
+        message:
+          "The approving reviewer cannot publish the same record. A different authorized publisher is required.",
+      };
+    }
     return {
       ok: false,
       message: "Your session cannot perform this action. Sign in again or contact an administrator.",
@@ -84,7 +96,7 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
   if (error instanceof KnowledgeCmsNotFoundError) {
     return {
       ok: false,
-      message: "This draft no longer exists.",
+      message: "This record no longer exists.",
     };
   }
   if (error instanceof KnowledgeCmsDisabledError) {
@@ -97,7 +109,7 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
   console.error("[knowledge-cms] Admin action failed.", error);
   return {
     ok: false,
-    message: "The draft could not be saved. Try again.",
+    message: "The record could not be updated. Try again.",
   };
 }
 
@@ -246,6 +258,74 @@ export async function approveKnowledgeCmsRecordAction(
       ok: true,
       message:
         "Approved for publisher review. This record is still private and unpublished.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function publishKnowledgeCmsRecordAction(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    assertValidRecordTarget(kind, id);
+    const {
+      expectedRevision,
+      indexing,
+      canonicalPathConfirmation,
+      decisionNote,
+    } = parseKnowledgeCmsWorkflowForm(formData, "publish");
+    const updated = await publishKnowledgeCmsAdminRecord(
+      kind,
+      id,
+      expectedRevision,
+      indexing!,
+      canonicalPathConfirmation,
+      decisionNote!,
+    );
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/${kind}/${encodeURIComponent(id)}`,
+    );
+    return {
+      ok: true,
+      message:
+        "CMS publication recorded. This still does not add a public website page.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function unpublishKnowledgeCmsRecordAction(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    assertValidRecordTarget(kind, id);
+    const { expectedRevision, decisionNote } =
+      parseKnowledgeCmsWorkflowForm(formData, "unpublish");
+    const updated = await unpublishKnowledgeCmsAdminRecord(
+      kind,
+      id,
+      expectedRevision,
+      decisionNote!,
+    );
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/${kind}/${encodeURIComponent(id)}`,
+    );
+    return {
+      ok: true,
+      message:
+        "CMS publication withdrawn and its search projection removed. The record is now a draft.",
       revision: updated.revision,
     };
   } catch (error) {

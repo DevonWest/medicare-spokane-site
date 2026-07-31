@@ -2,6 +2,7 @@ import {
   getKnowledgeCmsAuthorizationDecision,
   type KnowledgeCmsCreateInput,
   type KnowledgeCmsActor,
+  type KnowledgeCmsDiscoverability,
   type KnowledgeCmsRecord,
   type KnowledgeCmsRecordKind,
   type KnowledgeCmsSource,
@@ -32,10 +33,19 @@ export interface KnowledgeCmsAdminChangeRequestDto {
   requestedAt: string;
 }
 
+export interface KnowledgeCmsAdminReviewDto {
+  reviewerAgentSlug: string;
+  reviewedAt: string;
+  reviewDueAt: string;
+  decisionNote?: string;
+}
+
 export interface KnowledgeCmsAdminWorkflowActionsDto {
   approve: boolean;
+  publish: boolean;
   submitForReview: boolean;
   requestChanges: boolean;
+  unpublish: boolean;
 }
 
 type KnowledgeCmsAdminRecordDtoFor<
@@ -48,6 +58,7 @@ type KnowledgeCmsAdminRecordDtoFor<
       changeRequest?: KnowledgeCmsAdminChangeRequestDto;
       editable: boolean;
       ownedByCurrentUser: boolean;
+      review?: KnowledgeCmsAdminReviewDto;
       revision: number;
       createdAt: string;
       updatedAt: string;
@@ -135,6 +146,18 @@ export function toKnowledgeCmsAdminRecordDto(
         }
       : {}),
     ownedByCurrentUser: record.ownerId === actor.id,
+    ...(record.review
+      ? {
+          review: {
+            reviewerAgentSlug: record.review.reviewerAgentSlug,
+            reviewedAt: record.review.reviewedAt,
+            reviewDueAt: record.review.reviewDueAt,
+            ...(record.review.decisionNote
+              ? { decisionNote: record.review.decisionNote }
+              : {}),
+          },
+        }
+      : {}),
     revision: audit.revision,
     createdAt: audit.createdAt,
     updatedAt: audit.updatedAt,
@@ -143,6 +166,11 @@ export function toKnowledgeCmsAdminRecordDto(
         record.status === "in_review" &&
         options.reviewerVerified === true &&
         getKnowledgeCmsAuthorizationDecision(actor, "approve", record)
+          .allowed,
+      publish:
+        record.status === "approved" &&
+        Boolean(record.review?.reviewedBy) &&
+        getKnowledgeCmsAuthorizationDecision(actor, "publish", record)
           .allowed,
       submitForReview:
         record.status === "draft" &&
@@ -159,6 +187,10 @@ export function toKnowledgeCmsAdminRecordDto(
           "request_changes",
           record,
         ).allowed,
+      unpublish:
+        record.status === "published" &&
+        getKnowledgeCmsAuthorizationDecision(actor, "unpublish", record)
+          .allowed,
     },
   } as KnowledgeCmsAdminRecordDto;
 }
@@ -408,16 +440,62 @@ export function parseKnowledgeCmsUpdateForm(
 export type KnowledgeCmsAdminWorkflowAction =
   | "submit_for_review"
   | "approve"
-  | "request_changes";
+  | "request_changes"
+  | "publish"
+  | "unpublish";
 
 export function parseKnowledgeCmsWorkflowForm(
   formData: FormData,
   action: KnowledgeCmsAdminWorkflowAction,
-): { expectedRevision: number; decisionNote?: string } {
+): {
+  expectedRevision: number;
+  decisionNote?: string;
+  indexing?: KnowledgeCmsDiscoverability["indexing"];
+  canonicalPathConfirmation?: string;
+} {
   const expectedRevision = readInteger(formData, "expectedRevision", {
     required: true,
     min: 1,
   })!;
+
+  if (action === "publish") {
+    const indexing = readString(formData, "indexing", { required: true });
+    if (indexing !== "blocked" && indexing !== "eligible") {
+      throw new KnowledgeCmsAdminInputError([
+        "indexing must be blocked or eligible.",
+      ]);
+    }
+    return {
+      expectedRevision,
+      indexing,
+      decisionNote: readString(formData, "publicationNote", {
+        required: true,
+        maxLength: 2_000,
+      }),
+      ...(indexing === "eligible"
+        ? {
+            canonicalPathConfirmation: readString(
+              formData,
+              "canonicalPathConfirmation",
+              {
+                required: true,
+                maxLength: 500,
+              },
+            ),
+          }
+        : {}),
+    };
+  }
+
+  if (action === "unpublish") {
+    return {
+      expectedRevision,
+      decisionNote: readString(formData, "unpublishReason", {
+        required: true,
+        maxLength: 2_000,
+      }),
+    };
+  }
 
   if (action === "approve" || action === "request_changes") {
     return {
@@ -434,4 +512,29 @@ export function parseKnowledgeCmsWorkflowForm(
   }
 
   return { expectedRevision };
+}
+
+export function validateKnowledgeCmsPublicationDecision(
+  record: Pick<KnowledgeCmsRecord, "discoverability">,
+  decision: {
+    indexing: KnowledgeCmsDiscoverability["indexing"];
+    canonicalPathConfirmation?: string;
+  },
+): string[] {
+  if (decision.indexing === "blocked") {
+    return [];
+  }
+
+  const canonicalPath = record.discoverability.canonicalPath;
+  if (!canonicalPath) {
+    return [
+      "Indexing eligibility requires an approved canonical path on the record.",
+    ];
+  }
+  if (decision.canonicalPathConfirmation !== canonicalPath) {
+    return [
+      "Canonical path confirmation must exactly match the approved record.",
+    ];
+  }
+  return [];
 }

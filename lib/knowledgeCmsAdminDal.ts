@@ -4,6 +4,7 @@ import {
   KNOWLEDGE_CMS_RECORD_KINDS,
   toKnowledgeCmsAdminRecordDto,
   toKnowledgeCmsAdminRecordSummaryDto,
+  validateKnowledgeCmsPublicationDecision,
   type KnowledgeCmsAdminRecordDto,
   type KnowledgeCmsAdminRecordSummaryDto,
 } from "./knowledgeCmsAdmin";
@@ -12,8 +13,10 @@ import {
   resolveCurrentEditorialReviewerVerification,
 } from "./editorial";
 import {
+  KnowledgeCmsValidationError,
   resolveKnowledgeCmsApprovalDueAt,
   type KnowledgeCmsCreateInput,
+  type KnowledgeCmsDiscoverability,
   type KnowledgeCmsRecordKind,
   type KnowledgeCmsUpdateInput,
 } from "./knowledgeCms";
@@ -190,4 +193,64 @@ export async function approveKnowledgeCmsAdminRecord(
     actor,
   );
   return { revision: record.audit.revision, status: "approved" };
+}
+
+export async function publishKnowledgeCmsAdminRecord(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  expectedRevision: number,
+  indexing: KnowledgeCmsDiscoverability["indexing"],
+  canonicalPathConfirmation: string | undefined,
+  decisionNote: string,
+): Promise<{ revision: number; status: "published" }> {
+  const actor = await requireKnowledgeCmsActor();
+  const now = new Date();
+  const repository = createKnowledgeCmsRepository();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => now,
+  });
+  const current = await workflow.get(kind, id, actor);
+  if (!current) {
+    throw new KnowledgeCmsNotFoundError(kind, id);
+  }
+  const errors = validateKnowledgeCmsPublicationDecision(current, {
+    indexing,
+    canonicalPathConfirmation,
+  });
+  if (errors.length > 0) {
+    throw new KnowledgeCmsValidationError(errors);
+  }
+
+  const record = await workflow.transition(
+    kind,
+    id,
+    {
+      action: "publish",
+      expectedRevision,
+      indexing,
+      decisionNote,
+    },
+    actor,
+  );
+  return { revision: record.audit.revision, status: "published" };
+}
+
+export async function unpublishKnowledgeCmsAdminRecord(
+  kind: KnowledgeCmsRecordKind,
+  id: string,
+  expectedRevision: number,
+  decisionNote: string,
+): Promise<{ revision: number; status: "draft" }> {
+  const actor = await requireKnowledgeCmsActor();
+  const record = await createWorkflow().transition(
+    kind,
+    id,
+    {
+      action: "unpublish",
+      expectedRevision,
+      decisionNote,
+    },
+    actor,
+  );
+  return { revision: record.audit.revision, status: "draft" };
 }

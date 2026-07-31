@@ -88,6 +88,45 @@ export default async function KnowledgeRecordPage({
             </p>
           </aside>
         ) : null}
+        {record.review ? (
+          <aside className="mt-8 rounded-2xl border border-emerald-300 bg-emerald-50 p-6 text-emerald-950 shadow-sm md:p-8">
+            <p className="text-sm font-bold uppercase tracking-[0.18em]">
+              Approved review
+            </p>
+            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="font-semibold text-emerald-800">Reviewer</dt>
+                <dd className="mt-1 capitalize">
+                  {record.review.reviewerAgentSlug.replaceAll("-", " ")}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-emerald-800">Reviewed</dt>
+                <dd className="mt-1">
+                  {new Date(record.review.reviewedAt).toLocaleDateString(
+                    "en-US",
+                    { timeZone: "UTC" },
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-emerald-800">
+                  Review valid through
+                </dt>
+                <dd className="mt-1">
+                  {new Date(
+                    `${record.review.reviewDueAt}T00:00:00.000Z`,
+                  ).toLocaleDateString("en-US", { timeZone: "UTC" })}
+                </dd>
+              </div>
+            </dl>
+            {record.review.decisionNote ? (
+              <p className="mt-5 whitespace-pre-wrap border-t border-emerald-200 pt-5 text-sm leading-7">
+                {record.review.decisionNote}
+              </p>
+            ) : null}
+          </aside>
+        ) : null}
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <KnowledgeRecordForm
             key={`${kind}:${id}`}
@@ -99,8 +138,11 @@ export default async function KnowledgeRecordPage({
         <KnowledgeWorkflowControls
           key={`${kind}:${id}:${record.revision}`}
           canApprove={record.workflowActions.approve}
+          canPublish={record.workflowActions.publish}
           canRequestChanges={record.workflowActions.requestChanges}
           canSubmitForReview={record.workflowActions.submitForReview}
+          canUnpublish={record.workflowActions.unpublish}
+          canonicalPath={record.discoverability.canonicalPath}
           id={id}
           kind={kind}
           revision={record.revision}

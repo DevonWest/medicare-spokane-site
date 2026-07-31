@@ -60,7 +60,9 @@ stateDiagram-v2
 Articles and FAQs need at least one current source before review. Source review
 windows cannot exceed 180 days. An approval requires a distinct reviewer with
 an active licensed-agent verification, and its review window cannot exceed 365
-days. Verification is checked again at publication.
+days. Verification is checked again at publication. The authenticated user who
+approved the record—and any account carrying the same reviewer agent
+identity—cannot publish that record.
 
 Submitting uses the latest saved revision and clears any prior active change
 request. Requesting changes requires a current, unambiguous licensed-reviewer
@@ -72,7 +74,10 @@ event.
 Published records create a search projection. Draft, review, approved,
 archived, and unpublished records remove it. A publisher must explicitly
 choose whether a published record is eligible for indexing; eligibility also
-requires a canonical path.
+requires a canonical path and an exact confirmation of that approved path.
+Publish and unpublish both require an audited decision note. Unpublishing
+atomically deletes the search projection, blocks indexing, clears the expired
+approval, and returns the record to draft.
 
 ## Permission model
 
@@ -82,7 +87,7 @@ requires a canonical path.
 | Editor | Create, edit, and submit any draft |
 | Reviewer | Approve or request changes, but never review their own record |
 | Publisher | Publish, unpublish, archive, and restore |
-| Admin | Administrative override except self-review |
+| Admin | Administrative override except self-review and reviewer/publisher separation |
 
 The model separates authentication from authorization. Firebase custom claims
 assign the roles, but the server reads the current Firebase user on every
@@ -104,6 +109,11 @@ request instead of trusting claims supplied by a form or browser state.
 - verified approval controls for reviewers who are not the record owner, with
   a required private decision note and a server-calculated review deadline
   bounded by source, reviewer-verification, and policy dates;
+- publisher-only publish controls with a required audit note, a deliberate
+  blocked-or-eligible indexing decision, exact canonical confirmation for
+  eligibility, and reviewer/publisher separation;
+- publisher-only unpublish controls that require a reason and atomically
+  remove the search projection before returning the record to draft;
 - safe DTOs that omit canonical ownership and audit internals from client
   components; and
 - articles, topics, FAQs, relationships, source records, search terms, and
@@ -115,9 +125,10 @@ reloads the current user record, so disabled accounts and role removals take
 effect without trusting stale browser claims. Session endpoints require an
 exact same-origin request.
 
-This release intentionally has no publish, unpublish, archive, restore,
-public-rendering, or migration controls. Approval leaves the record private and
-requires a separate publisher decision before any future publication.
+This release intentionally has no archive, restore, public-rendering, or
+migration controls. CMS publication remains private: it writes the governed
+record and search projection but does not add a route, sitemap entry, public
+card, schema block, or visible content to the existing site.
 
 ## Authentication rollout prerequisites
 
@@ -166,16 +177,16 @@ browser never receives a way to assign or elevate roles.
 - Public Knowledge Center rendering
 - Migration of the existing static registry
 - Hosted search service or embeddings
-- Publication workflow controls
+- Static-registry migration or import controls
 - Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
 
 ## Next release gate
 
-A later independently reviewed workflow release may add publisher controls. It
-must preserve per-action authentication, reviewer/publisher separation, source
-currency, current verified-review metadata, revision checks, explicit indexing
-decisions, and minimal DTOs. Publication cannot make a CMS record publicly
-renderable until the static-registry migration and public-rendering work are
-reviewed independently.
+A later independently reviewed release may add a dry-run migration planner for
+the existing static Knowledge Center registry. It must detect slug, canonical,
+relationship, source, and content conflicts without mutating Firestore or
+changing a public route. Public CMS rendering must remain separate until the
+migration output, rollback path, metadata parity, and protected-ranking-page
+invariants are reviewed independently.

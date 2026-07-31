@@ -12,6 +12,7 @@ import {
   parseKnowledgeCmsWorkflowForm,
   toKnowledgeCmsAdminRecordDto,
   toKnowledgeCmsAdminRecordSummaryDto,
+  validateKnowledgeCmsPublicationDecision,
 } from "../lib/knowledgeCmsAdmin";
 import type {
   KnowledgeCmsActor,
@@ -453,6 +454,100 @@ test("workflow form parsing accepts only governed transition fields", () => {
     expectedRevision: 9,
     decisionNote: "Official enrollment timing and source dates verified.",
   });
+
+  const publish = new FormData();
+  publish.set("expectedRevision", "10");
+  publish.set("publishedBy", "forged-publisher");
+  publish.set("publishedAt", "2099-12-31T00:00:00.000Z");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(publish, "publish"),
+    /indexing is required/i,
+  );
+  publish.set("indexing", "public");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(publish, "publish"),
+    /indexing must be blocked or eligible/i,
+  );
+  publish.set("indexing", "blocked");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(publish, "publish"),
+    /publicationNote is required/i,
+  );
+  publish.set("publicationNote", " Publish after checking the approved record. ");
+  assert.deepEqual(parseKnowledgeCmsWorkflowForm(publish, "publish"), {
+    expectedRevision: 10,
+    indexing: "blocked",
+    decisionNote: "Publish after checking the approved record.",
+  });
+  publish.set("indexing", "eligible");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(publish, "publish"),
+    /canonicalPathConfirmation is required/i,
+  );
+  publish.set(
+    "canonicalPathConfirmation",
+    "/resources/medicare-enrollment-in-spokane",
+  );
+  assert.deepEqual(parseKnowledgeCmsWorkflowForm(publish, "publish"), {
+    expectedRevision: 10,
+    indexing: "eligible",
+    canonicalPathConfirmation:
+      "/resources/medicare-enrollment-in-spokane",
+    decisionNote: "Publish after checking the approved record.",
+  });
+
+  const unpublish = new FormData();
+  unpublish.set("expectedRevision", "11");
+  assert.throws(
+    () => parseKnowledgeCmsWorkflowForm(unpublish, "unpublish"),
+    /unpublishReason is required/i,
+  );
+  unpublish.set("unpublishReason", " Source requires rechecking. ");
+  assert.deepEqual(parseKnowledgeCmsWorkflowForm(unpublish, "unpublish"), {
+    expectedRevision: 11,
+    decisionNote: "Source requires rechecking.",
+  });
+});
+
+test("publication decisions require exact canonical confirmation only for eligibility", () => {
+  const record = articleRecord({
+    discoverability: {
+      indexing: "blocked",
+      canonicalPath: "/resources/medicare-enrollment-in-spokane",
+    },
+  });
+  assert.deepEqual(
+    validateKnowledgeCmsPublicationDecision(record, {
+      indexing: "blocked",
+    }),
+    [],
+  );
+  assert.match(
+    validateKnowledgeCmsPublicationDecision(record, {
+      indexing: "eligible",
+      canonicalPathConfirmation: "/resources/wrong",
+    })[0] ?? "",
+    /exactly match/i,
+  );
+  assert.deepEqual(
+    validateKnowledgeCmsPublicationDecision(record, {
+      indexing: "eligible",
+      canonicalPathConfirmation:
+        "/resources/medicare-enrollment-in-spokane",
+    }),
+    [],
+  );
+  assert.match(
+    validateKnowledgeCmsPublicationDecision(
+      articleRecord(),
+      {
+        indexing: "eligible",
+        canonicalPathConfirmation:
+          "/resources/medicare-enrollment-in-spokane",
+      },
+    )[0] ?? "",
+    /approved canonical path/i,
+  );
 });
 
 test("admin DTOs omit ownership and audit internals while preserving access decisions", () => {
@@ -474,8 +569,10 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
   assert.equal(detail.revision, 1);
   assert.deepEqual(detail.workflowActions, {
     approve: false,
+    publish: false,
     submitForReview: true,
     requestChanges: false,
+    unpublish: false,
   });
 
   const readOnly = toKnowledgeCmsAdminRecordDto(
@@ -517,13 +614,69 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
     ).workflowActions,
     {
       approve: true,
+      publish: false,
       submitForReview: false,
       requestChanges: true,
+      unpublish: false,
     },
   );
+
+  const approvedRecord = articleRecord({
+    status: "approved",
+    review: {
+      reviewerAgentSlug: "lynn-wold",
+      reviewerVerificationId: "wa-license-check-1",
+      reviewedBy: "reviewer-user",
+      reviewedAt: NOW.toISOString(),
+      reviewDueAt: "2027-07-30",
+      decisionNote: "Official source evidence verified.",
+    },
+  });
+  const publisher: KnowledgeCmsActor = {
+    id: "publisher-user",
+    roles: ["publisher"],
+  };
+  const publishable = toKnowledgeCmsAdminRecordDto(
+    approvedRecord,
+    publisher,
+  );
+  assert.deepEqual(publishable.review, {
+    reviewerAgentSlug: "lynn-wold",
+    reviewedAt: NOW.toISOString(),
+    reviewDueAt: "2027-07-30",
+    decisionNote: "Official source evidence verified.",
+  });
+  assert.equal("reviewerVerificationId" in publishable.review!, false);
+  assert.equal("reviewedBy" in publishable.review!, false);
+  assert.equal(publishable.workflowActions.publish, true);
+  assert.equal(
+    toKnowledgeCmsAdminRecordDto(approvedRecord, {
+      id: "another-reviewer-account",
+      roles: ["publisher"],
+      agentSlug: "lynn-wold",
+    }).workflowActions.publish,
+    false,
+  );
+
+  const published = toKnowledgeCmsAdminRecordDto(
+    articleRecord({
+      ...approvedRecord,
+      status: "published",
+      publication: {
+        publishedAt: NOW.toISOString(),
+        publishedBy: "publisher-user",
+      },
+      discoverability: {
+        indexing: "blocked",
+      },
+    }),
+    publisher,
+  );
+  assert.equal("publication" in published, false);
+  assert.equal(published.workflowActions.unpublish, true);
 });
 
-test("admin routes remain default-off, noindex, and exclude publication transitions", () => {
+test("admin routes remain default-off and publication stays private and server-authorized", () => {
   const layout = readFileSync(
     join(root, "app/admin/knowledge/layout.tsx"),
     "utf8",
@@ -561,9 +714,12 @@ test("admin routes remain default-off, noindex, and exclude publication transiti
   assert.match(actions, /submitKnowledgeCmsForReviewAction/);
   assert.match(actions, /requestKnowledgeCmsChangesAction/);
   assert.match(actions, /approveKnowledgeCmsRecordAction/);
+  assert.match(actions, /publishKnowledgeCmsRecordAction/);
+  assert.match(actions, /unpublishKnowledgeCmsRecordAction/);
   assert.match(dataAccess, /resolveCurrentEditorialReviewerVerification/);
   assert.match(dataAccess, /resolveKnowledgeCmsApprovalDueAt/);
-  assert.doesNotMatch(actions, /publishKnowledge/i);
+  assert.match(dataAccess, /validateKnowledgeCmsPublicationDecision/);
+  assert.match(dataAccess, /requireKnowledgeCmsActor/);
   assert.match(nextConfig, /\/admin\/knowledge\/:path\*/);
   assert.match(nextConfig, /X-Robots-Tag/);
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);

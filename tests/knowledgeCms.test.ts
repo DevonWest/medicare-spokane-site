@@ -18,6 +18,7 @@ import {
   isKnowledgeCmsSourceExpired,
   parseKnowledgeCmsRecord,
   resolveKnowledgeCmsApprovalDueAt,
+  validateKnowledgeCmsPublishReadiness,
   validateKnowledgeCmsRecord,
   type KnowledgeCmsActor,
   type KnowledgeCmsArticleInput,
@@ -582,9 +583,19 @@ test("the workflow requires a different verified reviewer before publishing", as
   );
   assert.equal(approved.status, "approved");
   assert.equal(approved.review?.reviewerAgentSlug, "lynn-wold");
+  assert.equal(approved.review?.reviewedBy, reviewer.id);
   assert.equal(
     approved.review?.decisionNote,
     "Official enrollment source checked.",
+  );
+  const legacyApproval = structuredClone(approved);
+  if (legacyApproval.review) {
+    delete legacyApproval.review.reviewedBy;
+  }
+  assert.deepEqual(validateKnowledgeCmsRecord(legacyApproval), []);
+  assert.match(
+    validateKnowledgeCmsPublishReadiness(legacyApproval, NOW).join(" "),
+    /server-recorded reviewer user identity/i,
   );
 
   await assert.rejects(
@@ -597,6 +608,67 @@ test("the workflow requires a different verified reviewer before publishing", as
     KnowledgeCmsAuthorizationError,
   );
 
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "publish",
+        expectedRevision: 3,
+        decisionNote: "Reviewer must not publish their own approval.",
+      },
+      { ...reviewer, roles: ["reviewer", "publisher"] },
+    ),
+    (error: unknown) =>
+      error instanceof KnowledgeCmsAuthorizationError &&
+      error.reason === "reviewer_publisher_separation_required",
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "publish",
+        expectedRevision: 3,
+        decisionNote: "A second account cannot reuse the reviewer identity.",
+      },
+      {
+        id: "second-reviewer-account",
+        roles: ["publisher"],
+        agentSlug: "lynn-wold",
+      },
+    ),
+    (error: unknown) =>
+      error instanceof KnowledgeCmsAuthorizationError &&
+      error.reason === "reviewer_publisher_separation_required",
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "publish",
+        expectedRevision: 3,
+        decisionNote: "An indexing decision was not supplied.",
+      },
+      publisher,
+    ),
+    /explicit blocked or eligible indexing decision is required/i,
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      created.id,
+      {
+        action: "publish",
+        expectedRevision: 3,
+        indexing: "eligible",
+      },
+      publisher,
+    ),
+    /publication decision note is required/i,
+  );
+
   const published = await workflow.transition(
     "article",
     created.id,
@@ -604,6 +676,7 @@ test("the workflow requires a different verified reviewer before publishing", as
       action: "publish",
       expectedRevision: 3,
       indexing: "eligible",
+      decisionNote: "Approved canonical and indexing decision verified.",
     },
     publisher,
   );
@@ -623,6 +696,10 @@ test("the workflow requires a different verified reviewer before publishing", as
   assert.equal(
     repository.events.find((event) => event.event === "approve")?.note,
     "Official enrollment source checked.",
+  );
+  assert.equal(
+    repository.events.find((event) => event.event === "publish")?.note,
+    "Approved canonical and indexing decision verified.",
   );
 });
 
@@ -777,8 +854,21 @@ test("drafts do not produce search documents and unpublishing blocks indexing", 
       action: "publish",
       expectedRevision: approved.audit.revision,
       indexing: "eligible",
+      decisionNote: "Approved canonical and sources rechecked.",
     },
     publisher,
+  );
+  await assert.rejects(
+    workflow.transition(
+      "article",
+      draft.id,
+      {
+        action: "unpublish",
+        expectedRevision: published.audit.revision,
+      },
+      publisher,
+    ),
+    /unpublish reason is required/i,
   );
   const unpublished = await workflow.transition(
     "article",
@@ -786,6 +876,7 @@ test("drafts do not produce search documents and unpublishing blocks indexing", 
     {
       action: "unpublish",
       expectedRevision: published.audit.revision,
+      decisionNote: "Withdraw while source guidance is rechecked.",
     },
     publisher,
   );
@@ -795,6 +886,10 @@ test("drafts do not produce search documents and unpublishing blocks indexing", 
   assert.equal(unpublished.review, undefined);
   assert.equal(unpublished.publication, undefined);
   assert.equal(buildKnowledgeCmsSearchDocument(unpublished), undefined);
+  assert.equal(
+    repository.events.find((event) => event.event === "unpublish")?.note,
+    "Withdraw while source guidance is rechecked.",
+  );
 });
 
 test("submission blocks missing and expired evidence without blocking valid topics", async () => {
@@ -964,6 +1059,7 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
       action: "publish",
       expectedRevision: 3,
       indexing: "eligible",
+      decisionNote: "Approved canonical and sources rechecked.",
     },
     publisher,
   );
@@ -971,6 +1067,7 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
     expectedRevision: 3,
     event: "publish",
     actorId: publisher.id,
+    note: "Approved canonical and sources rechecked.",
   });
 
   const storedSearch = firestore.documents.get(
@@ -1002,6 +1099,35 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
       },
     ),
     /audit actor/i,
+  );
+
+  const unpublished = await workflow.transition(
+    "article",
+    draft.id,
+    {
+      action: "unpublish",
+      expectedRevision: 4,
+      decisionNote: "Withdraw while source evidence is rechecked.",
+    },
+    publisher,
+  );
+  await storage.save(unpublished, {
+    expectedRevision: 4,
+    event: "unpublish",
+    actorId: publisher.id,
+    note: "Withdraw while source evidence is rechecked.",
+  });
+  assert.equal(
+    firestore.documents.has(
+      "knowledge_search_documents/article--article-1",
+    ),
+    false,
+  );
+  assert.equal(
+    firestore.documents.get(
+      "knowledge_cms_audit_events/article--article-1--0000000005",
+    )?.note,
+    "Withdraw while source evidence is rechecked.",
   );
 });
 
