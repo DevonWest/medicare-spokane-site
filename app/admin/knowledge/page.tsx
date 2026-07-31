@@ -72,12 +72,20 @@ export default async function KnowledgeAdminPage() {
               </>
             ) : null}
             {canPreviewMigration ? (
-              <Link
-                className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
-                href="/admin/knowledge/migration-preview"
-              >
-                Migration preview
-              </Link>
+              <>
+                <Link
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                  href="/admin/knowledge/readiness"
+                >
+                  Readiness report
+                </Link>
+                <Link
+                  className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+                  href="/admin/knowledge/migration-preview"
+                >
+                  Migration preview
+                </Link>
+              </>
             ) : null}
             {canPreviewShadow ? (
               <Link

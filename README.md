@@ -191,7 +191,7 @@ When running on Google Cloud Run, grant the Cloud Run service account
 `roles/datastore.user` and rely on Application Default Credentials — no
 service-account key env vars are required. The private CMS additionally needs
 `firebaseauth.users.get` and `firebaseauth.users.createSession`; prefer a custom
-least-privilege role for those two permissions.
+least-privilege role for those two read/session permissions.
 
 ## Lead Capture (Firestore)
 
@@ -229,6 +229,12 @@ checks governed published article records against all 22 immutable React and
 SEO parity contracts. It performs no writes, renders previews inertly, keeps
 the CMS Markdown body non-public, and leaves every public route on its existing
 static source.
+The authenticated operational readiness report independently checks deployment
+flags, browser/Admin Firebase project alignment, aggregate role coverage,
+reviewer-publisher separation, deterministic article controls, execution
+history, and every current five-artifact migration receipt. It exposes no Auth
+user identities, performs no repair or write, and cannot enable execution,
+publication, indexing, shadow mode, or public cutover.
 The separately gated migration boundary can create one explicitly confirmed,
 indexing-blocked article draft at a time. It reconstructs the deterministic
 control server-side and atomically checks the expected-absent document, slug,

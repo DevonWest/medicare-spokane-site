@@ -61,12 +61,20 @@ export default async function KnowledgeMigrationPreviewPage() {
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
       <div className="mx-auto max-w-7xl">
-        <Link
-          className="text-sm font-semibold text-blue-700 hover:underline"
-          href="/admin/knowledge"
-        >
-          ← Back to Knowledge CMS
-        </Link>
+        <div className="flex flex-wrap gap-4">
+          <Link
+            className="text-sm font-semibold text-blue-700 hover:underline"
+            href="/admin/knowledge"
+          >
+            ← Back to Knowledge CMS
+          </Link>
+          <Link
+            className="text-sm font-semibold text-blue-700 hover:underline"
+            href="/admin/knowledge/readiness"
+          >
+            Operational readiness
+          </Link>
+        </div>
 
         <header className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-700">
