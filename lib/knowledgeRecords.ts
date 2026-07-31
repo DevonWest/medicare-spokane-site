@@ -351,7 +351,9 @@ function addUtcDays(date: Date, days: number): Date {
 }
 
 function resolveAsOfDate(asOf: string | Date): Date {
-  return typeof asOf === "string" ? parseDateOnly(asOf) : asOf;
+  return typeof asOf === "string"
+    ? parseDateOnly(asOf)
+    : parseDateOnly(asOf.toISOString().slice(0, 10));
 }
 
 export function isKnowledgeFactExpired(
@@ -416,7 +418,7 @@ export function buildKnowledgeRecordSearchDocuments(
       topicSlugs: [...fact.topicSlugs],
       searchTerms: [],
       relatedFactIds: [],
-      sourceIds: getKnowledgeFactSourceIds(fact),
+      sourceIds: [...getKnowledgeFactSourceIds(fact)],
     }),
   );
   const faqDocuments: KnowledgeSearchDocument[] = getPublishedKnowledgeFaqs(
