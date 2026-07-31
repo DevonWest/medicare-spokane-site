@@ -10,15 +10,17 @@ Library registry.
 - `KNOWLEDGE_CMS_ENABLED` is server-only and accepts only the exact value
   `true`.
 - The data-access and workflow modules use `server-only`.
-- Enabling the flag does not expose an endpoint or user interface.
+- The private `/admin/knowledge` surface returns 404 while the flag is off.
+- Enabling the flag exposes only the noindex admin sign-in route; CMS data
+  still requires a verified Firebase session and an explicit CMS role.
 - Public pages and components are regression-tested not to import the CMS.
 - New records begin as drafts and are blocked from indexing.
 - Publishing a record does not make the existing site render it.
 - The current static Resource Library remains the production source of truth
   until a separately reviewed migration is complete.
 
-Keep the flag false until authenticated admin routes or actions perform fresh
-identity and authorization checks on every request.
+Keep the flag false until the authentication and role-assignment prerequisites
+below are complete.
 
 ## Firestore collections
 
@@ -75,30 +77,90 @@ requires a canonical path.
 | Publisher | Publish, unpublish, archive, and restore |
 | Admin | Administrative override except self-review |
 
-The model separates authentication from authorization. These roles are domain
-claims only; the next admin-surface release must derive them from a verified
-server-side identity and must not accept role or user identifiers from form
-fields, query strings, or client state.
+The model separates authentication from authorization. Firebase custom claims
+assign the roles, but the server reads the current Firebase user on every
+request instead of trusting claims supplied by a form or browser state.
+
+## Private editorial workspace
+
+`/admin/knowledge` supports:
+
+- Google sign-in through Firebase Auth;
+- an eight-hour HTTP-only, SameSite=Strict session cookie;
+- list and read views for authenticated CMS users;
+- private draft creation for authors, editors, and admins;
+- draft editing under the workflow's owner and role rules;
+- current-revision checks that stop stale tabs from overwriting newer edits;
+- safe DTOs that omit canonical ownership and audit internals from client
+  components; and
+- articles, topics, FAQs, relationships, source records, search terms, and
+  future discoverability metadata.
+
+Session exchange requires a sign-in from the preceding five minutes. Every
+read and mutation verifies the Firebase session with revocation checking and
+reloads the current user record, so disabled accounts and role removals take
+effect without trusting stale browser claims. Session endpoints require an
+exact same-origin request.
+
+This release intentionally has no submit, approve, request-changes, publish,
+unpublish, archive, restore, public-rendering, or migration controls.
+
+## Authentication rollout prerequisites
+
+Before changing `KNOWLEDGE_CMS_ENABLED` to `true`:
+
+1. Enable Google as a Firebase Authentication provider.
+2. Add the production and intended non-production hosts to Firebase Auth's
+   authorized domains.
+3. Supply `NEXT_PUBLIC_FIREBASE_API_KEY`,
+   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and
+   `NEXT_PUBLIC_FIREBASE_PROJECT_ID` at build time. The deployment workflow
+   reads the API key and Auth domain from GitHub repository variables and uses
+   `FIREBASE_PROJECT_ID` for the public project ID.
+4. Confirm the browser and Admin SDK use the same Firebase project.
+5. Assign each approved user a `knowledgeCmsRoles` custom claim containing only
+   `author`, `editor`, `reviewer`, `publisher`, or `admin`.
+6. Optionally assign `knowledgeCmsAgentSlug` only when it matches a verified
+   agent authority record.
+7. Verify the Cloud Run service account can access the CMS Firestore
+   collections and has `firebaseauth.users.get` plus
+   `firebaseauth.users.createSession`. Prefer a custom least-privilege role;
+   `roles/firebaseauth.admin` also contains both but grants broader Auth
+   administration.
+8. Test sign-in, unauthorized access, author ownership, and a revision conflict
+   in a non-production environment.
+
+The deployment workflow treats `KNOWLEDGE_CMS_ENABLED` as `false` when the
+repository variable is absent. If that variable is set to `true`, deployment
+fails before building unless the Firebase browser API key and Auth domain
+variables are present.
+
+Example custom-claim shape:
+
+```json
+{
+  "knowledgeCmsRoles": ["author", "editor"],
+  "knowledgeCmsAgentSlug": "verified-agent-slug"
+}
+```
+
+Role assignment remains an operator-controlled Firebase Admin task. The
+browser never receives a way to assign or elevate roles.
 
 ## Not included in this release
 
-- Admin pages, forms, routes, or server actions
-- Authentication or session management
 - Public Knowledge Center rendering
 - Migration of the existing static registry
 - Hosted search service or embeddings
+- Editorial workflow transition controls
+- Firebase role-assignment tooling
 - Changes to titles, headings, canonicals, redirects, robots rules, or sitemap
   URLs
 
 ## Next release gate
 
-The authenticated admin CRUD release must:
-
-1. verify identity inside every mutation and read boundary;
-2. map the identity to server-authoritative CMS roles;
-3. return minimal data-transfer objects;
-4. validate all client input;
-5. preserve revision checks and workflow transitions;
-6. remain inaccessible while `KNOWLEDGE_CMS_ENABLED` is false; and
-7. add request-level authorization and negative-path tests before the feature
-   can be enabled anywhere.
+The next workflow-interface release may add submit-for-review and
+request-changes controls. It must preserve per-action authentication,
+ownership, reviewer separation, source currency, verified reviewer identity,
+revision checks, and minimal DTOs. Approval and publication should remain a
+later independently reviewed release.

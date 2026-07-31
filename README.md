@@ -81,8 +81,11 @@ Set these in **Settings → Secrets and variables → Actions**.
 | `GCP_REGION` | `us-west1` | Cloud Run + Artifact Registry region |
 | `CLOUD_RUN_SERVICE` | `medicare-spokane-site` | Cloud Run service name |
 | `ARTIFACT_REGISTRY_REPO` | `web` | Existing Artifact Registry repo in `GCP_REGION` |
-| `RUNTIME_SERVICE_ACCOUNT` | `cloud-run-runtime@<project>.iam.gserviceaccount.com` | SA the container runs as. **Must have `roles/datastore.user`** on the Firestore project. |
+| `RUNTIME_SERVICE_ACCOUNT` | `cloud-run-runtime@<project>.iam.gserviceaccount.com` | SA the container runs as. **Must have `roles/datastore.user`** on the Firestore project. Before enabling the CMS, it also needs `firebaseauth.users.get` and `firebaseauth.users.createSession`. |
 | `FIREBASE_PROJECT_ID` | same as `GCP_PROJECT_ID` (usually) | Tells `firebase-admin` which project's Firestore to talk to |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web API key | Public browser identifier for the private CMS sign-in; required only before enabling the CMS |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `<project>.firebaseapp.com` | Firebase Auth domain for the private CMS sign-in; required only before enabling the CMS |
+| `KNOWLEDGE_CMS_ENABLED` | `false` | Server-only feature gate; absence and every value except exact `true` keep the CMS hidden |
 
 #### Authentication — pick **one**
 
@@ -109,6 +112,7 @@ The workflow auto-detects which path to use based on whether `GCP_WORKLOAD_IDENT
 - [ ] Create the Firestore database in **Native** mode in the chosen region.
 - [ ] Create an Artifact Registry **Docker** repo (`gcloud artifacts repositories create web --repository-format=docker --location=$REGION`).
 - [ ] Create the **runtime** service account and grant it `roles/datastore.user`.
+- [ ] Before enabling the CMS, grant the runtime service account a least-privilege custom role containing `firebaseauth.users.get` and `firebaseauth.users.createSession` (or use `roles/firebaseauth.admin` only if broader Auth administration is intentionally acceptable).
 - [ ] Create the **deployer** service account and grant it `roles/run.admin`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` (on the runtime SA).
 - [ ] (WIF only) Create a Workload Identity Pool + Provider for GitHub OIDC and bind the deployer SA to the GitHub repo.
 - [ ] Configure all GitHub variables/secrets listed above.
@@ -118,6 +122,7 @@ The workflow auto-detects which path to use based on whether `GCP_WORKLOAD_IDENT
 
 - [ ] PR is green (lint, test, build all pass via the `ci` job).
 - [ ] No new `FIREBASE_*` secrets are needed — the runtime SA's ADC is used in Cloud Run.
+- [ ] If the CMS flag is enabled, Firebase Google sign-in, authorized domains, browser variables, current CMS role claims, and runtime Auth permissions are verified first.
 - [ ] Merge to `main` → workflow auto-deploys.
 - [ ] Verify the new revision in Cloud Run console; check `100%` traffic is on the new revision.
 - [ ] Hit `https://www.medicareinspokane.com/api/leads` with a smoke test payload and confirm a doc appears in Firestore.
@@ -159,17 +164,30 @@ lib/
 | `FIREBASE_PROJECT_ID` | GCP project that owns the Firestore database | _required for lead capture_ |
 | `FIREBASE_CLIENT_EMAIL` | Service-account client email (admin SDK) | _required if not using ADC_ |
 | `FIREBASE_PRIVATE_KEY` | Service-account private key. Newlines may be escaped as `\n` — they are unescaped at runtime. **Server-only — never expose to the client.** | _required if not using ADC_ |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web app API key used by the private CMS Google sign-in. This is a public Firebase identifier, not a service-account secret. | _required before enabling the CMS_ |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth domain used by the private CMS Google sign-in. | _required before enabling the CMS_ |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID used by the browser Auth SDK. It must match the server-side Firebase project. | _required before enabling the CMS_ |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to a service-account JSON. Used as a fallback when the three vars above are not set. | _optional_ |
 | `CRM_API_BASE_URL` | Base URL for the CRM public form submission endpoint. **Server-only — never expose to the client.** | _required for CRM sync_ |
 | `CRM_API_KEY` | Optional server-side API key forwarded to the CRM public form submission endpoint as an `x-api-key` header. Never expose it to the client. | _optional_ |
-| `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS data-access layer. Only the exact value `true` enables it. Keep disabled until the authenticated admin surface is deployed. | `false` |
+| `KNOWLEDGE_CMS_ENABLED` | Server-only gate for the editorial CMS and private workspace. Only the exact value `true` enables it. Keep disabled until Firebase Auth, authorized domains, and explicit CMS role claims are configured. | `false` |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
-**Production (Cloud Run):** set only `NEXT_PUBLIC_SITE_URL`, `FIREBASE_PROJECT_ID`, and `NODE_ENV=production`. **Do not** set `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` — Cloud Run's runtime service account provides Application Default Credentials automatically (see the deployment section below).
+**Production (Cloud Run):** keep `KNOWLEDGE_CMS_ENABLED=false` until the
+documented Auth prerequisites are complete. The deployment workflow bakes
+`NEXT_PUBLIC_*` values into the image and supplies `FIREBASE_PROJECT_ID` plus
+the server-only CMS flag at runtime. **Do not** set `FIREBASE_CLIENT_EMAIL` /
+`FIREBASE_PRIVATE_KEY` — Cloud Run's runtime service account provides
+Application Default Credentials automatically (see the deployment section
+below).
 
 
-When running on Google Cloud Run, the simplest setup is to grant the Cloud Run service account the `roles/datastore.user` (Firestore) role and rely on Application Default Credentials — no `FIREBASE_*` env vars are required in that case.
+When running on Google Cloud Run, grant the Cloud Run service account
+`roles/datastore.user` and rely on Application Default Credentials — no
+service-account key env vars are required. The private CMS additionally needs
+`firebaseauth.users.get` and `firebaseauth.users.createSession`; prefer a custom
+least-privilege role for those two permissions.
 
 ## Lead Capture (Firestore)
 
@@ -193,13 +211,19 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 
 The default-off editorial foundation defines governed `knowledge_articles`,
 `knowledge_topics`, and `knowledge_faqs` records, along with unique slug locks,
-search projections, and append-only audit events. It is implemented as a
-server-only data-access layer and has no route, page, action, or client import.
+search projections, and append-only audit events. The private
+`/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
+edit-draft views. It remains a server-authorized editing surface and does not
+render CMS records on the public website.
 See [docs/knowledge-cms-foundation.md](docs/knowledge-cms-foundation.md) for the
 workflow, collection, permission, and rollout contract.
 
-Do not enable `KNOWLEDGE_CMS_ENABLED` yet. The authenticated admin surface and
-per-request identity verification are intentionally a separate release.
+Keep `KNOWLEDGE_CMS_ENABLED=false` until Firebase Google sign-in, authorized
+domains, the three public Firebase web variables, and explicit
+`knowledgeCmsRoles` custom claims are configured. Enabling the flag without
+those prerequisites does not grant access; the workspace still requires a
+verified Firebase session and current server-side role lookup on every read or
+write.
 
 ### Suggested Firestore index
 
@@ -332,7 +356,7 @@ The workflow will:
 - Push to `…/site-beta:<sha>` in Artifact Registry.
 - Deploy to the `medicare-spokane-site-beta` service with the same vars set as runtime env (and `FIREBASE_PROJECT_ID`, `NODE_ENV=production`).
 
-> ⚠️ `NEXT_PUBLIC_*` values are inlined into the client JS bundle at `next build`. Setting them only on Cloud Run is not enough — they must also be passed as `--build-arg` (the workflow does this).
+> ⚠️ `NEXT_PUBLIC_*` values are inlined into the client JS bundle at `next build`. Setting them only on Cloud Run is not enough — they must also be passed as `--build-arg` (the workflow does this for the site, analytics, and Firebase Auth identifiers).
 
 ### Post-deploy QA on beta
 

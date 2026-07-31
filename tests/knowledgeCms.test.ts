@@ -292,7 +292,7 @@ test("the server-side feature flag is disabled unless explicitly true", async ()
   assert.equal(isKnowledgeCmsEnabled("false"), false);
   assert.equal(isKnowledgeCmsEnabled("1"), false);
   assert.equal(isKnowledgeCmsEnabled(" TRUE "), false);
-  assert.equal(isKnowledgeCmsEnabled(" true "), true);
+  assert.equal(isKnowledgeCmsEnabled(" true "), false);
   assert.throws(() => assertKnowledgeCmsEnabled(undefined), {
     code: "knowledge_cms_disabled",
   });
@@ -839,11 +839,14 @@ function listTypeScriptFiles(directory: string): string[] {
   });
 }
 
-test("the disabled foundation is not imported by any public route or component", () => {
+test("the CMS remains isolated from every public route and component", () => {
   const publicFiles = [
     ...listTypeScriptFiles(join(root, "app")),
     ...listTypeScriptFiles(join(root, "components")),
-  ];
+  ].filter(
+    (path) =>
+      !relative(root, path).startsWith(`${join("app", "admin")}${"/"}`),
+  );
   const imports = publicFiles
     .filter((path) => /\bknowledgeCms\b/.test(readFileSync(path, "utf8")))
     .map((path) => relative(root, path));

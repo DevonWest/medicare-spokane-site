@@ -43,6 +43,9 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `FIREBASE_PROJECT_ID` | `medicareinspokane-prod` | Usually same as `GCP_PROJECT_ID` |
 | `RUNTIME_SERVICE_ACCOUNT` | `cloud-run-runtime@medicareinspokane-prod.iam.gserviceaccount.com` | The runtime SA from §5 |
 | `NEXT_PUBLIC_GTM_ID` | `GTM-XXXXXXX` | **Optional.** Leave unset to disable Google Tag Manager. |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web API key | Required only before enabling the private Knowledge CMS |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `medicareinspokane-prod.firebaseapp.com` | Required only before enabling the private Knowledge CMS |
+| `KNOWLEDGE_CMS_ENABLED` | `false` | **Optional.** Leave absent or set to `false` until the full Auth checklist passes. |
 
 ### 1b. Authentication — pick ONE of these two options
 
@@ -75,6 +78,7 @@ gcloud services enable \
   iamcredentials.googleapis.com \
   iam.googleapis.com \
   firestore.googleapis.com \
+  identitytoolkit.googleapis.com \
   compute.googleapis.com
 ```
 
@@ -84,6 +88,8 @@ What each one is for:
 - `cloudbuild` — used implicitly by some `gcloud` flows.
 - `iamcredentials` + `iam` — needed for Workload Identity Federation and impersonation.
 - `firestore` — your `website_leads` collection lives here.
+- `identitytoolkit` — Firebase Authentication for the private editorial
+  workspace; harmless while the CMS remains disabled.
 - `compute` — needed if you ever switch from Cloud Run domain mappings to a Load Balancer (optional, §6 alt path).
 
 You should see `Operation "operations/..." finished successfully.` for each.
@@ -173,6 +179,25 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
 > `roles/datastore.user` is the right role for Firestore in Native mode (read + write documents, no admin). It's what `firebase-admin` needs to write to `website_leads`.
 
 Put `cloud-run-runtime@PROJECT_ID.iam.gserviceaccount.com` into the `RUNTIME_SERVICE_ACCOUNT` GitHub variable from §1a.
+
+Before enabling the private Knowledge CMS, create and grant a least-privilege
+Firebase Auth role:
+
+```bash
+gcloud iam roles create knowledgeCmsAuthRuntime \
+  --project=PROJECT_ID \
+  --title="Knowledge CMS Auth Runtime" \
+  --description="Read current Firebase users and exchange verified ID tokens for CMS sessions" \
+  --permissions="firebaseauth.users.get,firebaseauth.users.createSession" \
+  --stage=GA
+
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="serviceAccount:cloud-run-runtime@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="projects/PROJECT_ID/roles/knowledgeCmsAuthRuntime"
+```
+
+If the custom role already exists, skip the create command and confirm its
+permissions before applying the binding.
 
 ### 5b. Create the deployer service account
 
@@ -319,13 +344,22 @@ What happens:
   - `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`
   - `NEXT_PUBLIC_SITE_ENV=staging`
   - `NEXT_PUBLIC_GTM_ID=<value of your GitHub variable, or empty>`
+  - Firebase browser API key, Auth domain, and project ID (empty is accepted
+    while the CMS stays disabled)
 - It pushes the image to `REGION-docker.pkg.dev/PROJECT_ID/web/site-beta:<commit-sha>`.
 - It deploys that image to the `medicare-spokane-site-beta` Cloud Run service with the runtime SA attached and these env vars set:
   - `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`
   - `NEXT_PUBLIC_SITE_ENV=staging`
   - `NEXT_PUBLIC_GTM_ID=<same as above>`
   - `FIREBASE_PROJECT_ID=PROJECT_ID`
+  - `KNOWLEDGE_CMS_ENABLED=false` unless the exact GitHub variable is set to
+    `true`
   - `NODE_ENV=production`
+
+If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when
+the Firebase browser API key or Auth domain variable is missing. Before
+enabling it, the runtime service account also needs
+`firebaseauth.users.get` and `firebaseauth.users.createSession`.
 
 The workflow's last step prints the service URL. Total runtime: ~4–7 minutes.
 
@@ -368,7 +402,16 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 ### 8f. Performance smoke test
 - [ ] Run https://pagespeed.web.dev/ against `https://beta.medicareinspokane.com`. Mobile Performance ≥ 80 is the target. Anything red → investigate before prod.
 
-If all of 8a–8f pass, beta is good.
+### 8g. Private Knowledge CMS (only when intentionally enabled)
+- [ ] Firebase Google sign-in is enabled and the beta hostname is an authorized domain.
+- [ ] `/admin/knowledge/login` returns 200 with `X-Robots-Tag: noindex, nofollow, noarchive`.
+- [ ] An account without `knowledgeCmsRoles` cannot enter.
+- [ ] An approved author can create and edit only a private draft it owns.
+- [ ] A stale edit is rejected instead of overwriting the newer revision.
+- [ ] No CMS route appears in `/sitemap.xml`, and no CMS record appears on `/resources`.
+
+If the CMS stays disabled, 8a–8f are sufficient. When the CMS is intentionally
+enabled, 8g must also pass before production.
 
 ---
 
