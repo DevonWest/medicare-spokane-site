@@ -533,7 +533,7 @@ export const knowledgeCmsRouteParityManifest: ReadonlyArray<KnowledgeCmsRoutePar
             snapshot,
           ),
           reason:
-            "The lossless renderer contract is defined, but no public CMS renderer implementation or shadow-parity evidence yet preserves this route's verified React structure and required features.",
+            "A private shadow adapter can reproduce the verified React route, but the CMS Markdown body is not publicly rendered and no reviewed shadow evidence or cutover approval exists.",
         },
       }),
     ];

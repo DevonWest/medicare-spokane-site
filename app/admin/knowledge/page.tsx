@@ -4,6 +4,7 @@ import LogoutButton from "./components/LogoutButton";
 import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
 import { listKnowledgeCmsAdminRecords } from "@/lib/knowledgeCmsAdminDal";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
+import { isKnowledgeCmsPrivateShadowEnabled } from "@/lib/knowledgeCmsShadowRenderer";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -28,6 +29,8 @@ export default async function KnowledgeAdminPage() {
   const canPreviewMigration = actor.roles.some((role) =>
     ["publisher", "admin"].includes(role),
   );
+  const canPreviewShadow =
+    canPreviewMigration && isKnowledgeCmsPrivateShadowEnabled();
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -74,6 +77,14 @@ export default async function KnowledgeAdminPage() {
                 href="/admin/knowledge/migration-preview"
               >
                 Migration preview
+              </Link>
+            ) : null}
+            {canPreviewShadow ? (
+              <Link
+                className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                href="/admin/knowledge/shadow-preview"
+              >
+                Shadow renderer
               </Link>
             ) : null}
             <LogoutButton />
