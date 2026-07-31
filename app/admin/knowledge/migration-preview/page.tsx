@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
 import {
-  getKnowledgeCmsAdminMigrationPreview,
+  getKnowledgeCmsAdminMigrationWorkspacePreview,
 } from "@/lib/knowledgeCmsMigrationDal";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
 import type {
@@ -38,7 +38,14 @@ export default async function KnowledgeMigrationPreviewPage() {
     notFound();
   }
 
-  const preview = await getKnowledgeCmsAdminMigrationPreview();
+  const { preview, articleMaterializationDryRun } =
+    await getKnowledgeCmsAdminMigrationWorkspacePreview();
+  const materializationByTargetId = new Map(
+    articleMaterializationDryRun.receipts.map((receipt) => [
+      receipt.target.id,
+      receipt,
+    ]),
+  );
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -140,6 +147,79 @@ export default async function KnowledgeMigrationPreviewPage() {
             );
           })}
         </div>
+
+        <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm md:p-8">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-blue-700">
+            Zero-write server materialization
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">
+            Article dry-run receipts
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">
+            The server revalidated each deterministic control against the
+            current Firestore inventory, bound it to the authenticated
+            session actor and one server-clock timestamp, and compiled any
+            conflict-free target into a schema-valid private draft in memory.
+            These receipts are evidence only and cannot authorize a write.
+          </p>
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            {[
+              ["Controls", articleMaterializationDryRun.summary.controls],
+              [
+                "Absent targets",
+                articleMaterializationDryRun.summary
+                  .expectedAbsentConfirmed,
+              ],
+              [
+                "Present targets",
+                articleMaterializationDryRun.summary.targetsPresent,
+              ],
+              [
+                "In-memory drafts",
+                articleMaterializationDryRun.summary
+                  .recordsMaterializedInMemory,
+              ],
+              ["Blocked", articleMaterializationDryRun.summary.blocked],
+              ["Writes", articleMaterializationDryRun.summary.writeCount],
+            ].map(([label, value]) => (
+              <div
+                className="rounded-xl border border-blue-200 bg-white p-4"
+                key={label}
+              >
+                <dt className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  {label}
+                </dt>
+                <dd className="mt-1 text-2xl font-bold text-slate-950">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <dl className="mt-6 space-y-2 text-xs leading-6 text-slate-700">
+            <div>
+              <dt className="inline font-semibold">Authenticated actor: </dt>
+              <dd className="inline font-mono">
+                {articleMaterializationDryRun.actor.id}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline font-semibold">Server clock: </dt>
+              <dd className="inline font-mono">
+                {articleMaterializationDryRun.generatedAt}
+              </dd>
+            </div>
+            <div>
+              <dt className="inline font-semibold">Batch receipt: </dt>
+              <dd className="inline break-all font-mono">
+                sha256:{articleMaterializationDryRun.fingerprint.value}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-5 text-sm font-semibold text-red-800">
+            Execution eligible: 0 · transactional recheck required · public
+            source remains the verified static route
+          </p>
+        </section>
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <h2 className="text-xl font-bold text-slate-950">Release gates</h2>
@@ -374,6 +454,36 @@ export default async function KnowledgeMigrationPreviewPage() {
                                 Execution disabled · 0 writes · Markdown is
                                 not the public page body
                               </p>
+                              {materializationByTargetId.get(
+                                candidate.target.id,
+                              ) ? (
+                                <>
+                                  <p className="mt-2 font-semibold text-slate-800">
+                                    Dry run: {" "}
+                                    {
+                                      materializationByTargetId.get(
+                                        candidate.target.id,
+                                      )?.materialization.status
+                                    }
+                                  </p>
+                                  <p>
+                                    Firestore target: {" "}
+                                    {
+                                      materializationByTargetId.get(
+                                        candidate.target.id,
+                                      )?.target.observedState
+                                    }
+                                  </p>
+                                  <p className="break-all font-mono">
+                                    receipt sha256:
+                                    {
+                                      materializationByTargetId.get(
+                                        candidate.target.id,
+                                      )?.fingerprint.value
+                                    }
+                                  </p>
+                                </>
+                              ) : null}
                             </>
                           ) : null}
                         </>
