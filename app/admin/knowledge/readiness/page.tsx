@@ -232,7 +232,7 @@ export default async function KnowledgeCmsReadinessPage() {
               ))}
             </dl>
             <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-800">
-              Reviewer/publisher separation: {roleDirectory.capabilities.reviewerPublisherSeparationReady
+              Review and publishing coverage: {roleDirectory.capabilities.reviewerPublisherCoverageReady
                 ? "verified"
                 : "blocked"} · directory pages: {roleDirectory.pagesRead} · writes: {roleDirectory.writeCount}
             </p>

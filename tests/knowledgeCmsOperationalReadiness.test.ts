@@ -38,6 +38,17 @@ const reviewerVerifications: EditorialReviewerVerification[] = [
     validThrough: "2027-07-30",
     verificationSourceUrl: "https://example.gov/license/lynn-wold",
   },
+  {
+    id: "readiness-devon-west",
+    agentSlug: "devon-west",
+    status: "verified",
+    credentialName: "Washington insurance producer license",
+    jurisdiction: "Washington",
+    verifiedAt: "2026-07-31",
+    validThrough: "2027-07-31",
+    verificationSourceUrl:
+      "https://www.insurance.wa.gov/agent-and-company-lookup-tool",
+  },
 ];
 
 function mockServerOnlyModule() {
@@ -414,7 +425,7 @@ function listTypeScriptFiles(directory: string): string[] {
   });
 }
 
-test("role readiness paginates Auth users and proves reviewer-publisher separation without identities", async () => {
+test("role readiness paginates Auth users and proves review and publishing coverage without identities", async () => {
   const snapshot = await completeRoleDirectory();
 
   assert.equal(snapshot.status, "complete");
@@ -425,10 +436,40 @@ test("role readiness paginates Auth users and proves reviewer-publisher separati
   assert.equal(snapshot.roleCounts.reviewer, 1);
   assert.equal(snapshot.roleCounts.publisher, 1);
   assert.equal(snapshot.capabilities.verifiedReviewerAccounts, 1);
-  assert.equal(snapshot.capabilities.reviewerPublisherSeparationReady, true);
+  assert.equal(snapshot.capabilities.reviewerPublisherCoverageReady, true);
   assert.equal(snapshot.writeCount, 0);
   assert.equal("users" in snapshot, false);
   assert.equal(Object.isFrozen(snapshot), true);
+});
+
+test("one verified account can satisfy authoring, review, and publishing coverage", async () => {
+  const [readiness] = await loadReadinessModules();
+  const snapshot = await readiness.scanKnowledgeCmsRoleDirectory(
+    {
+      listUsers: async () => ({
+        users: [
+          {
+            uid: "devon-google-account",
+            emailVerified: true,
+            disabled: false,
+            customClaims: {
+              knowledgeCmsRoles: ["admin"],
+              knowledgeCmsAgentSlug: "devon-west",
+            },
+          },
+        ],
+      }),
+    },
+    NOW,
+    reviewerVerifications,
+  );
+
+  assert.equal(snapshot.status, "complete");
+  assert.equal(snapshot.capabilities.authoringAccounts, 1);
+  assert.equal(snapshot.capabilities.reviewerClaimAccounts, 1);
+  assert.equal(snapshot.capabilities.verifiedReviewerAccounts, 1);
+  assert.equal(snapshot.capabilities.publisherAccounts, 1);
+  assert.equal(snapshot.capabilities.reviewerPublisherCoverageReady, true);
 });
 
 test("role readiness fails closed on invalid, inactive, duplicate, or unavailable directory evidence", async () => {

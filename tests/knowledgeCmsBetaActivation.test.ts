@@ -60,7 +60,7 @@ function roleDirectory() {
       reviewerClaimAccounts: 1,
       verifiedReviewerAccounts: 1,
       publisherAccounts: 1,
-      reviewerPublisherSeparationReady: true,
+      reviewerPublisherCoverageReady: true,
     },
     writeCount: 0 as const,
   };

@@ -34,8 +34,27 @@ const currentReviewerVerification: EditorialReviewerVerification = {
   verificationSourceUrl: "https://example.gov/license/lynn-wold",
 };
 
-test("reviewer claims remain disabled until a verification record is added", () => {
-  assert.deepEqual(editorialReviewerVerifications, []);
+test("Devon West has the current licensed-reviewer evidence required by the CMS", () => {
+  assert.equal(editorialReviewerVerifications.length, 1);
+  assert.equal(
+    editorialReviewerVerifications[0]?.id,
+    "devon-west-wa-oic-2026-07-31",
+  );
+  assert.equal(
+    resolveCurrentEditorialReviewerVerification(
+      "devon-west",
+      "2026-07-31",
+    )?.id,
+    "devon-west-wa-oic-2026-07-31",
+  );
+  assert.equal(
+    resolveVerifiedEditorialReviewer(
+      "devon-west",
+      "devon-west-wa-oic-2026-07-31",
+      "2026-07-31",
+    )?.name,
+    "Devon West",
+  );
   assert.equal(
     resolveVerifiedEditorialReviewer(
       "lynn-wold",
@@ -45,7 +64,7 @@ test("reviewer claims remain disabled until a verification record is added", () 
     undefined,
   );
   assert.deepEqual(
-    validateEditorialReviewerVerifications("2026-07-30"),
+    validateEditorialReviewerVerifications("2026-07-31"),
     [],
   );
 });

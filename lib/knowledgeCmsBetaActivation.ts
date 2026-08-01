@@ -324,7 +324,7 @@ const rollbackTriggers: KnowledgeCmsBetaActivationPreview["rollback"]["triggers"
   {
     code: "authorization_failure",
     detail:
-      "Role separation, Firebase project alignment, session refresh, or least-privilege access fails.",
+      "Reviewer verification, Firebase project alignment, session refresh, or least-privilege access fails.",
   },
   {
     code: "private_shadow_mismatch",

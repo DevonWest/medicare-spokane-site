@@ -101,7 +101,7 @@ export interface KnowledgeCmsRoleDirectorySnapshot {
     reviewerClaimAccounts: number;
     verifiedReviewerAccounts: number;
     publisherAccounts: number;
-    reviewerPublisherSeparationReady: boolean;
+    reviewerPublisherCoverageReady: boolean;
   };
   writeCount: 0;
 }
@@ -424,15 +424,8 @@ export async function scanKnowledgeCmsRoleDirectory(
       ).length,
       verifiedReviewerAccounts: verifiedReviewers.length,
       publisherAccounts: publishers.length,
-      reviewerPublisherSeparationReady: verifiedReviewers.some((reviewer) =>
-        publishers.some(
-          (publisher) =>
-            publisher.id !== reviewer.id &&
-            (reviewer.agentSlug === undefined ||
-              publisher.agentSlug === undefined ||
-              publisher.agentSlug !== reviewer.agentSlug),
-        ),
-      ),
+      reviewerPublisherCoverageReady:
+        verifiedReviewers.length > 0 && publishers.length > 0,
     },
     writeCount: 0 as const,
   });
@@ -1114,7 +1107,7 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       input.roleDirectory.capabilities.authoringAccounts > 0 &&
       input.roleDirectory.capabilities.verifiedReviewerAccounts > 0 &&
       input.roleDirectory.capabilities.publisherAccounts > 0 &&
-      input.roleDirectory.capabilities.reviewerPublisherSeparationReady,
+      input.roleDirectory.capabilities.reviewerPublisherCoverageReady,
   );
   const articleTargetEvidence = migration.targetEvidence.filter(
     (target) => target.kind === "article",
@@ -1248,8 +1241,8 @@ export function buildKnowledgeCmsOperationalReadinessReport(input: {
       "authentication",
       editorialReady ? "pass" : "blocked",
       editorialReady
-        ? "Authoring, currently verified review, publishing, and reviewer-publisher separation coverage are present."
-        : "The role directory does not yet prove complete authoring, verified review, publishing, and reviewer-publisher separation coverage.",
+        ? "Authoring, currently verified review, and publishing coverage are present. One verified account may perform separately audited review and publication actions."
+        : "The role directory does not yet prove complete authoring, verified review, and publishing coverage.",
     ),
     check(
       "article_execution_gate",

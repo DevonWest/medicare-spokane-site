@@ -77,11 +77,11 @@ stateDiagram-v2
 ```
 
 Articles and FAQs need at least one current source before review. Source review
-windows cannot exceed 180 days. An approval requires a distinct reviewer with
-an active licensed-agent verification, and its review window cannot exceed 365
-days. Verification is checked again at publication. The authenticated user who
-approved the record—and any account carrying the same reviewer agent
-identity—cannot publish that record.
+windows cannot exceed 180 days. An approval requires an authenticated reviewer
+with an active licensed-agent verification, and its review window cannot exceed
+365 days. Verification is checked again at publication. One verified account
+may author, review, approve, and publish a record, but approval and publication
+remain separate revision-bound actions with separate required decision notes.
 
 Submitting uses the latest saved revision and clears any prior active change
 request. Requesting changes requires a current, unambiguous licensed-reviewer
@@ -104,9 +104,9 @@ approval, and returns the record to draft.
 |---|---|
 | Author | Create records; edit and submit their own drafts |
 | Editor | Create, edit, and submit any draft |
-| Reviewer | Approve or request changes, but never review their own record |
+| Reviewer | Approve or request changes, including on records they own |
 | Publisher | Publish, unpublish, archive, and restore |
-| Admin | Administrative override except self-review and reviewer/publisher separation |
+| Admin | Administrative authority across the private editorial workflow |
 
 The model separates authentication from authorization. Firebase custom claims
 assign the roles, but the server reads the current Firebase user on every
@@ -123,14 +123,14 @@ request instead of trusting claims supplied by a form or browser state.
 - draft editing under the workflow's owner and role rules;
 - current-revision checks that stop stale tabs from overwriting newer edits;
 - submit-for-review controls for authorized draft owners and editors;
-- request-changes controls for verified reviewers who are not the record
-  owner, with required feedback visible on the returned draft;
-- verified approval controls for reviewers who are not the record owner, with
-  a required private decision note and a server-calculated review deadline
+- request-changes controls for verified reviewers, with required feedback
+  visible on the returned draft;
+- verified approval controls for reviewers, with a required private decision
+  note and a server-calculated review deadline
   bounded by source, reviewer-verification, and policy dates;
 - publisher-only publish controls with a required audit note, a deliberate
   blocked-or-eligible indexing decision, exact canonical confirmation for
-  eligibility, and reviewer/publisher separation;
+  eligibility, and a separate revision-bound publication action;
 - publisher-only unpublish controls that require a reason and atomically
   remove the search projection before returning the record to draft;
 - safe DTOs that omit canonical ownership and audit internals from client
@@ -432,8 +432,7 @@ The report evaluates separate capabilities rather than collapsing unlike
 risks into one ambiguous status:
 
 - private workspace configuration and Firebase browser/Admin project alignment;
-- aggregate authoring, currently verified reviewer, publisher, and
-  reviewer-publisher separation coverage;
+- aggregate authoring, currently verified reviewer, and publisher coverage;
 - one-record article migration readiness or verified completion;
 - one-record topic/FAQ migration readiness or verified completion;
 - complete 45-record migration readiness and deterministic operator order;
@@ -445,7 +444,7 @@ risks into one ambiguous status:
 The Auth scan paginates up to 1,000 accounts per read and returns counts only.
 It does not expose UIDs, email addresses, claims, or account records. Malformed
 claims, incomplete pagination, duplicate users, missing list permission, no
-current licensed reviewer, or no distinct publisher fail closed. Disabled or
+current licensed reviewer, or no publisher fail closed. Disabled or
 unverified accounts with CMS claims are reported but cannot count as active
 coverage.
 

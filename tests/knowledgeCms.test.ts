@@ -387,7 +387,7 @@ test("the server-side feature flag is disabled unless explicitly true", async ()
   );
 });
 
-test("authorization separates authoring, review, and publishing duties", () => {
+test("authorization enforces role boundaries while allowing one account to review and publish", () => {
   const draft = {
     ownerId: author.id,
     status: "draft",
@@ -419,7 +419,7 @@ test("authorization separates authoring, review, and publishing duties", () => {
       "approve",
       draft,
     ),
-    { allowed: false, reason: "self_review_forbidden" },
+    { allowed: true, reason: "allowed" },
   );
   assert.deepEqual(
     getKnowledgeCmsAuthorizationDecision(
@@ -427,7 +427,7 @@ test("authorization separates authoring, review, and publishing duties", () => {
       "request_changes",
       draft,
     ),
-    { allowed: false, reason: "self_review_forbidden" },
+    { allowed: true, reason: "allowed" },
   );
 });
 
@@ -575,7 +575,7 @@ test("authors can update their own drafts while optimistic revisions protect edi
   );
 });
 
-test("the workflow requires a different verified reviewer before publishing", async () => {
+test("the workflow requires current verified review before publishing", async () => {
   const {
     KnowledgeCmsReviewerVerificationError,
     KnowledgeCmsWorkflow,
@@ -597,23 +597,6 @@ test("the workflow requires a different verified reviewer before publishing", as
     author,
   );
   assert.equal(submitted.status, "in_review");
-
-  await assert.rejects(
-    workflow.transition(
-      "article",
-      created.id,
-      {
-        action: "approve",
-        expectedRevision: 2,
-        reviewerVerificationId: "wa-license-check-1",
-        reviewDueAt: "2027-07-30",
-      },
-      { id: author.id, roles: ["reviewer"], agentSlug: "devon-west" },
-    ),
-    (error: unknown) =>
-      error instanceof KnowledgeCmsAuthorizationError &&
-      error.reason === "self_review_forbidden",
-  );
 
   await assert.rejects(
     workflow.transition(
@@ -691,40 +674,6 @@ test("the workflow requires a different verified reviewer before publishing", as
       {
         action: "publish",
         expectedRevision: 3,
-        decisionNote: "Reviewer must not publish their own approval.",
-      },
-      { ...reviewer, roles: ["reviewer", "publisher"] },
-    ),
-    (error: unknown) =>
-      error instanceof KnowledgeCmsAuthorizationError &&
-      error.reason === "reviewer_publisher_separation_required",
-  );
-  await assert.rejects(
-    workflow.transition(
-      "article",
-      created.id,
-      {
-        action: "publish",
-        expectedRevision: 3,
-        decisionNote: "A second account cannot reuse the reviewer identity.",
-      },
-      {
-        id: "second-reviewer-account",
-        roles: ["publisher"],
-        agentSlug: "lynn-wold",
-      },
-    ),
-    (error: unknown) =>
-      error instanceof KnowledgeCmsAuthorizationError &&
-      error.reason === "reviewer_publisher_separation_required",
-  );
-  await assert.rejects(
-    workflow.transition(
-      "article",
-      created.id,
-      {
-        action: "publish",
-        expectedRevision: 3,
         decisionNote: "An indexing decision was not supplied.",
       },
       publisher,
@@ -776,6 +725,62 @@ test("the workflow requires a different verified reviewer before publishing", as
   assert.equal(
     repository.events.find((event) => event.event === "publish")?.note,
     "Approved canonical and indexing decision verified.",
+  );
+});
+
+test("a verified licensed owner can approve and publish their own record", async () => {
+  const { KnowledgeCmsWorkflow } = await loadServerModules();
+  const repository = new MemoryKnowledgeCmsRepository();
+  const devon: KnowledgeCmsActor = {
+    id: "devon-google-account",
+    roles: ["author", "reviewer", "publisher"],
+    agentSlug: "devon-west",
+  };
+  enableKnowledgeCmsForTest();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => NOW,
+    idFactory: () => "devon-article",
+    reviewerVerifier: (agentSlug, verificationId) =>
+      agentSlug === "devon-west" &&
+      verificationId === "devon-west-wa-oic-2026-07-31",
+  });
+
+  const created = await workflow.create(articleInput(), devon);
+  const submitted = await workflow.transition(
+    "article",
+    created.id,
+    { action: "submit_for_review", expectedRevision: 1 },
+    devon,
+  );
+  const approved = await workflow.transition(
+    "article",
+    created.id,
+    {
+      action: "approve",
+      expectedRevision: submitted.audit.revision,
+      reviewerVerificationId: "devon-west-wa-oic-2026-07-31",
+      reviewDueAt: "2027-01-26",
+      decisionNote: "Reviewed the article against every governed source.",
+    },
+    devon,
+  );
+  const published = await workflow.transition(
+    "article",
+    created.id,
+    {
+      action: "publish",
+      expectedRevision: approved.audit.revision,
+      indexing: "blocked",
+      decisionNote: "Approved the private CMS publication separately.",
+    },
+    devon,
+  );
+
+  assert.equal(approved.review?.reviewedBy, devon.id);
+  assert.equal(published.publication?.publishedBy, devon.id);
+  assert.deepEqual(
+    repository.events.map((event) => event.event),
+    ["create", "submit_for_review", "approve", "publish"],
   );
 });
 

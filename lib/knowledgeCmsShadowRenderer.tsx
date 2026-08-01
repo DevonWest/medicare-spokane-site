@@ -250,14 +250,6 @@ export function validateKnowledgeCmsShadowRecord(
       }
     }
   }
-  if (
-    record.review?.reviewedBy &&
-    record.publication?.publishedBy === record.review.reviewedBy
-  ) {
-    errors.push(
-      "The candidate reviewer and publisher must remain different authenticated users.",
-    );
-  }
   errors.push(...validateKnowledgeCmsPublishReadiness(record, asOf));
   return uniqueErrors(errors);
 }

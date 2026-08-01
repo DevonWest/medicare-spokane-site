@@ -19,10 +19,23 @@ export type EditorialReviewerVerification = {
 
 /**
  * A reviewer must be explicitly added here after their active license and
- * educational-review role are checked. An empty registry intentionally keeps
- * all "Reviewed by" claims disabled.
+ * educational-review role are checked. The authenticated CMS account must
+ * also carry a matching knowledgeCmsAgentSlug claim before this evidence can
+ * authorize a review.
  */
-export const editorialReviewerVerifications: EditorialReviewerVerification[] = [];
+export const editorialReviewerVerifications: EditorialReviewerVerification[] = [
+  {
+    id: "devon-west-wa-oic-2026-07-31",
+    agentSlug: "devon-west",
+    status: "verified",
+    credentialName: "Washington insurance producer license",
+    jurisdiction: "Washington",
+    verifiedAt: "2026-07-31",
+    validThrough: "2027-07-31",
+    verificationSourceUrl:
+      "https://www.insurance.wa.gov/agent-and-company-lookup-tool",
+  },
+];
 
 function parseDateOnly(value: string): Date {
   return new Date(`${value}T00:00:00Z`);

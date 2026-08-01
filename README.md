@@ -230,11 +230,12 @@ append-only audit events. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records
-on the public website. Verified approval is available to a distinct licensed
-reviewer. A different authenticated publisher can record an explicit
-blocked-or-eligible indexing decision, publish into the private CMS search
-projection, and unpublish back to draft with an audited reason. Neither action
-creates a public route or changes the existing Resource Library.
+on the public website. Verified approval is available to an authenticated
+licensed reviewer, including the record owner. An authenticated publisher may
+then record a separate blocked-or-eligible indexing decision, publish into the
+private CMS search projection, and unpublish back to draft with an audited
+reason; the same verified account may perform both revision-bound actions.
+Neither action creates a public route or changes the existing Resource Library.
 Exact private `shadow` mode adds a publisher/admin workspace that checks
 governed published articles and immutable CMS rendering artifacts against all
 22 React and metadata parity contracts. The preview performs no writes,
@@ -244,8 +245,8 @@ source. A separate default-off control may create one revision-bound artifact
 and one audit event; it cannot overwrite, bulk-execute, or authorize cutover.
 The authenticated operational readiness report independently checks deployment
 flags, browser/Admin Firebase project alignment, aggregate role coverage,
-reviewer-publisher separation, deterministic article controls, execution
-history, and every current five-artifact migration receipt. It exposes no Auth
+verified review and publishing coverage, deterministic article controls,
+execution history, and every current five-artifact migration receipt. It exposes no Auth
 user identities, performs no repair or write, and cannot enable execution,
 publication, indexing, shadow mode, or public cutover.
 The publisher/admin beta activation preview then binds a fresh readiness receipt
