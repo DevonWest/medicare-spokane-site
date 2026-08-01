@@ -184,6 +184,16 @@ projection but does not add a route, sitemap entry, public card, schema block,
 or visible content to the existing site. Only the independent guarded-cutover
 configuration can route the 22 already-governed canonical paths.
 
+The admin-only governed article review queue is a convenience over the normal
+editorial workflow, not a migration or artifact executor. One record-specific
+attestation can advance exactly one unchanged governed article through its
+remaining submit, approve, and private-publish states. Every state keeps its
+own revision and append-only audit event; the server rechecks the immutable
+control, current sources, reviewer evidence, and expected revision first. Any
+blocked row stops the deterministic queue, indexing is forced to `blocked`, and
+the queue cannot change renderer mode, deploy, move traffic, or authorize
+cutover. There is no publish-all action.
+
 ## Authentication rollout prerequisites
 
 Before changing `KNOWLEDGE_CMS_ENABLED` to `true`:

@@ -437,18 +437,18 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] An author can submit only its own valid, current-source draft for review.
 - [ ] A reviewer without one current licensed-reviewer verification cannot
   return a record for changes.
-- [ ] A verified reviewer who is not the owner can request changes only with
-  required feedback, and the returned draft shows that feedback without
+- [ ] A verified reviewer can request changes, including on a record they own,
+  only with required feedback; the returned draft shows that feedback without
   exposing the verification identifier.
-- [ ] A verified reviewer who is not the owner can approve only with a required
+- [ ] A verified reviewer can approve a record they own only with a required
   decision note and a server-calculated review deadline.
-- [ ] A different user with `publisher` or `admin` can publish an approved
-  record only after choosing blocked or eligible indexing and entering a
-  required audit note.
+- [ ] The same verified account may perform the later, separate publish action
+  when it has `publisher` or `admin`, but must still choose blocked or eligible
+  indexing and enter a distinct required audit note.
 - [ ] Eligible indexing requires an approved canonical path and exact
   confirmation; a missing or mismatched confirmation fails closed.
-- [ ] The approving reviewer, including another account carrying the same
-  reviewer agent identity, cannot publish that record.
+- [ ] Approval and publication remain separate revision-bound actions with
+  separate append-only audit events, even when one account performs both.
 - [ ] A publisher can unpublish only with a required reason; the record returns
   to draft and its search projection is removed.
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
@@ -480,6 +480,10 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] The operator sequence is topics → FAQs → articles, exposes no bulk action,
   authorizes no execution itself, and requires a fresh report after every
   separately confirmed one-record transaction.
+- [ ] The admin-only governed article review queue advances exactly one existing
+  article per attestation, refuses any control/content/source mismatch, keeps
+  indexing blocked, and records separate submit, approve, and publish events;
+  it is not a migration, rendering-artifact, deployment, or cutover executor.
 - [ ] A publisher/admin can open `/admin/knowledge/beta-activation`; it reports
   exact `staging` and the canonical beta origin, binds a fresh valid readiness
   SHA-256, and shows no blocked activation check.

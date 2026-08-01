@@ -12,6 +12,9 @@ import type {
   KnowledgeCmsArticleMigrationExecutionRequest,
 } from "./knowledgeCmsArticleMigrationExecution";
 import type {
+  KnowledgeCmsArticleEditorialRolloutRequest,
+} from "./knowledgeCmsArticleEditorialRollout";
+import type {
   KnowledgeCmsSupportingMigrationExecutionRequest,
 } from "./knowledgeCmsSupportingMigrationExecution";
 import type {
@@ -400,6 +403,41 @@ export function parseKnowledgeCmsArticleMigrationExecutionForm(
     controlId,
     controlFingerprint,
     confirmation,
+  };
+}
+
+export function parseKnowledgeCmsArticleEditorialRolloutForm(
+  recordIdValue: unknown,
+  formData: FormData,
+): KnowledgeCmsArticleEditorialRolloutRequest {
+  const id =
+    typeof recordIdValue === "string" ? recordIdValue.trim() : "";
+  if (!isKnowledgeCmsRecordId(id)) {
+    throw new KnowledgeCmsAdminInputError([
+      "The selected governed article is invalid.",
+    ]);
+  }
+  if (formData.get("reviewAttestation") !== "confirmed") {
+    throw new KnowledgeCmsAdminInputError([
+      "Confirm the record-specific review attestation before continuing.",
+    ]);
+  }
+
+  return {
+    id,
+    expectedRevision: readInteger(formData, "expectedRevision", {
+      required: true,
+      min: 1,
+    })!,
+    attested: true,
+    approvalNote: readString(formData, "approvalNote", {
+      required: true,
+      maxLength: 2_000,
+    })!,
+    publicationNote: readString(formData, "publicationNote", {
+      required: true,
+      maxLength: 2_000,
+    })!,
   };
 }
 
