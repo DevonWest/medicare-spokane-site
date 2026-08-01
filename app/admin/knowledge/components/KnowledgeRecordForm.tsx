@@ -14,6 +14,10 @@ import type {
   KnowledgeCmsRecordKind,
   KnowledgeCmsSource,
 } from "@/lib/knowledgeCms";
+import {
+  createKnowledgeCmsSourceDraft,
+  prepareKnowledgeCmsSourcesForSubmission,
+} from "@/lib/knowledgeCmsEditor";
 
 type FormAction = (
   state: KnowledgeCmsAdminActionState,
@@ -32,18 +36,6 @@ const labelClass = "block text-sm font-semibold text-slate-800";
 
 function lines(values: string[] | undefined): string {
   return values?.join("\n") ?? "";
-}
-
-function emptySource(): KnowledgeCmsSource {
-  return {
-    id: "",
-    kind: "official",
-    title: "",
-    publisher: "",
-    url: "",
-    checkedAt: "",
-    reviewDueAt: "",
-  };
 }
 
 function TextField({
@@ -124,6 +116,7 @@ function SourceFields({
   initialSources: KnowledgeCmsSource[];
 }) {
   const [sources, setSources] = useState<KnowledgeCmsSource[]>(initialSources);
+  const preparedSources = prepareKnowledgeCmsSourcesForSubmission(sources);
 
   function update(index: number, patch: Partial<KnowledgeCmsSource>) {
     setSources((current) =>
@@ -139,126 +132,171 @@ function SourceFields({
         Sources
       </legend>
       <p className="mb-4 text-sm leading-6 text-slate-600">
-        Articles and FAQs need at least one current source before review. Saving
-        a draft does not submit it for review.
+        For most sources, enter only the title and official link. The source ID,
+        publisher, checked date, and six-month review date are filled
+        automatically and remain available under Source details.
       </p>
-      <input name="sources" type="hidden" value={JSON.stringify(sources)} />
+      <input
+        name="sources"
+        type="hidden"
+        value={JSON.stringify(preparedSources)}
+      />
       <div className="space-y-5">
-        {sources.map((source, index) => (
-          <div
-            className="rounded-lg border border-slate-200 bg-slate-50 p-4"
-            key={index}
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className={labelClass}>
-                Source ID
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) => update(index, { id: event.target.value })}
-                  required
-                  value={source.id}
-                />
-              </label>
-              <label className={labelClass}>
-                Source type
-                <select
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) =>
-                    update(index, {
-                      kind: event.target.value as KnowledgeCmsSource["kind"],
-                    })
+        {sources.map((source, index) => {
+          const prepared = preparedSources[index];
+          return (
+            <div
+              className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+              key={index}
+            >
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Source {index + 1}
+              </p>
+              <div className="mt-3 grid gap-4">
+                <label className={labelClass}>
+                  Source title
+                  <input
+                    className={inputClass}
+                    disabled={disabled}
+                    onChange={(event) =>
+                      update(index, { title: event.target.value })
+                    }
+                    required
+                    value={source.title}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Official HTTPS link
+                  <input
+                    className={inputClass}
+                    disabled={disabled}
+                    onChange={(event) =>
+                      update(index, { url: event.target.value })
+                    }
+                    pattern="https://.*"
+                    required
+                    type="url"
+                    value={source.url}
+                  />
+                </label>
+              </div>
+              {prepared.publisher && prepared.reviewDueAt ? (
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  {prepared.publisher} · review scheduled through{" "}
+                  {prepared.reviewDueAt}
+                </p>
+              ) : null}
+              <details className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+                  Source details
+                </summary>
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  These values are prepared automatically. Open this section
+                  only when a source needs a different publisher, type, ID, or
+                  review date.
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className={labelClass}>
+                    Source ID
+                    <input
+                      className={inputClass}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        update(index, { id: event.target.value })
+                      }
+                      placeholder={
+                        prepared.id || "Filled automatically from the title"
+                      }
+                      value={source.id}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Source type
+                    <select
+                      className={inputClass}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        update(index, {
+                          kind: event.target
+                            .value as KnowledgeCmsSource["kind"],
+                        })
+                      }
+                      value={source.kind}
+                    >
+                      <option value="official">Official</option>
+                      <option value="first_party">
+                        First-party disclosure
+                      </option>
+                    </select>
+                  </label>
+                  <label className={`${labelClass} md:col-span-2`}>
+                    Publisher
+                    <input
+                      className={inputClass}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        update(index, { publisher: event.target.value })
+                      }
+                      placeholder={
+                        prepared.publisher ||
+                        "Filled automatically from the website"
+                      }
+                      value={source.publisher}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Checked date
+                    <input
+                      className={inputClass}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        update(index, { checkedAt: event.target.value })
+                      }
+                      required
+                      type="date"
+                      value={source.checkedAt}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Review due
+                    <input
+                      className={inputClass}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        update(index, { reviewDueAt: event.target.value })
+                      }
+                      required
+                      type="date"
+                      value={source.reviewDueAt}
+                    />
+                  </label>
+                </div>
+              </details>
+              {!disabled ? (
+                <button
+                  className="mt-4 text-sm font-semibold text-red-700 hover:text-red-900"
+                  onClick={() =>
+                    setSources((current) =>
+                      current.filter((_, sourceIndex) => sourceIndex !== index),
+                    )
                   }
-                  value={source.kind}
+                  type="button"
                 >
-                  <option value="official">Official</option>
-                  <option value="first_party">First-party disclosure</option>
-                </select>
-              </label>
-              <label className={labelClass}>
-                Title
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) =>
-                    update(index, { title: event.target.value })
-                  }
-                  required
-                  value={source.title}
-                />
-              </label>
-              <label className={labelClass}>
-                Publisher
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) =>
-                    update(index, { publisher: event.target.value })
-                  }
-                  required
-                  value={source.publisher}
-                />
-              </label>
-              <label className={`${labelClass} md:col-span-2`}>
-                HTTPS URL
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) => update(index, { url: event.target.value })}
-                  required
-                  type="url"
-                  value={source.url}
-                />
-              </label>
-              <label className={labelClass}>
-                Checked date
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) =>
-                    update(index, { checkedAt: event.target.value })
-                  }
-                  required
-                  type="date"
-                  value={source.checkedAt}
-                />
-              </label>
-              <label className={labelClass}>
-                Review due
-                <input
-                  className={inputClass}
-                  disabled={disabled}
-                  onChange={(event) =>
-                    update(index, { reviewDueAt: event.target.value })
-                  }
-                  required
-                  type="date"
-                  value={source.reviewDueAt}
-                />
-              </label>
+                  Remove source
+                </button>
+              ) : null}
             </div>
-            {!disabled ? (
-              <button
-                className="mt-4 text-sm font-semibold text-red-700 hover:text-red-900"
-                onClick={() =>
-                  setSources((current) =>
-                    current.filter((_, sourceIndex) => sourceIndex !== index),
-                  )
-                }
-                type="button"
-              >
-                Remove source
-              </button>
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
       {!disabled ? (
         <button
           className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
           onClick={() =>
-            setSources((current) => [...current, emptySource()])
+            setSources((current) => [
+              ...current,
+              createKnowledgeCmsSourceDraft(),
+            ])
           }
           type="button"
         >
@@ -303,6 +341,18 @@ export default function KnowledgeRecordForm({
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
           This record is read-only. Only drafts may be edited, and authors may
           edit only drafts they own.
+        </div>
+      ) : null}
+
+      {editable ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+          <p className="font-semibold">Everyday editing</p>
+          <p className="mt-1">
+            Update the content and sources below. The CMS preserves existing
+            SEO, URLs, and relationships, and it creates a safe slug for new
+            records automatically. Technical overrides are under Advanced
+            settings.
+          </p>
         </div>
       ) : null}
 
@@ -424,129 +474,141 @@ export default function KnowledgeRecordForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-xl border border-slate-200 p-5">
-        <legend className="px-2 text-lg font-semibold text-slate-950">
-          Slug and search
-        </legend>
-        <div className="grid gap-5">
-          <TextField
-            defaultValue={record?.slug}
-            disabled={!editable}
-            label="Slug"
-            maxLength={200}
-            name="slug"
-          />
-          <TextAreaField
-            defaultValue={lines(record?.searchTerms)}
-            disabled={!editable}
-            help="One term per line. These remain private until a later public migration."
-            label="Search terms"
-            name="searchTerms"
-            rows={5}
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-xl border border-slate-200 p-5">
-        <legend className="px-2 text-lg font-semibold text-slate-950">
-          Discoverability metadata
-        </legend>
-        <p className="mb-4 text-sm leading-6 text-slate-600">
-          Drafts always remain blocked from indexing. These fields prepare a
-          future reviewed publication.
-        </p>
-        <div className="grid gap-5">
-          <TextField
-            defaultValue={record?.discoverability.pageTitle}
-            disabled={!editable}
-            label="Page title"
-            maxLength={300}
-            name="pageTitle"
-          />
-          <TextAreaField
-            defaultValue={record?.discoverability.description}
-            disabled={!editable}
-            label="Description"
-            name="description"
-            rows={3}
-          />
-          <TextField
-            defaultValue={record?.discoverability.canonicalPath}
-            disabled={!editable}
-            label="Future canonical path"
-            maxLength={500}
-            name="canonicalPath"
-          />
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-xl border border-slate-200 p-5">
-        <legend className="px-2 text-lg font-semibold text-slate-950">
-          Relationships
-        </legend>
-        <p className="mb-4 text-sm leading-6 text-slate-600">
-          Enter one identifier, slug, carrier name, or existing site path per
-          line.
-        </p>
-        <div className="grid gap-5 md:grid-cols-2">
-          <TextAreaField
-            defaultValue={lines(relationships?.articleIds)}
-            disabled={!editable}
-            label="Article IDs"
-            name="articleIds"
-            rows={4}
-          />
-          <TextAreaField
-            defaultValue={lines(relationships?.topicIds)}
-            disabled={!editable}
-            label="Topic IDs"
-            name="topicIds"
-            rows={4}
-          />
-          <TextAreaField
-            defaultValue={lines(relationships?.faqIds)}
-            disabled={!editable}
-            label="FAQ IDs"
-            name="faqIds"
-            rows={4}
-          />
-          <TextAreaField
-            defaultValue={lines(relationships?.citySlugs)}
-            disabled={!editable}
-            label="City slugs"
-            name="citySlugs"
-            rows={4}
-          />
-          <TextAreaField
-            defaultValue={lines(relationships?.agentSlugs)}
-            disabled={!editable}
-            label="Agent slugs"
-            name="agentSlugs"
-            rows={4}
-          />
-          <TextAreaField
-            defaultValue={lines(relationships?.carrierNames)}
-            disabled={!editable}
-            label="Carrier names"
-            name="carrierNames"
-            rows={4}
-          />
-          <div className="md:col-span-2">
-            <TextAreaField
-              defaultValue={lines(relationships?.existingPaths)}
-              disabled={!editable}
-              label="Existing site paths"
-              name="existingPaths"
-              rows={4}
-            />
-          </div>
-        </div>
-      </fieldset>
-
       <SourceFields
         disabled={!editable}
         initialSources={record?.sources ?? []}
       />
+
+      <details className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <summary className="cursor-pointer text-slate-950">
+          <span className="block text-lg font-semibold">Advanced settings</span>
+          <span className="mt-1 block text-sm font-normal leading-6 text-slate-600">
+            Slug, search terms, SEO metadata, and content relationships are
+            already preserved for migrated records. Open only when you need to
+            override them.
+          </span>
+        </summary>
+        <div className="mt-5 space-y-6">
+          <fieldset className="rounded-xl border border-slate-200 bg-white p-5">
+            <legend className="px-2 text-lg font-semibold text-slate-950">
+              Slug and search
+            </legend>
+            <div className="grid gap-5">
+              <TextField
+                defaultValue={record?.slug}
+                disabled={!editable}
+                label="Slug"
+                maxLength={200}
+                name="slug"
+              />
+              <TextAreaField
+                defaultValue={lines(record?.searchTerms)}
+                disabled={!editable}
+                help="One term per line. These remain private until a later public migration."
+                label="Search terms"
+                name="searchTerms"
+                rows={5}
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className="rounded-xl border border-slate-200 bg-white p-5">
+            <legend className="px-2 text-lg font-semibold text-slate-950">
+              Discoverability metadata
+            </legend>
+            <p className="mb-4 text-sm leading-6 text-slate-600">
+              Drafts always remain blocked from indexing. These fields prepare a
+              future reviewed publication.
+            </p>
+            <div className="grid gap-5">
+              <TextField
+                defaultValue={record?.discoverability.pageTitle}
+                disabled={!editable}
+                label="Page title"
+                maxLength={300}
+                name="pageTitle"
+              />
+              <TextAreaField
+                defaultValue={record?.discoverability.description}
+                disabled={!editable}
+                label="Description"
+                name="description"
+                rows={3}
+              />
+              <TextField
+                defaultValue={record?.discoverability.canonicalPath}
+                disabled={!editable}
+                label="Future canonical path"
+                maxLength={500}
+                name="canonicalPath"
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className="rounded-xl border border-slate-200 bg-white p-5">
+            <legend className="px-2 text-lg font-semibold text-slate-950">
+              Relationships
+            </legend>
+            <p className="mb-4 text-sm leading-6 text-slate-600">
+              Enter one identifier, slug, carrier name, or existing site path
+              per line.
+            </p>
+            <div className="grid gap-5 md:grid-cols-2">
+              <TextAreaField
+                defaultValue={lines(relationships?.articleIds)}
+                disabled={!editable}
+                label="Article IDs"
+                name="articleIds"
+                rows={4}
+              />
+              <TextAreaField
+                defaultValue={lines(relationships?.topicIds)}
+                disabled={!editable}
+                label="Topic IDs"
+                name="topicIds"
+                rows={4}
+              />
+              <TextAreaField
+                defaultValue={lines(relationships?.faqIds)}
+                disabled={!editable}
+                label="FAQ IDs"
+                name="faqIds"
+                rows={4}
+              />
+              <TextAreaField
+                defaultValue={lines(relationships?.citySlugs)}
+                disabled={!editable}
+                label="City slugs"
+                name="citySlugs"
+                rows={4}
+              />
+              <TextAreaField
+                defaultValue={lines(relationships?.agentSlugs)}
+                disabled={!editable}
+                label="Agent slugs"
+                name="agentSlugs"
+                rows={4}
+              />
+              <TextAreaField
+                defaultValue={lines(relationships?.carrierNames)}
+                disabled={!editable}
+                label="Carrier names"
+                name="carrierNames"
+                rows={4}
+              />
+              <div className="md:col-span-2">
+                <TextAreaField
+                  defaultValue={lines(relationships?.existingPaths)}
+                  disabled={!editable}
+                  label="Existing site paths"
+                  name="existingPaths"
+                  rows={4}
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+      </details>
 
       {state.message ? (
         <div

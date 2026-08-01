@@ -523,6 +523,32 @@ test("creating a record produces a private draft with immutable audit fields", a
   assert.deepEqual(repository.events.map((event) => event.event), ["create"]);
 });
 
+test("new drafts derive safe search and SEO defaults from everyday fields", async () => {
+  const { KnowledgeCmsWorkflow } = await loadServerModules();
+  const repository = new MemoryKnowledgeCmsRepository();
+  enableKnowledgeCmsForTest();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => NOW,
+    idFactory: () => "article-defaults",
+  });
+
+  const record = await workflow.create(
+    articleInput({
+      searchTerms: ["  "],
+      discoverability: undefined,
+    }),
+    author,
+  );
+
+  assert.equal(record.slug, "medicare-enrollment-in-spokane");
+  assert.deepEqual(record.searchTerms, ["Medicare Enrollment in Spokane"]);
+  assert.deepEqual(record.discoverability, {
+    pageTitle: "Medicare Enrollment in Spokane",
+    description: "A practical guide to Medicare enrollment timing.",
+    indexing: "blocked",
+  });
+});
+
 test("authors can update their own drafts while optimistic revisions protect edits", async () => {
   const { KnowledgeCmsWorkflow } = await loadServerModules();
   const repository = new MemoryKnowledgeCmsRepository();

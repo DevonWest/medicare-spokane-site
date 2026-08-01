@@ -121,6 +121,12 @@ request instead of trusting claims supplied by a form or browser state.
 - list and read views for authenticated CMS users;
 - private draft creation for authors, editors, and admins;
 - draft editing under the workflow's owner and role rules;
+- an everyday editor that keeps content and sources prominent while retaining
+  slug, search, SEO, and relationship overrides in a collapsed advanced
+  section;
+- automatic slug, search-term, page-title, and description defaults for new
+  records, plus source ID, publisher, checked-date, and six-month review-date
+  preparation that remains explicitly overridable;
 - current-revision checks that stop stale tabs from overwriting newer edits;
 - submit-for-review controls for authorized draft owners and editors;
 - request-changes controls for verified reviewers, with required feedback

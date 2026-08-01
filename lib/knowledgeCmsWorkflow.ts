@@ -114,11 +114,16 @@ function normalizeSources(
 function normalizeDiscoverability(
   value: Omit<KnowledgeCmsDiscoverability, "indexing"> | undefined,
   indexing: KnowledgeCmsDiscoverability["indexing"] = "blocked",
+  defaults: Omit<KnowledgeCmsDiscoverability, "indexing"> = {},
 ): KnowledgeCmsDiscoverability {
   return {
-    pageTitle: cleanOptional(value?.pageTitle),
-    description: cleanOptional(value?.description),
-    canonicalPath: cleanOptional(value?.canonicalPath),
+    pageTitle:
+      cleanOptional(value?.pageTitle) ?? cleanOptional(defaults.pageTitle),
+    description:
+      cleanOptional(value?.description) ?? cleanOptional(defaults.description),
+    canonicalPath:
+      cleanOptional(value?.canonicalPath) ??
+      cleanOptional(defaults.canonicalPath),
     indexing,
   };
 }
@@ -127,25 +132,43 @@ function resolveInputTitle(input: KnowledgeCmsCreateInput): string {
   return input.kind === "faq" ? input.question : input.title;
 }
 
+function resolveInputDescription(input: KnowledgeCmsCreateInput): string {
+  if (input.kind === "article") {
+    return input.summary;
+  }
+  if (input.kind === "topic") {
+    return input.description;
+  }
+  return input.answer;
+}
+
 function createBaseRecord(
   input: KnowledgeCmsCreateInput,
   actor: KnowledgeCmsActor,
   id: string,
   nowIso: string,
 ) {
+  const title = cleanRequired(resolveInputTitle(input));
+  const description = cleanRequired(resolveInputDescription(input));
+  const searchTerms = uniqueTrimmed(input.searchTerms);
   return {
     schemaVersion: KNOWLEDGE_CMS_SCHEMA_VERSION,
     id,
     kind: input.kind,
-    slug: generateKnowledgeCmsSlug(
-      cleanOptional(input.slug) ?? resolveInputTitle(input),
-    ),
+    slug: generateKnowledgeCmsSlug(cleanOptional(input.slug) ?? title),
     status: "draft" as const,
     ownerId: actor.id,
-    searchTerms: uniqueTrimmed(input.searchTerms),
+    searchTerms: searchTerms.length > 0 ? searchTerms : [title],
     relationships: normalizeKnowledgeCmsRelationships(input.relationships),
     sources: normalizeSources(input.sources),
-    discoverability: normalizeDiscoverability(input.discoverability),
+    discoverability: normalizeDiscoverability(
+      input.discoverability,
+      "blocked",
+      {
+        pageTitle: title.slice(0, 200).trim(),
+        description: description.slice(0, 500).trim(),
+      },
+    ),
     audit: {
       revision: 1,
       createdAt: nowIso,
