@@ -232,8 +232,6 @@ export interface KnowledgeCmsAuthorizationDecision {
     | "authentication_required"
     | "role_required"
     | "owner_required"
-    | "self_review_forbidden"
-    | "reviewer_publisher_separation_required"
     | "status_not_editable";
 }
 
@@ -1112,26 +1110,12 @@ export function getKnowledgeCmsAuthorizationDecision(
     if (!hasAnyRole(actor, ["reviewer", "admin"])) {
       return { allowed: false, reason: "role_required" };
     }
-    if (record?.ownerId === actor.id) {
-      return { allowed: false, reason: "self_review_forbidden" };
-    }
     return { allowed: true, reason: "allowed" };
   }
 
   if (action === "publish") {
     if (!hasAnyRole(actor, ["publisher", "admin"])) {
       return { allowed: false, reason: "role_required" };
-    }
-    if (
-      record?.review &&
-      (record.review.reviewedBy === actor.id ||
-        (actor.agentSlug !== undefined &&
-          record.review.reviewerAgentSlug === actor.agentSlug))
-    ) {
-      return {
-        allowed: false,
-        reason: "reviewer_publisher_separation_required",
-      };
     }
     return { allowed: true, reason: "allowed" };
   }

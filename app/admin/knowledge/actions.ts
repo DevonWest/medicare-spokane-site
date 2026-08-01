@@ -185,16 +185,6 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
     error instanceof KnowledgeCmsAuthenticationError ||
     error instanceof KnowledgeCmsAuthorizationError
   ) {
-    if (
-      error instanceof KnowledgeCmsAuthorizationError &&
-      error.reason === "reviewer_publisher_separation_required"
-    ) {
-      return {
-        ok: false,
-        message:
-          "The approving reviewer cannot publish the same record. A different authorized publisher is required.",
-      };
-    }
     return {
       ok: false,
       message: "Your session cannot perform this action. Sign in again or contact an administrator.",
@@ -364,7 +354,7 @@ export async function approveKnowledgeCmsRecordAction(
     return {
       ok: true,
       message:
-        "Approved for publisher review. This record is still private and unpublished.",
+        "Approved and ready for the separate publishing decision. This record is still private and unpublished.",
       revision: updated.revision,
     };
   } catch (error) {

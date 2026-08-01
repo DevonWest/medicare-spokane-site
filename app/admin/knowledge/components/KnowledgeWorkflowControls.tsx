@@ -184,14 +184,14 @@ function ApproveControl({
       />
       <p className="mt-3 text-sm leading-6 text-slate-600">
         Approval does not publish this record or make it visible on the public
-        website. A separate publisher decision is still required.
+        website. A separate, audited publishing decision is still required.
       </p>
       <button
         className="mt-4 min-h-12 rounded-lg bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={pending || state.conflict}
         type="submit"
       >
-        {pending ? "Approving…" : "Approve for publisher review"}
+        {pending ? "Approving…" : "Approve for publishing"}
       </button>
       <ActionMessage state={state} />
     </form>

@@ -708,11 +708,11 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
   assert.equal(publishable.workflowActions.publish, true);
   assert.equal(
     toKnowledgeCmsAdminRecordDto(approvedRecord, {
-      id: "another-reviewer-account",
-      roles: ["publisher"],
+      id: "reviewer-user",
+      roles: ["reviewer", "publisher"],
       agentSlug: "lynn-wold",
     }).workflowActions.publish,
-    false,
+    true,
   );
 
   const published = toKnowledgeCmsAdminRecordDto(

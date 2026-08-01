@@ -301,6 +301,47 @@ test("a governed article and immutable artifact produce exact private shadow evi
   );
 });
 
+test("private shadow accepts separately audited review and publication by one account", async () => {
+  const { buildKnowledgeCmsShadowPreview } = await loadShadowRenderer();
+  const record = articleRecord("turning-65-spokane", {
+    review: {
+      reviewerAgentSlug: "devon-west",
+      reviewerVerificationId: "devon-west-wa-oic-2026-07-31",
+      reviewedBy: "devon-google-account",
+      reviewedAt: "2026-07-30T21:00:00.000Z",
+      reviewDueAt: "2027-01-26",
+      decisionNote: "Reviewed every governed source.",
+    },
+    publication: {
+      publishedAt: "2026-07-30T21:30:00.000Z",
+      publishedBy: "devon-google-account",
+    },
+    audit: {
+      revision: 4,
+      createdAt: "2026-07-30T20:00:00.000Z",
+      createdBy: "devon-google-account",
+      updatedAt: "2026-07-30T21:30:00.000Z",
+      updatedBy: "devon-google-account",
+    },
+  });
+  const representation = await representationDocument(
+    "turning-65-spokane",
+    record,
+  );
+  const preview = buildKnowledgeCmsShadowPreview(
+    [record],
+    [{ id: representation.id, data: representation.data }],
+    { asOf: NOW, rendererMode: "shadow" },
+  );
+
+  assert.equal(
+    preview.results.find(
+      (candidate) => candidate.entryId === "turning-65-spokane",
+    )?.status,
+    "parity_passed",
+  );
+});
+
 test("beta parity approval requires all 22 exact artifacts and rejects unexpected documents", async () => {
   const { buildKnowledgeCmsShadowPreview } = await loadShadowRenderer();
   const records = knowledgeCmsRouteParityManifest.map((parity) =>
