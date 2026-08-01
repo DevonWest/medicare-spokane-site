@@ -34,7 +34,7 @@ export default function KnowledgeArticleMigrationExecutionControl({
   return (
     <form
       action={formAction}
-      className="rounded-xl border border-amber-300 bg-amber-50 p-4"
+      className="min-w-0 rounded-xl border border-amber-300 bg-amber-50 p-4"
     >
       <p className="font-bold text-amber-950">
         Create one private draft
@@ -61,7 +61,7 @@ export default function KnowledgeArticleMigrationExecutionControl({
         </p>
       ) : null}
       <button
-        className="mt-3 rounded-lg bg-amber-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="mt-3 w-full rounded-lg bg-amber-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
         disabled={pending}
         type="submit"
       >

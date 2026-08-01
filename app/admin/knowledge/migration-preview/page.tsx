@@ -564,7 +564,7 @@ export default async function KnowledgeMigrationPreviewPage() {
           ) : null}
         </section>
 
-        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-8 min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 p-6 md:p-8">
             <h2 className="text-xl font-bold text-slate-950">
               Proposed record inventory
@@ -575,19 +575,10 @@ export default async function KnowledgeMigrationPreviewPage() {
               an eligible record when its one-record execution gate is enabled.
             </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-600">
-                <tr>
-                  <th className="px-5 py-4">Target</th>
-                  <th className="px-5 py-4">Origin</th>
-                  <th className="px-5 py-4">State</th>
-                  <th className="px-5 py-4">Canonical / relationships</th>
-                  <th className="px-5 py-4">Findings</th>
-                  <th className="px-5 py-4">Execution</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+          <ul
+            className="divide-y divide-slate-200"
+            data-testid="knowledge-migration-candidate-inventory"
+          >
                 {preview.candidates.map((candidate) => {
                   const receipt = materializationByTargetId.get(
                     candidate.target.id,
@@ -617,28 +608,37 @@ export default async function KnowledgeMigrationPreviewPage() {
                   );
 
                   return (
-                  <tr className="align-top" key={candidate.key}>
-                    <td className="px-5 py-5">
+                  <li
+                    className="grid min-w-0 gap-5 p-5 text-sm md:grid-cols-2 md:p-6 xl:grid-cols-3"
+                    key={candidate.key}
+                  >
+                    <section className="min-w-0">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Target
+                      </h3>
                       <p className="font-semibold text-slate-950">
                         {candidate.target.title}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 break-all text-xs text-slate-500">
                         {candidate.target.kind}:{candidate.target.id}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 break-all text-xs text-slate-500">
                         slug: {candidate.target.slug}
                       </p>
-                    </td>
-                    <td className="px-5 py-5 text-slate-700">
+                    </section>
+                    <section className="min-w-0 text-slate-700">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Origin
+                      </h3>
                       <p>{candidate.origin.kind.replaceAll("_", " ")}</p>
                       {"path" in candidate.origin ? (
                         <>
-                          <p className="mt-1 font-mono text-xs text-slate-500">
+                          <p className="mt-1 break-all font-mono text-xs text-slate-500">
                             {candidate.origin.path}
                           </p>
                           {candidate.target.kind === "article" &&
                           candidate.target.routeParity ? (
-                            <p className="mt-1 font-mono text-xs text-slate-500">
+                            <p className="mt-1 break-all font-mono text-xs text-slate-500">
                               {candidate.target.routeParity.sourceFile}
                             </p>
                           ) : null}
@@ -646,7 +646,7 @@ export default async function KnowledgeMigrationPreviewPage() {
                       ) : null}
                       {supportingControl ? (
                         <>
-                          <p className="mt-2 font-semibold text-slate-800">
+                          <p className="mt-2 break-all font-semibold text-slate-800">
                             Control: {supportingControl.controlId}
                           </p>
                           <p>
@@ -662,15 +662,21 @@ export default async function KnowledgeMigrationPreviewPage() {
                           </p>
                         </>
                       ) : null}
-                    </td>
-                    <td className="px-5 py-5">
+                    </section>
+                    <section className="min-w-0">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        State
+                      </h3>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${stateStyles[candidate.state]}`}
                       >
                         {formatState(candidate.state)}
                       </span>
-                    </td>
-                    <td className="px-5 py-5 text-xs leading-6 text-slate-600">
+                    </section>
+                    <section className="min-w-0 text-xs leading-6 text-slate-600">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Canonical / relationships
+                      </h3>
                       <p>
                         Canonical:{" "}
                         {candidate.target.canonicalPath ?? "none proposed"}
@@ -813,8 +819,11 @@ export default async function KnowledgeMigrationPreviewPage() {
                           ) : null}
                         </>
                       ) : null}
-                    </td>
-                    <td className="min-w-80 px-5 py-5">
+                    </section>
+                    <section className="min-w-0">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Findings
+                      </h3>
                       {candidate.issues.length === 0 ? (
                         <p className="text-sm font-semibold text-emerald-700">
                           No mapping conflicts.
@@ -834,8 +843,11 @@ export default async function KnowledgeMigrationPreviewPage() {
                           ))}
                         </ul>
                       )}
-                    </td>
-                    <td className="min-w-80 px-5 py-5">
+                    </section>
+                    <section className="min-w-0">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Execution
+                      </h3>
                       {articleExecutionAvailable && articleControl ? (
                         <KnowledgeArticleMigrationExecutionControl
                           confirmationPhrase={
@@ -875,13 +887,11 @@ export default async function KnowledgeMigrationPreviewPage() {
                               : "Topic/FAQ execution gate disabled."}
                         </p>
                       )}
-                    </td>
-                  </tr>
+                    </section>
+                  </li>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+          </ul>
         </div>
       </div>
     </section>

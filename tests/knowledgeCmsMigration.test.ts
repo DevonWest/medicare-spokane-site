@@ -523,6 +523,11 @@ test("admin migration route gates preview and single-record execution separately
   assert.match(page, /admin/);
   assert.match(page, /isKnowledgeCmsArticleMigrationExecutionEnabled/);
   assert.match(page, /KnowledgeArticleMigrationExecutionControl/);
+  assert.match(
+    page,
+    /data-testid="knowledge-migration-candidate-inventory"/,
+  );
+  assert.match(page, /md:grid-cols-2 md:p-6 xl:grid-cols-3/);
   assert.doesNotMatch(page, /["']use client["']/);
   assert.match(dataAccess, /requireKnowledgeCmsActor/);
   assert.match(dataAccess, /createArticleMigrationDraft/);

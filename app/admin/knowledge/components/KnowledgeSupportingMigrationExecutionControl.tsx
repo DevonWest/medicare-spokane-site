@@ -32,7 +32,7 @@ export default function KnowledgeSupportingMigrationExecutionControl({
   return (
     <form
       action={formAction}
-      className="rounded-xl border border-violet-300 bg-violet-50 p-4"
+      className="min-w-0 rounded-xl border border-violet-300 bg-violet-50 p-4"
     >
       <p className="font-bold text-violet-950">
         Create one private {kind} draft
@@ -58,7 +58,7 @@ export default function KnowledgeSupportingMigrationExecutionControl({
         </p>
       ) : null}
       <button
-        className="mt-3 rounded-lg bg-violet-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="mt-3 w-full rounded-lg bg-violet-700 px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
         disabled={pending}
         type="submit"
       >
