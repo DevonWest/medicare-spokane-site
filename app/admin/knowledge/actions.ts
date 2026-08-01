@@ -68,8 +68,62 @@ import {
   KnowledgeCmsDisabledError,
   KnowledgeCmsNotFoundError,
 } from "@/lib/knowledgeCmsRepository";
+import {
+  KnowledgeCmsAiFeatureError,
+  applyKnowledgeCmsAiRun,
+  createKnowledgeCmsAiRun,
+  isKnowledgeCmsAiRunId,
+} from "@/lib/knowledgeCmsAiDal";
+import {
+  KnowledgeCmsAiInputError,
+  KnowledgeCmsAiProviderError,
+  parseKnowledgeCmsAiRequest,
+} from "@/lib/knowledgeCmsAi";
+import {
+  KnowledgeCmsSeoFeatureError,
+  runKnowledgeCmsSeoScan,
+} from "@/lib/knowledgeCmsSeoDal";
 
 function errorState(error: unknown): KnowledgeCmsAdminActionState {
+  if (error instanceof KnowledgeCmsAiProviderError) {
+    return {
+      ok: false,
+      message:
+        error.reason === "unconfigured"
+          ? "The OpenAI API key is not configured for this deployment."
+          : error.reason === "invalid_response"
+            ? "The AI response did not pass the CMS safety checks. Nothing was saved; try again or narrow the request."
+            : "The AI provider is temporarily unavailable. Nothing was saved; try again later.",
+    };
+  }
+  if (error instanceof KnowledgeCmsAiInputError) {
+    return {
+      ok: false,
+      message: "Check the copilot request and try again.",
+      errors: error.errors,
+    };
+  }
+  if (error instanceof KnowledgeCmsAiFeatureError) {
+    const messages: Record<KnowledgeCmsAiFeatureError["reason"], string> = {
+      already_applied: "This proposal has already been applied.",
+      disabled: "The AI copilot is not enabled.",
+      invalid_clock: "The server clock could not support this AI action.",
+      proposal_not_applyable: "This proposal is advisory and cannot be applied as a draft.",
+      run_not_found: "This copilot proposal no longer exists.",
+      target_not_draft: "The target article changed or is no longer an editable draft.",
+      wrong_actor: "Only the administrator who created this proposal can apply it.",
+    };
+    return { ok: false, message: messages[error.reason], conflict: true };
+  }
+  if (error instanceof KnowledgeCmsSeoFeatureError) {
+    return {
+      ok: false,
+      message:
+        error.reason === "disabled"
+          ? "The continuous SEO scanner is not enabled."
+          : "The server clock could not support this SEO scan.",
+    };
+  }
   if (error instanceof KnowledgeCmsAdminInputError) {
     return {
       ok: false,
@@ -265,6 +319,65 @@ export async function createKnowledgeCmsDraftAction(
   }
 
   revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+  redirect(destination);
+}
+
+export async function runKnowledgeCmsSeoScanAction(
+  _previousState: KnowledgeCmsAdminActionState,
+  _formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  void _previousState;
+  void _formData;
+  try {
+    const scan = await runKnowledgeCmsSeoScan({ trigger: "manual" });
+    revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/copilot`);
+    return {
+      ok: true,
+      message: `Scan complete: ${scan.summary.totalOpportunities} prioritized opportunities across ${scan.summary.pagesAudited} public pages and ${scan.summary.recordsAudited} CMS records.`,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function createKnowledgeCmsAiRunAction(
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  let destination: string;
+  try {
+    const request = parseKnowledgeCmsAiRequest(formData);
+    const run = await createKnowledgeCmsAiRun(request);
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/copilot?run=${encodeURIComponent(run.id)}`;
+  } catch (error) {
+    return errorState(error);
+  }
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/copilot`);
+  redirect(destination);
+}
+
+export async function applyKnowledgeCmsAiRunAction(
+  runId: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  let destination: string;
+  try {
+    if (formData.get("confirmation") !== "apply_private_draft") {
+      throw new KnowledgeCmsAiInputError([
+        "Confirm that the proposal will remain a private draft.",
+      ]);
+    }
+    if (!isKnowledgeCmsAiRunId(runId)) {
+      throw new KnowledgeCmsAiFeatureError("run_not_found");
+    }
+    const applied = await applyKnowledgeCmsAiRun(runId);
+    destination = `${KNOWLEDGE_CMS_ADMIN_PATH}/article/${encodeURIComponent(applied.id)}`;
+  } catch (error) {
+    return errorState(error);
+  }
+  revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+  revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/copilot`);
   redirect(destination);
 }
 

@@ -185,6 +185,15 @@ lib/
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | Independent public-routing gate. It requires exact CMS enablement, `cutover`, a current approval receipt, and every execution gate disabled. | `false` |
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | Receipt suffix of the current immutable cutover approval. It must be exactly 64 lowercase hexadecimal characters. | _empty_ |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. `static` is the default, `shadow` enables private comparison, and `cutover` is effective only through the complete guarded routing configuration. | `static` |
+| `KNOWLEDGE_CMS_SEO_ENABLED` | Enables the admin-only deterministic SEO workbench. Exact `true` is required. It does not change public content. | `false` |
+| `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED` | Adds Search Console page/query evidence to SEO scans through Application Default Credentials. | `false` |
+| `SEARCH_CONSOLE_SITE_URL` | Search Console property, normally `sc-domain:medicareinspokane.com`. | _required when Search Console is enabled_ |
+| `KNOWLEDGE_CMS_AI_ENABLED` | Enables the admin-only OpenAI copilot. Proposals remain advisory until explicitly applied as private drafts. | `false` |
+| `OPENAI_API_KEY` | OpenAI API credential supplied to Cloud Run from Secret Manager. Never use a browser-exposed variable. | _required when AI is enabled_ |
+| `KNOWLEDGE_CMS_AI_MODEL` | Routine structured research/drafting model. | `gpt-5.6-terra` |
+| `KNOWLEDGE_CMS_AI_DEEP_MODEL` | Higher-capability model used only when the administrator selects deeper research. | `gpt-5.6-sol` |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | Enables the protected scheduled-scan endpoint. | `false` |
+| `KNOWLEDGE_CMS_SEO_CRON_TOKEN` | Random 32+ character bearer token supplied from Secret Manager to the scheduled endpoint. | _required when continuous SEO is enabled_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 
@@ -222,6 +231,14 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 `POST /api/review-feedback` follows the same backup-first pattern for the review funnel: validate the request, save the feedback to the `review_feedback` collection, then attempt the CRM public form sync without blocking a successful response after the Firestore write.
 
 ## Knowledge CMS foundation
+
+The admin-only Content & SEO Copilot combines deterministic page/CMS audits,
+Search Console comparison periods, guarded web research, and structured AI
+proposals. AI can create or update only a private article draft; it cannot
+submit, approve, publish, enable indexing, or change public routing. See
+[`docs/knowledge-cms-ai-seo-copilot.md`](docs/knowledge-cms-ai-seo-copilot.md)
+for architecture, activation, Search Console access, secrets, scheduling, and
+rollback.
 
 The default-off editorial foundation defines governed `knowledge_articles`,
 `knowledge_topics`, and `knowledge_faqs` records, plus revision-bound

@@ -25,6 +25,12 @@
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT required only for cutover
 #   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static, private shadow, or guarded cutover
+#   KNOWLEDGE_CMS_SEO_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_AI_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED optional; defaults to false
+#   OPENAI_API_KEY_SECRET required when the AI gate is true (Secret Manager name)
+#   KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET required when continuous SEO is true
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
@@ -103,6 +109,13 @@ jobs:
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED || 'false' }}
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT || '' }}
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
+      KNOWLEDGE_CMS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEO_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_AI_ENABLED: ${{ vars.KNOWLEDGE_CMS_AI_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED || 'false' }}
+      SEARCH_CONSOLE_SITE_URL: ${{ vars.SEARCH_CONSOLE_SITE_URL || 'sc-domain:medicareinspokane.com' }}
+      KNOWLEDGE_CMS_AI_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_MODEL || 'gpt-5.6-terra' }}
+      KNOWLEDGE_CMS_AI_DEEP_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MODEL || 'gpt-5.6-sol' }}
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
     steps:
@@ -119,6 +132,17 @@ jobs:
             echo "service=${{ vars.CLOUD_RUN_SERVICE_BETA }}" >> "$GITHUB_OUTPUT"
             echo "site_url=https://beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
             echo "site_env=staging" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$KNOWLEDGE_CMS_AI_ENABLED" = "true" ]; then
+            echo "openai_secret=OPENAI_API_KEY=${{ vars.OPENAI_API_KEY_SECRET }}:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "openai_secret=" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED" = "true" ]; then
+            echo "seo_cron_secret=KNOWLEDGE_CMS_SEO_CRON_TOKEN=${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET }}:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "seo_cron_secret=" >> "$GITHUB_OUTPUT"
           fi
 
           echo "image=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPO }}/site-${TARGET}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
@@ -145,6 +169,32 @@ jobs:
               exit 1
               ;;
           esac
+          for feature_flag in KNOWLEDGE_CMS_SEO_ENABLED KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED KNOWLEDGE_CMS_AI_ENABLED KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED; do
+            feature_value="${!feature_flag}"
+            case "$feature_value" in
+              true|false) ;;
+              *) echo "::error::$feature_flag must be exactly true or false"; exit 1 ;;
+            esac
+          done
+          if [ "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" ]; then
+            test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_SEO_ENABLED requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
+          fi
+          if [ "$KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED" = "true" ]; then
+            test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
+            test -n "$SEARCH_CONSOLE_SITE_URL" || (echo "::error::SEARCH_CONSOLE_SITE_URL is required" && exit 1)
+          fi
+          if [ "$KNOWLEDGE_CMS_AI_ENABLED" = "true" ]; then
+            test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_AI_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
+            case "${{ vars.OPENAI_API_KEY_SECRET }}" in
+              ''|*[!A-Za-z0-9_-]*) echo "::error::OPENAI_API_KEY_SECRET must name a Secret Manager secret"; exit 1 ;;
+            esac
+          fi
+          if [ "$KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED" = "true" ]; then
+            test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
+            case "${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET }}" in
+              ''|*[!A-Za-z0-9_-]*) echo "::error::KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET must name a Secret Manager secret"; exit 1 ;;
+            esac
+          fi
           case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
             static|shadow|cutover)
               ;;
@@ -283,7 +333,17 @@ jobs:
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
+            KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
+            KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
+            KNOWLEDGE_CMS_AI_ENABLED=${{ env.KNOWLEDGE_CMS_AI_ENABLED }}
+            KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED }}
+            SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
+            KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
+            KNOWLEDGE_CMS_AI_DEEP_MODEL=${{ env.KNOWLEDGE_CMS_AI_DEEP_MODEL }}
             NODE_ENV=production
+          secrets: |
+            ${{ steps.cfg.outputs.openai_secret }}
+            ${{ steps.cfg.outputs.seo_cron_secret }}
 
       - name: Deploy production cutover candidate with no traffic
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' && env.TARGET == 'production' }}
@@ -315,7 +375,17 @@ jobs:
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
+            KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
+            KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
+            KNOWLEDGE_CMS_AI_ENABLED=${{ env.KNOWLEDGE_CMS_AI_ENABLED }}
+            KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED }}
+            SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
+            KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
+            KNOWLEDGE_CMS_AI_DEEP_MODEL=${{ env.KNOWLEDGE_CMS_AI_DEEP_MODEL }}
             NODE_ENV=production
+          secrets: |
+            ${{ steps.cfg.outputs.openai_secret }}
+            ${{ steps.cfg.outputs.seo_cron_secret }}
 
       - name: Show service URL
         run: |

@@ -341,6 +341,8 @@ test("CMS collection names preserve the promised article, topic, and FAQ objects
     KNOWLEDGE_CMS_COLLECTIONS.canonicalPaths,
     "knowledge_cms_canonical_paths",
   );
+  assert.equal(KNOWLEDGE_CMS_COLLECTIONS.aiRuns, "knowledge_cms_ai_runs");
+  assert.equal(KNOWLEDGE_CMS_COLLECTIONS.seoScans, "knowledge_cms_seo_scans");
 });
 
 test("slug generation is deterministic and safe for public paths", () => {
@@ -428,6 +430,23 @@ test("authorization enforces role boundaries while allowing one account to revie
       draft,
     ),
     { allowed: true, reason: "allowed" },
+  );
+  const admin: KnowledgeCmsActor = { id: "cms-admin", roles: ["admin"] };
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(admin, "run_seo_scan").allowed,
+    true,
+  );
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(admin, "use_ai_copilot").allowed,
+    true,
+  );
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(editor, "run_seo_scan").allowed,
+    false,
+  );
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(editor, "use_ai_copilot").allowed,
+    false,
   );
 });
 
