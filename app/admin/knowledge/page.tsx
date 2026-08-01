@@ -31,6 +31,7 @@ export default async function KnowledgeAdminPage() {
   );
   const canPreviewShadow =
     canPreviewMigration && isKnowledgeCmsPrivateShadowEnabled();
+  const canRunArticleReviewQueue = actor.roles.includes("admin");
 
   return (
     <section className="bg-slate-50 px-5 py-10 md:py-14">
@@ -91,6 +92,14 @@ export default async function KnowledgeAdminPage() {
                 >
                   Migration preview
                 </Link>
+                {canRunArticleReviewQueue ? (
+                  <Link
+                    className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-100"
+                    href="/admin/knowledge/article-review-queue"
+                  >
+                    Article review queue
+                  </Link>
+                ) : null}
               </>
             ) : null}
             {canPreviewShadow ? (

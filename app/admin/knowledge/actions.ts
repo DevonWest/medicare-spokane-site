@@ -8,6 +8,7 @@ import {
   isKnowledgeCmsRecordId,
   isKnowledgeCmsRecordKind,
   parseKnowledgeCmsArticleMigrationExecutionForm,
+  parseKnowledgeCmsArticleEditorialRolloutForm,
   parseKnowledgeCmsNativeRepresentationExecutionForm,
   parseKnowledgeCmsPublicCutoverApprovalForm,
   parseKnowledgeCmsSupportingMigrationExecutionForm,
@@ -16,6 +17,13 @@ import {
   parseKnowledgeCmsWorkflowForm,
   type KnowledgeCmsAdminActionState,
 } from "@/lib/knowledgeCmsAdmin";
+import {
+  KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_PATH,
+} from "@/lib/knowledgeCmsArticleEditorialRollout";
+import {
+  KnowledgeCmsArticleEditorialRolloutError,
+  executeKnowledgeCmsArticleEditorialRollout,
+} from "@/lib/knowledgeCmsArticleEditorialRolloutDal";
 import {
   approveKnowledgeCmsAdminRecord,
   createKnowledgeCmsAdminRecord,
@@ -74,6 +82,28 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       ok: false,
       message: "This record is not ready for that action.",
       errors: error.errors,
+    };
+  }
+  if (error instanceof KnowledgeCmsArticleEditorialRolloutError) {
+    if (error.reason === "already_complete") {
+      return {
+        ok: true,
+        message: "All governed articles are already privately published.",
+      };
+    }
+    if (error.reason === "inventory_blocked") {
+      return {
+        ok: false,
+        message:
+          "The governed article queue found a control, content, source, or workflow mismatch. Review the blocked row before continuing.",
+        conflict: true,
+      };
+    }
+    return {
+      ok: false,
+      message:
+        "The next governed article or its revision changed. Reload the queue before continuing.",
+      conflict: true,
     };
   }
   if (error instanceof KnowledgeCmsArticleMigrationExecutionError) {
@@ -392,6 +422,34 @@ export async function publishKnowledgeCmsRecordAction(
       ok: true,
       message:
         "CMS publication recorded. This still does not add a public website page.",
+      revision: updated.revision,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function publishNextGovernedKnowledgeCmsArticleAction(
+  recordId: string,
+  _previousState: KnowledgeCmsAdminActionState,
+  formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  try {
+    const request = parseKnowledgeCmsArticleEditorialRolloutForm(
+      recordId,
+      formData,
+    );
+    const updated =
+      await executeKnowledgeCmsArticleEditorialRollout(request);
+    revalidatePath(KNOWLEDGE_CMS_ADMIN_PATH);
+    revalidatePath(KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_PATH);
+    revalidatePath(
+      `${KNOWLEDGE_CMS_ADMIN_PATH}/article/${encodeURIComponent(updated.id)}`,
+    );
+    return {
+      ok: true,
+      message:
+        "One governed article was reviewed and published in the private CMS. Indexing remains blocked and public rendering remains static.",
       revision: updated.revision,
     };
   } catch (error) {

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import type { DecodedIdToken, UserRecord } from "firebase-admin/auth";
 import {
   KnowledgeCmsAdminInputError,
+  parseKnowledgeCmsArticleEditorialRolloutForm,
   parseKnowledgeCmsArticleMigrationExecutionForm,
   parseKnowledgeCmsCreateForm,
   parseKnowledgeCmsUpdateForm,
@@ -466,6 +467,42 @@ test("article migration parsing accepts only the bound control and typed confirm
   );
 });
 
+test("article rollout form requires a record-specific attestation and audit notes", () => {
+  const form = new FormData();
+  form.set("expectedRevision", "3");
+  form.set("approvalNote", " Verified governed source evidence. ");
+  form.set("publicationNote", " Private publication remains blocked. ");
+  assert.throws(
+    () =>
+      parseKnowledgeCmsArticleEditorialRolloutForm(
+        "resource-entry--turning-65-spokane",
+        form,
+      ),
+    /review attestation/i,
+  );
+
+  form.set("reviewAttestation", "confirmed");
+  assert.deepEqual(
+    parseKnowledgeCmsArticleEditorialRolloutForm(
+      "resource-entry--turning-65-spokane",
+      form,
+    ),
+    {
+      id: "resource-entry--turning-65-spokane",
+      expectedRevision: 3,
+      attested: true,
+      approvalNote: "Verified governed source evidence.",
+      publicationNote: "Private publication remains blocked.",
+    },
+  );
+
+  assert.throws(
+    () =>
+      parseKnowledgeCmsArticleEditorialRolloutForm("../wrong", form),
+    /selected governed article is invalid/i,
+  );
+});
+
 test("workflow form parsing accepts only governed transition fields", () => {
   const submit = new FormData();
   submit.set("expectedRevision", "7");
@@ -747,6 +784,7 @@ test("admin routes remain default-off and publication stays private and server-a
     "app/admin/knowledge/login/page.tsx",
     "app/admin/knowledge/new/page.tsx",
     "app/admin/knowledge/[kind]/[id]/page.tsx",
+    "app/admin/knowledge/article-review-queue/page.tsx",
     "app/admin/knowledge/migration-preview/page.tsx",
     "app/admin/knowledge/migration-preview/[recordId]/page.tsx",
     "app/admin/knowledge/readiness/page.tsx",
@@ -784,6 +822,7 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(actions, /requestKnowledgeCmsChangesAction/);
   assert.match(actions, /approveKnowledgeCmsRecordAction/);
   assert.match(actions, /publishKnowledgeCmsRecordAction/);
+  assert.match(actions, /publishNextGovernedKnowledgeCmsArticleAction/);
   assert.match(actions, /unpublishKnowledgeCmsRecordAction/);
   assert.match(actions, /createKnowledgeCmsArticleMigrationDraftAction/);
   assert.match(dataAccess, /resolveCurrentEditorialReviewerVerification/);
