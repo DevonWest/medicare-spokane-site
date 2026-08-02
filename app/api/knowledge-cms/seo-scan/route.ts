@@ -6,6 +6,7 @@ import {
   runKnowledgeCmsSeoScan,
 } from "@/lib/knowledgeCmsSeoDal";
 import { env } from "@/lib/runtimeValues";
+import { hasCurrentKnowledgeCmsContinuousSeoActivation } from "@/lib/knowledgeCmsCopilotActivation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,6 +46,12 @@ export async function POST(request: Request) {
   if (!validToken(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  if (!(await hasCurrentKnowledgeCmsContinuousSeoActivation())) {
+    return NextResponse.json(
+      { error: "activation_unverified" },
+      { status: 503 },
+    );
+  }
 
   try {
     const scan = await runKnowledgeCmsSeoScan({
@@ -54,6 +61,15 @@ export async function POST(request: Request) {
         roles: ["admin"],
       },
     });
+    if (
+      process.env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED === "true" &&
+      scan.searchConsoleStatus !== "available"
+    ) {
+      return NextResponse.json(
+        { error: "search_console_unavailable" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({
       status: "ok",
       scanId: scan.id,

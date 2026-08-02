@@ -195,7 +195,7 @@ lib/
 | `KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS` | Hard response ceiling for routine copilot requests, including reasoning tokens. | `16000` |
 | `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | Hard response ceiling for administrator-selected deeper research. | `24000` |
 | `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | OpenAI request timeout; deployment accepts 30,000–240,000 milliseconds. | `180000` |
-| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | Enables the protected scheduled-scan endpoint. | `false` |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | Enables the protected scheduled-scan endpoint. Deployment also requires Search Console, and execution requires current live activation evidence for the exact environment/configuration. | `false` |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN` | Random 32+ character bearer token supplied from Secret Manager to the scheduled endpoint. | _required when continuous SEO is enabled_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
@@ -243,7 +243,11 @@ initial CMS mutation. A separate confirmation snapshots the exact private CMS
 publication and opens the proposal as an indexing-blocked draft only while the
 public renderer remains static. AI cannot submit, approve, publish, enable
 indexing, or change public routing. Token and web-search usage are retained on
-each run, and output/time limits are enforced before activation. See
+each run, and output/time limits are enforced before activation. A separate
+live check verifies Search Console access and both configured OpenAI models
+without sending CMS content or making a generation request. Its sanitized,
+environment-bound evidence expires after 35 days and is required before the
+scheduled scanner can execute. See
 [`docs/knowledge-cms-ai-seo-copilot.md`](docs/knowledge-cms-ai-seo-copilot.md)
 for architecture, activation, Search Console access, secrets, scheduling, and
 rollback.

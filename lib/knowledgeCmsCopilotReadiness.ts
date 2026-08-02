@@ -18,7 +18,13 @@ export interface KnowledgeCmsCopilotReadiness {
   totalCount: number;
 }
 
-type RuntimeEnvironment = Record<string, string | undefined>;
+export type KnowledgeCmsCopilotRuntimeEnvironment = Record<
+  string,
+  string | undefined
+>;
+
+export const KNOWLEDGE_CMS_AI_DEFAULT_MODEL = "gpt-5.6-terra";
+export const KNOWLEDGE_CMS_AI_DEFAULT_DEEP_MODEL = "gpt-5.6-sol";
 
 function enabled(value: string | undefined): boolean {
   return value === "true";
@@ -31,6 +37,21 @@ function configured(value: string | undefined): boolean {
 function validModel(value: string | undefined, fallback: string): string | undefined {
   const candidate = value?.trim() || fallback;
   return /^gpt-[A-Za-z0-9._-]{1,80}$/.test(candidate) ? candidate : undefined;
+}
+
+export function resolveKnowledgeCmsAiModels(
+  runtime: KnowledgeCmsCopilotRuntimeEnvironment = process.env,
+): { routineModel?: string; deepModel?: string } {
+  return {
+    routineModel: validModel(
+      runtime.KNOWLEDGE_CMS_AI_MODEL,
+      KNOWLEDGE_CMS_AI_DEFAULT_MODEL,
+    ),
+    deepModel: validModel(
+      runtime.KNOWLEDGE_CMS_AI_DEEP_MODEL,
+      KNOWLEDGE_CMS_AI_DEFAULT_DEEP_MODEL,
+    ),
+  };
 }
 
 function validSearchConsoleSite(value: string | undefined): string | undefined {
@@ -61,7 +82,7 @@ function check(
 }
 
 export function getKnowledgeCmsCopilotReadiness(
-  runtime: RuntimeEnvironment = process.env,
+  runtime: KnowledgeCmsCopilotRuntimeEnvironment = process.env,
 ): KnowledgeCmsCopilotReadiness {
   const cmsEnabled = enabled(runtime.KNOWLEDGE_CMS_ENABLED);
   const seoEnabled = enabled(runtime.KNOWLEDGE_CMS_SEO_ENABLED);
@@ -75,14 +96,7 @@ export function getKnowledgeCmsCopilotReadiness(
   const searchConsoleSite = validSearchConsoleSite(
     runtime.SEARCH_CONSOLE_SITE_URL,
   );
-  const routineModel = validModel(
-    runtime.KNOWLEDGE_CMS_AI_MODEL,
-    "gpt-5.6-terra",
-  );
-  const deepModel = validModel(
-    runtime.KNOWLEDGE_CMS_AI_DEEP_MODEL,
-    "gpt-5.6-sol",
-  );
+  const { routineModel, deepModel } = resolveKnowledgeCmsAiModels(runtime);
 
   const checks: KnowledgeCmsCopilotReadinessCheck[] = [
     check(

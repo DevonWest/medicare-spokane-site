@@ -248,6 +248,59 @@ test("OpenAI requests cap output and return auditable usage without storing cont
   }
 });
 
+test("OpenAI activation verifies both configured models without generating content", async () => {
+  mockServerOnlyModule();
+  const { verifyKnowledgeCmsOpenAiAccess } = await import(
+    "../lib/knowledgeCmsAiOpenAi"
+  );
+  const requested: string[] = [];
+  const result = await verifyKnowledgeCmsOpenAiAccess({
+    runtime: {
+      KNOWLEDGE_CMS_AI_ENABLED: "true",
+      OPENAI_API_KEY: "private-test-key",
+      KNOWLEDGE_CMS_AI_MODEL: "gpt-5.6-terra",
+      KNOWLEDGE_CMS_AI_DEEP_MODEL: "gpt-5.6-sol",
+    },
+    client: {
+      models: {
+        async retrieve(model) {
+          requested.push(model);
+          return { id: model };
+        },
+      },
+    },
+  });
+  assert.deepEqual(requested.sort(), ["gpt-5.6-sol", "gpt-5.6-terra"]);
+  assert.deepEqual(result, {
+    status: "available",
+    routineModel: "gpt-5.6-terra",
+    deepModel: "gpt-5.6-sol",
+  });
+});
+
+test("OpenAI activation reports sanitized access failures", async () => {
+  mockServerOnlyModule();
+  const { verifyKnowledgeCmsOpenAiAccess } = await import(
+    "../lib/knowledgeCmsAiOpenAi"
+  );
+  const result = await verifyKnowledgeCmsOpenAiAccess({
+    runtime: {
+      KNOWLEDGE_CMS_AI_ENABLED: "true",
+      OPENAI_API_KEY: "private-test-key",
+    },
+    client: {
+      models: {
+        async retrieve() {
+          throw { status: 403, message: "private provider detail" };
+        },
+      },
+    },
+  });
+  assert.equal(result.status, "unavailable");
+  assert.equal(result.errorCode, "access_denied");
+  assert.doesNotMatch(JSON.stringify(result), /private provider detail/);
+});
+
 test("published proposals require confirmation and open an audited private working revision", async () => {
   mockServerOnlyModule();
   const previous = process.env.KNOWLEDGE_CMS_AI_ENABLED;
