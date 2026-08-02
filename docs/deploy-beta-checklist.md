@@ -365,6 +365,8 @@ When it shows **OK**, `https://beta.medicareinspokane.com` will serve the placeh
 
 What happens:
 - The `ci` job runs `npm ci`, `npm run lint`, `npm test`, `npm run build`. All must pass.
+- The deploy job requires Cloud SDK 573.0.0 or newer and verifies readiness-probe
+  support before building or pushing an image.
 - The `deploy` job authenticates to GCP, builds a Docker image with build-args
   - `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`
   - `NEXT_PUBLIC_SITE_ENV=staging`

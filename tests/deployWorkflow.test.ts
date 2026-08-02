@@ -10,7 +10,7 @@ const workflow = readFileSync(
   "utf8",
 );
 
-test("Cloud Run deployments use Node 24-compatible maintained actions", () => {
+test("Cloud Run deployments use compatible maintained actions and Cloud SDK", () => {
   assert.doesNotMatch(workflow, /actions\/checkout@v4/);
   assert.doesNotMatch(workflow, /actions\/setup-node@v4/);
   assert.doesNotMatch(workflow, /google-github-actions\/(?:auth|setup-gcloud|deploy-cloudrun)@v2/);
@@ -18,6 +18,14 @@ test("Cloud Run deployments use Node 24-compatible maintained actions", () => {
   assert.match(workflow, /actions\/setup-node@v5/);
   assert.match(workflow, /google-github-actions\/auth@v3/);
   assert.match(workflow, /google-github-actions\/setup-gcloud@v3/);
+  assert.match(workflow, /version: ">= 573\.0\.0"/);
+  assert.match(workflow, /- name: Verify Cloud SDK readiness-probe support/);
+  assert.match(workflow, /gcloud run deploy --help/);
+  assert.match(workflow, /--readiness-probe/);
+  assert.ok(
+    workflow.indexOf("- name: Verify Cloud SDK readiness-probe support") <
+      workflow.indexOf("- name: Build container image"),
+  );
   assert.equal(
     (workflow.match(/google-github-actions\/deploy-cloudrun@v3/g) ?? [])
       .length,

@@ -302,9 +302,19 @@ jobs:
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
+        id: setup_gcloud
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
+          version: ">= 573.0.0"
+
+      - name: Verify Cloud SDK readiness-probe support
+        run: |
+          echo "Cloud SDK version: ${{ steps.setup_gcloud.outputs.version }}"
+          if ! gcloud run deploy --help 2>&1 | grep -Fq -- "--readiness-probe"; then
+            echo "::error::Cloud SDK must support gcloud run deploy --readiness-probe"
+            exit 1
+          fi
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
