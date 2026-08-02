@@ -69,9 +69,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: "npm"
@@ -126,7 +126,7 @@ jobs:
       TARGET: ${{ github.event.inputs.target || 'beta' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Resolve target config
         id: cfg
@@ -296,13 +296,13 @@ jobs:
           esac
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
 
@@ -325,8 +325,9 @@ jobs:
         run: docker push "${{ steps.cfg.outputs.image }}"
 
       - name: Deploy standard or beta-canary revision
+        id: deploy_standard
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
-        uses: google-github-actions/deploy-cloudrun@v2
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
@@ -339,6 +340,8 @@ jobs:
             --memory=512Mi
             --min-instances=0
             --max-instances=10
+            --startup-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=0,failureThreshold=30,timeoutSeconds=2,periodSeconds=2
+            --readiness-probe=httpGet.path=/healthz,httpGet.port=8080,successThreshold=1,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
           env_vars: |
             NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
@@ -362,14 +365,16 @@ jobs:
             SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
             KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
             KNOWLEDGE_CMS_AI_DEEP_MODEL=${{ env.KNOWLEDGE_CMS_AI_DEEP_MODEL }}
+            APP_COMMIT_SHA=${{ github.sha }}
             NODE_ENV=production
           secrets: |
             ${{ steps.cfg.outputs.openai_secret }}
             ${{ steps.cfg.outputs.seo_cron_secret }}
 
       - name: Deploy production cutover candidate with no traffic
+        id: deploy_cutover_candidate
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' && env.TARGET == 'production' }}
-        uses: google-github-actions/deploy-cloudrun@v2
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
@@ -384,6 +389,8 @@ jobs:
             --max-instances=10
             --no-traffic
             --tag=cms-cutover-candidate
+            --startup-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=0,failureThreshold=30,timeoutSeconds=2,periodSeconds=2
+            --readiness-probe=httpGet.path=/healthz,httpGet.port=8080,successThreshold=1,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
           env_vars: |
             NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
@@ -407,10 +414,22 @@ jobs:
             SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
             KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
             KNOWLEDGE_CMS_AI_DEEP_MODEL=${{ env.KNOWLEDGE_CMS_AI_DEEP_MODEL }}
+            APP_COMMIT_SHA=${{ github.sha }}
             NODE_ENV=production
           secrets: |
             ${{ steps.cfg.outputs.openai_secret }}
             ${{ steps.cfg.outputs.seo_cron_secret }}
+
+      - name: Verify deployed public health
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        run: >-
+          node scripts/verify-cloud-run-health.mjs
+          --url "${{ steps.cfg.outputs.site_url }}/healthz"
+          --commit "${{ github.sha }}"
+          --target "$TARGET"
+          --attempts 36
+          --delay-ms 5000
+          --timeout-ms 10000
 
       - name: Show service URL
         run: |

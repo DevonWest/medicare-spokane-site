@@ -401,6 +401,8 @@ What happens:
     Secret Manager rather than repository plaintext
   - continuous SEO cannot deploy without Search Console enabled and cannot
     execute until an administrator records current live activation evidence
+  - `APP_COMMIT_SHA=<current Git commit>` so the public health check can prove
+    which revision is actually serving
   - `NODE_ENV=production`
 
 If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when
@@ -408,7 +410,11 @@ the Firebase browser API key or Auth domain variable is missing. Before
 enabling it, the runtime service account also needs
 `firebaseauth.users.get` and `firebaseauth.users.createSession`.
 
-The workflow's last step prints the service URL. Total runtime: ~4–7 minutes.
+Cloud Run checks `/healthz` before an instance can receive traffic. The workflow
+then retries the public `/healthz` route and fails unless it reports `ok`, the
+exact Git commit, the intended beta/production environment, and a valid renderer
+configuration. Its last step prints the service URL. Total runtime: ~4–10
+minutes, including public-route verification.
 
 > **If it fails, the error is in the job log.** Common causes: missing GitHub variable (read the `Validate target service variable is set` step), Artifact Registry repo doesn't exist (§3), or the deployer SA missing a role (§5b/c).
 
@@ -421,6 +427,8 @@ Open `https://beta.medicareinspokane.com` and walk these checks. Anything that f
 ### 8a. Site is up and serving the new image
 - [ ] Homepage loads, looks right, no console errors (DevTools → Console).
 - [ ] `curl -sI https://beta.medicareinspokane.com/healthz` returns `HTTP/2 200`.
+- [ ] `/healthz` reports `deployment.commitSha` equal to the commit shown in the
+  successful deploy run.
 
 ### 8b. Search engines are blocked (because `SITE_ENV=staging`)
 - [ ] `curl -s https://beta.medicareinspokane.com/robots.txt` shows `Disallow: /` for `User-agent: *`.
