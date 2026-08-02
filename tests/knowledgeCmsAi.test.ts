@@ -140,20 +140,34 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
     join(root, "lib/knowledgeCmsAiOpenAi.ts"),
     "utf8",
   );
+  const deploy = readFileSync(
+    join(root, ".github/workflows/deploy.yml"),
+    "utf8",
+  );
   const dal = readFileSync(join(root, "lib/knowledgeCmsAiDal.ts"), "utf8");
   const page = readFileSync(
     join(root, "app/admin/knowledge/copilot/page.tsx"),
     "utf8",
   );
   assert.match(controls, /apply_private_draft/);
+  assert.match(controls, /start_private_revision/);
   assert.match(controls, /will not submit, approve, publish, or enable indexing/);
   assert.match(route, /timingSafeEqual/);
   assert.match(route, /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED/);
   assert.match(provider, /store: false/);
   assert.match(provider, /allowed_domains/);
+  assert.match(provider, /max_output_tokens/);
+  assert.match(provider, /KNOWLEDGE_CMS_AI_TIMEOUT_MS/);
+  assert.match(
+    deploy,
+    /vars\.KNOWLEDGE_CMS_SEO_ENABLED \|\| vars\.KNOWLEDGE_CMS_ENABLED/,
+  );
+  assert.match(deploy, /KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS/);
+  assert.match(deploy, /KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS/);
   assert.match(dal, /revision_proposal/);
   assert.match(dal, /currentArticle\.status !== "published"/);
-  assert.match(page, /published CMS record, public route, indexing/);
+  assert.match(page, /immutable/);
+  assert.match(page, /static public/);
   assert.match(page, /AI proposal history/);
   assert.match(controls, /Continue refining this proposal/);
   assert.match(provider, /previousProposal/);

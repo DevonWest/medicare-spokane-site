@@ -343,6 +343,10 @@ test("CMS collection names preserve the promised article, topic, and FAQ objects
   );
   assert.equal(KNOWLEDGE_CMS_COLLECTIONS.aiRuns, "knowledge_cms_ai_runs");
   assert.equal(KNOWLEDGE_CMS_COLLECTIONS.seoScans, "knowledge_cms_seo_scans");
+  assert.equal(
+    KNOWLEDGE_CMS_COLLECTIONS.articleRevisionSnapshots,
+    "knowledge_cms_article_revision_snapshots",
+  );
 });
 
 test("slug generation is deterministic and safe for public paths", () => {
@@ -439,6 +443,14 @@ test("authorization enforces role boundaries while allowing one account to revie
   assert.equal(
     getKnowledgeCmsAuthorizationDecision(admin, "use_ai_copilot").allowed,
     true,
+  );
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(admin, "start_revision").allowed,
+    true,
+  );
+  assert.equal(
+    getKnowledgeCmsAuthorizationDecision(editor, "start_revision").allowed,
+    false,
   );
   assert.equal(
     getKnowledgeCmsAuthorizationDecision(editor, "run_seo_scan").allowed,
@@ -1018,6 +1030,133 @@ test("drafts do not produce search documents and unpublishing blocks indexing", 
   );
 });
 
+test("published articles can enter one route-stable private working revision", async () => {
+  const { KnowledgeCmsWorkflow } = await loadServerModules();
+  const repository = new MemoryKnowledgeCmsRepository();
+  const admin: KnowledgeCmsActor = {
+    id: "cms-admin",
+    roles: ["admin"],
+    agentSlug: "devon-west",
+  };
+  enableKnowledgeCmsForTest();
+  const workflow = new KnowledgeCmsWorkflow(repository, {
+    now: () => NOW,
+    idFactory: () => "article-working-revision",
+    reviewerVerifier: () => true,
+  });
+  const draft = await workflow.create(articleInput(), admin);
+  const submitted = await workflow.transition(
+    "article",
+    draft.id,
+    { action: "submit_for_review", expectedRevision: 1 },
+    admin,
+  );
+  const approved = await workflow.transition(
+    "article",
+    draft.id,
+    {
+      action: "approve",
+      expectedRevision: submitted.audit.revision,
+      reviewerVerificationId: "verification-1",
+      reviewDueAt: "2027-01-26",
+      decisionNote: "The first CMS publication was reviewed.",
+    },
+    admin,
+  );
+  const published = await workflow.transition(
+    "article",
+    draft.id,
+    {
+      action: "publish",
+      expectedRevision: approved.audit.revision,
+      indexing: "blocked",
+      decisionNote: "Published privately before the working revision.",
+    },
+    admin,
+  );
+
+  await assert.rejects(
+    workflow.startPublishedArticleRevision(
+      published.id,
+      articleInput({ slug: "a-different-route" }),
+      published.audit.revision,
+      admin,
+      {
+        sourceAiRunId: "4f59f915-58ca-4d35-9b3f-d7d28c589723",
+        note: "Attempt a route-changing revision.",
+      },
+    ),
+    /preserve the published slug and canonical path/i,
+  );
+
+  const revised = await workflow.startPublishedArticleRevision(
+    published.id,
+    articleInput({
+      body: "A clearer evidence-backed private working revision.",
+    }),
+    published.audit.revision,
+    admin,
+    {
+      sourceAiRunId: "4f59f915-58ca-4d35-9b3f-d7d28c589723",
+      note: "Start the reviewed AI working revision.",
+    },
+  );
+  assert.equal(revised.status, "draft");
+  assert.equal(revised.audit.revision, published.audit.revision + 1);
+  assert.equal(revised.review, undefined);
+  assert.equal(revised.publication, undefined);
+  assert.equal(revised.discoverability.indexing, "blocked");
+  assert.equal(
+    revised.workingRevision?.sourceRevision,
+    published.audit.revision,
+  );
+  assert.equal(
+    revised.workingRevision?.sourcePublishedAt,
+    published.publication?.publishedAt,
+  );
+  assert.deepEqual(validateKnowledgeCmsRecord(revised), []);
+  assert.equal(repository.events.at(-1)?.event, "start_revision");
+
+  const resubmitted = await workflow.transition(
+    "article",
+    revised.id,
+    {
+      action: "submit_for_review",
+      expectedRevision: revised.audit.revision,
+    },
+    admin,
+  );
+  const reapproved = await workflow.transition(
+    "article",
+    revised.id,
+    {
+      action: "approve",
+      expectedRevision: resubmitted.audit.revision,
+      reviewerVerificationId: "verification-1",
+      reviewDueAt: "2027-01-26",
+      decisionNote: "The working revision was reviewed independently.",
+    },
+    admin,
+  );
+  const republished = await workflow.transition(
+    "article",
+    revised.id,
+    {
+      action: "publish",
+      expectedRevision: reapproved.audit.revision,
+      indexing: "blocked",
+      decisionNote: "The reviewed working revision was privately published.",
+    },
+    admin,
+  );
+  assert.equal(republished.status, "published");
+  assert.equal(republished.kind, "article");
+  if (republished.kind !== "article") {
+    throw new Error("Expected an article working revision.");
+  }
+  assert.equal(republished.workingRevision, undefined);
+});
+
 test("submission blocks missing and expired evidence without blocking valid topics", async () => {
   const { KnowledgeCmsWorkflow } = await loadServerModules();
   const repository = new MemoryKnowledgeCmsRepository();
@@ -1260,6 +1399,131 @@ test("the Firestore adapter commits records, slug locks, search, and audit atomi
       "knowledge_cms_audit_events/article--article-1--0000000005",
     )?.note,
     "Withdraw while source evidence is rechecked.",
+  );
+});
+
+test("starting a working revision atomically preserves the published CMS snapshot", async () => {
+  const {
+    FirestoreKnowledgeCmsRepository,
+    KnowledgeCmsWorkflow,
+  } = await loadServerModules();
+  enableKnowledgeCmsForTest();
+  const admin: KnowledgeCmsActor = {
+    id: "cms-admin",
+    roles: ["admin"],
+    agentSlug: "devon-west",
+  };
+  const memory = new MemoryKnowledgeCmsRepository();
+  const workflow = new KnowledgeCmsWorkflow(memory, {
+    now: () => NOW,
+    idFactory: () => "article-snapshot",
+    reviewerVerifier: () => true,
+  });
+  const firestore = new FakeFirestore();
+  const storage = new FirestoreKnowledgeCmsRepository({
+    db: firestore as never,
+  });
+
+  const draft = await workflow.create(articleInput(), admin);
+  await storage.save(draft, {
+    expectedRevision: null,
+    event: "create",
+    actorId: admin.id,
+  });
+  const submitted = await workflow.transition(
+    "article",
+    draft.id,
+    { action: "submit_for_review", expectedRevision: 1 },
+    admin,
+  );
+  await storage.save(submitted, {
+    expectedRevision: 1,
+    event: "submit_for_review",
+    actorId: admin.id,
+  });
+  const approved = await workflow.transition(
+    "article",
+    draft.id,
+    {
+      action: "approve",
+      expectedRevision: 2,
+      reviewerVerificationId: "verification-1",
+      reviewDueAt: "2027-01-26",
+      decisionNote: "Reviewed before private publication.",
+    },
+    admin,
+  );
+  await storage.save(approved, {
+    expectedRevision: 2,
+    event: "approve",
+    actorId: admin.id,
+  });
+  const published = await workflow.transition(
+    "article",
+    draft.id,
+    {
+      action: "publish",
+      expectedRevision: 3,
+      indexing: "blocked",
+      decisionNote: "Privately published before revision.",
+    },
+    admin,
+  );
+  assert.equal(published.kind, "article");
+  if (published.kind !== "article") {
+    throw new Error("Expected a published article.");
+  }
+  await storage.save(published, {
+    expectedRevision: 3,
+    event: "publish",
+    actorId: admin.id,
+  });
+
+  const revised = await workflow.startPublishedArticleRevision(
+    published.id,
+    articleInput({ body: "The new private working-revision body." }),
+    published.audit.revision,
+    admin,
+    {
+      sourceAiRunId: "4f59f915-58ca-4d35-9b3f-d7d28c589723",
+      note: "Start the AI-assisted working revision.",
+    },
+  );
+  await storage.save(revised, {
+    expectedRevision: published.audit.revision,
+    event: "start_revision",
+    actorId: admin.id,
+    note: "Start the AI-assisted working revision.",
+  });
+
+  const snapshot = firestore.documents.get(
+    "knowledge_cms_article_revision_snapshots/article--article-snapshot--0000000004",
+  );
+  assert.equal(snapshot?.sourceRevision, 4);
+  assert.equal(snapshot?.sourceStatus, "published");
+  assert.equal(
+    (snapshot?.record as Record<string, unknown> | undefined)?.status,
+    "published",
+  );
+  assert.equal(
+    (snapshot?.record as Record<string, unknown> | undefined)?.body,
+    published.body,
+  );
+  assert.equal(
+    firestore.documents.get("knowledge_articles/article-snapshot")?.status,
+    "draft",
+  );
+  assert.equal(
+    firestore.documents.has(
+      "knowledge_search_documents/article--article-snapshot",
+    ),
+    false,
+  );
+  assert.equal(
+    firestore.documents.get(
+      "knowledge_cms_audit_events/article--article-snapshot--0000000005",
+    )?.event,
+    "start_revision",
   );
 });
 

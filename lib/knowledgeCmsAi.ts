@@ -60,6 +60,16 @@ export interface KnowledgeCmsAiProposal {
   citations: KnowledgeCmsAiCitation[];
 }
 
+export interface KnowledgeCmsAiUsage {
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  totalTokens: number;
+  webSearchCalls: number;
+  maxOutputTokens: number;
+}
+
 export interface KnowledgeCmsAiContext {
   request: KnowledgeCmsAiRequest;
   currentArticle?: KnowledgeCmsArticle;
@@ -78,7 +88,11 @@ export interface KnowledgeCmsAiProvider {
   generate(
     context: KnowledgeCmsAiContext,
     options: { actorId: string },
-  ): Promise<{ model: string; proposal: KnowledgeCmsAiProposal }>;
+  ): Promise<{
+    model: string;
+    proposal: KnowledgeCmsAiProposal;
+    usage?: KnowledgeCmsAiUsage;
+  }>;
 }
 
 export class KnowledgeCmsAiInputError extends Error {

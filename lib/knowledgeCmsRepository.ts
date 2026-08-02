@@ -9,6 +9,7 @@ import type {
 } from "firebase-admin/firestore";
 import { getFirestoreAdmin } from "./firebase-admin";
 import {
+  KNOWLEDGE_CMS_ARTICLE_REVISION_SNAPSHOT_SCHEMA_VERSION,
   KNOWLEDGE_CMS_COLLECTIONS,
   assertKnowledgeCmsActionAllowed,
   buildKnowledgeCmsSearchDocument,
@@ -16,6 +17,7 @@ import {
   parseKnowledgeCmsRecord,
   type KnowledgeCmsActor,
   type KnowledgeCmsArticle,
+  type KnowledgeCmsArticleRevisionSnapshot,
   type KnowledgeCmsFaq,
   type KnowledgeCmsRecord,
   type KnowledgeCmsRecordKind,
@@ -74,6 +76,7 @@ export type KnowledgeCmsAuditEvent =
   | "migration_create_private_supporting_draft"
   | "create_private_article_rendering"
   | "create_public_cutover_approval"
+  | "start_revision"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -213,6 +216,13 @@ function auditDocumentId(
   return `${record.kind}--${record.id}--${String(record.audit.revision).padStart(10, "0")}`;
 }
 
+function articleRevisionSnapshotDocumentId(
+  articleId: string,
+  sourceRevision: number,
+): string {
+  return `article--${articleId}--${String(sourceRevision).padStart(10, "0")}`;
+}
+
 function toFirestoreData(value: unknown): DocumentData {
   return JSON.parse(JSON.stringify(value)) as DocumentData;
 }
@@ -251,6 +261,72 @@ function assertSequentialRevision(
   if (next.audit.revision !== expected) {
     throw new KnowledgeCmsConflictError(
       `Knowledge CMS revision must advance to ${expected}.`,
+    );
+  }
+}
+
+function assertPublishedArticleRevisionStart(
+  current: KnowledgeCmsRecord | undefined,
+  next: KnowledgeCmsRecord,
+): asserts current is KnowledgeCmsArticle {
+  if (
+    !current ||
+    current.kind !== "article" ||
+    current.status !== "published" ||
+    next.kind !== "article" ||
+    next.status !== "draft" ||
+    !next.workingRevision ||
+    next.workingRevision.sourceRevision !== current.audit.revision ||
+    next.workingRevision.sourcePublishedAt !== current.publication?.publishedAt ||
+    next.workingRevision.sourcePublishedBy !== current.publication?.publishedBy ||
+    next.workingRevision.startedAt !== next.audit.updatedAt ||
+    next.workingRevision.startedBy !== next.audit.updatedBy ||
+    next.slug !== current.slug ||
+    next.discoverability.canonicalPath !==
+      current.discoverability.canonicalPath ||
+    next.discoverability.indexing !== "blocked" ||
+    next.review !== undefined ||
+    next.publication !== undefined
+  ) {
+    throw new KnowledgeCmsConflictError(
+      "A working revision must atomically replace one exact published article with an indexing-blocked draft on the same route.",
+    );
+  }
+}
+
+function assertWorkingRevisionContinuity(
+  current: KnowledgeCmsRecord | undefined,
+  next: KnowledgeCmsRecord,
+  event: KnowledgeCmsAuditEvent,
+): void {
+  if (event === "start_revision") {
+    assertPublishedArticleRevisionStart(current, next);
+    return;
+  }
+  if (current?.kind !== "article" || next.kind !== "article") {
+    if (next.kind === "article" && next.workingRevision) {
+      throw new KnowledgeCmsConflictError(
+        "Working-revision metadata may be created only by start_revision.",
+      );
+    }
+    return;
+  }
+  if (
+    next.workingRevision &&
+    JSON.stringify(next.workingRevision) !==
+      JSON.stringify(current.workingRevision)
+  ) {
+    throw new KnowledgeCmsConflictError(
+      "Working-revision metadata is immutable after the revision starts.",
+    );
+  }
+  if (
+    current.workingRevision &&
+    !next.workingRevision &&
+    event !== "publish"
+  ) {
+    throw new KnowledgeCmsConflictError(
+      "Only publication may close a working revision.",
     );
   }
 }
@@ -449,6 +525,20 @@ export class FirestoreKnowledgeCmsRepository
     const auditRef = this.db
       .collection(KNOWLEDGE_CMS_COLLECTIONS.audit)
       .doc(auditDocumentId(nextRecord));
+    const revisionSnapshotId =
+      options.event === "start_revision" &&
+      nextRecord.kind === "article" &&
+      options.expectedRevision !== null
+        ? articleRevisionSnapshotDocumentId(
+            nextRecord.id,
+            options.expectedRevision,
+          )
+        : undefined;
+    const revisionSnapshotRef = revisionSnapshotId
+      ? this.db
+          .collection(KNOWLEDGE_CMS_COLLECTIONS.articleRevisionSnapshots)
+          .doc(revisionSnapshotId)
+      : undefined;
 
     await this.db.runTransaction(async (transaction) => {
       const currentSnapshot = await transaction.get(recordRef);
@@ -458,6 +548,15 @@ export class FirestoreKnowledgeCmsRepository
       );
       assertExpectedRevision(current, options);
       assertSequentialRevision(current, nextRecord);
+      assertWorkingRevisionContinuity(current, nextRecord, options.event);
+      const revisionSnapshot = revisionSnapshotRef
+        ? await transaction.get(revisionSnapshotRef)
+        : undefined;
+      if (revisionSnapshot?.exists) {
+        throw new KnowledgeCmsConflictError(
+          "The immutable published-article revision snapshot already exists.",
+        );
+      }
 
       const nextSlugSnapshot = await transaction.get(nextSlugRef);
       if (options.expectedRevision === null && nextSlugSnapshot.exists) {
@@ -534,6 +633,27 @@ export class FirestoreKnowledgeCmsRepository
         : undefined;
 
       transaction.set(recordRef, toFirestoreData(nextRecord));
+      if (
+        revisionSnapshotRef &&
+        revisionSnapshotId &&
+        current?.kind === "article" &&
+        nextRecord.kind === "article" &&
+        nextRecord.workingRevision
+      ) {
+        const snapshot: KnowledgeCmsArticleRevisionSnapshot = {
+          schemaVersion:
+            KNOWLEDGE_CMS_ARTICLE_REVISION_SNAPSHOT_SCHEMA_VERSION,
+          id: revisionSnapshotId,
+          articleId: current.id,
+          sourceRevision: current.audit.revision,
+          sourceStatus: "published",
+          sourceAiRunId: nextRecord.workingRevision.sourceAiRunId,
+          createdAt: nextRecord.audit.updatedAt,
+          createdBy: options.actorId,
+          record: cloneKnowledgeCmsRecord(current) as KnowledgeCmsArticle,
+        };
+        transaction.set(revisionSnapshotRef, toFirestoreData(snapshot));
+      }
       transaction.set(nextSlugRef, {
         kind: nextRecord.kind,
         recordId: nextRecord.id,

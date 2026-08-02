@@ -19,8 +19,12 @@ This first release provides one end-to-end system:
 - private history for recent scans and actor-owned AI proposals;
 - complete working-revision proposals for published articles without
   unpublishing or mutating the published CMS record;
+- one separately confirmed promotion that preserves the exact published CMS
+  revision as an immutable snapshot and opens the proposal as a private draft;
 - follow-up refinement that carries the prior proposal into a new, separately
   stored AI run;
+- per-run token and web-search usage evidence plus enforced output and request
+  timeout ceilings;
 - one explicit confirmation that can only create or update a private draft;
   and
 - a secret-protected endpoint for recurring scans.
@@ -66,12 +70,24 @@ field limits, HTTPS sources, source review dates, slugs, canonical paths, and
 the task-specific draft rule. Applying a proposal uses the normal CMS workflow
 and expected revision. A changed or non-draft target fails closed.
 
-Published articles are intentionally different. The copilot may prepare and
-retain a complete private revision proposal against the exact published
-revision, but the proposal has no apply control. It cannot overwrite,
-unpublish, reindex, or otherwise mutate the published record. A later governed
-revision workflow must promote that work. Follow-up refinements preserve the
-earlier proposal as evidence and create a new run rather than rewriting history.
+Published articles are intentionally different. Generating and refining a
+proposal performs no CMS mutation. A separate confirmation may then start one
+private working revision only while the effective public renderer is static.
+That transaction verifies the exact published revision, preserves its full CMS
+record in `knowledge_cms_article_revision_snapshots`, removes the private search
+projection, blocks indexing, keeps the slug and canonical path unchanged, and
+opens the proposal as a normal draft. The verified static website page remains
+unchanged. The draft must still be submitted, reviewed, approved, and published
+through the existing governed workflow. Stale proposals, route changes, an
+existing working revision, or active CMS public routing fail closed.
+
+OpenAI responses have explicit output ceilings (16,000 routine and 24,000 deep
+tokens by default), one SDK retry, and a three-minute request timeout. Each saved
+run records input, cached-input, output, reasoning, and total tokens plus the
+number of web-search calls. It stores no API key, provider response ID, actor
+identity in the transmitted editorial context, or raw provider envelope.
+Follow-up refinements preserve the earlier proposal as evidence and create a new
+run rather than rewriting history.
 
 Continuous execution runs only the deterministic/Search Console scan. It does
 not spend AI tokens or silently generate content. An administrator chooses when
@@ -79,13 +95,17 @@ to ask the AI to turn current evidence into a strategy or draft.
 
 ## Activation order
 
-All gates default to `false`. Merge and deployment alone do not activate the
-copilot.
+Search Console, AI, and continuous scanning default to `false`. The manual
+deterministic scanner follows the private CMS gate when its own repository
+variable is unset; explicit `false` keeps it disabled. Merge and deployment
+alone do not activate a paid or scheduled integration.
 
 1. Deploy with all four new gates false and confirm `/healthz` plus the
    existing CMS still work.
-2. Set `KNOWLEDGE_CMS_SEO_ENABLED=true`, deploy beta, run one manual scan, and
-   inspect the technical/CMS findings.
+2. The manual deterministic scanner follows the private CMS gate when
+   `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
+   inspect the technical/CMS findings. Set the variable explicitly to `false`
+   at any time to retain the kill switch.
 3. Enable the Search Console API, grant the runtime service account property
    access, set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true`, and verify a scan
    reports `available` rather than `access_denied` or `site_not_found`.
@@ -115,6 +135,9 @@ Repository variables:
 | `KNOWLEDGE_CMS_AI_ENABLED` | `true` |
 | `KNOWLEDGE_CMS_AI_MODEL` | `gpt-5.6-terra` |
 | `KNOWLEDGE_CMS_AI_DEEP_MODEL` | `gpt-5.6-sol` |
+| `KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS` | `16000` |
+| `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | `24000` |
+| `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | `180000` |
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` |
@@ -198,9 +221,12 @@ After each environment is activated:
    source URL.
 7. Apply it and confirm the destination record is `draft`, indexing is
    blocked, and no public route changed.
-8. Select one published article and confirm the result is labeled a private
-   revision proposal with no apply control and no published-record mutation.
-9. Refine that proposal once and confirm both runs remain separately available
+8. Select one published article and confirm generation leaves the published
+   record unchanged. Review the result, explicitly start its private working
+   revision, and confirm the prior published CMS record exists as an immutable
+   snapshot while the current record is an indexing-blocked draft on the same
+   route. Confirm the static public page is unchanged.
+9. Refine another proposal once and confirm both runs remain separately available
    in AI proposal history.
 10. Confirm recent manual and scheduled evidence scans appear in scan history.
 11. Submit/review/publish only through the existing governed CMS workflow.

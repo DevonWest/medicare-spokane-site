@@ -206,10 +206,20 @@ function Proposal({
       </div>
       {run.status === "revision_proposal" ? (
         <p className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          This is a private working revision for a published article. The current
-          published CMS record, public route, indexing, and search projection remain
-          unchanged. Review and retain the proposal here until it is promoted through
-          a governed revision workflow.
+          This proposal has not changed the published CMS article. After you review it,
+          the working-revision control can preserve that publication as an immutable
+          snapshot and open this version as a private draft. The verified static public
+          page remains unchanged throughout the review cycle.
+        </p>
+      ) : null}
+      {run.usage ? (
+        <p className="mt-4 text-xs text-slate-500">
+          API usage: {run.usage.inputTokens.toLocaleString("en-US")} input ·{" "}
+          {run.usage.outputTokens.toLocaleString("en-US")} output ·{" "}
+          {run.usage.reasoningTokens.toLocaleString("en-US")} reasoning ·{" "}
+          {run.usage.webSearchCalls} web search
+          {run.usage.webSearchCalls === 1 ? "" : "es"} · output capped at{" "}
+          {run.usage.maxOutputTokens.toLocaleString("en-US")} tokens
         </p>
       ) : null}
       <p className="mt-5 whitespace-pre-wrap text-slate-700">{run.proposal.reasoning}</p>
@@ -260,10 +270,17 @@ function Proposal({
           </ul>
         </div>
       ) : null}
-      {run.status === "pending" && draft ? <KnowledgeCmsAiApplyControl runId={run.id} /> : null}
+      {(run.status === "pending" || run.status === "revision_proposal") && draft ? (
+        <KnowledgeCmsAiApplyControl
+          revisionProposal={run.status === "revision_proposal"}
+          runId={run.id}
+        />
+      ) : null}
       {run.status === "applied" && run.appliedRecordId ? (
         <Link className="mt-6 inline-flex font-semibold text-blue-700 hover:underline" href={`/admin/knowledge/article/${encodeURIComponent(run.appliedRecordId)}`}>
-          Open the applied private draft →
+          {run.targetStatus === "published"
+            ? "Open the private working revision →"
+            : "Open the applied private draft →"}
         </Link>
       ) : null}
       <KnowledgeCmsAiRefineControl
@@ -376,7 +393,7 @@ export default async function KnowledgeCmsCopilotPage({
           <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
             <span className={`rounded-full px-3 py-1 ${seoEnabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>SEO scanner {seoEnabled ? "enabled" : "disabled"}</span>
             <span className={`rounded-full px-3 py-1 ${aiEnabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>AI copilot {aiEnabled ? "enabled" : "not configured"}</span>
-            <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-800">Draft-only changes</span>
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-800">Human-controlled draft changes</span>
           </div>
         </header>
 

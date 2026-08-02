@@ -2,6 +2,7 @@ import {
   getKnowledgeCmsAuthorizationDecision,
   type KnowledgeCmsCreateInput,
   type KnowledgeCmsActor,
+  type KnowledgeCmsArticleWorkingRevision,
   type KnowledgeCmsDiscoverability,
   type KnowledgeCmsRecord,
   type KnowledgeCmsRecordKind,
@@ -55,6 +56,12 @@ export interface KnowledgeCmsAdminReviewDto {
   decisionNote?: string;
 }
 
+export interface KnowledgeCmsAdminWorkingRevisionDto {
+  sourceRevision: number;
+  sourcePublishedAt: string;
+  startedAt: string;
+}
+
 export interface KnowledgeCmsAdminWorkflowActionsDto {
   approve: boolean;
   publish: boolean;
@@ -68,12 +75,18 @@ type KnowledgeCmsAdminRecordDtoFor<
 > = RecordType extends KnowledgeCmsRecord
   ? Omit<
       RecordType,
-      "ownerId" | "audit" | "changeRequest" | "review" | "publication"
+      | "ownerId"
+      | "audit"
+      | "changeRequest"
+      | "review"
+      | "publication"
+      | "workingRevision"
     > & {
       changeRequest?: KnowledgeCmsAdminChangeRequestDto;
       editable: boolean;
       ownedByCurrentUser: boolean;
       review?: KnowledgeCmsAdminReviewDto;
+      workingRevision?: KnowledgeCmsAdminWorkingRevisionDto;
       revision: number;
       createdAt: string;
       updatedAt: string;
@@ -142,12 +155,14 @@ export function toKnowledgeCmsAdminRecordDto(
     ownerId?: string;
     publication?: KnowledgeCmsRecord["publication"];
     review?: KnowledgeCmsRecord["review"];
+    workingRevision?: KnowledgeCmsArticleWorkingRevision;
   };
   delete safeRecord.audit;
   delete safeRecord.changeRequest;
   delete safeRecord.ownerId;
   delete safeRecord.publication;
   delete safeRecord.review;
+  delete safeRecord.workingRevision;
   return {
     ...safeRecord,
     editable: getKnowledgeCmsAuthorizationDecision(actor, "update", record)
@@ -170,6 +185,15 @@ export function toKnowledgeCmsAdminRecordDto(
             ...(record.review.decisionNote
               ? { decisionNote: record.review.decisionNote }
               : {}),
+          },
+        }
+      : {}),
+    ...(record.kind === "article" && record.workingRevision
+      ? {
+          workingRevision: {
+            sourceRevision: record.workingRevision.sourceRevision,
+            sourcePublishedAt: record.workingRevision.sourcePublishedAt,
+            startedAt: record.workingRevision.startedAt,
           },
         }
       : {}),

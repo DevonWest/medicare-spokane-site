@@ -1,10 +1,13 @@
 export const KNOWLEDGE_CMS_SCHEMA_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_ARTICLE_REVISION_SNAPSHOT_SCHEMA_VERSION =
+  1 as const;
 
 export const KNOWLEDGE_CMS_COLLECTIONS = {
   article: "knowledge_articles",
   topic: "knowledge_topics",
   faq: "knowledge_faqs",
   articleRenderings: "knowledge_cms_article_renderings",
+  articleRevisionSnapshots: "knowledge_cms_article_revision_snapshots",
   cutoverApprovals: "knowledge_cms_cutover_approvals",
   aiRuns: "knowledge_cms_ai_runs",
   seoScans: "knowledge_cms_seo_scans",
@@ -44,6 +47,7 @@ export type KnowledgeCmsAction =
   | "approve_public_cutover"
   | "use_ai_copilot"
   | "run_seo_scan"
+  | "start_revision"
   | "update"
   | "submit_for_review"
   | "approve"
@@ -117,6 +121,15 @@ export interface KnowledgeCmsAuditFields {
   updatedBy: string;
 }
 
+export interface KnowledgeCmsArticleWorkingRevision {
+  sourceRevision: number;
+  sourcePublishedAt: string;
+  sourcePublishedBy: string;
+  sourceAiRunId: string;
+  startedAt: string;
+  startedBy: string;
+}
+
 interface KnowledgeCmsBaseRecord {
   schemaVersion: typeof KNOWLEDGE_CMS_SCHEMA_VERSION;
   id: string;
@@ -140,6 +153,19 @@ export interface KnowledgeCmsArticle extends KnowledgeCmsBaseRecord {
   summary: string;
   body: string;
   bodyFormat: "markdown";
+  workingRevision?: KnowledgeCmsArticleWorkingRevision;
+}
+
+export interface KnowledgeCmsArticleRevisionSnapshot {
+  schemaVersion: typeof KNOWLEDGE_CMS_ARTICLE_REVISION_SNAPSHOT_SCHEMA_VERSION;
+  id: string;
+  articleId: string;
+  sourceRevision: number;
+  sourceStatus: "published";
+  sourceAiRunId: string;
+  createdAt: string;
+  createdBy: string;
+  record: KnowledgeCmsArticle;
 }
 
 export interface KnowledgeCmsTopic extends KnowledgeCmsBaseRecord {
@@ -285,6 +311,8 @@ const sourceKinds = new Set<KnowledgeCmsSourceKind>([
 ]);
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/;
+const uuidV4Pattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
 const sitePathPattern = /^\/(?!\/)[A-Za-z0-9/_-]*$/;
 
@@ -669,6 +697,55 @@ function validateAudit(value: unknown): string[] {
   return errors;
 }
 
+function validateArticleWorkingRevision(
+  value: unknown,
+  status: unknown,
+  audit: unknown,
+): string[] {
+  if (!isRecord(value)) {
+    return ["article.workingRevision must be an object."];
+  }
+
+  const errors: string[] = [];
+  const revision = isRecord(audit) ? audit.revision : undefined;
+  if (
+    typeof value.sourceRevision !== "number" ||
+    !Number.isSafeInteger(value.sourceRevision) ||
+    value.sourceRevision < 1 ||
+    (typeof revision === "number" && value.sourceRevision >= revision)
+  ) {
+    errors.push("article.workingRevision.sourceRevision is invalid.");
+  }
+  if (!isIsoInstant(value.sourcePublishedAt)) {
+    errors.push("article.workingRevision.sourcePublishedAt must be an ISO timestamp.");
+  }
+  if (
+    !isNonEmptyString(value.sourcePublishedBy, 200) ||
+    !identifierPattern.test(value.sourcePublishedBy)
+  ) {
+    errors.push("article.workingRevision.sourcePublishedBy is invalid.");
+  }
+  if (
+    !isNonEmptyString(value.sourceAiRunId, 200) ||
+    !uuidV4Pattern.test(value.sourceAiRunId)
+  ) {
+    errors.push("article.workingRevision.sourceAiRunId is invalid.");
+  }
+  if (!isIsoInstant(value.startedAt)) {
+    errors.push("article.workingRevision.startedAt must be an ISO timestamp.");
+  }
+  if (
+    !isNonEmptyString(value.startedBy, 200) ||
+    !identifierPattern.test(value.startedBy)
+  ) {
+    errors.push("article.workingRevision.startedBy is invalid.");
+  }
+  if (status === "published") {
+    errors.push("A published article cannot retain working-revision metadata.");
+  }
+  return errors;
+}
+
 function validateBaseRecord(value: Record<string, unknown>): string[] {
   const errors: string[] = [];
 
@@ -782,7 +859,19 @@ export function validateKnowledgeCmsRecord(value: unknown): string[] {
     if (value.bodyFormat !== "markdown") {
       errors.push('article.bodyFormat must equal "markdown".');
     }
+    if (value.workingRevision !== undefined) {
+      errors.push(
+        ...validateArticleWorkingRevision(
+          value.workingRevision,
+          value.status,
+          value.audit,
+        ),
+      );
+    }
   } else if (value.kind === "topic") {
+    if (value.workingRevision !== undefined) {
+      errors.push("Only articles may retain working-revision metadata.");
+    }
     if (!isNonEmptyString(value.title, 300)) {
       errors.push("topic.title is required.");
     }
@@ -804,6 +893,9 @@ export function validateKnowledgeCmsRecord(value: unknown): string[] {
       errors.push("topic.order must be a non-negative integer.");
     }
   } else if (value.kind === "faq") {
+    if (value.workingRevision !== undefined) {
+      errors.push("Only articles may retain working-revision metadata.");
+    }
     if (!isNonEmptyString(value.question, 500)) {
       errors.push("faq.question is required.");
     }
@@ -1128,6 +1220,12 @@ export function getKnowledgeCmsAuthorizationDecision(
       return { allowed: false, reason: "role_required" };
     }
     return { allowed: true, reason: "allowed" };
+  }
+
+  if (action === "start_revision") {
+    return hasAnyRole(actor, ["publisher", "admin"])
+      ? { allowed: true, reason: "allowed" }
+      : { allowed: false, reason: "role_required" };
   }
 
   if (

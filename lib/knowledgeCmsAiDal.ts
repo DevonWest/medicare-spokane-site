@@ -19,6 +19,7 @@ import {
   type KnowledgeCmsAiProposal,
   type KnowledgeCmsAiProvider,
   type KnowledgeCmsAiRequest,
+  type KnowledgeCmsAiUsage,
 } from "./knowledgeCmsAi";
 import { OpenAiKnowledgeCmsProvider } from "./knowledgeCmsAiOpenAi";
 import { requireKnowledgeCmsActor } from "./knowledgeCmsAdminAuth";
@@ -34,6 +35,10 @@ import {
   type KnowledgeCmsSeoScanStore,
 } from "./knowledgeCmsSeoDal";
 import { KnowledgeCmsWorkflow } from "./knowledgeCmsWorkflow";
+import {
+  resolveKnowledgeCmsPublicRouting,
+  type KnowledgeCmsPublicRoutingResolution,
+} from "./knowledgeCmsPublicRouting";
 
 export type KnowledgeCmsAiRunStatus =
   | "applied"
@@ -51,6 +56,7 @@ export interface KnowledgeCmsAiRun {
   initiatedBy: string;
   createdAt: string;
   model: string;
+  usage?: KnowledgeCmsAiUsage;
   parentRunId?: string;
   targetRecordId?: string;
   targetRevision?: number;
@@ -78,6 +84,10 @@ export interface KnowledgeCmsAiDalDependencies {
   now?: () => Date;
   provider?: KnowledgeCmsAiProvider;
   repository?: KnowledgeCmsRepository;
+  publicRouting?: () => Pick<
+    KnowledgeCmsPublicRoutingResolution,
+    "effectiveMode"
+  >;
   runStore?: KnowledgeCmsAiRunStore;
   scanStore?: KnowledgeCmsSeoScanStore;
 }
@@ -88,13 +98,16 @@ export class KnowledgeCmsAiFeatureError extends Error {
   constructor(
     readonly reason:
       | "already_applied"
+      | "confirmation_mismatch"
       | "disabled"
       | "invalid_clock"
       | "parent_run_invalid"
       | "proposal_not_applyable"
+      | "public_renderer_active"
       | "run_not_found"
       | "target_not_draft"
       | "target_not_improvable"
+      | "target_not_published"
       | "wrong_actor",
   ) {
     super(`Knowledge CMS AI action is unavailable (${reason}).`);
@@ -112,6 +125,37 @@ export function isKnowledgeCmsAiRunId(value: unknown): value is string {
   return (
     typeof value === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
+}
+
+function isKnowledgeCmsAiUsage(value: unknown): value is KnowledgeCmsAiUsage {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const usage = value as Partial<KnowledgeCmsAiUsage>;
+  const counters = [
+    usage.inputTokens,
+    usage.cachedInputTokens,
+    usage.outputTokens,
+    usage.reasoningTokens,
+    usage.totalTokens,
+    usage.webSearchCalls,
+    usage.maxOutputTokens,
+  ];
+  return Boolean(
+    counters.every(
+      (counter) =>
+        typeof counter === "number" &&
+        Number.isSafeInteger(counter) &&
+        counter >= 0,
+    ) &&
+      (usage.cachedInputTokens ?? 0) <= (usage.inputTokens ?? 0) &&
+      (usage.reasoningTokens ?? 0) <= (usage.outputTokens ?? 0) &&
+      usage.totalTokens ===
+        (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0) &&
+      (usage.maxOutputTokens ?? 0) >= (usage.outputTokens ?? 0) &&
+      (usage.maxOutputTokens ?? 0) >= 4_000 &&
+      (usage.maxOutputTokens ?? 0) <= 40_000,
   );
 }
 
@@ -144,6 +188,7 @@ function parseStoredRun(value: unknown): KnowledgeCmsAiRun | undefined {
     typeof run.model === "string" &&
     /^gpt-[A-Za-z0-9._-]{1,80}$/.test(run.model) &&
     typeof run.deepResearch === "boolean" &&
+    (run.usage === undefined || isKnowledgeCmsAiUsage(run.usage)) &&
     (run.mode === "site_strategy" ||
       run.mode === "new_article" ||
       run.mode === "improve_article") &&
@@ -266,7 +311,10 @@ export class FirestoreKnowledgeCmsAiRunStore implements KnowledgeCmsAiRunStore {
         }
         throw new KnowledgeCmsAiFeatureError("already_applied");
       }
-      if (run.status !== "pending") {
+      if (
+        run.status !== "pending" &&
+        run.status !== "revision_proposal"
+      ) {
         throw new KnowledgeCmsAiFeatureError("proposal_not_applyable");
       }
       transaction.update(reference, {
@@ -377,6 +425,7 @@ export async function createKnowledgeCmsAiRun(
     initiatedBy: actor.id,
     createdAt,
     model: generated.model,
+    ...(generated.usage ? { usage: generated.usage } : {}),
     ...(parentRun ? { parentRunId: parentRun.id } : {}),
     ...(currentArticle
       ? {
@@ -426,6 +475,7 @@ function articleInput(
 
 export async function applyKnowledgeCmsAiRun(
   runId: string,
+  confirmation: "apply_private_draft" | "start_private_revision",
   dependencies: KnowledgeCmsAiDalDependencies = {},
 ): Promise<{ id: string; revision: number }> {
   assertEnabled();
@@ -443,8 +493,20 @@ export async function applyKnowledgeCmsAiRun(
     }
     throw new KnowledgeCmsAiFeatureError("already_applied");
   }
-  if (run.status !== "pending" || !run.proposal.draft) {
+  if (!run.proposal.draft) {
     throw new KnowledgeCmsAiFeatureError("proposal_not_applyable");
+  }
+  const expectedConfirmation =
+    run.status === "revision_proposal"
+      ? "start_private_revision"
+      : run.status === "pending"
+        ? "apply_private_draft"
+        : undefined;
+  if (!expectedConfirmation) {
+    throw new KnowledgeCmsAiFeatureError("proposal_not_applyable");
+  }
+  if (confirmation !== expectedConfirmation) {
+    throw new KnowledgeCmsAiFeatureError("confirmation_mismatch");
   }
 
   const repository = dependencies.repository ?? createKnowledgeCmsRepository();
@@ -454,7 +516,38 @@ export async function applyKnowledgeCmsAiRun(
     ...(run.proposedRecordId ? { idFactory: () => run.proposedRecordId! } : {}),
   });
   let result: KnowledgeCmsArticle;
-  if (run.mode === "improve_article") {
+  if (run.status === "revision_proposal") {
+    const current = asArticle(
+      await repository.get("article", run.targetRecordId ?? ""),
+    );
+    if (current?.workingRevision?.sourceAiRunId === run.id) {
+      result = current;
+    } else {
+      if (
+        !current ||
+        current.status !== "published" ||
+        current.audit.revision !== run.targetRevision
+      ) {
+        throw new KnowledgeCmsAiFeatureError("target_not_published");
+      }
+      if (
+        (dependencies.publicRouting ?? resolveKnowledgeCmsPublicRouting)()
+          .effectiveMode !== "static"
+      ) {
+        throw new KnowledgeCmsAiFeatureError("public_renderer_active");
+      }
+      result = await workflow.startPublishedArticleRevision(
+        current.id,
+        articleInput(run, current),
+        run.targetRevision ?? 0,
+        actor,
+        {
+          sourceAiRunId: run.id,
+          note: `Started a private CMS working revision from AI copilot proposal ${run.id}; the prior published CMS record was preserved as an immutable snapshot.`,
+        },
+      );
+    }
+  } else if (run.mode === "improve_article") {
     const current = asArticle(
       await repository.get("article", run.targetRecordId ?? ""),
     );

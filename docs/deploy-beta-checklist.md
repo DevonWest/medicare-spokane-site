@@ -53,12 +53,15 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | `false` | **Optional.** Independent final routing gate. Keep false except during an explicitly approved canary/cutover. |
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | _empty_ | **Optional.** Current 64-character lowercase approval receipt; required only when the cutover gate is true. |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** `static` is the default, `shadow` is private comparison, and `cutover` is accepted only with every independent gate and receipt exact. |
-| `KNOWLEDGE_CMS_SEO_ENABLED` | `false` | **Optional.** Admin-only deterministic SEO scanner; requires the CMS gate. |
+| `KNOWLEDGE_CMS_SEO_ENABLED` | Follows `KNOWLEDGE_CMS_ENABLED` when unset | **Optional.** Admin-only deterministic SEO scanner; set explicitly to `false` for the independent kill switch. |
 | `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED` | `false` | **Optional.** Adds Search Console evidence; requires the SEO gate and property access. |
 | `SEARCH_CONSOLE_SITE_URL` | `sc-domain:medicareinspokane.com` | Search Console property used by the server-side read-only client. |
 | `KNOWLEDGE_CMS_AI_ENABLED` | `false` | **Optional.** Draft-only OpenAI copilot; requires the SEO gate and API-key secret. |
 | `KNOWLEDGE_CMS_AI_MODEL` | `gpt-5.6-terra` | Routine copilot model. |
 | `KNOWLEDGE_CMS_AI_DEEP_MODEL` | `gpt-5.6-sol` | Model used only when deeper research is selected. |
+| `KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS` | `16000` | Routine request output ceiling; accepted range is 4,000–40,000. |
+| `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | `24000` | Deep-research request output ceiling; accepted range is 4,000–40,000. |
+| `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | `180000` | OpenAI request timeout; accepted range is 30,000–240,000 milliseconds. |
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` | Secret Manager **name**, never the key value. Required only when the AI gate is true. |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `false` | **Optional.** Enables the protected recurring-scan endpoint. |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Required only when recurring scans are true. |
@@ -470,6 +473,20 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 - [ ] A publisher can unpublish only with a required reason; the record returns
   to draft and its search projection is removed.
 - [ ] A stale edit is rejected instead of overwriting the newer revision.
+- [ ] A pending AI proposal can apply only to an existing private draft or a
+  new private draft after the operator enters the exact confirmation.
+- [ ] An AI proposal for a published article remains read-only until an
+  admin/publisher enters the separate working-revision confirmation; the
+  transaction snapshots the exact prior private publication, removes its
+  private search projection, and creates an indexing-blocked draft.
+- [ ] Starting that working revision is refused when public CMS rendering is
+  active, the article or proposal revision is stale, the slug/canonical path
+  changes, or the AI run is not the actor's unapplied revision proposal.
+- [ ] Applying AI output never submits, approves, publishes, enables indexing,
+  or changes a public route; the resulting draft completes the normal review
+  and publication workflow.
+- [ ] Copilot history shows token and web-search usage plus the configured
+  output ceiling for each completed request, without showing a secret value.
 - [ ] With the separate article-migration gate false, no execution form is
   available on the migration preview.
 - [ ] With the separate topic/FAQ migration gate false, none of the 12 topic or

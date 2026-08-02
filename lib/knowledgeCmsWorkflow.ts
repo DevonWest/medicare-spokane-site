@@ -14,6 +14,7 @@ import {
   KnowledgeCmsValidationError,
   type KnowledgeCmsActor,
   type KnowledgeCmsArticle,
+  type KnowledgeCmsArticleInput,
   type KnowledgeCmsChangeRequest,
   type KnowledgeCmsCreateInput,
   type KnowledgeCmsDiscoverability,
@@ -42,6 +43,7 @@ export type KnowledgeCmsTransitionAction = Exclude<
   | "migration_create_private_supporting_draft"
   | "create_private_article_rendering"
   | "create_public_cutover_approval"
+  | "start_revision"
   | "update"
 >;
 
@@ -523,6 +525,76 @@ export class KnowledgeCmsWorkflow {
     return cloneKnowledgeCmsRecord(next);
   }
 
+  async startPublishedArticleRevision(
+    id: string,
+    input: KnowledgeCmsArticleInput,
+    expectedRevision: number,
+    actor: KnowledgeCmsActor,
+    options: { note: string; sourceAiRunId: string },
+  ): Promise<KnowledgeCmsArticle> {
+    const current = await this.repository.get("article", id);
+    if (!current || current.kind !== "article") {
+      throw new KnowledgeCmsNotFoundError("article", id);
+    }
+    assertRevision(current, expectedRevision);
+    assertKnowledgeCmsActionAllowed(actor, "start_revision", current);
+    if (current.status !== "published" || !current.publication) {
+      throw new KnowledgeCmsStateError(
+        `Cannot start_revision a ${current.status} article.`,
+      );
+    }
+
+    const note = cleanOptional(options.note);
+    if (!note) {
+      throw new KnowledgeCmsValidationError([
+        "A working-revision reason is required.",
+      ]);
+    }
+    const updated = applyUpdate(current, input) as KnowledgeCmsArticle;
+    if (
+      updated.slug !== current.slug ||
+      updated.discoverability.canonicalPath !==
+        current.discoverability.canonicalPath
+    ) {
+      throw new KnowledgeCmsValidationError([
+        "A working revision must preserve the published slug and canonical path.",
+      ]);
+    }
+
+    const nowIso = this.now().toISOString();
+    const next = applyAudit(
+      {
+        ...updated,
+        status: "draft",
+        changeRequest: undefined,
+        review: undefined,
+        publication: undefined,
+        discoverability: {
+          ...updated.discoverability,
+          indexing: "blocked",
+        },
+        workingRevision: {
+          sourceRevision: current.audit.revision,
+          sourcePublishedAt: current.publication.publishedAt,
+          sourcePublishedBy: current.publication.publishedBy,
+          sourceAiRunId: options.sourceAiRunId,
+          startedAt: nowIso,
+          startedBy: actor.id,
+        },
+      },
+      actor,
+      nowIso,
+    ) as KnowledgeCmsArticle;
+    assertValidRecord(next);
+    await this.repository.save(next, {
+      expectedRevision,
+      event: "start_revision",
+      actorId: actor.id,
+      note,
+    });
+    return cloneKnowledgeCmsRecord(next) as KnowledgeCmsArticle;
+  }
+
   async transition(
     kind: KnowledgeCmsRecordKind,
     id: string,
@@ -659,6 +731,9 @@ export class KnowledgeCmsWorkflow {
         next = {
           ...current,
           status: "published",
+          ...(current.kind === "article"
+            ? { workingRevision: undefined }
+            : {}),
           publication: {
             publishedAt: nowIso,
             publishedBy: actor.id,

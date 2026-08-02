@@ -25,9 +25,12 @@
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT required only for cutover
 #   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static, private shadow, or guarded cutover
-#   KNOWLEDGE_CMS_SEO_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_SEO_ENABLED optional; follows the private CMS gate when unset
 #   KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_AI_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS optional; defaults to 16000
+#   KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS optional; defaults to 24000
+#   KNOWLEDGE_CMS_AI_TIMEOUT_MS optional; defaults to 180000
 #   KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED optional; defaults to false
 #   OPENAI_API_KEY_SECRET required when the AI gate is true (Secret Manager name)
 #   KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET required when continuous SEO is true
@@ -109,9 +112,12 @@ jobs:
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED || 'false' }}
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT || '' }}
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
-      KNOWLEDGE_CMS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEO_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEO_ENABLED || vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
       KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED || 'false' }}
       KNOWLEDGE_CMS_AI_ENABLED: ${{ vars.KNOWLEDGE_CMS_AI_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS || '16000' }}
+      KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS || '24000' }}
+      KNOWLEDGE_CMS_AI_TIMEOUT_MS: ${{ vars.KNOWLEDGE_CMS_AI_TIMEOUT_MS || '180000' }}
       KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED || 'false' }}
       SEARCH_CONSOLE_SITE_URL: ${{ vars.SEARCH_CONSOLE_SITE_URL || 'sc-domain:medicareinspokane.com' }}
       KNOWLEDGE_CMS_AI_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_MODEL || 'gpt-5.6-terra' }}
@@ -189,6 +195,17 @@ jobs:
               ''|*[!A-Za-z0-9_-]*) echo "::error::OPENAI_API_KEY_SECRET must name a Secret Manager secret"; exit 1 ;;
             esac
           fi
+          for token_limit in KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS; do
+            token_value="${!token_limit}"
+            case "$token_value" in
+              ''|*[!0-9]*) echo "::error::$token_limit must be an integer"; exit 1 ;;
+            esac
+            test "$token_value" -ge 4000 -a "$token_value" -le 40000 || (echo "::error::$token_limit must be between 4000 and 40000" && exit 1)
+          done
+          case "$KNOWLEDGE_CMS_AI_TIMEOUT_MS" in
+            ''|*[!0-9]*) echo "::error::KNOWLEDGE_CMS_AI_TIMEOUT_MS must be an integer"; exit 1 ;;
+          esac
+          test "$KNOWLEDGE_CMS_AI_TIMEOUT_MS" -ge 30000 -a "$KNOWLEDGE_CMS_AI_TIMEOUT_MS" -le 240000 || (echo "::error::KNOWLEDGE_CMS_AI_TIMEOUT_MS must be between 30000 and 240000" && exit 1)
           if [ "$KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED" = "true" ]; then
             test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
             case "${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET }}" in
@@ -336,6 +353,9 @@ jobs:
             KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
             KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
             KNOWLEDGE_CMS_AI_ENABLED=${{ env.KNOWLEDGE_CMS_AI_ENABLED }}
+            KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS=${{ env.KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS }}
+            KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS=${{ env.KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS }}
+            KNOWLEDGE_CMS_AI_TIMEOUT_MS=${{ env.KNOWLEDGE_CMS_AI_TIMEOUT_MS }}
             KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED }}
             SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
             KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
@@ -378,6 +398,9 @@ jobs:
             KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
             KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
             KNOWLEDGE_CMS_AI_ENABLED=${{ env.KNOWLEDGE_CMS_AI_ENABLED }}
+            KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS=${{ env.KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS }}
+            KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS=${{ env.KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS }}
+            KNOWLEDGE_CMS_AI_TIMEOUT_MS=${{ env.KNOWLEDGE_CMS_AI_TIMEOUT_MS }}
             KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED }}
             SEARCH_CONSOLE_SITE_URL=${{ env.SEARCH_CONSOLE_SITE_URL }}
             KNOWLEDGE_CMS_AI_MODEL=${{ env.KNOWLEDGE_CMS_AI_MODEL }}
