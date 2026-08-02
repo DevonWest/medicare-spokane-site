@@ -58,7 +58,12 @@ test("traffic-serving deploys promote and verify one exact ready revision", () =
   assert.match(workflow, /no_traffic: true/);
   assert.match(workflow, /- name: Require exact deployed revision readiness/);
   assert.match(workflow, /gcloud run revisions describe "\$REVISION"/);
-  assert.match(workflow, /status\.conditions\[\?type="Ready"\]\.status/);
+  assert.match(workflow, /--format=json/);
+  assert.match(
+    workflow,
+    /node scripts\/parse-cloud-run-revision-readiness\.mjs/,
+  );
+  assert.doesNotMatch(workflow, /status\.conditions\[\?type=/);
   assert.match(workflow, /--to-revisions "\$REVISION=100"/);
   assert.match(workflow, /- name: Resolve canonical Cloud Run service URL/);
   assert.match(workflow, /--format='value\(status\.url\)'/);

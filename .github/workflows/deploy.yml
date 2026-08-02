@@ -428,10 +428,15 @@ jobs:
         run: |
           ready_status=""
           for attempt in $(seq 1 48); do
-            ready_status="$(gcloud run revisions describe "$REVISION" \
+            revision_json="$(gcloud run revisions describe "$REVISION" \
               --region "$REGION" \
               --project "$PROJECT_ID" \
-              --format='value(status.conditions[?type="Ready"].status)' 2>/dev/null || true)"
+              --format=json 2>/dev/null || true)"
+            ready_status=""
+            if [ -n "$revision_json" ]; then
+              ready_status="$(printf '%s' "$revision_json" | \
+                node scripts/parse-cloud-run-revision-readiness.mjs)"
+            fi
 
             if [ "$ready_status" = "True" ]; then
               break
