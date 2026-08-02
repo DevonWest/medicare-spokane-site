@@ -65,10 +65,27 @@ test("traffic-serving deploys promote and verify one exact ready revision", () =
   );
   assert.doesNotMatch(workflow, /status\.conditions\[\?type=/);
   assert.match(workflow, /--to-revisions "\$REVISION=100"/);
-  assert.match(workflow, /- name: Resolve canonical Cloud Run service URL/);
-  assert.match(workflow, /--format='value\(status\.url\)'/);
+  assert.match(
+    workflow,
+    /- name: Verify exact Cloud Run traffic and endpoint state/,
+  );
+  assert.match(workflow, /gcloud run services describe "\$SERVICE"/);
+  assert.match(workflow, /node scripts\/parse-cloud-run-service-state\.mjs/);
+  assert.match(workflow, /--revision "\$REVISION"/);
   assert.match(workflow, /- name: Verify deployed Cloud Run service health/);
-  assert.match(workflow, /--url "\$\{\{ steps\.service_url\.outputs\.url \}\}\/healthz"/);
+  assert.match(
+    workflow,
+    /steps\.service_state\.outputs\.direct_public == 'true'/,
+  );
+  assert.match(
+    workflow,
+    /--url "\$\{\{ steps\.service_state\.outputs\.direct_url \}\}\/healthz"/,
+  );
+  assert.match(workflow, /- name: Explain protected Cloud Run service endpoint/);
+  assert.match(
+    workflow,
+    /steps\.service_state\.outputs\.direct_public != 'true'/,
+  );
   assert.doesNotMatch(workflow, /steps\.deploy_standard\.outputs\.url/);
   assert.match(workflow, /- name: Verify deployed custom-domain health/);
   assert.match(workflow, /--url "\$\{\{ steps\.cfg\.outputs\.site_url \}\}\/healthz"/);
@@ -77,6 +94,10 @@ test("traffic-serving deploys promote and verify one exact ready revision", () =
   assert.match(workflow, /- name: Show service URL\n\s+if: \$\{\{ always\(\) \}\}/);
   assert.ok(
     workflow.indexOf("- name: Require exact deployed revision readiness") <
-      workflow.indexOf("- name: Verify deployed Cloud Run service health"),
+      workflow.indexOf("- name: Verify exact Cloud Run traffic and endpoint state"),
+  );
+  assert.ok(
+    workflow.indexOf("- name: Verify exact Cloud Run traffic and endpoint state") <
+      workflow.indexOf("- name: Verify deployed custom-domain health"),
   );
 });

@@ -418,12 +418,14 @@ pushed. Cloud Run then creates a uniquely named revision with no traffic,
 checks `/healthz` before the instance can become ready, and continues monitoring
 it with a liveness probe. Only after that exact revision reports `Ready=True`
 does the workflow assign it 100% of service traffic. It then retries the Cloud
-Run service URL, resolved directly from the promoted service instead of from a
-deployment-action traffic alias, before checking the public custom-domain
-`/healthz` route. Both must report `ok`, the exact Git commit, the intended
-beta/production environment, and a valid renderer configuration. The final
-service-URL step runs even after a failed custom-domain check. Total runtime:
-~4–10 minutes, including public-route verification.
+Run service state and fails unless that one named revision owns exactly 100% of
+traffic. When the service exposes its default `run.app` origin publicly, the
+workflow verifies `/healthz` there too. When ingress restrictions or a disabled
+default URL intentionally protect that origin, the direct request is skipped
+without changing the service network policy. The public custom-domain
+`/healthz` route is always required to report `ok`, the exact Git commit, the
+intended beta/production environment, and a valid renderer configuration.
+Total runtime is ~4–10 minutes, including public-route verification.
 
 If custom-domain verification reports `DNS name could not be resolved`, the
 Cloud Run revision can still be healthy but the public record is absent. Add
