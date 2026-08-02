@@ -136,6 +136,10 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
     join(root, "app/api/knowledge-cms/seo-scan/route.ts"),
     "utf8",
   );
+  const activation = readFileSync(
+    join(root, "lib/knowledgeCmsCopilotActivation.ts"),
+    "utf8",
+  );
   const provider = readFileSync(
     join(root, "lib/knowledgeCmsAiOpenAi.ts"),
     "utf8",
@@ -154,16 +158,23 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
   assert.match(controls, /will not submit, approve, publish, or enable indexing/);
   assert.match(route, /timingSafeEqual/);
   assert.match(route, /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED/);
+  assert.match(route, /hasCurrentKnowledgeCmsContinuousSeoActivation/);
+  assert.match(route, /search_console_unavailable/);
   assert.match(provider, /store: false/);
   assert.match(provider, /allowed_domains/);
   assert.match(provider, /max_output_tokens/);
   assert.match(provider, /KNOWLEDGE_CMS_AI_TIMEOUT_MS/);
+  assert.match(provider, /models\.retrieve/);
   assert.match(
     deploy,
     /vars\.KNOWLEDGE_CMS_SEO_ENABLED \|\| vars\.KNOWLEDGE_CMS_ENABLED/,
   );
   assert.match(deploy, /KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS/);
   assert.match(deploy, /KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS/);
+  assert.match(
+    deploy,
+    /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED requires KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true/,
+  );
   assert.match(dal, /revision_proposal/);
   assert.match(dal, /currentArticle\.status !== "published"/);
   assert.match(page, /immutable/);
@@ -171,4 +182,8 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
   assert.match(page, /AI proposal history/);
   assert.match(controls, /Continue refining this proposal/);
   assert.match(provider, /previousProposal/);
+  assert.match(controls, /Verify live connections/);
+  assert.match(controls, /sends no CMS article, prompt, client data/);
+  assert.match(activation, /readyForContinuousSeo/);
+  assert.match(activation, /configurationFingerprint/);
 });

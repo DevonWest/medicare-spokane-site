@@ -107,21 +107,27 @@ alone do not activate a paid or scheduled integration.
    inspect the technical/CMS findings. Set the variable explicitly to `false`
    at any time to retain the kill switch.
 3. Enable the Search Console API, grant the runtime service account property
-   access, set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true`, and verify a scan
-   reports `available` rather than `access_denied` or `site_not_found`.
+   access, and set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true`. In the copilot,
+   run **Verify live connections**; it performs one read-only, one-row
+   analytics query and must report Search Console as verified.
 4. Put the OpenAI key in Secret Manager, configure the repository secret-name
-   variable, set `KNOWLEDGE_CMS_AI_ENABLED=true`, and test site strategy on
-   beta. Then test one new private draft and review every field/source before
-   applying it.
-5. Create the scheduler token secret and job, then set
-   `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=true`.
+   variable, and set `KNOWLEDGE_CMS_AI_ENABLED=true`. Run **Verify live
+   connections** again; it retrieves metadata for both configured models
+   without sending a prompt or making a generation request. Then test site
+   strategy on beta and one new private draft before applying anything.
+5. Create the scheduler token secret and job, then set both Search Console and
+   `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=true`. Deploy and immediately rerun
+   **Verify live connections** so current evidence binds the scheduler token
+   state and exact deployment configuration before the first scheduled call.
 6. Repeat the checks on production. The public renderer and cutover gates are
    independent and remain unchanged.
 
-The copilot page includes an activation-readiness panel for these dependencies.
-It reports whether each capability is ready, disabled, or blocked without
-rendering secret values, service-account IDs, actor IDs, or tokens. Search
-Console access is fully verified only after a scan returns `available`.
+The copilot page separates configuration readiness from live verification. The
+live result records only sanitized states, environment, origin, and timestamps;
+it omits secret values, service-account IDs, actor IDs, tokens, and the internal
+configuration fingerprint. Search Console is checked with read-only analytics,
+and OpenAI access is checked with model metadata only. Evidence is bound to the
+exact environment/configuration and expires after 35 days.
 
 ## GitHub and Cloud Run configuration
 
@@ -202,11 +208,14 @@ Send the same Secret Manager token as either:
 - `x-knowledge-cms-seo-token: <token>`.
 
 A weekly schedule is a good initial cadence because Search Console data is not
-real time and Medicare content should not be churned daily. The endpoint
-returns 404 unless the CMS, SEO, and continuous-scan gates are all exact
-`true`; an invalid token returns 401. Success returns only the scan ID, time,
-and issue counts. The full evidence remains in the private Firestore scan
-collection.
+real time and Medicare content should not be churned daily. Deployment refuses
+continuous SEO unless Search Console is enabled. The endpoint returns 404
+unless the CMS, SEO, and continuous-scan gates are all exact `true`; an invalid
+token returns 401; missing, expired, or configuration-mismatched live evidence
+returns 503 `activation_unverified`. If the configured Search Console request
+fails, the evidence scan is retained but the endpoint returns 503
+`search_console_unavailable` so Scheduler can alert instead of silently
+degrading. Success returns only the scan ID, time, and issue counts.
 
 ## Operational verification
 
@@ -214,22 +223,25 @@ After each environment is activated:
 
 1. Confirm `/healthz`, `/robots.txt`, and `/sitemap.xml` return 200.
 2. Sign in with the admin CMS account and open **AI & SEO Copilot**.
-3. Run a fresh scan and verify the configured origin matches that environment.
-4. Confirm beta `noindex` does not appear as a production defect.
-5. Generate site strategy and confirm it has no **Apply** control.
-6. Generate one article proposal; inspect its Markdown, metadata, and every
+3. Run **Verify live connections** and confirm the result is current for the
+   exact environment/origin. Verify Search Console and both OpenAI models when
+   their gates are enabled.
+4. Run a fresh scan and verify the configured origin matches that environment.
+5. Confirm beta `noindex` does not appear as a production defect.
+6. Generate site strategy and confirm it has no **Apply** control.
+7. Generate one article proposal; inspect its Markdown, metadata, and every
    source URL.
-7. Apply it and confirm the destination record is `draft`, indexing is
+8. Apply it and confirm the destination record is `draft`, indexing is
    blocked, and no public route changed.
-8. Select one published article and confirm generation leaves the published
+9. Select one published article and confirm generation leaves the published
    record unchanged. Review the result, explicitly start its private working
    revision, and confirm the prior published CMS record exists as an immutable
    snapshot while the current record is an indexing-blocked draft on the same
    route. Confirm the static public page is unchanged.
-9. Refine another proposal once and confirm both runs remain separately available
+10. Refine another proposal once and confirm both runs remain separately available
    in AI proposal history.
-10. Confirm recent manual and scheduled evidence scans appear in scan history.
-11. Submit/review/publish only through the existing governed CMS workflow.
+11. Confirm recent manual and scheduled evidence scans appear in scan history.
+12. Submit/review/publish only through the existing governed CMS workflow.
 
 ## Disable and rollback
 

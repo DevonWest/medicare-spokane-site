@@ -63,7 +63,7 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | `24000` | Deep-research request output ceiling; accepted range is 4,000–40,000. |
 | `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | `180000` | OpenAI request timeout; accepted range is 30,000–240,000 milliseconds. |
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` | Secret Manager **name**, never the key value. Required only when the AI gate is true. |
-| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `false` | **Optional.** Enables the protected recurring-scan endpoint. |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `false` | **Optional.** Enables the protected recurring-scan endpoint; requires Search Console plus current live activation evidence for the exact deployment. |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Required only when recurring scans are true. |
 
 Leave the four new feature gates false for the first deployment. Activate them
@@ -399,6 +399,8 @@ What happens:
   - all AI/SEO gates default false; when deliberately enabled, the workflow
     validates their dependencies and attaches the OpenAI/scheduler values from
     Secret Manager rather than repository plaintext
+  - continuous SEO cannot deploy without Search Console enabled and cannot
+    execute until an administrator records current live activation evidence
   - `NODE_ENV=production`
 
 If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when
@@ -487,6 +489,15 @@ You should see HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
   and publication workflow.
 - [ ] Copilot history shows token and web-search usage plus the configured
   output ceiling for each completed request, without showing a secret value.
+- [ ] **Verify live connections** performs one read-only Search Console query
+  plus OpenAI model-metadata retrieval for the routine and deep models; it
+  sends no CMS content, prompt, client data, or generation request.
+- [ ] The saved activation result exposes no actor, secret, token, or
+  configuration fingerprint; it is bound to the exact environment/origin and
+  requires refresh after a configuration change or 35 days.
+- [ ] The recurring SEO endpoint returns `activation_unverified` until current
+  activation evidence exists, and returns `search_console_unavailable` rather
+  than silently succeeding when configured search evidence cannot be read.
 - [ ] With the separate article-migration gate false, no execution form is
   available on the migration preview.
 - [ ] With the separate topic/FAQ migration gate false, none of the 12 topic or

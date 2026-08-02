@@ -344,6 +344,10 @@ test("CMS collection names preserve the promised article, topic, and FAQ objects
   assert.equal(KNOWLEDGE_CMS_COLLECTIONS.aiRuns, "knowledge_cms_ai_runs");
   assert.equal(KNOWLEDGE_CMS_COLLECTIONS.seoScans, "knowledge_cms_seo_scans");
   assert.equal(
+    KNOWLEDGE_CMS_COLLECTIONS.copilotActivation,
+    "knowledge_cms_copilot_activation",
+  );
+  assert.equal(
     KNOWLEDGE_CMS_COLLECTIONS.articleRevisionSnapshots,
     "knowledge_cms_article_revision_snapshots",
   );

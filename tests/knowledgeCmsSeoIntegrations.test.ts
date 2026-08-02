@@ -106,6 +106,37 @@ test("Search Console fails closed when the feature is disabled or site property 
   assert.equal(invalid.errorCode, "invalid_configuration");
 });
 
+test("Search Console activation uses one read-only, one-row analytics request", async () => {
+  mockServerOnlyModule();
+  const searchConsole = await import("../lib/knowledgeCmsSearchConsole");
+  const calls: Array<Record<string, unknown>> = [];
+  const result = await searchConsole.verifyKnowledgeCmsSearchConsoleAccess({
+    enabled: "true",
+    siteUrl: "sc-domain:medicareinspokane.com",
+    now: new Date("2026-08-01T12:00:00.000Z"),
+    client: {
+      async query(input) {
+        calls.push(input as unknown as Record<string, unknown>);
+        return { data: {} };
+      },
+    },
+  });
+  assert.deepEqual(result, {
+    status: "available",
+    siteUrl: "sc-domain:medicareinspokane.com",
+  });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].requestBody, {
+    startDate: "2026-07-02",
+    endDate: "2026-07-29",
+    dimensions: ["page"],
+    dataState: "final",
+    type: "web",
+    rowLimit: 1,
+    startRow: 0,
+  });
+});
+
 test("crawler extracts rendered SEO signals and never follows off-origin links", async () => {
   mockServerOnlyModule();
   const crawler = await import("../lib/knowledgeCmsSeoCrawler");

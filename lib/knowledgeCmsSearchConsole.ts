@@ -39,6 +39,12 @@ export interface KnowledgeCmsSearchConsoleSnapshot {
   errorCode?: KnowledgeCmsSearchConsoleErrorCode;
 }
 
+export interface KnowledgeCmsSearchConsoleAccessCheck {
+  status: KnowledgeCmsSearchConsoleStatus;
+  siteUrl?: string;
+  errorCode?: KnowledgeCmsSearchConsoleErrorCode;
+}
+
 interface SearchConsoleQueryResult {
   data: {
     rows?: Array<{
@@ -65,6 +71,11 @@ export interface LoadKnowledgeCmsSearchConsoleOptions {
   rowLimit?: number;
   siteUrl?: string;
 }
+
+export type VerifyKnowledgeCmsSearchConsoleAccessOptions = Omit<
+  LoadKnowledgeCmsSearchConsoleOptions,
+  "rowLimit"
+>;
 
 export function isKnowledgeCmsSearchConsoleEnabled(
   value: string | undefined = process.env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED,
@@ -191,6 +202,50 @@ function classifyError(error: unknown): KnowledgeCmsSearchConsoleErrorCode {
     return "quota_exceeded";
   }
   return "request_failed";
+}
+
+export async function verifyKnowledgeCmsSearchConsoleAccess(
+  options: VerifyKnowledgeCmsSearchConsoleAccessOptions = {},
+): Promise<KnowledgeCmsSearchConsoleAccessCheck> {
+  const enabled = isKnowledgeCmsSearchConsoleEnabled(options.enabled);
+  if (!enabled) return { status: "disabled" };
+
+  const configuredSiteUrl = options.siteUrl ?? env("SEARCH_CONSOLE_SITE_URL");
+  const siteUrl = validSiteUrl(configuredSiteUrl);
+  if (!siteUrl) {
+    return {
+      status: "unconfigured",
+      errorCode: "invalid_configuration",
+    };
+  }
+
+  const current = buildKnowledgeCmsSearchConsolePeriods(options.now).current;
+  const client = options.client ?? createClient();
+  try {
+    await client.query({
+      siteUrl,
+      requestBody: {
+        startDate: current.startDate,
+        endDate: current.endDate,
+        dimensions: ["page"],
+        dataState: "final",
+        type: "web",
+        rowLimit: 1,
+        startRow: 0,
+      },
+    });
+    return { status: "available", siteUrl };
+  } catch (error) {
+    const errorCode = classifyError(error);
+    console.error("[knowledge-cms-seo] Search Console access verification failed.", {
+      errorCode,
+    });
+    return {
+      status: "unavailable",
+      siteUrl,
+      errorCode,
+    };
+  }
 }
 
 export async function loadKnowledgeCmsSearchConsoleSnapshot(

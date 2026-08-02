@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import {
   applyKnowledgeCmsAiRunAction,
   createKnowledgeCmsAiRunAction,
+  runKnowledgeCmsCopilotActivationCheckAction,
   runKnowledgeCmsSeoScanAction,
 } from "../actions";
 import {
@@ -47,6 +48,29 @@ export function KnowledgeCmsSeoScanControl({ enabled }: { enabled: boolean }) {
       >
         {pending ? "Scanning site…" : "Run fresh SEO scan"}
       </button>
+      <ActionMessage state={state} />
+    </form>
+  );
+}
+
+export function KnowledgeCmsActivationCheckControl() {
+  const [state, action, pending] = useActionState(
+    runKnowledgeCmsCopilotActivationCheckAction,
+    initialKnowledgeCmsAdminActionState,
+  );
+  return (
+    <form action={action}>
+      <button
+        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+        disabled={pending}
+        type="submit"
+      >
+        {pending ? "Verifying connections…" : "Verify live connections"}
+      </button>
+      <p className="mt-2 max-w-xl text-xs text-slate-500">
+        Uses one read-only Search Console query and OpenAI model metadata. It
+        sends no CMS article, prompt, client data, or generation request.
+      </p>
       <ActionMessage state={state} />
     </form>
   );

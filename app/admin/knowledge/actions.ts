@@ -83,6 +83,10 @@ import {
   KnowledgeCmsSeoFeatureError,
   runKnowledgeCmsSeoScan,
 } from "@/lib/knowledgeCmsSeoDal";
+import {
+  KnowledgeCmsCopilotActivationError,
+  runKnowledgeCmsCopilotActivationCheck,
+} from "@/lib/knowledgeCmsCopilotActivation";
 
 function errorState(error: unknown): KnowledgeCmsAdminActionState {
   if (error instanceof KnowledgeCmsAiProviderError) {
@@ -132,6 +136,15 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
         error.reason === "disabled"
           ? "The continuous SEO scanner is not enabled."
           : "The server clock could not support this SEO scan.",
+    };
+  }
+  if (error instanceof KnowledgeCmsCopilotActivationError) {
+    return {
+      ok: false,
+      message:
+        error.reason === "invalid_clock"
+          ? "The server clock could not support the activation check."
+          : "The live activation check could not be completed. No feature was enabled or changed.",
     };
   }
   if (error instanceof KnowledgeCmsAdminInputError) {
@@ -344,6 +357,24 @@ export async function runKnowledgeCmsSeoScanAction(
     return {
       ok: true,
       message: `Scan complete: ${scan.summary.totalOpportunities} prioritized opportunities across ${scan.summary.pagesAudited} public pages and ${scan.summary.recordsAudited} CMS records.`,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+export async function runKnowledgeCmsCopilotActivationCheckAction(
+  _previousState: KnowledgeCmsAdminActionState,
+  _formData: FormData,
+): Promise<KnowledgeCmsAdminActionState> {
+  void _previousState;
+  void _formData;
+  try {
+    const evidence = await runKnowledgeCmsCopilotActivationCheck();
+    revalidatePath(`${KNOWLEDGE_CMS_ADMIN_PATH}/copilot`);
+    return {
+      ok: true,
+      message: `Activation check complete: ${evidence.readyCount} of ${evidence.totalCount} capabilities verified. No CMS content was sent or changed.`,
     };
   } catch (error) {
     return errorState(error);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
+  KnowledgeCmsActivationCheckControl,
   KnowledgeCmsAiApplyControl,
   KnowledgeCmsAiRefineControl,
   KnowledgeCmsAiRequestControl,
@@ -19,6 +20,11 @@ import {
   type KnowledgeCmsCopilotReadiness,
   type KnowledgeCmsCopilotReadinessState,
 } from "@/lib/knowledgeCmsCopilotReadiness";
+import {
+  getKnowledgeCmsCopilotActivationStatus,
+  type KnowledgeCmsCopilotActivationCheckState,
+  type KnowledgeCmsCopilotActivationStatus,
+} from "@/lib/knowledgeCmsCopilotActivation";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
 import {
   getRecentKnowledgeCmsSeoScans,
@@ -53,7 +59,25 @@ const readinessClasses: Record<KnowledgeCmsCopilotReadinessState, string> = {
   ready: "border-emerald-200 bg-emerald-50 text-emerald-900",
 };
 
-function ReadinessPanel({ readiness }: { readiness: KnowledgeCmsCopilotReadiness }) {
+const activationClasses: Record<
+  KnowledgeCmsCopilotActivationCheckState,
+  string
+> = {
+  blocked: "border-red-200 bg-red-50 text-red-900",
+  disabled: "border-slate-200 bg-slate-50 text-slate-700",
+  verified: "border-emerald-200 bg-emerald-50 text-emerald-900",
+};
+
+function ReadinessPanel({
+  activation,
+  readiness,
+}: {
+  activation?: KnowledgeCmsCopilotActivationStatus;
+  readiness: KnowledgeCmsCopilotReadiness;
+}) {
+  const liveCurrent = Boolean(
+    activation?.currentConfiguration && !activation.expired,
+  );
   return (
     <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -64,9 +88,12 @@ function ReadinessPanel({ readiness }: { readiness: KnowledgeCmsCopilotReadiness
             or other secret values.
           </p>
         </div>
-        <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
-          {readiness.readyCount} of {readiness.totalCount} ready
-        </span>
+        <div className="space-y-3">
+          <span className="block rounded-full bg-blue-100 px-3 py-1 text-center text-sm font-semibold text-blue-800">
+            {readiness.readyCount} of {readiness.totalCount} configured
+          </span>
+          <KnowledgeCmsActivationCheckControl />
+        </div>
       </div>
       <div className="mt-6 grid gap-3 md:grid-cols-2">
         {readiness.checks.map((item) => (
@@ -78,6 +105,98 @@ function ReadinessPanel({ readiness }: { readiness: KnowledgeCmsCopilotReadiness
             <p className="mt-2 text-sm">{item.detail}</p>
           </article>
         ))}
+      </div>
+      <div className="mt-7 border-t border-slate-200 pt-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-slate-950">
+              Last live verification
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Configuration is not treated as working access until these
+              external checks pass.
+            </p>
+          </div>
+          {activation ? (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                liveCurrent
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-amber-100 text-amber-900"
+              }`}
+            >
+              {liveCurrent ? "current" : "refresh required"}
+            </span>
+          ) : null}
+        </div>
+        {!activation ? (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            No live activation evidence exists for this deployment. Run the
+            connection check before enabling recurring monitoring.
+          </p>
+        ) : (
+          <>
+            <p className="mt-4 text-sm text-slate-600">
+              Checked {formatDate(activation.evidence.checkedAt)} for{" "}
+              {activation.evidence.environment} at {activation.evidence.origin}.{" "}
+              Evidence expires {formatDate(activation.evidence.expiresAt)}.
+            </p>
+            {!activation.currentConfiguration ? (
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                The deployment configuration changed after this check. Verify
+                the live connections again.
+              </p>
+            ) : null}
+            {activation.expired ? (
+              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                This evidence is older than the activation window. Verify the
+                connections again before recurring monitoring can run.
+              </p>
+            ) : null}
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {activation.evidence.checks.map((item) => (
+                <article
+                  className={`rounded-xl border p-4 ${activationClasses[item.state]}`}
+                  key={item.id}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="font-bold">{item.label}</h4>
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      {item.state}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm">{item.detail}</p>
+                  <p className="mt-2 text-xs uppercase tracking-wider opacity-75">
+                    {item.verification} check
+                  </p>
+                </article>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+              <span
+                className={`rounded-full px-3 py-1 ${
+                  activation.evidence.readyForAi
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                AI {activation.evidence.readyForAi ? "live" : "not live"}
+              </span>
+              <span
+                className={`rounded-full px-3 py-1 ${
+                  activation.evidence.readyForContinuousSeo
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                Recurring monitoring{" "}
+                {activation.evidence.readyForContinuousSeo
+                  ? "verified"
+                  : "not verified"}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
@@ -354,11 +473,12 @@ export default async function KnowledgeCmsCopilotPage({
   const readiness = getKnowledgeCmsCopilotReadiness();
   const aiEnabled =
     readiness.checks.find((item) => item.id === "ai")?.state === "ready";
-  const [records, scans, run, runHistory] = await Promise.all([
+  const [records, scans, run, runHistory, activation] = await Promise.all([
     listKnowledgeCmsAdminRecords(),
     seoEnabled ? getRecentKnowledgeCmsSeoScans(8) : Promise.resolve([]),
     runId && aiFlagEnabled ? getKnowledgeCmsAiRun(runId) : Promise.resolve(undefined),
     aiFlagEnabled ? listKnowledgeCmsAiRuns(12) : Promise.resolve([]),
+    getKnowledgeCmsCopilotActivationStatus({ actor }),
   ]);
   const scan = scans[0];
   const articles = records
@@ -397,7 +517,7 @@ export default async function KnowledgeCmsCopilotPage({
           </div>
         </header>
 
-        <ReadinessPanel readiness={readiness} />
+        <ReadinessPanel activation={activation} readiness={readiness} />
 
         {run ? <Proposal aiEnabled={aiEnabled} run={run} /> : runId ? (
           <p className="mt-8 rounded-xl border border-red-200 bg-red-50 p-5 text-red-900">That proposal is unavailable or does not belong to this session.</p>

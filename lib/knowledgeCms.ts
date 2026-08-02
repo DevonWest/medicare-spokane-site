@@ -9,6 +9,7 @@ export const KNOWLEDGE_CMS_COLLECTIONS = {
   articleRenderings: "knowledge_cms_article_renderings",
   articleRevisionSnapshots: "knowledge_cms_article_revision_snapshots",
   cutoverApprovals: "knowledge_cms_cutover_approvals",
+  copilotActivation: "knowledge_cms_copilot_activation",
   aiRuns: "knowledge_cms_ai_runs",
   seoScans: "knowledge_cms_seo_scans",
   search: "knowledge_search_documents",

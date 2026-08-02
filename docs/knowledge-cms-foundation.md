@@ -52,6 +52,9 @@ below are complete.
 | `knowledge_cms_canonical_paths` | Transactional, cross-kind canonical-path locks |
 | `knowledge_cms_audit_events` | Append-only lifecycle audit events |
 | `knowledge_cms_cutover_approvals` | Immutable, expiring approvals binding all 45 records and 22 route artifacts |
+| `knowledge_cms_ai_runs` | Private AI proposals, refinements, usage, and application state |
+| `knowledge_cms_seo_scans` | Manual and scheduled technical, content, source, and Search Console evidence |
+| `knowledge_cms_copilot_activation` | Current sanitized live-integration evidence, isolated by deployment environment and origin |
 
 The repository writes the canonical record, slug lock, canonical-path lock,
 search projection, and audit event in one Firestore transaction. Updates

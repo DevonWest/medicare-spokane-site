@@ -12,6 +12,10 @@ import {
   type KnowledgeCmsAiProvider,
   type KnowledgeCmsAiUsage,
 } from "./knowledgeCmsAi";
+import {
+  resolveKnowledgeCmsAiModels,
+  type KnowledgeCmsCopilotRuntimeEnvironment,
+} from "./knowledgeCmsCopilotReadiness";
 import { env } from "./runtimeValues";
 
 const SYSTEM_INSTRUCTIONS = `You are the private AI Content & SEO Copilot for MedicareInSpokane.com, a licensed independent insurance agency in Spokane, Washington.
@@ -24,11 +28,6 @@ When currentArticle is supplied, preserve its established slug and canonical pat
 
 For site strategy, evaluate evidence before recommending changes. Search competitors only to identify search intent and content gaps; never copy their language. A strategy response must set draft to null.`;
 
-function configuredModel(name: string, fallback: string): string {
-  const value = env(name);
-  return value && /^gpt-[A-Za-z0-9._-]{1,80}$/.test(value) ? value : fallback;
-}
-
 function configuredInteger(
   name: string,
   fallback: number,
@@ -39,6 +38,101 @@ function configuredInteger(
   return Number.isSafeInteger(value) && value >= minimum && value <= maximum
     ? value
     : fallback;
+}
+
+export type KnowledgeCmsOpenAiAccessStatus =
+  | "available"
+  | "disabled"
+  | "unavailable"
+  | "unconfigured";
+
+export type KnowledgeCmsOpenAiAccessErrorCode =
+  | "access_denied"
+  | "invalid_configuration"
+  | "model_not_found"
+  | "quota_exceeded"
+  | "request_failed";
+
+export interface KnowledgeCmsOpenAiAccessCheck {
+  status: KnowledgeCmsOpenAiAccessStatus;
+  routineModel?: string;
+  deepModel?: string;
+  errorCode?: KnowledgeCmsOpenAiAccessErrorCode;
+}
+
+export interface KnowledgeCmsOpenAiModelClient {
+  models: {
+    retrieve(model: string): Promise<{ id: string }>;
+  };
+}
+
+export interface VerifyKnowledgeCmsOpenAiAccessOptions {
+  client?: KnowledgeCmsOpenAiModelClient;
+  runtime?: KnowledgeCmsCopilotRuntimeEnvironment;
+}
+
+function openAiErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const candidate = error as { status?: unknown; code?: unknown };
+  const value = candidate.status ?? candidate.code;
+  return typeof value === "number" ? value : Number(value) || undefined;
+}
+
+function classifyOpenAiAccessError(
+  error: unknown,
+): KnowledgeCmsOpenAiAccessErrorCode {
+  const status = openAiErrorStatus(error);
+  if (status === 401 || status === 403) return "access_denied";
+  if (status === 404) return "model_not_found";
+  if (status === 429) return "quota_exceeded";
+  return "request_failed";
+}
+
+export async function verifyKnowledgeCmsOpenAiAccess(
+  options: VerifyKnowledgeCmsOpenAiAccessOptions = {},
+): Promise<KnowledgeCmsOpenAiAccessCheck> {
+  const runtime = options.runtime ?? process.env;
+  if (runtime.KNOWLEDGE_CMS_AI_ENABLED !== "true") {
+    return { status: "disabled" };
+  }
+  const { routineModel, deepModel } = resolveKnowledgeCmsAiModels(runtime);
+  const apiKey = runtime.OPENAI_API_KEY?.trim();
+  if (!apiKey || !routineModel || !deepModel) {
+    return {
+      status: "unconfigured",
+      ...(routineModel ? { routineModel } : {}),
+      ...(deepModel ? { deepModel } : {}),
+      errorCode: "invalid_configuration",
+    };
+  }
+
+  const client: KnowledgeCmsOpenAiModelClient =
+    options.client ??
+    new OpenAI({
+      apiKey,
+      maxRetries: 0,
+      timeout: 15_000,
+    });
+  try {
+    await Promise.all(
+      [...new Set([routineModel, deepModel])].map(async (model) => {
+        const result = await client.models.retrieve(model);
+        if (!result?.id) throw new Error("OpenAI model metadata was empty.");
+      }),
+    );
+    return { status: "available", routineModel, deepModel };
+  } catch (error) {
+    const errorCode = classifyOpenAiAccessError(error);
+    console.error("[knowledge-cms-ai] OpenAI access verification failed.", {
+      errorCode,
+    });
+    return {
+      status: "unavailable",
+      routineModel,
+      deepModel,
+      errorCode,
+    };
+  }
 }
 
 function usageFromResponse(
@@ -131,9 +225,11 @@ export class OpenAiKnowledgeCmsProvider implements KnowledgeCmsAiProvider {
 
   async generate(context: KnowledgeCmsAiContext, options: { actorId: string }) {
     const deep = context.request.deepResearch;
-    const model = deep
-      ? configuredModel("KNOWLEDGE_CMS_AI_DEEP_MODEL", "gpt-5.6-sol")
-      : configuredModel("KNOWLEDGE_CMS_AI_MODEL", "gpt-5.6-terra");
+    const { routineModel, deepModel } = resolveKnowledgeCmsAiModels();
+    const model = deep ? deepModel : routineModel;
+    if (!model) {
+      throw new KnowledgeCmsAiProviderError("unconfigured");
+    }
     const strategy = context.request.mode === "site_strategy";
     const maxOutputTokens = deep
       ? configuredInteger(
