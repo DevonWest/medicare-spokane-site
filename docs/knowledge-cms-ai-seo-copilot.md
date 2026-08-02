@@ -136,13 +136,15 @@ incompatible runner cannot fail only after the image has been pushed.
 For a traffic-serving deployment, the workflow first smoke-tests the exact
 container image, creates a uniquely named no-traffic revision, and waits for
 that exact revision to report ready. It then assigns 100% of traffic to the
-revision by name, verifies the exact commit through Cloud Run's service URL,
-resolved directly from the service rather than a deployment-action traffic
-alias, and only then retries the public beta or production route. Both responses
-must report the deployment environment and a valid renderer configuration. The
-service URL is printed even if public DNS or certificate verification fails.
-This keeps a green build, image push, stale `LATEST` alias, healthy but
-unpromoted revision, or missing custom domain from being mistaken for a
+revision by name and validates the authoritative service state reports that
+single revision at exactly 100%. If the service configuration exposes its
+default `run.app` origin publicly, the workflow also verifies the exact commit
+there. Restricted-ingress or disabled default endpoints remain protected and
+are recorded as an intentional skip rather than weakened for CI. The public
+beta or production domain is always required to report the exact commit,
+deployment environment, and a valid renderer configuration. This keeps a green
+build, image push, stale `LATEST` alias, healthy but unpromoted revision,
+protected direct endpoint, or missing custom domain from being mistaken for a
 successful public rollout.
 
 ## GitHub and Cloud Run configuration

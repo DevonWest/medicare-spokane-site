@@ -469,18 +469,21 @@ jobs:
             --to-revisions "$REVISION=100" \
             --quiet
 
-      - name: Resolve canonical Cloud Run service URL
-        id: service_url
+      - name: Verify exact Cloud Run traffic and endpoint state
+        id: service_state
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         env:
+          REVISION: ${{ steps.cfg.outputs.revision }}
           SERVICE: ${{ steps.cfg.outputs.service }}
         run: |
-          service_url="$(gcloud run services describe "$SERVICE" \
+          service_json="$(gcloud run services describe "$SERVICE" \
             --region "$REGION" \
             --project "$PROJECT_ID" \
-            --format='value(status.url)')"
-          test -n "$service_url" || (echo "::error::Cloud Run service URL is missing" && exit 1)
-          echo "url=$service_url" >> "$GITHUB_OUTPUT"
+            --format=json)"
+          endpoint_state="$(printf '%s' "$service_json" | \
+            node scripts/parse-cloud-run-service-state.mjs \
+              --revision "$REVISION")"
+          printf '%s\n' "$endpoint_state" >> "$GITHUB_OUTPUT"
 
       - name: Deploy production cutover candidate with no traffic
         id: deploy_cutover_candidate
@@ -532,15 +535,22 @@ jobs:
             ${{ steps.cfg.outputs.seo_cron_secret }}
 
       - name: Verify deployed Cloud Run service health
-        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        if: ${{ (env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production') && steps.service_state.outputs.direct_public == 'true' }}
         run: >-
           node scripts/verify-cloud-run-health.mjs
-          --url "${{ steps.service_url.outputs.url }}/healthz"
+          --url "${{ steps.service_state.outputs.direct_url }}/healthz"
           --commit "${{ github.sha }}"
           --target "$TARGET"
           --attempts 24
           --delay-ms 5000
           --timeout-ms 10000
+
+      - name: Explain protected Cloud Run service endpoint
+        if: ${{ (env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production') && steps.service_state.outputs.direct_public != 'true' }}
+        env:
+          DIRECT_ENDPOINT_REASON: ${{ steps.service_state.outputs.direct_reason }}
+        run: >-
+          echo "Direct run.app health check skipped because the Cloud Run service endpoint is protected ($DIRECT_ENDPOINT_REASON)."
 
       - name: Verify deployed custom-domain health
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
