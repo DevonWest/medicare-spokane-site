@@ -185,13 +185,16 @@ lib/
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | Independent public-routing gate. It requires exact CMS enablement, `cutover`, a current approval receipt, and every execution gate disabled. | `false` |
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | Receipt suffix of the current immutable cutover approval. It must be exactly 64 lowercase hexadecimal characters. | _empty_ |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | Server-only renderer mode. `static` is the default, `shadow` enables private comparison, and `cutover` is effective only through the complete guarded routing configuration. | `static` |
-| `KNOWLEDGE_CMS_SEO_ENABLED` | Enables the admin-only deterministic SEO workbench. Exact `true` is required. It does not change public content. | `false` |
+| `KNOWLEDGE_CMS_SEO_ENABLED` | Enables the admin-only deterministic SEO workbench. When the repository variable is unset, deployment follows the private CMS gate; explicit `false` remains the kill switch. It does not change public content. | follows `KNOWLEDGE_CMS_ENABLED` |
 | `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED` | Adds Search Console page/query evidence to SEO scans through Application Default Credentials. | `false` |
 | `SEARCH_CONSOLE_SITE_URL` | Search Console property, normally `sc-domain:medicareinspokane.com`. | _required when Search Console is enabled_ |
 | `KNOWLEDGE_CMS_AI_ENABLED` | Enables the admin-only OpenAI copilot. Proposals remain advisory until explicitly applied as private drafts. | `false` |
 | `OPENAI_API_KEY` | OpenAI API credential supplied to Cloud Run from Secret Manager. Never use a browser-exposed variable. | _required when AI is enabled_ |
 | `KNOWLEDGE_CMS_AI_MODEL` | Routine structured research/drafting model. | `gpt-5.6-terra` |
 | `KNOWLEDGE_CMS_AI_DEEP_MODEL` | Higher-capability model used only when the administrator selects deeper research. | `gpt-5.6-sol` |
+| `KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS` | Hard response ceiling for routine copilot requests, including reasoning tokens. | `16000` |
+| `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | Hard response ceiling for administrator-selected deeper research. | `24000` |
+| `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | OpenAI request timeout; deployment accepts 30,000–240,000 milliseconds. | `180000` |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | Enables the protected scheduled-scan endpoint. | `false` |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN` | Random 32+ character bearer token supplied from Secret Manager to the scheduled endpoint. | _required when continuous SEO is enabled_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
@@ -235,9 +238,12 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 The admin-only Content & SEO Copilot combines deterministic page/CMS audits,
 Search Console comparison periods, guarded web research, and structured AI
 proposals. It retains scan/proposal history, supports follow-up refinements,
-and can prepare private working revisions for published articles without
-mutating them. AI can directly create or update only a private article draft;
-it cannot submit, approve, publish, enable indexing, or change public routing. See
+and can prepare private working revisions for published articles without an
+initial CMS mutation. A separate confirmation snapshots the exact private CMS
+publication and opens the proposal as an indexing-blocked draft only while the
+public renderer remains static. AI cannot submit, approve, publish, enable
+indexing, or change public routing. Token and web-search usage are retained on
+each run, and output/time limits are enforced before activation. See
 [`docs/knowledge-cms-ai-seo-copilot.md`](docs/knowledge-cms-ai-seo-copilot.md)
 for architecture, activation, Search Console access, secrets, scheduling, and
 rollback.
@@ -245,7 +251,8 @@ rollback.
 The default-off editorial foundation defines governed `knowledge_articles`,
 `knowledge_topics`, and `knowledge_faqs` records, plus revision-bound
 `knowledge_cms_article_renderings`, unique slug locks, search projections, and
-append-only audit events. The private
+append-only audit events. Published-article revision starts also preserve the
+prior full record in `knowledge_cms_article_revision_snapshots`. The private
 `/admin/knowledge` workspace adds authenticated list, detail, create-draft, and
 edit-draft views, plus submit-for-review and verified request-changes controls.
 It remains a server-authorized editing surface and does not render CMS records

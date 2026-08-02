@@ -10,6 +10,7 @@ import {
   parseKnowledgeCmsAiProposal,
   type KnowledgeCmsAiContext,
   type KnowledgeCmsAiProvider,
+  type KnowledgeCmsAiUsage,
 } from "./knowledgeCmsAi";
 import { env } from "./runtimeValues";
 
@@ -26,6 +27,45 @@ For site strategy, evaluate evidence before recommending changes. Search competi
 function configuredModel(name: string, fallback: string): string {
   const value = env(name);
   return value && /^gpt-[A-Za-z0-9._-]{1,80}$/.test(value) ? value : fallback;
+}
+
+function configuredInteger(
+  name: string,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+): number {
+  const value = Number(env(name));
+  return Number.isSafeInteger(value) && value >= minimum && value <= maximum
+    ? value
+    : fallback;
+}
+
+function usageFromResponse(
+  response: {
+    output: Array<{ type: string }>;
+    usage?: {
+      input_tokens: number;
+      input_tokens_details: { cached_tokens: number };
+      output_tokens: number;
+      output_tokens_details: { reasoning_tokens: number };
+      total_tokens: number;
+    };
+  },
+  maxOutputTokens: number,
+): KnowledgeCmsAiUsage | undefined {
+  if (!response.usage) return undefined;
+  return {
+    inputTokens: response.usage.input_tokens,
+    cachedInputTokens: response.usage.input_tokens_details.cached_tokens,
+    outputTokens: response.usage.output_tokens,
+    reasoningTokens: response.usage.output_tokens_details.reasoning_tokens,
+    totalTokens: response.usage.total_tokens,
+    webSearchCalls: response.output.filter(
+      (item) => item.type === "web_search_call",
+    ).length,
+    maxOutputTokens,
+  };
 }
 
 function compactContext(context: KnowledgeCmsAiContext): string {
@@ -75,7 +115,18 @@ export class OpenAiKnowledgeCmsProvider implements KnowledgeCmsAiProvider {
     if (!client && !apiKey) {
       throw new KnowledgeCmsAiProviderError("unconfigured");
     }
-    this.client = client ?? new OpenAI({ apiKey });
+    this.client =
+      client ??
+      new OpenAI({
+        apiKey,
+        maxRetries: 1,
+        timeout: configuredInteger(
+          "KNOWLEDGE_CMS_AI_TIMEOUT_MS",
+          180_000,
+          30_000,
+          240_000,
+        ),
+      });
   }
 
   async generate(context: KnowledgeCmsAiContext, options: { actorId: string }) {
@@ -84,6 +135,19 @@ export class OpenAiKnowledgeCmsProvider implements KnowledgeCmsAiProvider {
       ? configuredModel("KNOWLEDGE_CMS_AI_DEEP_MODEL", "gpt-5.6-sol")
       : configuredModel("KNOWLEDGE_CMS_AI_MODEL", "gpt-5.6-terra");
     const strategy = context.request.mode === "site_strategy";
+    const maxOutputTokens = deep
+      ? configuredInteger(
+          "KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS",
+          24_000,
+          4_000,
+          40_000,
+        )
+      : configuredInteger(
+          "KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS",
+          16_000,
+          4_000,
+          40_000,
+        );
     let response;
     try {
       response = await this.client.responses.create({
@@ -91,6 +155,7 @@ export class OpenAiKnowledgeCmsProvider implements KnowledgeCmsAiProvider {
         instructions: SYSTEM_INSTRUCTIONS,
         input: compactContext(context),
         store: false,
+        max_output_tokens: maxOutputTokens,
         safety_identifier: createHash("sha256")
           .update(`knowledge-cms:${options.actorId}`)
           .digest("hex"),
@@ -146,9 +211,11 @@ export class OpenAiKnowledgeCmsProvider implements KnowledgeCmsAiProvider {
       }
       throw error;
     }
+    const usage = usageFromResponse(response, maxOutputTokens);
     return {
       model,
       proposal,
+      ...(usage ? { usage } : {}),
     };
   }
 }

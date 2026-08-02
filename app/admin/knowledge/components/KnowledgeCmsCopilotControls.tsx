@@ -105,7 +105,9 @@ export function KnowledgeCmsAiRequestControl({
           </select>
           <span className="mt-2 block font-normal text-slate-600">
             Draft changes can be applied to the private draft. Published articles
-            produce a private revision proposal and leave the published record unchanged.
+            produce a private revision proposal; after review, you can explicitly
+            open it as an editable draft while the current static website page stays
+            unchanged.
           </span>
         </label>
       ) : null}
@@ -140,7 +142,13 @@ export function KnowledgeCmsAiRequestControl({
   );
 }
 
-export function KnowledgeCmsAiApplyControl({ runId }: { runId: string }) {
+export function KnowledgeCmsAiApplyControl({
+  revisionProposal = false,
+  runId,
+}: {
+  revisionProposal?: boolean;
+  runId: string;
+}) {
   const boundAction = applyKnowledgeCmsAiRunAction.bind(null, runId);
   const [state, action, pending] = useActionState(
     boundAction,
@@ -154,11 +162,12 @@ export function KnowledgeCmsAiApplyControl({ runId }: { runId: string }) {
           name="confirmation"
           required
           type="checkbox"
-          value="apply_private_draft"
+          value={revisionProposal ? "start_private_revision" : "apply_private_draft"}
         />
         <span>
-          I reviewed this proposal and understand it will only create or update a
-          private draft. It will not submit, approve, publish, or enable indexing.
+          {revisionProposal
+            ? "I reviewed this proposal and understand it will preserve the current published CMS revision as an immutable snapshot, remove its private search projection, and open the proposal as an indexing-blocked draft. The verified static public page stays unchanged, and the revision still requires normal review and publishing."
+            : "I reviewed this proposal and understand it will only create or update a private draft. It will not submit, approve, publish, or enable indexing."}
         </span>
       </label>
       <button
@@ -166,7 +175,13 @@ export function KnowledgeCmsAiApplyControl({ runId }: { runId: string }) {
         disabled={pending}
         type="submit"
       >
-        {pending ? "Applying private draft…" : "Apply as private draft"}
+        {pending
+          ? revisionProposal
+            ? "Starting private revision…"
+            : "Applying private draft…"
+          : revisionProposal
+            ? "Start private working revision"
+            : "Apply as private draft"}
       </button>
       <ActionMessage state={state} />
     </form>

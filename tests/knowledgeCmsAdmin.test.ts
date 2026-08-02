@@ -768,6 +768,36 @@ test("admin DTOs omit ownership and audit internals while preserving access deci
   );
   assert.equal("publication" in published, false);
   assert.equal(published.workflowActions.unpublish, true);
+
+  const workingRevision = toKnowledgeCmsAdminRecordDto(
+    articleRecord({
+      audit: {
+        revision: 6,
+        createdAt: NOW.toISOString(),
+        createdBy: "author-user",
+        updatedAt: NOW.toISOString(),
+        updatedBy: "publisher-user",
+      },
+      workingRevision: {
+        sourceRevision: 5,
+        sourcePublishedAt: NOW.toISOString(),
+        sourcePublishedBy: "publisher-user",
+        sourceAiRunId: "4f59f915-58ca-4d35-9b3f-d7d28c589723",
+        startedAt: NOW.toISOString(),
+        startedBy: "publisher-user",
+      },
+    }),
+    publisher,
+  );
+  assert.deepEqual(workingRevision.workingRevision, {
+    sourceRevision: 5,
+    sourcePublishedAt: NOW.toISOString(),
+    startedAt: NOW.toISOString(),
+  });
+  assert.doesNotMatch(
+    JSON.stringify(workingRevision),
+    /sourceAiRunId|sourcePublishedBy|startedBy/,
+  );
 });
 
 test("admin routes remain default-off and publication stays private and server-authorized", () => {

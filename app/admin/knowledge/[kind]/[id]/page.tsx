@@ -69,6 +69,27 @@ export default async function KnowledgeRecordPage({
             })}
           </p>
         </header>
+        {record.kind === "article" && record.workingRevision ? (
+          <aside className="mt-8 rounded-2xl border border-blue-300 bg-blue-50 p-6 text-blue-950 shadow-sm md:p-8">
+            <p className="text-sm font-bold uppercase tracking-[0.18em]">
+              Private working revision
+            </p>
+            <p className="mt-3 text-sm leading-7">
+              This draft started from privately published CMS revision{" "}
+              {record.workingRevision.sourceRevision}, which was preserved as an
+              immutable snapshot. The verified static public website page remains
+              unchanged until this draft completes the normal review and publishing
+              workflow.
+            </p>
+            <p className="mt-4 text-xs font-semibold text-blue-800">
+              Revision started{" "}
+              {new Date(record.workingRevision.startedAt).toLocaleString(
+                "en-US",
+                { timeZone: "America/Los_Angeles" },
+              )}
+            </p>
+          </aside>
+        ) : null}
         {record.changeRequest ? (
           <aside className="mt-8 rounded-2xl border border-amber-300 bg-amber-50 p-6 text-amber-950 shadow-sm md:p-8">
             <p className="text-sm font-bold uppercase tracking-[0.18em]">

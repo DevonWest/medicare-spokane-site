@@ -46,6 +46,7 @@ below are complete.
 | `knowledge_topics` | Reusable topic and category records |
 | `knowledge_faqs` | Reusable question-and-answer records |
 | `knowledge_cms_article_renderings` | Immutable, revision-bound lossless article rendering artifacts |
+| `knowledge_cms_article_revision_snapshots` | Immutable prior private publications preserved when an AI-assisted working revision starts |
 | `knowledge_search_documents` | Published-record search projections |
 | `knowledge_cms_slugs` | Transactional, per-record-kind slug locks |
 | `knowledge_cms_canonical_paths` | Transactional, cross-kind canonical-path locks |
@@ -69,6 +70,7 @@ stateDiagram-v2
     InReview --> Approved: Verified review
     Approved --> Published: Publisher approval
     Published --> Draft: Unpublish
+    Published --> Draft: Start private working revision
     Draft --> Archived: Archive
     InReview --> Archived: Archive
     Approved --> Archived: Archive
@@ -98,6 +100,14 @@ Publish and unpublish both require an audited decision note. Unpublishing
 atomically deletes the search projection, blocks indexing, clears the expired
 approval, and returns the record to draft.
 
+A publisher or admin may also start an AI-assisted working revision of one
+published article after a separate exact confirmation. The transaction keeps
+the slug and canonical path fixed, snapshots the full published CMS record,
+removes its private search projection, blocks indexing, and opens the proposal
+as a normal draft. It is refused while CMS public routing is active. The
+verified static public route stays unchanged, and the draft must complete the
+normal submit, review, approval, and publication sequence.
+
 ## Permission model
 
 | Role | Allowed responsibilities |
@@ -105,7 +115,7 @@ approval, and returns the record to draft.
 | Author | Create records; edit and submit their own drafts |
 | Editor | Create, edit, and submit any draft |
 | Reviewer | Approve or request changes, including on records they own |
-| Publisher | Publish, unpublish, archive, and restore |
+| Publisher | Publish, unpublish, start article working revisions, archive, and restore |
 | Admin | Administrative authority across the private editorial workflow |
 
 The model separates authentication from authorization. Firebase custom claims
@@ -139,6 +149,9 @@ request instead of trusting claims supplied by a form or browser state.
   eligibility, and a separate revision-bound publication action;
 - publisher-only unpublish controls that require a reason and atomically
   remove the search projection before returning the record to draft;
+- publisher/admin-only AI working-revision controls that preserve an immutable
+  prior publication and cannot submit, approve, publish, enable indexing, or
+  change the public route;
 - safe DTOs that omit canonical ownership and audit internals from client
   components;
 - articles, topics, FAQs, relationships, source records, search terms, and
