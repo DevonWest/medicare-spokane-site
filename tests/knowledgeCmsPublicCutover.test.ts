@@ -473,7 +473,19 @@ test("approval, deployment, and direct-route boundaries remain explicit and fail
   assert.doesNotMatch(sitemap, /cms-render|public-cutover/);
   assert.match(workflow, /--no-traffic/);
   assert.match(workflow, /--tag=cms-cutover-candidate/);
-  assert.doesNotMatch(workflow, /update-traffic/);
+  const cutoverDeployStart = workflow.indexOf(
+    "- name: Deploy production cutover candidate with no traffic",
+  );
+  const serviceVerificationStart = workflow.indexOf(
+    "- name: Verify deployed Cloud Run service health",
+  );
+  assert.ok(cutoverDeployStart >= 0);
+  assert.ok(serviceVerificationStart > cutoverDeployStart);
+  const cutoverDeploy = workflow.slice(
+    cutoverDeployStart,
+    serviceVerificationStart,
+  );
+  assert.doesNotMatch(cutoverDeploy, /update-traffic|--to-revisions/);
   assert.match(
     foundation,
     /## Guarded public cutover and rollback contract/,

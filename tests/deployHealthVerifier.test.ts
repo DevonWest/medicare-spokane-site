@@ -33,6 +33,17 @@ test("deployment health arguments require a safe exact target", () => {
   assert.equal(options.url.href, "https://beta.medicareinspokane.com/healthz");
   assert.equal(options.expectedCommitSha, commitSha);
   assert.equal(options.expectedTarget, "beta");
+  assert.equal(
+    parseDeploymentHealthArguments([
+      "--url",
+      "http://127.0.0.1:18080/healthz",
+      "--commit",
+      commitSha,
+      "--target",
+      "beta",
+    ]).url.href,
+    "http://127.0.0.1:18080/healthz",
+  );
   assert.throws(
     () =>
       parseDeploymentHealthArguments([
@@ -43,7 +54,19 @@ test("deployment health arguments require a safe exact target", () => {
         "--target",
         "beta",
       ]),
-    /credential-free HTTPS URL/,
+    /credential-free HTTPS or loopback HTTP/,
+  );
+  assert.throws(
+    () =>
+      parseDeploymentHealthArguments([
+        "--url",
+        "http://example.com/healthz",
+        "--commit",
+        commitSha,
+        "--target",
+        "beta",
+      ]),
+    /credential-free HTTPS or loopback HTTP/,
   );
 });
 
