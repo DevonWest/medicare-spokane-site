@@ -38,16 +38,37 @@ function parseIngress(payload) {
     throw new Error("Cloud Run service annotations must be an object.");
   }
 
-  const rawIngress =
+  const desiredRawIngress =
     annotations?.["run.googleapis.com/ingress"] ??
     payload.ingress ??
-    payload.spec?.ingress ??
-    "all";
-  const ingress = INGRESS_VALUES.get(rawIngress);
+    payload.spec?.ingress;
+  const activeRawIngress =
+    annotations?.["run.googleapis.com/ingress-status"] ??
+    payload.ingressStatus ??
+    payload.ingress_status ??
+    desiredRawIngress;
+  const ingress = INGRESS_VALUES.get(activeRawIngress);
   if (!ingress) {
-    throw new Error("Cloud Run service has an unsupported ingress setting.");
+    throw new Error(
+      "Cloud Run service is missing a supported active ingress setting.",
+    );
   }
   return { annotations: annotations ?? {}, ingress };
+}
+
+function parseInvokerIamDisabled(payload, annotations) {
+  const rawValue =
+    annotations["run.googleapis.com/invoker-iam-disabled"] ??
+    payload.invokerIamDisabled ??
+    payload.invoker_iam_disabled ??
+    false;
+  if (rawValue === true || rawValue === "true") {
+    return true;
+  }
+  if (rawValue === false || rawValue === "false") {
+    return false;
+  }
+  throw new Error("Cloud Run invoker IAM check state must be boolean.");
 }
 
 function parseDefaultUrlDisabled(payload, annotations) {
@@ -138,6 +159,7 @@ export function parseCloudRunServiceState(payload, expectedRevision) {
   validateTraffic(payload, expectedRevision);
   const { annotations, ingress } = parseIngress(payload);
   const defaultUrlDisabled = parseDefaultUrlDisabled(payload, annotations);
+  const invokerIamDisabled = parseInvokerIamDisabled(payload, annotations);
   const directUrl = parseServiceUrl(payload);
 
   if (defaultUrlDisabled) {
@@ -158,6 +180,13 @@ export function parseCloudRunServiceState(payload, expectedRevision) {
     return {
       directPublic: false,
       directReason: "ingress-internal-and-cloud-load-balancing",
+      directUrl,
+    };
+  }
+  if (!invokerIamDisabled) {
+    return {
+      directPublic: false,
+      directReason: "invoker-iam-check-enabled",
       directUrl,
     };
   }

@@ -19,12 +19,15 @@ test("Cloud Run deployments use compatible maintained actions and Cloud SDK", ()
   assert.match(workflow, /google-github-actions\/auth@v3/);
   assert.match(workflow, /google-github-actions\/setup-gcloud@v3/);
   assert.match(workflow, /version: "latest"/);
-  assert.match(workflow, /- name: Verify Cloud SDK health-probe support/);
+  assert.match(workflow, /- name: Verify Cloud SDK deployment support/);
   assert.match(workflow, /gcloud run deploy --help/);
-  assert.match(workflow, /for probe_flag in --startup-probe --liveness-probe/);
+  assert.match(
+    workflow,
+    /--startup-probe \\\n\s+--liveness-probe \\\n\s+--ingress \\\n\s+--default-url \\\n\s+--no-invoker-iam-check/,
+  );
   assert.doesNotMatch(workflow, /--readiness-probe/);
   assert.ok(
-    workflow.indexOf("- name: Verify Cloud SDK health-probe support") <
+    workflow.indexOf("- name: Verify Cloud SDK deployment support") <
       workflow.indexOf("- name: Build container image"),
   );
   assert.equal(
@@ -49,6 +52,27 @@ test("every Cloud Run revision is gated by the lightweight health route", () => 
   assert.ok(
     workflow.indexOf("- name: Smoke test built container health") <
       workflow.indexOf("- name: Push container image"),
+  );
+});
+
+test("public website deploys explicitly reconcile network and invocation access", () => {
+  assert.equal((workflow.match(/--ingress=all/g) ?? []).length, 2);
+  assert.equal((workflow.match(/--default-url/g) ?? []).length, 3);
+  assert.equal((workflow.match(/--no-invoker-iam-check/g) ?? []).length, 3);
+  assert.doesNotMatch(workflow, /--allow-unauthenticated/);
+});
+
+test("custom-domain DNS is verified before an image is built", () => {
+  assert.match(workflow, /- name: Verify target custom-domain DNS/);
+  assert.match(workflow, /node scripts\/verify-deployment-dns\.mjs/);
+  assert.match(
+    workflow,
+    /--hostname "\$\{\{ steps\.cfg\.outputs\.site_host \}\}"/,
+  );
+  assert.match(workflow, /--expected-cname "ghs\.googlehosted\.com"/);
+  assert.ok(
+    workflow.indexOf("- name: Verify target custom-domain DNS") <
+      workflow.indexOf("- name: Build container image"),
   );
 });
 

@@ -14,13 +14,34 @@ const parser = join(root, "scripts/parse-cloud-run-service-state.mjs");
 const revision = "medicare-spokane-site-beta-r-12345678-12345678901-1";
 
 function servicePayload(overrides: Record<string, unknown> = {}) {
+  const metadata =
+    overrides.metadata &&
+    typeof overrides.metadata === "object" &&
+    !Array.isArray(overrides.metadata)
+      ? (overrides.metadata as Record<string, unknown>)
+      : {};
+  const metadataAnnotations =
+    metadata.annotations &&
+    typeof metadata.annotations === "object" &&
+    !Array.isArray(metadata.annotations)
+      ? (metadata.annotations as Record<string, unknown>)
+      : {};
+
   return {
-    metadata: { annotations: {} },
     status: {
       traffic: [{ percent: 100, revisionName: revision }],
       url: "https://medicare-spokane-site-beta-example-uw.a.run.app",
     },
     ...overrides,
+    metadata: {
+      ...metadata,
+      annotations: {
+        "run.googleapis.com/ingress": "all",
+        "run.googleapis.com/ingress-status": "all",
+        "run.googleapis.com/invoker-iam-disabled": "true",
+        ...metadataAnnotations,
+      },
+    },
   };
 }
 
@@ -64,7 +85,10 @@ test("classifies restricted ingress without weakening it", () => {
     const state = parseCloudRunServiceState(
       servicePayload({
         metadata: {
-          annotations: { "run.googleapis.com/ingress": ingress },
+          annotations: {
+            "run.googleapis.com/ingress": ingress,
+            "run.googleapis.com/ingress-status": ingress,
+          },
         },
       }),
       revision,
@@ -73,6 +97,39 @@ test("classifies restricted ingress without weakening it", () => {
     assert.equal(state.directReason, reason);
     assert.match(formatCloudRunServiceState(state), /^direct_public=false/m);
   }
+});
+
+test("uses authoritative active ingress instead of optimistic desired ingress", () => {
+  const state = parseCloudRunServiceState(
+    servicePayload({
+      metadata: {
+        annotations: {
+          "run.googleapis.com/ingress": "all",
+          "run.googleapis.com/ingress-status": "internal",
+        },
+      },
+    }),
+    revision,
+  );
+
+  assert.equal(state.directPublic, false);
+  assert.equal(state.directReason, "ingress-internal");
+});
+
+test("classifies an enabled invoker IAM check as protected", () => {
+  const state = parseCloudRunServiceState(
+    servicePayload({
+      metadata: {
+        annotations: {
+          "run.googleapis.com/invoker-iam-disabled": "false",
+        },
+      },
+    }),
+    revision,
+  );
+
+  assert.equal(state.directPublic, false);
+  assert.equal(state.directReason, "invoker-iam-check-enabled");
 });
 
 test("classifies a disabled or unavailable default URL", () => {
@@ -155,12 +212,15 @@ test("fails closed on unsafe service metadata", () => {
       parseCloudRunServiceState(
         servicePayload({
           metadata: {
-            annotations: { "run.googleapis.com/ingress": "unexpected" },
+            annotations: {
+              "run.googleapis.com/ingress": "unexpected",
+              "run.googleapis.com/ingress-status": "unexpected",
+            },
           },
         }),
         revision,
       ),
-    /unsupported ingress/,
+    /supported active ingress/,
   );
   assert.throws(
     () =>

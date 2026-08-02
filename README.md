@@ -442,9 +442,10 @@ GitHub → Actions → **Deploy to Cloud Run** → **Run workflow** → choose:
 - Target: `beta`
 
 The workflow will:
+- Verify the target hostname points to `ghs.googlehosted.com` before building.
 - Build the image with `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`, `NEXT_PUBLIC_SITE_ENV=staging`, `NEXT_PUBLIC_GTM_ID=$VAR` baked in.
 - Push to `…/site-beta:<sha>` in Artifact Registry.
-- Deploy to the `medicare-spokane-site-beta` service with the same vars set as runtime env (and `FIREBASE_PROJECT_ID`, `NODE_ENV=production`).
+- Deploy to the `medicare-spokane-site-beta` service with explicit public ingress, default URL, and disabled Invoker IAM check, plus the same vars set as runtime env (and `FIREBASE_PROJECT_ID`, `NODE_ENV=production`).
 
 > ⚠️ `NEXT_PUBLIC_*` values are inlined into the client JS bundle at `next build`. Setting them only on Cloud Run is not enough — they must also be passed as `--build-arg` (the workflow does this for the site, analytics, and Firebase Auth identifiers).
 

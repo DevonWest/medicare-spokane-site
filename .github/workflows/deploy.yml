@@ -134,10 +134,12 @@ jobs:
           if [ "$TARGET" = "production" ]; then
             service="${{ vars.CLOUD_RUN_SERVICE }}"
             echo "site_url=https://www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+            echo "site_host=www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
             echo "site_env=production" >> "$GITHUB_OUTPUT"
           else
             service="${{ vars.CLOUD_RUN_SERVICE_BETA }}"
             echo "site_url=https://beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+            echo "site_host=beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
             echo "site_env=staging" >> "$GITHUB_OUTPUT"
           fi
 
@@ -313,13 +315,27 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           version: "latest"
 
-      - name: Verify Cloud SDK health-probe support
+      - name: Verify target custom-domain DNS
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        run: >-
+          node scripts/verify-deployment-dns.mjs
+          --hostname "${{ steps.cfg.outputs.site_host }}"
+          --expected-cname "ghs.googlehosted.com"
+          --attempts 6
+          --delay-ms 5000
+
+      - name: Verify Cloud SDK deployment support
         run: |
           echo "Cloud SDK version: ${{ steps.setup_gcloud.outputs.version }}"
           deploy_help="$(gcloud run deploy --help 2>&1)"
-          for probe_flag in --startup-probe --liveness-probe; do
-            if ! grep -Fq -- "$probe_flag" <<< "$deploy_help"; then
-              echo "::error::Cloud SDK must support gcloud run deploy $probe_flag"
+          for required_flag in \
+            --startup-probe \
+            --liveness-probe \
+            --ingress \
+            --default-url \
+            --no-invoker-iam-check; do
+            if ! grep -Fq -- "$required_flag" <<< "$deploy_help"; then
+              echo "::error::Cloud SDK must support gcloud run deploy $required_flag"
               exit 1
             fi
           done
@@ -383,7 +399,9 @@ jobs:
           no_traffic: true
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
-            --allow-unauthenticated
+            --ingress=all
+            --default-url
+            --no-invoker-iam-check
             --port=8080
             --cpu=1
             --memory=512Mi
@@ -495,7 +513,9 @@ jobs:
           image: ${{ steps.cfg.outputs.image }}
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
-            --allow-unauthenticated
+            --ingress=all
+            --default-url
+            --no-invoker-iam-check
             --port=8080
             --cpu=1
             --memory=512Mi
