@@ -53,6 +53,19 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED` | `false` | **Optional.** Independent final routing gate. Keep false except during an explicitly approved canary/cutover. |
 | `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT` | _empty_ | **Optional.** Current 64-character lowercase approval receipt; required only when the cutover gate is true. |
 | `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE` | `static` | **Optional.** `static` is the default, `shadow` is private comparison, and `cutover` is accepted only with every independent gate and receipt exact. |
+| `KNOWLEDGE_CMS_SEO_ENABLED` | `false` | **Optional.** Admin-only deterministic SEO scanner; requires the CMS gate. |
+| `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED` | `false` | **Optional.** Adds Search Console evidence; requires the SEO gate and property access. |
+| `SEARCH_CONSOLE_SITE_URL` | `sc-domain:medicareinspokane.com` | Search Console property used by the server-side read-only client. |
+| `KNOWLEDGE_CMS_AI_ENABLED` | `false` | **Optional.** Draft-only OpenAI copilot; requires the SEO gate and API-key secret. |
+| `KNOWLEDGE_CMS_AI_MODEL` | `gpt-5.6-terra` | Routine copilot model. |
+| `KNOWLEDGE_CMS_AI_DEEP_MODEL` | `gpt-5.6-sol` | Model used only when deeper research is selected. |
+| `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` | Secret Manager **name**, never the key value. Required only when the AI gate is true. |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `false` | **Optional.** Enables the protected recurring-scan endpoint. |
+| `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Required only when recurring scans are true. |
+
+Leave the four new feature gates false for the first deployment. Activate them
+in the verified sequence in
+[`knowledge-cms-ai-seo-copilot.md`](knowledge-cms-ai-seo-copilot.md).
 
 ### 1b. Authentication — pick ONE of these two options
 
@@ -86,6 +99,8 @@ gcloud services enable \
   iam.googleapis.com \
   firestore.googleapis.com \
   identitytoolkit.googleapis.com \
+  searchconsole.googleapis.com \
+  secretmanager.googleapis.com \
   compute.googleapis.com
 ```
 
@@ -378,6 +393,9 @@ What happens:
     cutover is active
   - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact private `shadow`
     or fully gated `cutover` is intentionally configured
+  - all AI/SEO gates default false; when deliberately enabled, the workflow
+    validates their dependencies and attaches the OpenAI/scheduler values from
+    Secret Manager rather than repository plaintext
   - `NODE_ENV=production`
 
 If `KNOWLEDGE_CMS_ENABLED=true`, the workflow stops before the image build when

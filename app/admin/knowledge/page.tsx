@@ -102,6 +102,14 @@ export default async function KnowledgeAdminPage() {
                 ) : null}
               </>
             ) : null}
+            {canRunArticleReviewQueue ? (
+              <Link
+                className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-100"
+                href="/admin/knowledge/copilot"
+              >
+                AI & SEO Copilot
+              </Link>
+            ) : null}
             {canPreviewShadow ? (
               <>
                 <Link

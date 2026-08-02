@@ -32,6 +32,13 @@ const excludedPathParts = [
   join("lib", "reviewFeedback.ts"),
   join("lib", "runtimeValues.ts"),
   join("lib", "env.ts"),
+  join("lib", "knowledgeCmsAi.ts"),
+  join("lib", "knowledgeCmsAiDal.ts"),
+  join("lib", "knowledgeCmsAiOpenAi.ts"),
+  join("lib", "knowledgeCmsSearchConsole.ts"),
+  join("lib", "knowledgeCmsSeo.ts"),
+  join("lib", "knowledgeCmsSeoCrawler.ts"),
+  join("lib", "knowledgeCmsSeoDal.ts"),
 ];
 
 const internalPublicContentPhrases = [

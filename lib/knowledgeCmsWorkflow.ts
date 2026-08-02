@@ -463,6 +463,7 @@ export class KnowledgeCmsWorkflow {
   async create(
     input: KnowledgeCmsCreateInput,
     actor: KnowledgeCmsActor,
+    options: { note?: string } = {},
   ): Promise<KnowledgeCmsRecord> {
     assertKnowledgeCmsActionAllowed(actor, "create");
     const nowIso = this.now().toISOString();
@@ -472,6 +473,7 @@ export class KnowledgeCmsWorkflow {
       expectedRevision: null,
       event: "create",
       actorId: actor.id,
+      ...(options.note ? { note: options.note } : {}),
     });
     return cloneKnowledgeCmsRecord(record);
   }
@@ -500,6 +502,7 @@ export class KnowledgeCmsWorkflow {
     input: KnowledgeCmsUpdateInput,
     expectedRevision: number,
     actor: KnowledgeCmsActor,
+    options: { note?: string } = {},
   ): Promise<KnowledgeCmsRecord> {
     const current = await this.repository.get(kind, id);
     if (!current) {
@@ -515,6 +518,7 @@ export class KnowledgeCmsWorkflow {
       expectedRevision,
       event: "update",
       actorId: actor.id,
+      ...(options.note ? { note: options.note } : {}),
     });
     return cloneKnowledgeCmsRecord(next);
   }
