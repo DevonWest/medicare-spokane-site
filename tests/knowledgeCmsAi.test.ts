@@ -91,7 +91,7 @@ test("strategy proposals may cite competitors but cannot contain an applyable dr
   );
 });
 
-test("copilot form parsing requires intent and a draft target for improvements", () => {
+test("copilot form parsing requires intent and an article target for improvements", () => {
   const form = new FormData();
   form.set("mode", "new_article");
   form.set("prompt", "Create a useful Spokane enrollment guide.");
@@ -105,7 +105,26 @@ test("copilot form parsing requires intent and a draft target for improvements",
   const invalid = new FormData();
   invalid.set("mode", "improve_article");
   invalid.set("prompt", "Improve the selected article for visitors.");
-  assert.throws(() => parseKnowledgeCmsAiRequest(invalid), /Choose a draft article/);
+  assert.throws(() => parseKnowledgeCmsAiRequest(invalid), /Choose an article/);
+});
+
+test("copilot refinement binds a valid prior run without accepting forged IDs", () => {
+  const form = new FormData();
+  form.set("mode", "site_strategy");
+  form.set("prompt", "Keep the priorities but add clearer evidence and next steps.");
+  form.set("parentRunId", "4f59f915-58ca-4d35-9b3f-d7d28c589723");
+  assert.deepEqual(parseKnowledgeCmsAiRequest(form), {
+    mode: "site_strategy",
+    prompt: "Keep the priorities but add clearer evidence and next steps.",
+    deepResearch: false,
+    parentRunId: "4f59f915-58ca-4d35-9b3f-d7d28c589723",
+  });
+
+  form.set("parentRunId", "../../another-run");
+  assert.throws(
+    () => parseKnowledgeCmsAiRequest(form),
+    /valid prior proposal/i,
+  );
 });
 
 test("copilot UI and scheduled endpoint preserve explicit human and secret gates", () => {
@@ -121,10 +140,21 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
     join(root, "lib/knowledgeCmsAiOpenAi.ts"),
     "utf8",
   );
+  const dal = readFileSync(join(root, "lib/knowledgeCmsAiDal.ts"), "utf8");
+  const page = readFileSync(
+    join(root, "app/admin/knowledge/copilot/page.tsx"),
+    "utf8",
+  );
   assert.match(controls, /apply_private_draft/);
   assert.match(controls, /will not submit, approve, publish, or enable indexing/);
   assert.match(route, /timingSafeEqual/);
   assert.match(route, /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED/);
   assert.match(provider, /store: false/);
   assert.match(provider, /allowed_domains/);
+  assert.match(dal, /revision_proposal/);
+  assert.match(dal, /currentArticle\.status !== "published"/);
+  assert.match(page, /published CMS record, public route, indexing/);
+  assert.match(page, /AI proposal history/);
+  assert.match(controls, /Continue refining this proposal/);
+  assert.match(provider, /previousProposal/);
 });

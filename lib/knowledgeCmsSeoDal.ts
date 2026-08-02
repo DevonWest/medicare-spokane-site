@@ -70,6 +70,7 @@ export interface KnowledgeCmsSeoScan {
 export interface KnowledgeCmsSeoScanStore {
   save(scan: KnowledgeCmsSeoScan): Promise<void>;
   latest(): Promise<KnowledgeCmsSeoScan | undefined>;
+  listRecent?(limit: number): Promise<KnowledgeCmsSeoScan[]>;
 }
 
 export interface KnowledgeCmsSeoDalDependencies {
@@ -144,6 +145,20 @@ export class FirestoreKnowledgeCmsSeoScanStore
       .get();
     const value = snapshot.docs[0]?.data();
     return isStoredScan(value) ? value : undefined;
+  }
+
+  async listRecent(limit: number): Promise<KnowledgeCmsSeoScan[]> {
+    const boundedLimit = Number.isInteger(limit)
+      ? Math.min(Math.max(limit, 1), 50)
+      : 8;
+    const snapshot = await this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.seoScans)
+      .orderBy("completedAt", "desc")
+      .limit(boundedLimit)
+      .get();
+    return snapshot.docs
+      .map((document) => document.data())
+      .filter((value): value is KnowledgeCmsSeoScan => isStoredScan(value));
   }
 }
 
@@ -252,4 +267,22 @@ export async function getLatestKnowledgeCmsSeoScan(
   if (!isKnowledgeCmsSeoEnabled()) return undefined;
   const store = dependencies.store ?? new FirestoreKnowledgeCmsSeoScanStore();
   return store.latest();
+}
+
+export async function getRecentKnowledgeCmsSeoScans(
+  limit = 8,
+  dependencies: Pick<KnowledgeCmsSeoDalDependencies, "store"> = {},
+): Promise<KnowledgeCmsSeoScan[]> {
+  const actor = await requireKnowledgeCmsActor();
+  assertAuthorized(actor);
+  if (!isKnowledgeCmsSeoEnabled()) return [];
+  const boundedLimit = Number.isInteger(limit)
+    ? Math.min(Math.max(limit, 1), 25)
+    : 8;
+  const store = dependencies.store ?? new FirestoreKnowledgeCmsSeoScanStore();
+  if (store.listRecent) {
+    return (await store.listRecent(boundedLimit)).slice(0, boundedLimit);
+  }
+  const latest = await store.latest();
+  return latest ? [latest] : [];
 }

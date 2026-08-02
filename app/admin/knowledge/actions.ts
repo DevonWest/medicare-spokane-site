@@ -108,9 +108,13 @@ function errorState(error: unknown): KnowledgeCmsAdminActionState {
       already_applied: "This proposal has already been applied.",
       disabled: "The AI copilot is not enabled.",
       invalid_clock: "The server clock could not support this AI action.",
+      parent_run_invalid:
+        "That earlier proposal is unavailable or does not match this task.",
       proposal_not_applyable: "This proposal is advisory and cannot be applied as a draft.",
       run_not_found: "This copilot proposal no longer exists.",
       target_not_draft: "The target article changed or is no longer an editable draft.",
+      target_not_improvable:
+        "Only draft or published articles can be selected for improvement.",
       wrong_actor: "Only the administrator who created this proposal can apply it.",
     };
     return { ok: false, message: messages[error.reason], conflict: true };

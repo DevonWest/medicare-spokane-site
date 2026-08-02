@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   KnowledgeCmsAiApplyControl,
+  KnowledgeCmsAiRefineControl,
   KnowledgeCmsAiRequestControl,
   KnowledgeCmsSeoScanControl,
 } from "../components/KnowledgeCmsCopilotControls";
@@ -10,16 +11,21 @@ import { getCurrentKnowledgeCmsActor } from "@/lib/knowledgeCmsAdminAuth";
 import {
   getKnowledgeCmsAiRun,
   isKnowledgeCmsAiEnabled,
+  listKnowledgeCmsAiRuns,
   type KnowledgeCmsAiRun,
 } from "@/lib/knowledgeCmsAiDal";
+import {
+  getKnowledgeCmsCopilotReadiness,
+  type KnowledgeCmsCopilotReadiness,
+  type KnowledgeCmsCopilotReadinessState,
+} from "@/lib/knowledgeCmsCopilotReadiness";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
 import {
-  getLatestKnowledgeCmsSeoScan,
+  getRecentKnowledgeCmsSeoScans,
   isKnowledgeCmsSeoEnabled,
   type KnowledgeCmsSeoScan,
 } from "@/lib/knowledgeCmsSeoDal";
 import type { KnowledgeCmsSeoPriority } from "@/lib/knowledgeCmsSeo";
-import { env } from "@/lib/runtimeValues";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -41,7 +47,49 @@ const priorityClasses: Record<KnowledgeCmsSeoPriority, string> = {
   low: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
-function ScanDashboard({ scan }: { scan: KnowledgeCmsSeoScan }) {
+const readinessClasses: Record<KnowledgeCmsCopilotReadinessState, string> = {
+  blocked: "border-red-200 bg-red-50 text-red-900",
+  disabled: "border-slate-200 bg-slate-50 text-slate-700",
+  ready: "border-emerald-200 bg-emerald-50 text-emerald-900",
+};
+
+function ReadinessPanel({ readiness }: { readiness: KnowledgeCmsCopilotReadiness }) {
+  return (
+    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-950">Activation readiness</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Configuration status is shown without exposing keys, tokens, account IDs,
+            or other secret values.
+          </p>
+        </div>
+        <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+          {readiness.readyCount} of {readiness.totalCount} ready
+        </span>
+      </div>
+      <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {readiness.checks.map((item) => (
+          <article className={`rounded-xl border p-4 ${readinessClasses[item.state]}`} key={item.id}>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-bold">{item.label}</h3>
+              <span className="text-xs font-bold uppercase tracking-wider">{item.state}</span>
+            </div>
+            <p className="mt-2 text-sm">{item.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ScanDashboard({
+  history,
+  scan,
+}: {
+  history: KnowledgeCmsSeoScan[];
+  scan: KnowledgeCmsSeoScan;
+}) {
   const metrics = scan.searchMetrics;
   return (
     <div className="space-y-6">
@@ -100,11 +148,50 @@ function ScanDashboard({ scan }: { scan: KnowledgeCmsSeoScan }) {
           ))
         )}
       </div>
+      {history.length > 1 ? (
+        <details className="rounded-xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer font-semibold text-blue-800">
+            View {history.length} recent scans
+          </summary>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="px-3 py-2">Completed</th>
+                  <th className="px-3 py-2">Trigger</th>
+                  <th className="px-3 py-2">Priorities</th>
+                  <th className="px-3 py-2">Clicks</th>
+                  <th className="px-3 py-2">Impressions</th>
+                  <th className="px-3 py-2">Search Console</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {history.map((item) => (
+                  <tr key={item.id}>
+                    <td className="whitespace-nowrap px-3 py-2">{formatDate(item.completedAt)}</td>
+                    <td className="px-3 py-2">{item.trigger}</td>
+                    <td className="px-3 py-2">{item.summary.totalOpportunities}</td>
+                    <td className="px-3 py-2">{Math.round(item.searchMetrics.clicks)}</td>
+                    <td className="px-3 py-2">{Math.round(item.searchMetrics.impressions)}</td>
+                    <td className="px-3 py-2">{item.searchConsoleStatus.replaceAll("_", " ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }
 
-function Proposal({ run }: { run: KnowledgeCmsAiRun }) {
+function Proposal({
+  aiEnabled,
+  run,
+}: {
+  aiEnabled: boolean;
+  run: KnowledgeCmsAiRun;
+}) {
   const draft = run.proposal.draft;
   return (
     <section className="mt-8 rounded-2xl border border-violet-200 bg-white p-6 shadow-sm md:p-8">
@@ -114,9 +201,17 @@ function Proposal({ run }: { run: KnowledgeCmsAiRun }) {
           <h2 className="mt-2 text-2xl font-bold text-slate-950">{run.proposal.summary}</h2>
         </div>
         <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
-          {run.model} · {run.status}
+          {run.model} · {run.status.replaceAll("_", " ")}
         </span>
       </div>
+      {run.status === "revision_proposal" ? (
+        <p className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+          This is a private working revision for a published article. The current
+          published CMS record, public route, indexing, and search projection remain
+          unchanged. Review and retain the proposal here until it is promoted through
+          a governed revision workflow.
+        </p>
+      ) : null}
       <p className="mt-5 whitespace-pre-wrap text-slate-700">{run.proposal.reasoning}</p>
       {run.proposal.recommendedActions.length ? (
         <ol className="mt-5 list-decimal space-y-2 pl-6 text-slate-800">
@@ -171,6 +266,51 @@ function Proposal({ run }: { run: KnowledgeCmsAiRun }) {
           Open the applied private draft →
         </Link>
       ) : null}
+      <KnowledgeCmsAiRefineControl
+        enabled={aiEnabled}
+        mode={run.mode}
+        runId={run.id}
+        targetRecordId={run.targetRecordId}
+      />
+    </section>
+  );
+}
+
+function RunHistory({ runs }: { runs: KnowledgeCmsAiRun[] }) {
+  return (
+    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <h2 className="text-2xl font-bold text-slate-950">AI proposal history</h2>
+      <p className="mt-2 text-sm text-slate-600">
+        Reopen prior strategy, draft, and published-article revision proposals without
+        rerunning research or re-entering the request.
+      </p>
+      {runs.length === 0 ? (
+        <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-5 text-slate-700">
+          No saved AI proposals yet.
+        </p>
+      ) : (
+        <div className="mt-5 divide-y divide-slate-200 rounded-xl border border-slate-200">
+          {runs.map((item) => (
+            <Link
+              className="block p-4 hover:bg-slate-50"
+              href={`/admin/knowledge/copilot?run=${encodeURIComponent(item.id)}`}
+              key={item.id}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-950">{item.proposal.summary}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {formatDate(item.createdAt)} · {item.mode.replaceAll("_", " ")} · {item.model}
+                  </p>
+                </div>
+                <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-800">
+                  {item.status.replaceAll("_", " ")}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -194,15 +334,28 @@ export default async function KnowledgeCmsCopilotPage({
     typeof query.opportunity === "string" ? query.opportunity : undefined;
   const seoEnabled = isKnowledgeCmsSeoEnabled();
   const aiFlagEnabled = isKnowledgeCmsAiEnabled();
-  const aiEnabled = aiFlagEnabled && Boolean(env("OPENAI_API_KEY"));
-  const [records, scan, run] = await Promise.all([
+  const readiness = getKnowledgeCmsCopilotReadiness();
+  const aiEnabled =
+    readiness.checks.find((item) => item.id === "ai")?.state === "ready";
+  const [records, scans, run, runHistory] = await Promise.all([
     listKnowledgeCmsAdminRecords(),
-    seoEnabled ? getLatestKnowledgeCmsSeoScan() : Promise.resolve(undefined),
+    seoEnabled ? getRecentKnowledgeCmsSeoScans(8) : Promise.resolve([]),
     runId && aiFlagEnabled ? getKnowledgeCmsAiRun(runId) : Promise.resolve(undefined),
+    aiFlagEnabled ? listKnowledgeCmsAiRuns(12) : Promise.resolve([]),
   ]);
-  const draftArticles = records
-    .filter((record) => record.kind === "article" && record.status === "draft")
-    .map((record) => ({ id: record.id, title: record.title, revision: record.revision }));
+  const scan = scans[0];
+  const articles = records
+    .filter(
+      (record) =>
+        record.kind === "article" &&
+        (record.status === "draft" || record.status === "published"),
+    )
+    .map((record) => ({
+      id: record.id,
+      title: record.title,
+      revision: record.revision,
+      status: record.status as "draft" | "published",
+    }));
   const selectedOpportunity = scan?.opportunities.find(
     (opportunity) => opportunity.id === opportunityId,
   );
@@ -227,7 +380,9 @@ export default async function KnowledgeCmsCopilotPage({
           </div>
         </header>
 
-        {run ? <Proposal run={run} /> : runId ? (
+        <ReadinessPanel readiness={readiness} />
+
+        {run ? <Proposal aiEnabled={aiEnabled} run={run} /> : runId ? (
           <p className="mt-8 rounded-xl border border-red-200 bg-red-50 p-5 text-red-900">That proposal is unavailable or does not belong to this session.</p>
         ) : null}
 
@@ -240,7 +395,7 @@ export default async function KnowledgeCmsCopilotPage({
             <KnowledgeCmsSeoScanControl enabled={seoEnabled} />
           </div>
           <div className="mt-7">
-            {scan ? <ScanDashboard scan={scan} /> : (
+            {scan ? <ScanDashboard history={scans} scan={scan} /> : (
               <p className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-slate-700">No saved scan yet. Enable the scanner and run the first evidence pass.</p>
             )}
           </div>
@@ -256,12 +411,14 @@ export default async function KnowledgeCmsCopilotPage({
               </p>
             ) : null}
             <KnowledgeCmsAiRequestControl
-              articles={draftArticles}
+              articles={articles}
               enabled={aiEnabled}
               initialPrompt={initialPrompt}
             />
           </div>
         </section>
+
+        <RunHistory runs={runHistory} />
       </div>
     </section>
   );
