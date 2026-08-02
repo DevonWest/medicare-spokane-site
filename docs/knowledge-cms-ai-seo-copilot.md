@@ -133,11 +133,13 @@ Every Cloud Run revision uses `/healthz` for startup and liveness probes. The
 deploy workflow installs the latest SDK available through the maintained Google
 action and verifies both supported probe flags before building an image, so an
 incompatible runner cannot fail only after the image has been pushed.
-For a traffic-serving deployment, the workflow retries the public beta or
-production route and accepts it only when the response reports the exact Git
-commit, deployment environment, and a valid renderer configuration. This keeps
-a green build or image push from being mistaken for a successful public
-rollout.
+For a traffic-serving deployment, the workflow explicitly assigns traffic to
+`LATEST`, verifies the exact commit through Cloud Run's service URL, and only
+then retries the public beta or production route. Both responses must report
+the deployment environment and a valid renderer configuration. The service URL
+is printed even if public DNS or certificate verification fails. This keeps a
+green build, image push, healthy but unpromoted revision, or missing custom
+domain from being mistaken for a successful public rollout.
 
 ## GitHub and Cloud Run configuration
 

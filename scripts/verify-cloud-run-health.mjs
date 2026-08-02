@@ -92,10 +92,33 @@ export function validateDeploymentHealthPayload(
   }
 }
 
-function cleanFailureReason(error) {
+export function cleanFailureReason(error) {
   if (error instanceof Error) {
     if (error.name === "AbortError" || error.name === "TimeoutError") {
       return "request timed out";
+    }
+    const cause =
+      error.cause && typeof error.cause === "object" ? error.cause : undefined;
+    const causeCode =
+      cause && "code" in cause && typeof cause.code === "string"
+        ? cause.code
+        : undefined;
+    if (causeCode === "ENOTFOUND" || causeCode === "EAI_AGAIN") {
+      return "DNS name could not be resolved";
+    }
+    if (causeCode === "ECONNREFUSED") {
+      return "connection was refused";
+    }
+    if (causeCode === "ECONNRESET") {
+      return "connection was reset";
+    }
+    if (
+      causeCode === "CERT_HAS_EXPIRED" ||
+      causeCode === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
+      causeCode === "ERR_TLS_CERT_ALTNAME_INVALID" ||
+      causeCode === "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+    ) {
+      return "TLS certificate validation failed";
     }
     return error.message.replace(/[\r\n]+/g, " ").slice(0, 240);
   }

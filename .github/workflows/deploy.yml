@@ -345,6 +345,7 @@ jobs:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
           image: ${{ steps.cfg.outputs.image }}
+          revision_traffic: LATEST=100
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
             --allow-unauthenticated
@@ -433,7 +434,18 @@ jobs:
             ${{ steps.cfg.outputs.openai_secret }}
             ${{ steps.cfg.outputs.seo_cron_secret }}
 
-      - name: Verify deployed public health
+      - name: Verify deployed Cloud Run service health
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        run: >-
+          node scripts/verify-cloud-run-health.mjs
+          --url "${{ steps.deploy_standard.outputs.url }}/healthz"
+          --commit "${{ github.sha }}"
+          --target "$TARGET"
+          --attempts 24
+          --delay-ms 5000
+          --timeout-ms 10000
+
+      - name: Verify deployed custom-domain health
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         run: >-
           node scripts/verify-cloud-run-health.mjs
@@ -445,6 +457,7 @@ jobs:
           --timeout-ms 10000
 
       - name: Show service URL
+        if: ${{ always() }}
         run: |
           echo "Deployed target: $TARGET"
           gcloud run services describe "${{ steps.cfg.outputs.service }}" \
