@@ -7,12 +7,24 @@ import { resolveKnowledgeCmsPublicRouting } from "@/lib/knowledgeCmsPublicRoutin
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const commitShaPattern = /^[0-9a-f]{40}$/;
+
+export function getDeploymentCommitSha(
+  value: string | undefined = process.env.APP_COMMIT_SHA,
+): string | null {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && commitShaPattern.test(normalized) ? normalized : null;
+}
+
 export function GET() {
   const publicRenderer = resolveKnowledgeCmsPublicRouting();
   return NextResponse.json(
     {
       status: "ok",
       uptime: process.uptime(),
+      deployment: {
+        commitSha: getDeploymentCommitSha(),
+      },
       knowledgeCmsPublicRenderer: {
         requestedMode: publicRenderer.requestedMode,
         effectiveMode: publicRenderer.effectiveMode,

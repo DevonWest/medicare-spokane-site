@@ -129,6 +129,13 @@ configuration fingerprint. Search Console is checked with read-only analytics,
 and OpenAI access is checked with model metadata only. Evidence is bound to the
 exact environment/configuration and expires after 35 days.
 
+Every Cloud Run revision also uses `/healthz` for startup and readiness probes.
+For a traffic-serving deployment, the workflow retries the public beta or
+production route and accepts it only when the response reports the exact Git
+commit, deployment environment, and a valid renderer configuration. This keeps
+a green build or image push from being mistaken for a successful public
+rollout.
+
 ## GitHub and Cloud Run configuration
 
 Repository variables:
