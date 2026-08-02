@@ -306,15 +306,18 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.PROJECT_ID }}
-          version: ">= 573.0.0"
+          version: "latest"
 
-      - name: Verify Cloud SDK readiness-probe support
+      - name: Verify Cloud SDK health-probe support
         run: |
           echo "Cloud SDK version: ${{ steps.setup_gcloud.outputs.version }}"
-          if ! gcloud run deploy --help 2>&1 | grep -Fq -- "--readiness-probe"; then
-            echo "::error::Cloud SDK must support gcloud run deploy --readiness-probe"
-            exit 1
-          fi
+          deploy_help="$(gcloud run deploy --help 2>&1)"
+          for probe_flag in --startup-probe --liveness-probe; do
+            if ! grep -Fq -- "$probe_flag" <<< "$deploy_help"; then
+              echo "::error::Cloud SDK must support gcloud run deploy $probe_flag"
+              exit 1
+            fi
+          done
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
@@ -351,7 +354,7 @@ jobs:
             --min-instances=0
             --max-instances=10
             --startup-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=0,failureThreshold=30,timeoutSeconds=2,periodSeconds=2
-            --readiness-probe=httpGet.path=/healthz,httpGet.port=8080,successThreshold=1,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
+            --liveness-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=10,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
           env_vars: |
             NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
@@ -400,7 +403,7 @@ jobs:
             --no-traffic
             --tag=cms-cutover-candidate
             --startup-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=0,failureThreshold=30,timeoutSeconds=2,periodSeconds=2
-            --readiness-probe=httpGet.path=/healthz,httpGet.port=8080,successThreshold=1,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
+            --liveness-probe=httpGet.path=/healthz,httpGet.port=8080,initialDelaySeconds=10,failureThreshold=3,timeoutSeconds=2,periodSeconds=10
           env_vars: |
             NEXT_PUBLIC_SITE_URL=${{ steps.cfg.outputs.site_url }}
             NEXT_PUBLIC_SITE_ENV=${{ steps.cfg.outputs.site_env }}
