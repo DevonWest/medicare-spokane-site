@@ -338,7 +338,7 @@ In the **Cloud Console**:
 
 At your DNS provider (GoDaddy / Cloudflare / Namecheap / Google Domains / etc.):
 - **Type:** CNAME
-- **Name / Host:** `beta` (some providers want `beta.medicareinspokane.com` — both work)
+- **Name / Host:** `beta` (use this exact host in InMotion)
 - **Value / Target:** `ghs.googlehosted.com.` (include the trailing dot if the UI accepts it)
 - **TTL:** 300 (5 min) for the first 24 hours, then bump to 3600 once you're stable
 - **Cloudflare users only:** click the orange cloud to set the record to **DNS only** (grey cloud) for the initial setup. You can re-enable proxying later if you want, but Cloud Run's auto-issued cert needs DNS-only at first.
@@ -413,13 +413,18 @@ the Firebase browser API key or Auth domain variable is missing. Before
 enabling it, the runtime service account also needs
 `firebaseauth.users.get` and `firebaseauth.users.createSession`.
 
-The workflow smoke-tests `/healthz` in the exact container image before it is
-pushed. Cloud Run then creates a uniquely named revision with no traffic,
+The workflow first requires the target hostname to resolve through the
+documented `ghs.googlehosted.com` CNAME, so missing one-time DNS setup fails
+quickly instead of after an image build. It then smoke-tests `/healthz` in the
+exact container image before it is pushed. Cloud Run creates a uniquely named revision with no traffic,
 checks `/healthz` before the instance can become ready, and continues monitoring
 it with a liveness probe. Only after that exact revision reports `Ready=True`
 does the workflow assign it 100% of service traffic. It then retries the Cloud
 Run service state and fails unless that one named revision owns exactly 100% of
-traffic. When the service exposes its default `run.app` origin publicly, the
+traffic. The deployment explicitly reconciles public-site ingress, the default
+URL, and the recommended disabled Invoker IAM check, then validates Cloud Run's
+active `ingress-status` rather than assuming the requested setting took effect.
+When the service exposes its default `run.app` origin publicly, the
 workflow verifies `/healthz` there too. When ingress restrictions or a disabled
 default URL intentionally protect that origin, the direct request is skipped
 without changing the service network policy. The public custom-domain

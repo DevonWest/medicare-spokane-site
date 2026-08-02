@@ -133,10 +133,11 @@ Every Cloud Run revision uses `/healthz` for startup and liveness probes. The
 deploy workflow installs the latest SDK available through the maintained Google
 action and verifies both supported probe flags before building an image, so an
 incompatible runner cannot fail only after the image has been pushed.
-For a traffic-serving deployment, the workflow first smoke-tests the exact
-container image, creates a uniquely named no-traffic revision, and waits for
+For a traffic-serving deployment, the workflow first verifies the target
+custom-domain CNAME, smoke-tests the exact container image, creates a uniquely named no-traffic revision, and waits for
 that exact revision to report ready. It then assigns 100% of traffic to the
-revision by name and validates the authoritative service state reports that
+revision by name, explicitly reconciles public-site ingress, the default URL,
+and the disabled Invoker IAM check, and validates the authoritative service state reports that
 single revision at exactly 100%. If the service configuration exposes its
 default `run.app` origin publicly, the workflow also verifies the exact commit
 there. Restricted-ingress or disabled default endpoints remain protected and
