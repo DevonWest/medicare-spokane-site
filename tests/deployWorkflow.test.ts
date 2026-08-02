@@ -44,15 +44,34 @@ test("every Cloud Run revision is gated by the lightweight health route", () => 
     2,
   );
   assert.equal((workflow.match(/APP_COMMIT_SHA=\$\{\{ github\.sha \}\}/g) ?? []).length, 2);
+  assert.match(workflow, /- name: Smoke test built container health/);
+  assert.match(workflow, /--url "http:\/\/127\.0\.0\.1:18080\/healthz"/);
+  assert.ok(
+    workflow.indexOf("- name: Smoke test built container health") <
+      workflow.indexOf("- name: Push container image"),
+  );
 });
 
-test("traffic-serving deploys promote and verify the exact commit through both routes", () => {
-  assert.equal((workflow.match(/revision_traffic: LATEST=100/g) ?? []).length, 1);
+test("traffic-serving deploys promote and verify one exact ready revision", () => {
+  assert.doesNotMatch(workflow, /revision_traffic: LATEST=100/);
+  assert.match(workflow, /suffix: \$\{\{ steps\.cfg\.outputs\.revision_suffix \}\}/);
+  assert.match(workflow, /no_traffic: true/);
+  assert.match(workflow, /- name: Require exact deployed revision readiness/);
+  assert.match(workflow, /gcloud run revisions describe "\$REVISION"/);
+  assert.match(workflow, /status\.conditions\[\?type="Ready"\]\.status/);
+  assert.match(workflow, /--to-revisions "\$REVISION=100"/);
+  assert.match(workflow, /- name: Resolve canonical Cloud Run service URL/);
+  assert.match(workflow, /--format='value\(status\.url\)'/);
   assert.match(workflow, /- name: Verify deployed Cloud Run service health/);
-  assert.match(workflow, /--url "\$\{\{ steps\.deploy_standard\.outputs\.url \}\}\/healthz"/);
+  assert.match(workflow, /--url "\$\{\{ steps\.service_url\.outputs\.url \}\}\/healthz"/);
+  assert.doesNotMatch(workflow, /steps\.deploy_standard\.outputs\.url/);
   assert.match(workflow, /- name: Verify deployed custom-domain health/);
   assert.match(workflow, /--url "\$\{\{ steps\.cfg\.outputs\.site_url \}\}\/healthz"/);
   assert.match(workflow, /--commit "\$\{\{ github\.sha \}\}"/);
   assert.match(workflow, /--target "\$TARGET"/);
   assert.match(workflow, /- name: Show service URL\n\s+if: \$\{\{ always\(\) \}\}/);
+  assert.ok(
+    workflow.indexOf("- name: Require exact deployed revision readiness") <
+      workflow.indexOf("- name: Verify deployed Cloud Run service health"),
+  );
 });

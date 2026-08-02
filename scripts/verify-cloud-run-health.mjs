@@ -40,8 +40,19 @@ export function parseDeploymentHealthArguments(args) {
   }
 
   const url = new URL(values.get("--url") ?? "");
-  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
-    throw new Error("Deployment health URL must be a credential-free HTTPS URL.");
+  const loopbackHttp =
+    url.protocol === "http:" &&
+    (url.hostname === "127.0.0.1" || url.hostname === "localhost");
+  if (
+    (url.protocol !== "https:" && !loopbackHttp) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error(
+      "Deployment health URL must be credential-free HTTPS or loopback HTTP.",
+    );
   }
   if (url.pathname !== "/healthz") {
     throw new Error("Deployment health URL must target /healthz.");

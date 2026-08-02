@@ -132,14 +132,19 @@ jobs:
         id: cfg
         run: |
           if [ "$TARGET" = "production" ]; then
-            echo "service=${{ vars.CLOUD_RUN_SERVICE }}" >> "$GITHUB_OUTPUT"
+            service="${{ vars.CLOUD_RUN_SERVICE }}"
             echo "site_url=https://www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
             echo "site_env=production" >> "$GITHUB_OUTPUT"
           else
-            echo "service=${{ vars.CLOUD_RUN_SERVICE_BETA }}" >> "$GITHUB_OUTPUT"
+            service="${{ vars.CLOUD_RUN_SERVICE_BETA }}"
             echo "site_url=https://beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
             echo "site_env=staging" >> "$GITHUB_OUTPUT"
           fi
+
+          revision_suffix="r-${GITHUB_SHA:0:8}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "service=$service" >> "$GITHUB_OUTPUT"
+          echo "revision_suffix=$revision_suffix" >> "$GITHUB_OUTPUT"
+          echo "revision=${service}-${revision_suffix}" >> "$GITHUB_OUTPUT"
 
           if [ "$KNOWLEDGE_CMS_AI_ENABLED" = "true" ]; then
             echo "openai_secret=OPENAI_API_KEY=${{ vars.OPENAI_API_KEY_SECRET }}:latest" >> "$GITHUB_OUTPUT"
@@ -334,6 +339,35 @@ jobs:
             -t "${{ steps.cfg.outputs.image }}" \
             .
 
+      - name: Smoke test built container health
+        run: |
+          container_name="medicare-spokane-health-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            docker rm --force "$container_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker run --detach \
+            --name "$container_name" \
+            --publish 127.0.0.1:18080:8080 \
+            --env APP_COMMIT_SHA="${{ github.sha }}" \
+            --env NEXT_PUBLIC_SITE_ENV="${{ steps.cfg.outputs.site_env }}" \
+            --env NEXT_PUBLIC_SITE_URL="${{ steps.cfg.outputs.site_url }}" \
+            --env KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static \
+            --env KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false \
+            "${{ steps.cfg.outputs.image }}"
+
+          if ! node scripts/verify-cloud-run-health.mjs \
+            --url "http://127.0.0.1:18080/healthz" \
+            --commit "${{ github.sha }}" \
+            --target "$TARGET" \
+            --attempts 12 \
+            --delay-ms 1000 \
+            --timeout-ms 3000; then
+            docker logs --tail 100 "$container_name"
+            exit 1
+          fi
+
       - name: Push container image
         run: docker push "${{ steps.cfg.outputs.image }}"
 
@@ -345,7 +379,8 @@ jobs:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
           image: ${{ steps.cfg.outputs.image }}
-          revision_traffic: LATEST=100
+          suffix: ${{ steps.cfg.outputs.revision_suffix }}
+          no_traffic: true
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
             --allow-unauthenticated
@@ -384,6 +419,63 @@ jobs:
           secrets: |
             ${{ steps.cfg.outputs.openai_secret }}
             ${{ steps.cfg.outputs.seo_cron_secret }}
+
+      - name: Require exact deployed revision readiness
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        env:
+          REVISION: ${{ steps.cfg.outputs.revision }}
+          SERVICE: ${{ steps.cfg.outputs.service }}
+        run: |
+          ready_status=""
+          for attempt in $(seq 1 48); do
+            ready_status="$(gcloud run revisions describe "$REVISION" \
+              --region "$REGION" \
+              --project "$PROJECT_ID" \
+              --format='value(status.conditions[?type="Ready"].status)' 2>/dev/null || true)"
+
+            if [ "$ready_status" = "True" ]; then
+              break
+            fi
+            if [ "$ready_status" = "False" ]; then
+              echo "::error::Cloud Run revision $REVISION reported a terminal readiness failure"
+              gcloud run revisions describe "$REVISION" \
+                --region "$REGION" \
+                --project "$PROJECT_ID" \
+                --format='table(status.conditions[].type,status.conditions[].status,status.conditions[].reason,status.conditions[].message)'
+              exit 1
+            fi
+
+            echo "Waiting for Cloud Run revision $REVISION to become ready ($attempt/48)."
+            sleep 5
+          done
+
+          if [ "$ready_status" != "True" ]; then
+            echo "::error::Cloud Run revision $REVISION did not become ready within 240 seconds"
+            gcloud run revisions describe "$REVISION" \
+              --region "$REGION" \
+              --project "$PROJECT_ID" \
+              --format='table(status.conditions[].type,status.conditions[].status,status.conditions[].reason,status.conditions[].message)' || true
+            exit 1
+          fi
+
+          gcloud run services update-traffic "$SERVICE" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --to-revisions "$REVISION=100" \
+            --quiet
+
+      - name: Resolve canonical Cloud Run service URL
+        id: service_url
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
+        env:
+          SERVICE: ${{ steps.cfg.outputs.service }}
+        run: |
+          service_url="$(gcloud run services describe "$SERVICE" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --format='value(status.url)')"
+          test -n "$service_url" || (echo "::error::Cloud Run service URL is missing" && exit 1)
+          echo "url=$service_url" >> "$GITHUB_OUTPUT"
 
       - name: Deploy production cutover candidate with no traffic
         id: deploy_cutover_candidate
@@ -438,7 +530,7 @@ jobs:
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         run: >-
           node scripts/verify-cloud-run-health.mjs
-          --url "${{ steps.deploy_standard.outputs.url }}/healthz"
+          --url "${{ steps.service_url.outputs.url }}/healthz"
           --commit "${{ github.sha }}"
           --target "$TARGET"
           --attempts 24

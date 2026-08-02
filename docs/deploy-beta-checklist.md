@@ -413,12 +413,15 @@ the Firebase browser API key or Auth domain variable is missing. Before
 enabling it, the runtime service account also needs
 `firebaseauth.users.get` and `firebaseauth.users.createSession`.
 
-Cloud Run checks `/healthz` before an instance can receive traffic and continues
-monitoring it with a liveness probe. The workflow then retries the public
-Cloud Run service URL before checking the public `/healthz` route. Both must
-report `ok`, the exact Git commit, the intended beta/production environment,
-and a valid renderer configuration. Traffic-serving deployments explicitly
-assign 100% to `LATEST`, which clears any earlier no-traffic pin. The final
+The workflow smoke-tests `/healthz` in the exact container image before it is
+pushed. Cloud Run then creates a uniquely named revision with no traffic,
+checks `/healthz` before the instance can become ready, and continues monitoring
+it with a liveness probe. Only after that exact revision reports `Ready=True`
+does the workflow assign it 100% of service traffic. It then retries the Cloud
+Run service URL, resolved directly from the promoted service instead of from a
+deployment-action traffic alias, before checking the public custom-domain
+`/healthz` route. Both must report `ok`, the exact Git commit, the intended
+beta/production environment, and a valid renderer configuration. The final
 service-URL step runs even after a failed custom-domain check. Total runtime:
 ~4–10 minutes, including public-route verification.
 
