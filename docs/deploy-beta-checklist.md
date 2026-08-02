@@ -365,8 +365,9 @@ When it shows **OK**, `https://beta.medicareinspokane.com` will serve the placeh
 
 What happens:
 - The `ci` job runs `npm ci`, `npm run lint`, `npm test`, `npm run build`. All must pass.
-- The deploy job requires Cloud SDK 573.0.0 or newer and verifies readiness-probe
-  support before building or pushing an image.
+- The deploy job installs the latest Cloud SDK available through the maintained
+  Google action and verifies startup/liveness-probe support before building or
+  pushing an image.
 - The `deploy` job authenticates to GCP, builds a Docker image with build-args
   - `NEXT_PUBLIC_SITE_URL=https://beta.medicareinspokane.com`
   - `NEXT_PUBLIC_SITE_ENV=staging`
@@ -412,11 +413,12 @@ the Firebase browser API key or Auth domain variable is missing. Before
 enabling it, the runtime service account also needs
 `firebaseauth.users.get` and `firebaseauth.users.createSession`.
 
-Cloud Run checks `/healthz` before an instance can receive traffic. The workflow
-then retries the public `/healthz` route and fails unless it reports `ok`, the
-exact Git commit, the intended beta/production environment, and a valid renderer
-configuration. Its last step prints the service URL. Total runtime: ~4–10
-minutes, including public-route verification.
+Cloud Run checks `/healthz` before an instance can receive traffic and continues
+monitoring it with a liveness probe. The workflow then retries the public
+`/healthz` route and fails unless it reports `ok`, the exact Git commit, the
+intended beta/production environment, and a valid renderer configuration. Its
+last step prints the service URL. Total runtime: ~4–10 minutes, including
+public-route verification.
 
 > **If it fails, the error is in the job log.** Common causes: missing GitHub variable (read the `Validate target service variable is set` step), Artifact Registry repo doesn't exist (§3), or the deployer SA missing a role (§5b/c).
 

@@ -18,12 +18,13 @@ test("Cloud Run deployments use compatible maintained actions and Cloud SDK", ()
   assert.match(workflow, /actions\/setup-node@v5/);
   assert.match(workflow, /google-github-actions\/auth@v3/);
   assert.match(workflow, /google-github-actions\/setup-gcloud@v3/);
-  assert.match(workflow, /version: ">= 573\.0\.0"/);
-  assert.match(workflow, /- name: Verify Cloud SDK readiness-probe support/);
+  assert.match(workflow, /version: "latest"/);
+  assert.match(workflow, /- name: Verify Cloud SDK health-probe support/);
   assert.match(workflow, /gcloud run deploy --help/);
-  assert.match(workflow, /--readiness-probe/);
+  assert.match(workflow, /for probe_flag in --startup-probe --liveness-probe/);
+  assert.doesNotMatch(workflow, /--readiness-probe/);
   assert.ok(
-    workflow.indexOf("- name: Verify Cloud SDK readiness-probe support") <
+    workflow.indexOf("- name: Verify Cloud SDK health-probe support") <
       workflow.indexOf("- name: Build container image"),
   );
   assert.equal(
@@ -39,7 +40,7 @@ test("every Cloud Run revision is gated by the lightweight health route", () => 
     2,
   );
   assert.equal(
-    (workflow.match(/--readiness-probe=httpGet\.path=\/healthz/g) ?? []).length,
+    (workflow.match(/--liveness-probe=httpGet\.path=\/healthz/g) ?? []).length,
     2,
   );
   assert.equal((workflow.match(/APP_COMMIT_SHA=\$\{\{ github\.sha \}\}/g) ?? []).length, 2);

@@ -129,10 +129,10 @@ configuration fingerprint. Search Console is checked with read-only analytics,
 and OpenAI access is checked with model metadata only. Evidence is bound to the
 exact environment/configuration and expires after 35 days.
 
-Every Cloud Run revision also uses `/healthz` for startup and readiness probes.
-The deploy workflow requires Cloud SDK 573.0.0 or newer and verifies
-`--readiness-probe` support before building an image, so an outdated runner
-cannot fail only after the image has been pushed.
+Every Cloud Run revision uses `/healthz` for startup and liveness probes. The
+deploy workflow installs the latest SDK available through the maintained Google
+action and verifies both supported probe flags before building an image, so an
+incompatible runner cannot fail only after the image has been pushed.
 For a traffic-serving deployment, the workflow retries the public beta or
 production route and accepts it only when the response reports the exact Git
 commit, deployment environment, and a valid renderer configuration. This keeps
