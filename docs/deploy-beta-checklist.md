@@ -415,10 +415,17 @@ enabling it, the runtime service account also needs
 
 Cloud Run checks `/healthz` before an instance can receive traffic and continues
 monitoring it with a liveness probe. The workflow then retries the public
-`/healthz` route and fails unless it reports `ok`, the exact Git commit, the
-intended beta/production environment, and a valid renderer configuration. Its
-last step prints the service URL. Total runtime: ~4–10 minutes, including
-public-route verification.
+Cloud Run service URL before checking the public `/healthz` route. Both must
+report `ok`, the exact Git commit, the intended beta/production environment,
+and a valid renderer configuration. Traffic-serving deployments explicitly
+assign 100% to `LATEST`, which clears any earlier no-traffic pin. The final
+service-URL step runs even after a failed custom-domain check. Total runtime:
+~4–10 minutes, including public-route verification.
+
+If custom-domain verification reports `DNS name could not be resolved`, the
+Cloud Run revision can still be healthy but the public record is absent. Add
+the `beta` CNAME from §6c, wait for public DNS and the managed certificate, and
+rerun the failed deployment.
 
 > **If it fails, the error is in the job log.** Common causes: missing GitHub variable (read the `Validate target service variable is set` step), Artifact Registry repo doesn't exist (§3), or the deployer SA missing a role (§5b/c).
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  cleanFailureReason,
   parseDeploymentHealthArguments,
   validateDeploymentHealthPayload,
   verifyDeploymentHealth,
@@ -108,4 +109,22 @@ test("deployment health verification retries until the exact revision is live", 
 
   assert.equal(requests, 2);
   assert.equal(sleeps, 1);
+});
+
+test("deployment health failures preserve actionable network causes", () => {
+  const dnsCause = Object.assign(new Error("getaddrinfo ENOTFOUND"), {
+    code: "ENOTFOUND",
+  });
+  const refusedCause = Object.assign(new Error("connect ECONNREFUSED"), {
+    code: "ECONNREFUSED",
+  });
+
+  assert.equal(
+    cleanFailureReason(new TypeError("fetch failed", { cause: dnsCause })),
+    "DNS name could not be resolved",
+  );
+  assert.equal(
+    cleanFailureReason(new TypeError("fetch failed", { cause: refusedCause })),
+    "connection was refused",
+  );
 });

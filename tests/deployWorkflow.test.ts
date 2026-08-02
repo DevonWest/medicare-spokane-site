@@ -46,10 +46,13 @@ test("every Cloud Run revision is gated by the lightweight health route", () => 
   assert.equal((workflow.match(/APP_COMMIT_SHA=\$\{\{ github\.sha \}\}/g) ?? []).length, 2);
 });
 
-test("traffic-serving deploys verify the exact commit through the public route", () => {
-  assert.match(workflow, /- name: Verify deployed public health/);
-  assert.match(workflow, /node scripts\/verify-cloud-run-health\.mjs/);
+test("traffic-serving deploys promote and verify the exact commit through both routes", () => {
+  assert.equal((workflow.match(/revision_traffic: LATEST=100/g) ?? []).length, 1);
+  assert.match(workflow, /- name: Verify deployed Cloud Run service health/);
+  assert.match(workflow, /--url "\$\{\{ steps\.deploy_standard\.outputs\.url \}\}\/healthz"/);
+  assert.match(workflow, /- name: Verify deployed custom-domain health/);
   assert.match(workflow, /--url "\$\{\{ steps\.cfg\.outputs\.site_url \}\}\/healthz"/);
   assert.match(workflow, /--commit "\$\{\{ github\.sha \}\}"/);
   assert.match(workflow, /--target "\$TARGET"/);
+  assert.match(workflow, /- name: Show service URL\n\s+if: \$\{\{ always\(\) \}\}/);
 });
