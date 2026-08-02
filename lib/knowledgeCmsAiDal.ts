@@ -35,7 +35,11 @@ import {
 } from "./knowledgeCmsSeoDal";
 import { KnowledgeCmsWorkflow } from "./knowledgeCmsWorkflow";
 
-export type KnowledgeCmsAiRunStatus = "applied" | "pending" | "strategy";
+export type KnowledgeCmsAiRunStatus =
+  | "applied"
+  | "pending"
+  | "revision_proposal"
+  | "strategy";
 
 export interface KnowledgeCmsAiRun {
   id: string;
@@ -47,8 +51,10 @@ export interface KnowledgeCmsAiRun {
   initiatedBy: string;
   createdAt: string;
   model: string;
+  parentRunId?: string;
   targetRecordId?: string;
   targetRevision?: number;
+  targetStatus?: "draft" | "published";
   proposedRecordId?: string;
   proposal: KnowledgeCmsAiProposal;
   appliedAt?: string;
@@ -58,6 +64,7 @@ export interface KnowledgeCmsAiRun {
 
 export interface KnowledgeCmsAiRunStore {
   get(id: string): Promise<KnowledgeCmsAiRun | undefined>;
+  listRecent(limit: number): Promise<KnowledgeCmsAiRun[]>;
   save(run: KnowledgeCmsAiRun): Promise<void>;
   markApplied(
     id: string,
@@ -67,6 +74,7 @@ export interface KnowledgeCmsAiRunStore {
 }
 
 export interface KnowledgeCmsAiDalDependencies {
+  actor?: KnowledgeCmsActor;
   now?: () => Date;
   provider?: KnowledgeCmsAiProvider;
   repository?: KnowledgeCmsRepository;
@@ -82,9 +90,11 @@ export class KnowledgeCmsAiFeatureError extends Error {
       | "already_applied"
       | "disabled"
       | "invalid_clock"
+      | "parent_run_invalid"
       | "proposal_not_applyable"
       | "run_not_found"
       | "target_not_draft"
+      | "target_not_improvable"
       | "wrong_actor",
   ) {
     super(`Knowledge CMS AI action is unavailable (${reason}).`);
@@ -137,11 +147,16 @@ function parseStoredRun(value: unknown): KnowledgeCmsAiRun | undefined {
     (run.mode === "site_strategy" ||
       run.mode === "new_article" ||
       run.mode === "improve_article") &&
-    (run.status === "pending" || run.status === "strategy" || run.status === "applied") &&
+    (run.status === "pending" ||
+      run.status === "revision_proposal" ||
+      run.status === "strategy" ||
+      run.status === "applied") &&
     Boolean(run.proposal) &&
     (run.mode === "site_strategy"
       ? run.status === "strategy"
-      : run.status === "pending" || run.status === "applied");
+      : run.status === "pending" ||
+        run.status === "revision_proposal" ||
+        run.status === "applied");
   if (!valid) return undefined;
   if (
     run.mode === "improve_article" &&
@@ -149,6 +164,25 @@ function parseStoredRun(value: unknown): KnowledgeCmsAiRun | undefined {
       !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(run.targetRecordId) ||
       !Number.isInteger(run.targetRevision) ||
       (run.targetRevision ?? 0) < 1)
+  ) {
+    return undefined;
+  }
+  if (
+    run.parentRunId !== undefined &&
+    !isKnowledgeCmsAiRunId(run.parentRunId)
+  ) {
+    return undefined;
+  }
+  if (
+    run.targetStatus !== undefined &&
+    run.targetStatus !== "draft" &&
+    run.targetStatus !== "published"
+  ) {
+    return undefined;
+  }
+  if (
+    run.status === "revision_proposal" &&
+    (run.mode !== "improve_article" || run.targetStatus !== "published")
   ) {
     return undefined;
   }
@@ -187,6 +221,20 @@ export class FirestoreKnowledgeCmsAiRunStore implements KnowledgeCmsAiRunStore {
       .get();
     const value = snapshot.data();
     return parseStoredRun(value);
+  }
+
+  async listRecent(limit: number): Promise<KnowledgeCmsAiRun[]> {
+    const boundedLimit = Number.isInteger(limit)
+      ? Math.min(Math.max(limit, 1), 100)
+      : 20;
+    const snapshot = await this.db
+      .collection(KNOWLEDGE_CMS_COLLECTIONS.aiRuns)
+      .orderBy("createdAt", "desc")
+      .limit(boundedLimit)
+      .get();
+    return snapshot.docs
+      .map((document) => parseStoredRun(document.data()))
+      .filter((run): run is KnowledgeCmsAiRun => Boolean(run));
   }
 
   async save(run: KnowledgeCmsAiRun): Promise<void> {
@@ -262,10 +310,24 @@ export async function createKnowledgeCmsAiRun(
   dependencies: KnowledgeCmsAiDalDependencies = {},
 ): Promise<KnowledgeCmsAiRun> {
   assertEnabled();
-  const actor = await requireKnowledgeCmsActor();
+  const actor = dependencies.actor ?? (await requireKnowledgeCmsActor());
   assertAuthorized(actor);
   const repository = dependencies.repository ?? createKnowledgeCmsRepository();
+  const runStore = dependencies.runStore ?? new FirestoreKnowledgeCmsAiRunStore();
   const articles = (await repository.list({ kind: "article" })) as KnowledgeCmsArticle[];
+  let parentRun: KnowledgeCmsAiRun | undefined;
+  if (request.parentRunId) {
+    parentRun = await runStore.get(request.parentRunId);
+    if (
+      !parentRun ||
+      parentRun.initiatedBy !== actor.id ||
+      parentRun.mode !== request.mode ||
+      (request.mode === "improve_article" &&
+        parentRun.targetRecordId !== request.targetRecordId)
+    ) {
+      throw new KnowledgeCmsAiFeatureError("parent_run_invalid");
+    }
+  }
   let currentArticle: KnowledgeCmsArticle | undefined;
   if (request.mode === "improve_article") {
     currentArticle = asArticle(
@@ -274,8 +336,11 @@ export async function createKnowledgeCmsAiRun(
     if (!currentArticle) {
       throw new KnowledgeCmsNotFoundError("article", request.targetRecordId ?? "");
     }
-    if (currentArticle.status !== "draft") {
-      throw new KnowledgeCmsAiFeatureError("target_not_draft");
+    if (
+      currentArticle.status !== "draft" &&
+      currentArticle.status !== "published"
+    ) {
+      throw new KnowledgeCmsAiFeatureError("target_not_improvable");
     }
   }
 
@@ -285,6 +350,7 @@ export async function createKnowledgeCmsAiRun(
       request,
       ...(currentArticle ? { currentArticle } : {}),
       latestScan: await latestScan(dependencies.scanStore),
+      ...(parentRun ? { previousProposal: parentRun.proposal } : {}),
       articleInventory: articles.map((article) => ({
         id: article.id,
         title: article.title,
@@ -300,22 +366,30 @@ export async function createKnowledgeCmsAiRun(
     id: randomUUID(),
     schemaVersion: KNOWLEDGE_CMS_AI_RUN_SCHEMA_VERSION,
     mode: request.mode,
-    status: request.mode === "site_strategy" ? "strategy" : "pending",
+    status:
+      request.mode === "site_strategy"
+        ? "strategy"
+        : currentArticle?.status === "published"
+          ? "revision_proposal"
+          : "pending",
     prompt: request.prompt,
     deepResearch: request.deepResearch,
     initiatedBy: actor.id,
     createdAt,
     model: generated.model,
+    ...(parentRun ? { parentRunId: parentRun.id } : {}),
     ...(currentArticle
       ? {
           targetRecordId: currentArticle.id,
           targetRevision: currentArticle.audit.revision,
+          targetStatus:
+            currentArticle.status === "published" ? "published" : "draft",
         }
       : {}),
     ...(request.mode === "new_article" ? { proposedRecordId: randomUUID() } : {}),
     proposal: generated.proposal,
   };
-  await (dependencies.runStore ?? new FirestoreKnowledgeCmsAiRunStore()).save(run);
+  await runStore.save(run);
   return run;
 }
 
@@ -355,7 +429,7 @@ export async function applyKnowledgeCmsAiRun(
   dependencies: KnowledgeCmsAiDalDependencies = {},
 ): Promise<{ id: string; revision: number }> {
   assertEnabled();
-  const actor = await requireKnowledgeCmsActor();
+  const actor = dependencies.actor ?? (await requireKnowledgeCmsActor());
   assertAuthorized(actor);
   const runStore = dependencies.runStore ?? new FirestoreKnowledgeCmsAiRunStore();
   const run = await runStore.get(runId);
@@ -421,13 +495,31 @@ export async function applyKnowledgeCmsAiRun(
 
 export async function getKnowledgeCmsAiRun(
   id: string,
-  dependencies: Pick<KnowledgeCmsAiDalDependencies, "runStore"> = {},
+  dependencies: Pick<KnowledgeCmsAiDalDependencies, "actor" | "runStore"> = {},
 ): Promise<KnowledgeCmsAiRun | undefined> {
   assertEnabled();
-  const actor = await requireKnowledgeCmsActor();
+  const actor = dependencies.actor ?? (await requireKnowledgeCmsActor());
   assertAuthorized(actor);
   const run = await (
     dependencies.runStore ?? new FirestoreKnowledgeCmsAiRunStore()
   ).get(id);
   return run?.initiatedBy === actor.id ? run : undefined;
+}
+
+export async function listKnowledgeCmsAiRuns(
+  limit = 20,
+  dependencies: Pick<KnowledgeCmsAiDalDependencies, "actor" | "runStore"> = {},
+): Promise<KnowledgeCmsAiRun[]> {
+  assertEnabled();
+  const actor = dependencies.actor ?? (await requireKnowledgeCmsActor());
+  assertAuthorized(actor);
+  const boundedLimit = Number.isInteger(limit)
+    ? Math.min(Math.max(limit, 1), 50)
+    : 20;
+  const runs = await (
+    dependencies.runStore ?? new FirestoreKnowledgeCmsAiRunStore()
+  ).listRecent(Math.min(boundedLimit * 3, 100));
+  return runs
+    .filter((run) => run.initiatedBy === actor.id)
+    .slice(0, boundedLimit);
 }

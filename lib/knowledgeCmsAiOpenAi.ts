@@ -19,6 +19,8 @@ Produce helpful, accurate, people-first work for an owner/editor. Never publish,
 
 For article drafts, use only current official government or first-party sources supplied by web search. Every factual Medicare claim must be supportable by the returned sources. Write original, plain-language Markdown with useful Spokane context, clear next steps, and no keyword stuffing. Keep source review windows within 180 days. Return a complete response matching the JSON schema.
 
+When currentArticle is supplied, preserve its established slug and canonical path unless the administrator explicitly requests a route change and the evidence supports it. When previousProposal is supplied, treat the request as a follow-up: retain its useful work, apply the requested refinement, recheck every factual statement and source, and return a complete replacement proposal rather than a partial patch.
+
 For site strategy, evaluate evidence before recommending changes. Search competitors only to identify search intent and content gaps; never copy their language. A strategy response must set draft to null.`;
 
 function configuredModel(name: string, fallback: string): string {
@@ -30,7 +32,12 @@ function compactContext(context: KnowledgeCmsAiContext): string {
   const scan = context.latestScan;
   const article = context.currentArticle;
   return JSON.stringify({
-    task: context.request,
+    task: {
+      mode: context.request.mode,
+      prompt: context.request.prompt,
+      deepResearch: context.request.deepResearch,
+    },
+    previousProposal: context.previousProposal ?? null,
     currentArticle: article
       ? {
           id: article.id,

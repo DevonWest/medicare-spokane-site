@@ -234,8 +234,10 @@ The Firebase Admin SDK is only ever imported via `lib/firebase-admin.ts`, and th
 
 The admin-only Content & SEO Copilot combines deterministic page/CMS audits,
 Search Console comparison periods, guarded web research, and structured AI
-proposals. AI can create or update only a private article draft; it cannot
-submit, approve, publish, enable indexing, or change public routing. See
+proposals. It retains scan/proposal history, supports follow-up refinements,
+and can prepare private working revisions for published articles without
+mutating them. AI can directly create or update only a private article draft;
+it cannot submit, approve, publish, enable indexing, or change public routing. See
 [`docs/knowledge-cms-ai-seo-copilot.md`](docs/knowledge-cms-ai-seo-copilot.md)
 for architecture, activation, Search Console access, secrets, scheduling, and
 rollback.

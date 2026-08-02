@@ -14,8 +14,13 @@ This first release provides one end-to-end system:
 - two stable 28-day Search Console page/query periods, ending three days ago,
   for CTR, position, decline, and striking-distance opportunities;
 - OpenAI web research and strict JSON-schema responses for site strategy,
-  complete new article drafts, and improvements to an existing draft;
+  complete new article drafts, and improvements to an existing article;
 - a stored proposal with sources and a before-apply preview;
+- private history for recent scans and actor-owned AI proposals;
+- complete working-revision proposals for published articles without
+  unpublishing or mutating the published CMS record;
+- follow-up refinement that carries the prior proposal into a new, separately
+  stored AI run;
 - one explicit confirmation that can only create or update a private draft;
   and
 - a secret-protected endpoint for recurring scans.
@@ -61,6 +66,13 @@ field limits, HTTPS sources, source review dates, slugs, canonical paths, and
 the task-specific draft rule. Applying a proposal uses the normal CMS workflow
 and expected revision. A changed or non-draft target fails closed.
 
+Published articles are intentionally different. The copilot may prepare and
+retain a complete private revision proposal against the exact published
+revision, but the proposal has no apply control. It cannot overwrite,
+unpublish, reindex, or otherwise mutate the published record. A later governed
+revision workflow must promote that work. Follow-up refinements preserve the
+earlier proposal as evidence and create a new run rather than rewriting history.
+
 Continuous execution runs only the deterministic/Search Console scan. It does
 not spend AI tokens or silently generate content. An administrator chooses when
 to ask the AI to turn current evidence into a strategy or draft.
@@ -85,6 +97,11 @@ copilot.
    `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=true`.
 6. Repeat the checks on production. The public renderer and cutover gates are
    independent and remain unchanged.
+
+The copilot page includes an activation-readiness panel for these dependencies.
+It reports whether each capability is ready, disabled, or blocked without
+rendering secret values, service-account IDs, actor IDs, or tokens. Search
+Console access is fully verified only after a scan returns `available`.
 
 ## GitHub and Cloud Run configuration
 
@@ -181,7 +198,12 @@ After each environment is activated:
    source URL.
 7. Apply it and confirm the destination record is `draft`, indexing is
    blocked, and no public route changed.
-8. Submit/review/publish only through the existing governed CMS workflow.
+8. Select one published article and confirm the result is labeled a private
+   revision proposal with no apply control and no published-record mutation.
+9. Refine that proposal once and confirm both runs remain separately available
+   in AI proposal history.
+10. Confirm recent manual and scheduled evidence scans appear in scan history.
+11. Submit/review/publish only through the existing governed CMS workflow.
 
 ## Disable and rollback
 

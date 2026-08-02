@@ -10,6 +10,7 @@ import {
   initialKnowledgeCmsAdminActionState,
   type KnowledgeCmsAdminActionState,
 } from "@/lib/knowledgeCmsAdmin";
+import type { KnowledgeCmsAiMode } from "@/lib/knowledgeCmsAi";
 
 function ActionMessage({ state }: { state: KnowledgeCmsAdminActionState }) {
   if (!state.message) return null;
@@ -55,6 +56,7 @@ export interface KnowledgeCmsCopilotArticleOption {
   id: string;
   title: string;
   revision: number;
+  status: "draft" | "published";
 }
 
 export function KnowledgeCmsAiRequestControl({
@@ -83,24 +85,28 @@ export function KnowledgeCmsAiRequestControl({
         >
           <option value="site_strategy">Analyze SEO strategy</option>
           <option value="new_article">Create a complete article draft</option>
-          <option value="improve_article">Improve an existing draft article</option>
+          <option value="improve_article">Improve an existing article</option>
         </select>
       </label>
       {mode === "improve_article" ? (
         <label className="block text-sm font-semibold text-slate-800">
-          Draft article
+          Article
           <select
             className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
             name="targetRecordId"
             required
           >
-            <option value="">Choose a draft</option>
+            <option value="">Choose an article</option>
             {articles.map((article) => (
               <option key={article.id} value={article.id}>
-                {article.title} · revision {article.revision}
+                {article.title} · {article.status} · revision {article.revision}
               </option>
             ))}
           </select>
+          <span className="mt-2 block font-normal text-slate-600">
+            Draft changes can be applied to the private draft. Published articles
+            produce a private revision proposal and leave the published record unchanged.
+          </span>
         </label>
       ) : null}
       <label className="block text-sm font-semibold text-slate-800">
@@ -161,6 +167,55 @@ export function KnowledgeCmsAiApplyControl({ runId }: { runId: string }) {
         type="submit"
       >
         {pending ? "Applying private draft…" : "Apply as private draft"}
+      </button>
+      <ActionMessage state={state} />
+    </form>
+  );
+}
+
+export function KnowledgeCmsAiRefineControl({
+  enabled,
+  mode,
+  runId,
+  targetRecordId,
+}: {
+  enabled: boolean;
+  mode: KnowledgeCmsAiMode;
+  runId: string;
+  targetRecordId?: string;
+}) {
+  const [state, action, pending] = useActionState(
+    createKnowledgeCmsAiRunAction,
+    initialKnowledgeCmsAdminActionState,
+  );
+  return (
+    <form action={action} className="mt-6 rounded-xl border border-violet-200 bg-violet-50 p-5">
+      <input name="mode" type="hidden" value={mode} />
+      <input name="parentRunId" type="hidden" value={runId} />
+      {targetRecordId ? (
+        <input name="targetRecordId" type="hidden" value={targetRecordId} />
+      ) : null}
+      <label className="block text-sm font-semibold text-violet-950">
+        Continue refining this proposal
+        <textarea
+          className="mt-2 min-h-28 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 font-normal text-slate-900"
+          maxLength={4_000}
+          minLength={10}
+          name="prompt"
+          placeholder="For example: Keep the structure, but make the opening clearer and add a stronger Spokane-specific checklist."
+          required
+        />
+      </label>
+      <label className="mt-3 flex items-start gap-3 text-sm text-violet-900">
+        <input className="mt-1" name="deepResearch" type="checkbox" value="true" />
+        <span>Use the deeper model and a broader research pass for this refinement.</span>
+      </label>
+      <button
+        className="mt-4 rounded-lg bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+        disabled={!enabled || pending}
+        type="submit"
+      >
+        {pending ? "Refining proposal…" : "Refine with AI"}
       </button>
       <ActionMessage state={state} />
     </form>

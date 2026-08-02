@@ -26,6 +26,7 @@ export interface KnowledgeCmsAiRequest {
   mode: KnowledgeCmsAiMode;
   prompt: string;
   deepResearch: boolean;
+  parentRunId?: string;
   targetRecordId?: string;
 }
 
@@ -63,6 +64,7 @@ export interface KnowledgeCmsAiContext {
   request: KnowledgeCmsAiRequest;
   currentArticle?: KnowledgeCmsArticle;
   latestScan?: KnowledgeCmsSeoScan;
+  previousProposal?: KnowledgeCmsAiProposal;
   articleInventory: Array<{
     id: string;
     title: string;
@@ -341,6 +343,7 @@ export function parseKnowledgeCmsAiProposal(
 
 export function parseKnowledgeCmsAiRequest(formData: FormData): KnowledgeCmsAiRequest {
   const mode = formData.get("mode");
+  const parentRunId = formData.get("parentRunId");
   const prompt = formData.get("prompt");
   const targetRecordId = formData.get("targetRecordId");
   const errors: string[] = [];
@@ -358,14 +361,25 @@ export function parseKnowledgeCmsAiRequest(formData: FormData): KnowledgeCmsAiRe
   }
   const normalizedTarget =
     typeof targetRecordId === "string" ? targetRecordId.trim() : "";
+  const normalizedParentRunId =
+    typeof parentRunId === "string" ? parentRunId.trim() : "";
+  if (
+    normalizedParentRunId &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      normalizedParentRunId,
+    )
+  ) {
+    errors.push("Choose a valid prior proposal to refine.");
+  }
   if (mode === "improve_article" && !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(normalizedTarget)) {
-    errors.push("Choose a draft article to improve.");
+    errors.push("Choose an article to improve.");
   }
   if (errors.length > 0) throw new KnowledgeCmsAiInputError(errors);
   return {
     mode: mode as KnowledgeCmsAiMode,
     prompt: normalizedPrompt,
     deepResearch: formData.get("deepResearch") === "true",
+    ...(normalizedParentRunId ? { parentRunId: normalizedParentRunId } : {}),
     ...(mode === "improve_article" ? { targetRecordId: normalizedTarget } : {}),
   };
 }
