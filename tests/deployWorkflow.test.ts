@@ -10,6 +10,15 @@ const workflow = readFileSync(
   "utf8",
 );
 
+test("pull requests run the full CI job without deploying", () => {
+  assert.match(workflow, /on:\n  pull_request:\n  push:/);
+  assert.match(workflow, /push:\n    branches:\n      - main/);
+  assert.match(
+    workflow,
+    /deploy:\n    if: \${{ github\.event_name != 'pull_request' }}/,
+  );
+});
+
 test("Cloud Run deployments use compatible maintained actions and Cloud SDK", () => {
   assert.doesNotMatch(workflow, /actions\/checkout@v4/);
   assert.doesNotMatch(workflow, /actions\/setup-node@v4/);
