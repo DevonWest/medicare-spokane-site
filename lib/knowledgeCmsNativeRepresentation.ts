@@ -243,7 +243,9 @@ function extractSchemaTypes(html: string): KnowledgeCmsRouteSchemaType[] {
       | Record<string, unknown>
       | Array<Record<string, unknown>>;
     return (Array.isArray(parsed) ? parsed : [parsed]).flatMap((schema) =>
-      schema["@type"] === "FAQPage" || schema["@type"] === "WebPage"
+      schema["@type"] === "BreadcrumbList" ||
+      schema["@type"] === "FAQPage" ||
+      schema["@type"] === "WebPage"
         ? [schema["@type"]]
         : [],
     );

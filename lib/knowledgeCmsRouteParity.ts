@@ -9,7 +9,10 @@ export const KNOWLEDGE_CMS_ROUTE_PARITY_CAPTURE =
 export const KNOWLEDGE_CMS_ROUTE_PARITY_CANONICAL_ORIGIN =
   "https://www.medicareinspokane.com" as const;
 
-export type KnowledgeCmsRouteSchemaType = "FAQPage" | "WebPage";
+export type KnowledgeCmsRouteSchemaType =
+  | "BreadcrumbList"
+  | "FAQPage"
+  | "WebPage";
 export type KnowledgeCmsRoutePreservationRequirement =
   | "faq_disclosures"
   | "governed_faq_registry"
@@ -281,7 +284,7 @@ const routeSnapshotsByEntryId: Record<
       "Get local help reviewing individual and family health insurance options in Spokane, WA. Health Insurance Options LLC helps people compare coverage, costs, provider access, and enrollment timing before Medicare.",
     h1: "Health Insurance Help in Spokane, WA",
     renderedSha256:
-      "20c832160aa76f3f05617eb6e5c6f75aa7bee20e5aaad3691f3cf3de1c64797e",
+      "f2122923f6d83e3091c60f506ca16a676289b1b280024f6e49e8af52cd7a6b9b",
     renderedBytes: 28162,
     schemaTypes: ["BreadcrumbList", "FAQPage", "WebPage"],
     formCount: 1,
