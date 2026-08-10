@@ -143,11 +143,28 @@ export function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 410 });
   }
 
-  // Normalize ordinary page URLs only after terminal legacy directory
-  // handling. Retired /directory/* URLs must return 410 directly, including
-  // trailing-slash variants, so crawlers do not encounter a redirect chain.
-  // Enforce the same slashless URL shape used by page canonicals, internal
-  // links, and the sitemap. Preserve meaningful query parameters.
+  // Resolve every known legacy path before generic slash normalization.
+  // This preserves one-hop canonical redirects and terminal 410 responses for
+  // trailing-slash and legacy-capitalization variants.
+  const legacyResolution = getLegacyPathResolution(pathname);
+
+  if (legacyResolution) {
+    if (legacyResolution.type === "gone") {
+      return new NextResponse(null, { status: 410 });
+    }
+
+    const redirectUrl = new URL(request.url);
+    redirectUrl.pathname = legacyResolution.destination;
+
+    if (!legacyResolution.preserveQuery) {
+      redirectUrl.search = "";
+    }
+
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // Enforce the slashless URL shape used by page canonicals, internal links,
+  // and the sitemap for ordinary active pages. Preserve query parameters.
   if (pathname.length > 1 && pathname.endsWith("/")) {
     const redirectUrl = new URL(request.url);
     redirectUrl.pathname = stripTrailingSlash(pathname);
@@ -186,22 +203,5 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
-  const legacyResolution = getLegacyPathResolution(pathname);
-
-  if (!legacyResolution) {
-    return NextResponse.next();
-  }
-
-  if (legacyResolution.type === "gone") {
-    return new NextResponse(null, { status: 410 });
-  }
-
-  const redirectUrl = new URL(request.url);
-  redirectUrl.pathname = legacyResolution.destination;
-
-  if (!legacyResolution.preserveQuery) {
-    redirectUrl.search = "";
-  }
-
-  return NextResponse.redirect(redirectUrl, 301);
+  return NextResponse.next();
 }
