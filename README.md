@@ -356,7 +356,8 @@ Tracking is **opt-in** via `NEXT_PUBLIC_GTM_ID`. When that variable is set, the 
 
 | Path | Purpose |
 |---|---|
-| `/healthz` | Liveness probe for Cloud Run / uptime monitors. Returns `{ status: "ok", uptime }` with `Cache-Control: no-store`. Performs no I/O so it cannot fail because of Firestore. |
+| `/healthz` | Internal container smoke, startup, and liveness probe. Returns `{ status: "ok", uptime }` with `Cache-Control: no-store`. Performs no I/O so it cannot fail because of Firestore. |
+| `/api/deployment-health` | Public rollout and CMS SEO-monitor endpoint. Exposes the same revision-bound payload without using the conventional probe path that Google edge handling can intercept. |
 | `/robots.txt` | Auto-generated. Disallows everything when `NEXT_PUBLIC_SITE_ENV` ≠ `production`. |
 | `/sitemap.xml` | Auto-generated from `lib/cities`, `lib/zips`, `lib/topics`. |
 
@@ -453,7 +454,7 @@ The workflow will:
 
 Run the [Launch QA checklist](#launch-qa-checklist) against `https://beta.medicareinspokane.com`. In particular:
 - `curl -sI https://beta.medicareinspokane.com/robots.txt` shows `Disallow: /` (because `NEXT_PUBLIC_SITE_ENV=staging`).
-- `curl -sI https://beta.medicareinspokane.com/healthz` returns `200`.
+- `curl -sI https://beta.medicareinspokane.com/api/deployment-health` returns `200`.
 - View source on any page → `<meta name="robots" content="noindex,nofollow,…">` is present.
 - Submit a test lead → check Firestore `website_leads` for the doc, and GTM Preview for a `generate_lead` event tagged `site_env: "staging"` with **no** name/email/phone/zip in the payload.
 - Confirm security headers on `curl -sI https://beta.medicareinspokane.com/` (HSTS, `X-Frame-Options: DENY`, etc.).

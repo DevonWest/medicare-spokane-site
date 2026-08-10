@@ -9,6 +9,15 @@ const workflow = readFileSync(
   join(root, ".github/workflows/deploy.yml"),
   "utf8",
 );
+const readme = readFileSync(join(root, "README.md"), "utf8");
+const deploymentGuide = readFileSync(
+  join(root, "docs/deploy-beta-checklist.md"),
+  "utf8",
+);
+const copilotGuide = readFileSync(
+  join(root, "docs/knowledge-cms-ai-seo-copilot.md"),
+  "utf8",
+);
 
 test("pull requests run the full CI job without deploying", () => {
   assert.match(workflow, /on:\n  pull_request:\n  push:/);
@@ -82,6 +91,18 @@ test("every Cloud Run revision is gated by the lightweight health route", () => 
     workflow.indexOf("- name: Smoke test built container health") <
       workflow.indexOf("- name: Push container image"),
   );
+});
+
+test("public rollout and CMS monitoring guides use the edge-safe health endpoint", () => {
+  for (const guide of [readme, deploymentGuide, copilotGuide]) {
+    assert.match(guide, /\/api\/deployment-health/);
+    assert.doesNotMatch(
+      guide,
+      /https:\/\/(?:beta|www)\.medicareinspokane\.com\/healthz/,
+    );
+  }
+  assert.match(readme, /`\/healthz` \| Internal container smoke/);
+  assert.match(copilotGuide, /using `\/healthz` internally for container probes/);
 });
 
 test("public website deploys explicitly reconcile network and invocation access", () => {

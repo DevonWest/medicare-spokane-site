@@ -425,11 +425,12 @@ traffic. The deployment explicitly reconciles public-site ingress, the default
 URL, and the recommended disabled Invoker IAM check, then validates Cloud Run's
 active `ingress-status` rather than assuming the requested setting took effect.
 When the service exposes its default `run.app` origin publicly, the
-workflow verifies `/healthz` there too. When ingress restrictions or a disabled
-default URL intentionally protect that origin, the direct request is skipped
-without changing the service network policy. The public custom-domain
-`/healthz` route is always required to report `ok`, the exact Git commit, the
-intended beta/production environment, and a valid renderer configuration.
+workflow verifies `/api/deployment-health` there too. When ingress restrictions
+or a disabled default URL intentionally protect that origin, the direct request
+is skipped without changing the service network policy. The public custom-domain
+`/api/deployment-health` route is always required to report `ok`, the exact Git
+commit, the intended beta/production environment, and a valid renderer
+configuration.
 Total runtime is ~4–10 minutes, including public-route verification.
 
 If custom-domain verification reports `DNS name could not be resolved`, the
@@ -447,8 +448,9 @@ Open `https://beta.medicareinspokane.com` and walk these checks. Anything that f
 
 ### 8a. Site is up and serving the new image
 - [ ] Homepage loads, looks right, no console errors (DevTools → Console).
-- [ ] `curl -sI https://beta.medicareinspokane.com/healthz` returns `HTTP/2 200`.
-- [ ] `/healthz` reports `deployment.commitSha` equal to the commit shown in the
+- [ ] `curl -sI https://beta.medicareinspokane.com/api/deployment-health`
+  returns `HTTP/2 200`.
+- [ ] `/api/deployment-health` reports `deployment.commitSha` equal to the commit shown in the
   successful deploy run.
 
 ### 8b. Search engines are blocked (because `SITE_ENV=staging`)
@@ -633,8 +635,9 @@ For a guarded cutover only:
 1. Open the tagged candidate URL from the workflow/Cloud Run revision and run
    every §8 check against it, including all 22 governed paths and structured
    renderer logs.
-2. Confirm `/healthz` reports requested/effective `cutover`, routing enabled,
-   valid configuration, and the exact production environment classification.
+2. Confirm `/api/deployment-health` reports requested/effective `cutover`,
+   routing enabled, valid configuration, and the exact production environment
+   classification.
 3. Confirm direct `/cms-render/*` requests are 404 and the sitemap/robots,
    `/`, `/medicare-spokane`, and `/resources` outputs are unchanged.
 4. Only after an explicit review, move a small percentage of traffic to the
@@ -645,7 +648,7 @@ For a guarded cutover only:
 
 ### 9c. Verify prod (mirror of §8, but production-mode expectations)
 
-- [ ] `https://www.medicareinspokane.com/healthz` → `200`.
+- [ ] `https://www.medicareinspokane.com/api/deployment-health` → `200`.
 - [ ] `https://www.medicareinspokane.com/robots.txt` → **does NOT** contain `Disallow: /` (it should be the production robots policy, allowing crawlers on real pages).
 - [ ] View source on a page → **no** `noindex` meta tag.
 - [ ] Submit a real-looking test lead → appears in Firestore `website_leads`, `generate_lead` event fires in real GTM with `site_env: "production"`.

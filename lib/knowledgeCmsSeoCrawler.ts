@@ -3,12 +3,19 @@ import "server-only";
 import type {
   KnowledgeCmsRecord,
 } from "./knowledgeCms";
-import type {
-  KnowledgeCmsSeoPageObservation,
-  KnowledgeCmsSeoSiteObservation,
+import {
+  KNOWLEDGE_CMS_PUBLIC_HEALTH_PATH,
+  type KnowledgeCmsSeoPageObservation,
+  type KnowledgeCmsSeoSiteObservation,
 } from "./knowledgeCmsSeo";
 import { env } from "./runtimeValues";
 
+/*
+ * Public monitoring intentionally uses a different path from Cloud Run's
+ * internal liveness probe. Google's edge can intercept the conventional
+ * /healthz path, while /api/deployment-health reaches the application and
+ * exposes the same revision-bound payload.
+ */
 const MAX_CRAWL_PAGES = 50;
 const MAX_HTML_BYTES = 2_000_000;
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -242,7 +249,13 @@ export async function crawlKnowledgeCmsSite(
 
   const [pages, healthOk, sitemapOk, robotsOk] = await Promise.all([
     Promise.all(paths.map((path) => crawlPage(fetcher, origin, path))),
-    checkSiteResource(fetcher, origin, "/healthz", /"status"\s*:\s*"ok"/i, "application/json"),
+    checkSiteResource(
+      fetcher,
+      origin,
+      KNOWLEDGE_CMS_PUBLIC_HEALTH_PATH,
+      /"status"\s*:\s*"ok"/i,
+      "application/json",
+    ),
     checkSiteResource(fetcher, origin, "/sitemap.xml", /<urlset\b/i, "application/xml,text/xml"),
     checkSiteResource(fetcher, origin, "/robots.txt", /user-agent\s*:/i, "text/plain"),
   ]);

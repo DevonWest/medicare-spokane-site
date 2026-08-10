@@ -100,8 +100,9 @@ deterministic scanner follows the private CMS gate when its own repository
 variable is unset; explicit `false` keeps it disabled. Merge and deployment
 alone do not activate a paid or scheduled integration.
 
-1. Deploy with all four new gates false and confirm `/healthz` plus the
-   existing CMS still work.
+1. Deploy with all four new gates false and confirm public
+   `/api/deployment-health` plus the existing CMS still work. Cloud Run keeps
+   using `/healthz` internally for container probes.
 2. The manual deterministic scanner follows the private CMS gate when
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
@@ -140,8 +141,9 @@ revision by name, explicitly reconciles public-site ingress, the default URL,
 and the disabled Invoker IAM check, and validates the authoritative service state reports that
 single revision at exactly 100%. If the service configuration exposes its
 default `run.app` origin publicly, the workflow also verifies the exact commit
-there. Restricted-ingress or disabled default endpoints remain protected and
-are recorded as an intentional skip rather than weakened for CI. The public
+there through `/api/deployment-health`. Restricted-ingress or disabled default
+endpoints remain protected and are recorded as an intentional skip rather than
+weakened for CI. The public
 beta or production domain is always required to report the exact commit,
 deployment environment, and a valid renderer configuration. This keeps a green
 build, image push, stale `LATEST` alias, healthy but unpromoted revision,
@@ -240,7 +242,8 @@ degrading. Success returns only the scan ID, time, and issue counts.
 
 After each environment is activated:
 
-1. Confirm `/healthz`, `/robots.txt`, and `/sitemap.xml` return 200.
+1. Confirm public `/api/deployment-health`, `/robots.txt`, and `/sitemap.xml`
+   return 200. `/healthz` remains the internal Cloud Run probe.
 2. Sign in with the admin CMS account and open **AI & SEO Copilot**.
 3. Run **Verify live connections** and confirm the result is current for the
    exact environment/origin. Verify Search Console and both OpenAI models when
