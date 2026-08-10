@@ -13,12 +13,14 @@ import { siteConfig, telHref } from "@/lib/site";
 import { getHomepageTeamPreviewMembers } from "@/lib/team";
 
 export const metadata: Metadata = {
-  title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
-  description: siteConfig.description,
+  title: "Spokane Medicare & Health Insurance Agents | Local Help",
+  description:
+    "Get no-cost help from local licensed Spokane insurance agents comparing Medicare and individual or family health insurance options. In-person and phone consultations.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: `${siteConfig.shortName} | ${siteConfig.positioning}`,
-    description: siteConfig.description,
+    title: "Spokane Medicare & Health Insurance Agents | Local Help",
+    description:
+      "Get no-cost help from local licensed Spokane insurance agents comparing Medicare and individual or family health insurance options.",
     url: siteConfig.url,
     type: "website",
   },
@@ -78,11 +80,11 @@ export default function HomePage() {
               Licensed Independent Insurance Agency · Spokane, WA
             </p>
             <h1 className="mb-4 text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl lg:text-6xl">
-              Medicare Help for Spokane Residents
+              Local Medicare Help for Spokane Residents
             </h1>
             <p className="mb-6 text-lg leading-relaxed text-blue-50 md:text-xl">
-              Work with local licensed agents who guide you through your Medicare options with
-              clarity and confidence.
+              Work with local licensed Spokane agents for clear Medicare guidance, or get help
+              reviewing individual and family health insurance before Medicare.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <a
