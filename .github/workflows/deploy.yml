@@ -561,7 +561,7 @@ jobs:
         if: ${{ (env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production') && steps.service_state.outputs.direct_public == 'true' }}
         run: >-
           node scripts/verify-cloud-run-health.mjs
-          --url "${{ steps.service_state.outputs.direct_url }}/healthz"
+          --url "${{ steps.service_state.outputs.direct_url }}/api/deployment-health"
           --commit "${{ github.sha }}"
           --target "$TARGET"
           --attempts 24
@@ -579,7 +579,7 @@ jobs:
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         run: >-
           node scripts/verify-cloud-run-health.mjs
-          --url "${{ steps.cfg.outputs.site_url }}/healthz"
+          --url "${{ steps.cfg.outputs.site_url }}/api/deployment-health"
           --commit "${{ github.sha }}"
           --target "$TARGET"
           --attempts 36
