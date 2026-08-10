@@ -282,8 +282,8 @@ const routeSnapshotsByEntryId: Record<
     h1: "Health Insurance Help in Spokane, WA",
     renderedSha256:
       "20c832160aa76f3f05617eb6e5c6f75aa7bee20e5aaad3691f3cf3de1c64797e",
-    renderedBytes: 27766,
-    schemaTypes: ["FAQPage", "WebPage"],
+    renderedBytes: 28162,
+    schemaTypes: ["BreadcrumbList", "FAQPage", "WebPage"],
     formCount: 1,
     faqDisclosureCount: 5,
   },
