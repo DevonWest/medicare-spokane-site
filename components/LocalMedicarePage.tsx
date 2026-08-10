@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import FAQ from "@/components/FAQ";
 import Disclaimer from "@/components/Disclaimer";
 import LeadForm from "@/components/LeadForm";
@@ -173,6 +174,13 @@ export default function LocalMedicarePage({
 
   return (
     <>
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", path: "/" },
+          { name: `Medicare Help in ${city.name}` },
+        ]}
+      />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localSchema) }}
