@@ -19,6 +19,26 @@ test("pull requests run the full CI job without deploying", () => {
   );
 });
 
+test("main pushes and manual runs default to production", () => {
+  assert.match(workflow, /default: "production"/);
+  assert.match(
+    workflow,
+    /group: deploy-cloud-run-\$\{\{ github\.ref \}\}-\$\{\{ github\.event\.inputs\.target \|\| 'production' \}\}/,
+  );
+  assert.match(
+    workflow,
+    /TARGET: \$\{\{ github\.event\.inputs\.target \|\| 'production' \}\}/,
+  );
+  assert.match(
+    workflow,
+    /- name: Build sanity check\n        run: npm run build\n        env:\n          NEXT_PUBLIC_SITE_URL: https:\/\/www\.medicareinspokane\.com\n          NEXT_PUBLIC_SITE_ENV: production/,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /github\.event\.inputs\.target \|\| 'beta'/,
+  );
+});
+
 test("Cloud Run deployments use compatible maintained actions and Cloud SDK", () => {
   assert.doesNotMatch(workflow, /actions\/checkout@v4/);
   assert.doesNotMatch(workflow, /actions\/setup-node@v4/);
