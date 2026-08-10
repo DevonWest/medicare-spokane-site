@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
 const TARGETS = new Set(["beta", "production"]);
+const HEALTH_PATHS = new Set(["/healthz", "/api/deployment-health"]);
 
 function integerOption(name, value, minimum, maximum) {
   const parsed = Number(value);
@@ -54,8 +55,10 @@ export function parseDeploymentHealthArguments(args) {
       "Deployment health URL must be credential-free HTTPS or loopback HTTP.",
     );
   }
-  if (url.pathname !== "/healthz") {
-    throw new Error("Deployment health URL must target /healthz.");
+  if (!HEALTH_PATHS.has(url.pathname)) {
+    throw new Error(
+      "Deployment health URL must target /healthz or /api/deployment-health.",
+    );
   }
 
   const expectedCommitSha = (values.get("--commit") ?? "").toLowerCase();

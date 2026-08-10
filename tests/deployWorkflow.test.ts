@@ -132,7 +132,7 @@ test("traffic-serving deploys promote and verify one exact ready revision", () =
   );
   assert.match(
     workflow,
-    /--url "\$\{\{ steps\.service_state\.outputs\.direct_url \}\}\/healthz"/,
+    /--url "\$\{\{ steps\.service_state\.outputs\.direct_url \}\}\/api\/deployment-health"/,
   );
   assert.match(workflow, /- name: Explain protected Cloud Run service endpoint/);
   assert.match(
@@ -141,7 +141,7 @@ test("traffic-serving deploys promote and verify one exact ready revision", () =
   );
   assert.doesNotMatch(workflow, /steps\.deploy_standard\.outputs\.url/);
   assert.match(workflow, /- name: Verify deployed custom-domain health/);
-  assert.match(workflow, /--url "\$\{\{ steps\.cfg\.outputs\.site_url \}\}\/healthz"/);
+  assert.match(workflow, /--url "\$\{\{ steps\.cfg\.outputs\.site_url \}\}\/api\/deployment-health"/);
   assert.match(workflow, /--commit "\$\{\{ github\.sha \}\}"/);
   assert.match(workflow, /--target "\$TARGET"/);
   assert.match(workflow, /- name: Show service URL\n\s+if: \$\{\{ always\(\) \}\}/);
