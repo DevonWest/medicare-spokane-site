@@ -95,10 +95,12 @@ to ask the AI to turn current evidence into a strategy or draft.
 
 ## Activation order
 
-Search Console, AI, and continuous scanning default to `false`. The manual
-deterministic scanner follows the private CMS gate when its own repository
-variable is unset; explicit `false` keeps it disabled. Merge and deployment
-alone do not activate a paid or scheduled integration.
+Search Console evidence defaults to enabled for this repository now that the
+production runtime account has Restricted property access; an explicit repository
+value of `false` remains the kill switch. AI and continuous scanning still default
+to `false`. The manual deterministic scanner follows the private CMS gate when its
+own repository variable is unset. Merge and deployment alone do not activate a
+paid or scheduled integration.
 
 1. Deploy with all four new gates false and confirm public
    `/api/deployment-health` plus the existing CMS still work. Cloud Run keeps
@@ -107,10 +109,11 @@ alone do not activate a paid or scheduled integration.
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
    at any time to retain the kill switch.
-3. Enable the Search Console API, grant the runtime service account property
-   access, and set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true`. In the copilot,
-   run **Verify live connections**; it performs one read-only, one-row
-   analytics query and must report Search Console as verified.
+3. Enable the Search Console API and grant the runtime service account Restricted
+   property access. This repository then deploys
+   `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true` by default. In the copilot, run
+   **Verify live connections**; it performs one read-only, one-row analytics query
+   and must report Search Console as verified.
 4. Put the OpenAI key in Secret Manager, configure the repository secret-name
    variable, and set `KNOWLEDGE_CMS_AI_ENABLED=true`. Run **Verify live
    connections** again; it retrieves metadata for both configured models
