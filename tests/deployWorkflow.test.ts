@@ -81,7 +81,7 @@ test("Search Console activation enables and verifies the Google API before deplo
   );
   assert.match(
     copilotGuide,
-    /deployment workflow enables and verifies `searchconsole\.googleapis\.com`/,
+    /deployment workflow enables and verifies\s+`searchconsole\.googleapis\.com`/,
   );
 });
 
