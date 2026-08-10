@@ -1,7 +1,8 @@
 # Build and deploy the site container to Google Cloud Run.
 #
 # Triggers
-#   - push to main              → deploys beta
+#   - pull request             → runs CI only
+#   - push to main              → runs CI and deploys beta
 #   - manual workflow_dispatch  → choose beta or production
 #
 # Required GitHub repository Variables:
@@ -45,6 +46,7 @@
 name: Deploy to Cloud Run
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -89,6 +91,7 @@ jobs:
           NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
 
   deploy:
+    if: ${{ github.event_name != 'pull_request' }}
     name: Build image and deploy to Cloud Run
     needs: ci
     runs-on: ubuntu-latest
