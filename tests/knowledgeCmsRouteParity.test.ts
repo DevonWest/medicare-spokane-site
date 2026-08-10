@@ -165,16 +165,11 @@ test("rendered route bodies match their H1, schema, and SHA-256 snapshots", () =
       entry.renderedBody.bytes,
       `${entry.path} rendered byte count drifted`,
     );
-    // Breadcrumb JSON-LD is intentionally additive SEO metadata. Its
-    // serialized bytes are validated above and its exact schema type/order is
-    // validated below; do not make CMS body parity depend on JSON key order.
-    if (!entry.renderedBody.schemaTypes.includes("BreadcrumbList")) {
-      assert.equal(
-        renderedSha256,
-        entry.renderedBody.sha256,
-        `${entry.path} rendered body drifted`,
-      );
-    }
+    assert.equal(
+      renderedSha256,
+      entry.renderedBody.sha256,
+      `${entry.path} rendered body drifted`,
+    );
     assert.equal(
       h1s.length,
       entry.renderedBody.h1Count,
