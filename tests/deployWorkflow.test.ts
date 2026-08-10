@@ -48,6 +48,21 @@ test("main pushes and manual runs default to production", () => {
   );
 });
 
+test("Search Console evidence is enabled by default with an explicit kill switch", () => {
+  assert.match(
+    workflow,
+    /KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED: \${{ vars\.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED \|\| 'true' }}/,
+  );
+  assert.match(
+    workflow,
+    /SEARCH_CONSOLE_SITE_URL: \${{ vars\.SEARCH_CONSOLE_SITE_URL \|\| 'sc-domain:medicareinspokane\.com' }}/,
+  );
+  assert.match(
+    copilotGuide,
+    /explicit repository value of `false` remains the kill switch/,
+  );
+});
+
 test("Cloud Run deployments use compatible maintained actions and Cloud SDK", () => {
   assert.doesNotMatch(workflow, /actions\/checkout@v4/);
   assert.doesNotMatch(workflow, /actions\/setup-node@v4/);
