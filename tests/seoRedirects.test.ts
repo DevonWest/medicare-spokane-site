@@ -553,3 +553,28 @@ test("sitemap only includes canonical request, team, and prescription URLs", () 
   assert.equal(Array.from(sitemapUrls).some((url) => url.includes("/directory/")), false);
   assert.equal(Array.from(sitemapUrls).some((url) => url.includes("/Directory/")), false);
 });
+
+
+test("proxy permanently removes trailing slashes while preserving query parameters", () => {
+  const response = proxy(
+    new NextRequest("https://www.medicareinspokane.com/contact/?source=google"),
+  );
+
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.medicareinspokane.com/contact?source=google",
+  );
+});
+
+test("proxy leaves the canonical root URL unchanged", () => {
+  const response = proxy(new NextRequest("https://www.medicareinspokane.com/"));
+
+  assert.notEqual(response.status, 301);
+  assert.equal(response.headers.get("location"), null);
+});
+
+test("homepage metadata clearly covers Spokane Medicare and health insurance intent", () => {
+  assert.match(String(homeMetadata.title), /Spokane Medicare & Health Insurance Agents/);
+  assert.match(String(homeMetadata.description), /individual or family health insurance/i);
+});

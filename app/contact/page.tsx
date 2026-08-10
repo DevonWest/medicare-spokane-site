@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
@@ -8,12 +9,12 @@ const directionsHref =
   "https://www.google.com/maps/search/?api=1&query=Providence%20Medical%20Building%20820%20South%20McClellan%20Spokane%20WA%2099204";
 
 export const metadata: Metadata = {
-  title: "Contact a Licensed Spokane Medicare Agent",
+  title: "Contact Health Insurance Options | Spokane Insurance Help",
   description:
-    "Contact Medicare in Spokane — a licensed independent insurance agency helping Spokane-area residents with Medicare Advantage, Medicare Supplement, and Part D options.",
+    "Call or message Health Insurance Options LLC in Spokane for local help with Medicare or individual and family health insurance. No-cost consultations.",
   alternates: { canonical: `${siteConfig.url}/contact` },
   openGraph: {
-    title: "Contact a Licensed Spokane Medicare Agent",
+    title: "Contact Health Insurance Options | Spokane Insurance Help",
     description:
       "Reach a licensed independent insurance agency for Medicare help in Spokane, WA.",
     url: `${siteConfig.url}/contact`,
@@ -23,6 +24,8 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
+      <BreadcrumbSchema items={[{ name: "Home", path: "/" }, { name: "Contact" }]} />
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 text-white py-16 landscape-mobile:py-5 px-4">
         <div className="max-w-5xl mx-auto">
