@@ -109,8 +109,10 @@ paid or scheduled integration.
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
    at any time to retain the kill switch.
-3. Enable the Search Console API and grant the runtime service account Restricted
-   property access. This repository then deploys
+3. Grant the runtime service account Restricted property access. When Search
+   Console evidence is enabled, the deployment workflow enables and verifies
+   `searchconsole.googleapis.com` in the Cloud Run project before rollout. This
+   repository then deploys
    `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true` by default. In the copilot, run
    **Verify live connections**; it performs one read-only, one-row analytics query
    and must report Search Console as verified.
@@ -196,11 +198,11 @@ reuse the OpenAI key, Firebase credentials, or a user password.
 
 ## Search Console access
 
-Enable the API in the same GCP project used by the Cloud Run service:
-
-```bash
-gcloud services enable searchconsole.googleapis.com
-```
+When Search Console evidence is enabled, the deployment workflow idempotently
+enables and verifies `searchconsole.googleapis.com` in the same GCP project
+used by the Cloud Run service. The deployer service account therefore needs
+`serviceusage.services.enable` and `serviceusage.services.list` for that
+project.
 
 In Search Console, open the `medicareinspokane.com` domain property, then add
 the Cloud Run runtime service-account email as a user with read access. The
