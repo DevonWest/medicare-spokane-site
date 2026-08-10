@@ -68,6 +68,15 @@ export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const lowerPathname = pathname.toLowerCase();
 
+  // Enforce the same slashless URL shape used by page canonicals, internal
+  // links, and the sitemap. Preserve meaningful query parameters.
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    const redirectUrl = new URL(request.url);
+    redirectUrl.pathname = stripTrailingSlash(pathname);
+
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
   if (isKnowledgeCmsInternalRendererPath(pathname)) {
     const internalEntryId =
       getKnowledgeCmsEntryIdForInternalRendererPath(pathname);
