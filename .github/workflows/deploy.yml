@@ -318,13 +318,6 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           version: "latest"
 
-      - name: Ensure Search Console API is enabled
-        if: ${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED == 'true' }}
-        run: |
-          gcloud services enable searchconsole.googleapis.com --project "$PROJECT_ID" --quiet
-          enabled_service="$(gcloud services list --enabled --project "$PROJECT_ID" --filter='config.name:searchconsole.googleapis.com' --format='value(config.name)')"
-          test "$enabled_service" = "searchconsole.googleapis.com" || (echo "::error::Search Console API did not report enabled" && exit 1)
-
       - name: Verify target custom-domain DNS
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         run: >-

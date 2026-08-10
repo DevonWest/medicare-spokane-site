@@ -109,10 +109,10 @@ paid or scheduled integration.
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
    at any time to retain the kill switch.
-3. Grant the runtime service account Restricted property access. When Search
-   Console evidence is enabled, the deployment workflow enables and verifies
-   `searchconsole.googleapis.com` in the Cloud Run project before rollout. This
-   repository then deploys
+3. Enable `searchconsole.googleapis.com` once in the Cloud Run project with
+   a project owner or Service Usage administrator, then grant the runtime service
+   account Restricted property access. Ordinary deployments deliberately do not
+   require API-administration permission. This repository then deploys
    `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true` by default. In the copilot, run
    **Verify live connections**; it performs one read-only, one-row analytics query
    and must report Search Console as verified.
@@ -198,11 +198,18 @@ reuse the OpenAI key, Firebase credentials, or a user password.
 
 ## Search Console access
 
-When Search Console evidence is enabled, the deployment workflow idempotently
-enables and verifies `searchconsole.googleapis.com` in the same GCP project
-used by the Cloud Run service. The deployer service account therefore needs
-`serviceusage.services.enable` and `serviceusage.services.list` for that
-project.
+Enable the API once in the same GCP project used by the Cloud Run service:
+
+```bash
+gcloud services enable searchconsole.googleapis.com \
+  --project medicare-spokane-site
+```
+
+Run this as a project owner or Service Usage administrator. The ordinary
+GitHub deployer intentionally does not receive `serviceusage.services.enable`;
+deployments should not gain or depend on broad API-administration authority.
+The CMS live-connection check remains the authoritative verification that the
+API and Search Console property access are both ready.
 
 In Search Console, open the `medicareinspokane.com` domain property, then add
 the Cloud Run runtime service-account email as a user with read access. The

@@ -63,25 +63,20 @@ test("Search Console evidence is enabled by default with an explicit kill switch
   );
 });
 
-test("Search Console activation enables and verifies the Google API before deployment", () => {
-  assert.match(workflow, /- name: Ensure Search Console API is enabled/);
-  assert.match(workflow, /if: \${{ env\.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED == \'true\' }}/);
-  assert.match(workflow, /gcloud services enable searchconsole\.googleapis\.com/);
+test("Search Console API setup stays outside the least-privilege deploy workflow", () => {
+  assert.doesNotMatch(workflow, /gcloud services enable/);
+  assert.doesNotMatch(workflow, /serviceusage\.services\.enable/);
   assert.match(
-    workflow,
-    /--filter=\'config\.name:searchconsole\.googleapis\.com\'/,
-  );
-  assert.ok(
-    workflow.indexOf("- name: Set up gcloud") <
-      workflow.indexOf("- name: Ensure Search Console API is enabled"),
-  );
-  assert.ok(
-    workflow.indexOf("- name: Ensure Search Console API is enabled") <
-      workflow.indexOf("- name: Build container image"),
+    copilotGuide,
+    /gcloud services enable searchconsole\.googleapis\.com/,
   );
   assert.match(
     copilotGuide,
-    /deployment workflow enables and verifies\s+`searchconsole\.googleapis\.com`/,
+    /ordinary\s+GitHub deployer intentionally does not receive\s+`serviceusage\.services\.enable`/,
+  );
+  assert.match(
+    copilotGuide,
+    /CMS live-connection check remains the authoritative verification/,
   );
 });
 
