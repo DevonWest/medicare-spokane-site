@@ -23,14 +23,17 @@ function healthyPayload() {
 test("deployment health arguments require a safe exact target", () => {
   const options = parseDeploymentHealthArguments([
     "--url",
-    "https://beta.medicareinspokane.com/healthz",
+    "https://beta.medicareinspokane.com/api/deployment-health",
     "--commit",
     commitSha,
     "--target",
     "beta",
   ]);
 
-  assert.equal(options.url.href, "https://beta.medicareinspokane.com/healthz");
+  assert.equal(
+    options.url.href,
+    "https://beta.medicareinspokane.com/api/deployment-health",
+  );
   assert.equal(options.expectedCommitSha, commitSha);
   assert.equal(options.expectedTarget, "beta");
   assert.equal(
