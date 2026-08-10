@@ -59,7 +59,7 @@ test("Search Console evidence is enabled by default with an explicit kill switch
   );
   assert.match(
     copilotGuide,
-    /explicit repository value of `false` remains the kill switch/,
+    /explicit repository\s+value of `false` remains the kill switch/,
   );
 });
 
