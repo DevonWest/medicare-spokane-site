@@ -144,7 +144,7 @@ test("crawler extracts rendered SEO signals and never follows off-origin links",
   const fakeFetch: typeof fetch = async (input) => {
     const url = input instanceof URL ? input : new URL(String(input));
     requested.push(url.toString());
-    if (url.pathname === "/healthz") {
+    if (url.pathname === "/api/deployment-health") {
       return new Response('{"status":"ok"}', {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -169,6 +169,16 @@ test("crawler extracts rendered SEO signals and never follows off-origin links",
   assert.equal(result.pages[0].title, "Part D Spokane");
   assert.equal(result.pages[0].h1Count, 1);
   assert.equal(result.pages[0].internalLinkCount, 1);
+  assert.equal(
+    requested.includes(
+      "https://www.medicareinspokane.com/api/deployment-health",
+    ),
+    true,
+  );
+  assert.equal(
+    requested.includes("https://www.medicareinspokane.com/healthz"),
+    false,
+  );
   assert.equal(requested.some((url) => url.includes("competitor.example")), false);
 });
 

@@ -4,6 +4,8 @@ import type {
 } from "./knowledgeCms";
 
 export const KNOWLEDGE_CMS_SEO_SCAN_SCHEMA_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_PUBLIC_HEALTH_PATH =
+  "/api/deployment-health" as const;
 
 export type KnowledgeCmsSeoPriority = "critical" | "high" | "medium" | "low";
 export type KnowledgeCmsSeoOpportunityKind =
@@ -551,12 +553,13 @@ export function buildKnowledgeCmsTechnicalOpportunities(
       technicalOpportunity({
         discriminator: "health",
         priority: "critical",
-        title: "Repair the public health check",
-        reason: "The site health endpoint did not return a successful response.",
+        title: "Repair the public deployment health check",
+        reason:
+          "The public deployment-health endpoint did not return a successful response.",
         recommendation:
-          "Restore /healthz before relying on automated crawling, deployment verification, or uptime checks.",
+          `Restore ${KNOWLEDGE_CMS_PUBLIC_HEALTH_PATH} before relying on automated crawling or public rollout verification. Keep /healthz reserved for container probes.`,
         score: 2_000,
-        page: "/healthz",
+        page: KNOWLEDGE_CMS_PUBLIC_HEALTH_PATH,
       }),
     );
   }

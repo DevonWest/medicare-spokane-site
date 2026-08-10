@@ -170,3 +170,20 @@ test("technical audit respects beta noindex and still catches production noindex
     }).some((item) => item.title.includes("noindex")),
   );
 });
+
+test("technical audit reports the public deployment endpoint instead of the internal probe", () => {
+  const opportunities = buildKnowledgeCmsTechnicalOpportunities([], {
+    healthOk: false,
+    sitemapOk: true,
+    robotsOk: true,
+  });
+  const health = opportunities.find(
+    (item) => item.page === "/api/deployment-health",
+  );
+
+  assert.equal(health?.title, "Repair the public deployment health check");
+  assert.match(
+    health?.recommendation ?? "",
+    /Keep \/healthz reserved for container probes/,
+  );
+});
