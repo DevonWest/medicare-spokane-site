@@ -65,11 +65,11 @@ test("Search Console evidence is enabled by default with an explicit kill switch
 
 test("Search Console activation enables and verifies the Google API before deployment", () => {
   assert.match(workflow, /- name: Ensure Search Console API is enabled/);
-  assert.match(workflow, /if: \\${{ env\\.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED == \'true\' }}/);
-  assert.match(workflow, /gcloud services enable searchconsole\\.googleapis\\.com/);
+  assert.match(workflow, /if: \${{ env\.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED == \'true\' }}/);
+  assert.match(workflow, /gcloud services enable searchconsole\.googleapis\.com/);
   assert.match(
     workflow,
-    /--filter=\'config\\.name:searchconsole\\.googleapis\\.com\'/,
+    /--filter=\'config\.name:searchconsole\.googleapis\.com\'/,
   );
   assert.ok(
     workflow.indexOf("- name: Set up gcloud") <
@@ -81,7 +81,7 @@ test("Search Console activation enables and verifies the Google API before deplo
   );
   assert.match(
     copilotGuide,
-    /deployment workflow enables and verifies `searchconsole\\.googleapis\\.com`/,
+    /deployment workflow enables and verifies `searchconsole\.googleapis\.com`/,
   );
 });
 
