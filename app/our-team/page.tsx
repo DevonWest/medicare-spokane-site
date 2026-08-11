@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
@@ -53,7 +54,12 @@ export default function OurTeamPage() {
             Every member of our team lives and works in the Spokane community. When you call us, you
             are talking to a neighbor who knows the local healthcare landscape, the area&apos;s
             carrier networks, and what matters most to people here. We offer no-cost consultations
-            and stay available year-round — not just during enrollment season.
+            and stay available year-round — not just during enrollment season. You can also review
+            our{" "}
+            <Link href="/medicare-spokane" className="font-semibold text-blue-700 hover:underline">
+              Spokane Medicare help guide
+            </Link>{" "}
+            before speaking with the team.
           </p>
           <p>
             Our team has over{" "}
