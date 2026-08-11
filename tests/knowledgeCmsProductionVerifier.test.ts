@@ -10,19 +10,31 @@ const run = promisify(execFile);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const verifier = join(root, "scripts/verify-knowledge-cms-production-routes.mjs");
 
-function cmsHtml(link = "/resources") {
+function cmsHtml(input: {
+  path: string;
+  schemas: string[];
+  link?: string;
+}) {
   return `<!doctype html><html><head>
-    <link rel="canonical" href="https://www.medicareinspokane.com/medicare-appointment-checklist">
-    <script type="application/ld+json">{"@graph":[{"@type":"FAQPage"},{"@type":"WebPage"}]}</script>
+    <link rel="canonical" href="https://www.medicareinspokane.com${input.path}">
+    <script type="application/ld+json">${JSON.stringify({
+      "@graph": input.schemas.map((type) => ({ "@type": type })),
+    })}</script>
     </head><body data-knowledge-cms-article="article" data-knowledge-cms-revision="5">
-    <form></form><a href="${link}">Resource</a></body></html>`;
+    <form></form><a href="${input.link ?? "/resources"}">Resource</a></body></html>`;
 }
 
-async function withServer(link: string, callback: (baseUrl: string) => Promise<void>) {
+async function withServer(input: {
+  path?: string;
+  schemas?: string[];
+  link: string;
+}, callback: (baseUrl: string) => Promise<void>) {
+  const path = input.path ?? "/medicare-appointment-checklist";
+  const schemas = input.schemas ?? ["BreadcrumbList", "FAQPage", "WebPage"];
   const server = createServer((request, response) => {
-    if (request.url === "/medicare-appointment-checklist") {
+    if (request.url === path) {
       response.setHeader("x-knowledge-cms-cutover", "routed");
-      response.end(cmsHtml(link));
+      response.end(cmsHtml({ path, schemas, link: input.link }));
       return;
     }
     if (["/", "/medicare-spokane", "/resources"].includes(request.url ?? "")) {
@@ -43,7 +55,7 @@ async function withServer(link: string, callback: (baseUrl: string) => Promise<v
 }
 
 test("steady-state verifier checks routing, SEO contracts, forms, static routes, and links", async () => {
-  await withServer("/resources", async (baseUrl) => {
+  await withServer({ link: "/resources" }, async (baseUrl) => {
     const result = await run(process.execPath, [verifier, "--url", baseUrl, "--routes", "appointment-checklist"]);
     assert.match(result.stdout, /Verified CMS, canonical, indexing, schema, and forms/);
     assert.match(result.stdout, /Verified 1 unique internal links and 3 protected static routes/);
@@ -51,10 +63,27 @@ test("steady-state verifier checks routing, SEO contracts, forms, static routes,
 });
 
 test("steady-state verifier fails on a broken internal link", async () => {
-  await withServer("/missing", async (baseUrl) => {
+  await withServer({ link: "/missing" }, async (baseUrl) => {
     await assert.rejects(
       run(process.execPath, [verifier, "--url", baseUrl, "--routes", "appointment-checklist"]),
       /Internal link \/missing returned 404/,
     );
+  });
+});
+
+test("steady-state verifier does not require FAQ schema without governed visible FAQs", async () => {
+  await withServer({
+    path: "/medicare-annual-enrollment-spokane",
+    schemas: ["BreadcrumbList", "WebPage"],
+    link: "/resources",
+  }, async (baseUrl) => {
+    const result = await run(process.execPath, [
+      verifier,
+      "--url",
+      baseUrl,
+      "--routes",
+      "annual-enrollment-spokane",
+    ]);
+    assert.match(result.stdout, /Verified CMS, canonical, indexing, schema, and forms/);
   });
 });
