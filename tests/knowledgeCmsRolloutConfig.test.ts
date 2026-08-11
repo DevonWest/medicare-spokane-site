@@ -17,25 +17,46 @@ function resolve(config: unknown): string {
   return execFileSync(process.execPath, [resolver, path], { encoding: "utf8" });
 }
 
-test("the checked-in phase activates the guarded core Medicare route batch", () => {
+test("the checked-in phase activates all 22 governed CMS routes", () => {
   const config = JSON.parse(readFileSync(checkedInConfig, "utf8"));
-  assert.equal(config.phase, "cutover");
-  assert.equal(config.approvalReceipt, "a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2");
-  assert.deepEqual(config.routes, [
+  const expectedRoutes = [
     "turning-65-spokane",
     "compare-options",
     "medicare-advantage",
     "medicare-supplements",
     "appointment-checklist",
+    "annual-plan-review",
+    "annual-enrollment-spokane",
+    "prescription-review",
     "part-d",
-  ]);
+    "helping-parent",
+    "working-past-65",
+    "health-insurance-spokane",
+    "health-insurance-agent",
+    "individual-family-health-insurance",
+    "self-employed-health-insurance",
+    "special-enrollment-health-insurance",
+    "enrollment-resources",
+    "moving-to-spokane",
+    "medicare-savings-extra-help",
+    "medicare-faq",
+    "advantage-vs-supplement",
+    "represented-carriers",
+  ];
+  assert.equal(config.phase, "cutover");
+  assert.equal(config.approvalReceipt, "a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2");
+  assert.deepEqual(config.routes, expectedRoutes);
   const output = resolve(config);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover/);
   assert.match(output, /KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=turning-65-spokane\\|compare-options\\|medicare-advantage\\|medicare-supplements\\|appointment-checklist\\|part-d\n/);
+  assert.ok(
+    output
+      .split("\n")
+      .includes(`KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=${expectedRoutes.join("|")}`),
+  );
 });
 
 test("cutover requires a receipt and explicit unique routes", () => {
