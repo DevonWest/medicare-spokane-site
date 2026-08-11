@@ -67,8 +67,8 @@ function approvalExecutionEnabled(): boolean {
       environment.articleMigrationExecutionEnabled === "false" &&
       environment.supportingMigrationExecutionEnabled === "false" &&
       environment.nativeRepresentationExecutionEnabled === "false" &&
-      environment.siteEnvironment === "staging" &&
-      environment.siteUrl === "https://beta.medicareinspokane.com",
+      environment.siteEnvironment === "production" &&
+      environment.siteUrl === "https://www.medicareinspokane.com",
   );
 }
 

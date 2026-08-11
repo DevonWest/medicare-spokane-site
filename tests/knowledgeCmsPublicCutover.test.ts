@@ -212,6 +212,44 @@ afterEach(() => {
   }
 });
 
+test("approval execution is limited to the exact production shadow state", async () => {
+  mockServerOnlyModule();
+  const approval = await import("../lib/knowledgeCmsPublicCutoverDal");
+  Object.assign(process.env, {
+    KNOWLEDGE_CMS_ENABLED: "true",
+    KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "shadow",
+    KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "false",
+    KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "true",
+    KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED: "false",
+    KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED: "false",
+    KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
+    KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: "",
+    NEXT_PUBLIC_SITE_ENV: "production",
+    NEXT_PUBLIC_SITE_URL: "https://www.medicareinspokane.com",
+  });
+  assert.equal(
+    approval.isKnowledgeCmsPublicCutoverApprovalExecutionEnabled(),
+    true,
+  );
+
+  for (const [key, value] of [
+    ["KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED", "true"],
+    ["KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE", "cutover"],
+    ["KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED", "true"],
+    ["NEXT_PUBLIC_SITE_ENV", "staging"],
+    ["NEXT_PUBLIC_SITE_URL", "https://beta.medicareinspokane.com"],
+  ] as const) {
+    const previous = process.env[key];
+    process.env[key] = value;
+    assert.equal(
+      approval.isKnowledgeCmsPublicCutoverApprovalExecutionEnabled(),
+      false,
+      `${key}=${value} must fail closed`,
+    );
+    process.env[key] = previous;
+  }
+});
+
 test("public routing requires the complete exact cutover configuration", async () => {
   const [, , , , routing] = await loadModules();
   const valid = routing.resolveKnowledgeCmsPublicRouting(
