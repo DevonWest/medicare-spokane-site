@@ -31,10 +31,10 @@ function argument(name) {
 const baseUrl = argument("url");
 const routeValue = argument("routes");
 if (!baseUrl || !routeValue) {
-  throw new Error("Usage: --url <production candidate URL> --routes <comma-separated entry IDs>");
+  throw new Error("Usage: --url <production candidate URL> --routes <pipe- or comma-separated entry IDs>");
 }
 
-const entryIds = [...new Set(routeValue.split(",").map((value) => value.trim()).filter(Boolean))];
+const entryIds = [...new Set(routeValue.split(/[|,]/).map((value) => value.trim()).filter(Boolean))];
 if (entryIds.length === 0 || entryIds.some((entryId) => !routeByEntryId.has(entryId))) {
   throw new Error("The production route list is empty or contains an unknown governed entry ID.");
 }
