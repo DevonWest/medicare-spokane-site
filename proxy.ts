@@ -14,6 +14,7 @@ import {
   getKnowledgeCmsEntryIdForPublicPath,
   getKnowledgeCmsEntryIdForInternalRendererPath,
   isKnowledgeCmsInternalRendererPath,
+  isKnowledgeCmsPublicRouteEnabled,
   resolveKnowledgeCmsPublicRouting,
   validateKnowledgeCmsInternalRendererRequest,
 } from "@/lib/knowledgeCmsPublicRouting";
@@ -173,9 +174,12 @@ export function proxy(request: NextRequest) {
   }
 
   const publicRouting = resolveKnowledgeCmsPublicRouting();
-  const cutoverEntryId = publicRouting.routingEnabled
-    ? getKnowledgeCmsEntryIdForPublicPath(pathname)
-    : undefined;
+  const resolvedEntryId = getKnowledgeCmsEntryIdForPublicPath(pathname);
+  const cutoverEntryId =
+    resolvedEntryId &&
+    isKnowledgeCmsPublicRouteEnabled(resolvedEntryId, publicRouting)
+      ? resolvedEntryId
+      : undefined;
   if (cutoverEntryId) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = `${KNOWLEDGE_CMS_INTERNAL_RENDERER_PREFIX}/${cutoverEntryId}`;

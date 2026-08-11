@@ -3,13 +3,12 @@
 # Triggers
 #   - pull request             → runs CI only
 #   - push to main              → runs CI and deploys production
-#   - manual workflow_dispatch  → choose beta or production
+#   - manual workflow_dispatch  → deploy production
 #
 # Required GitHub repository Variables:
 #   GCP_PROJECT_ID
 #   GCP_REGION
 #   CLOUD_RUN_SERVICE
-#   CLOUD_RUN_SERVICE_BETA
 #   ARTIFACT_REGISTRY_REPO
 #   FIREBASE_PROJECT_ID
 #   RUNTIME_SERVICE_ACCOUNT
@@ -25,6 +24,7 @@
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT required only for cutover
+#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES comma-separated governed entry IDs; empty keeps every route static
 #   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static, private shadow, or guarded cutover
 #   KNOWLEDGE_CMS_SEO_ENABLED optional; follows the private CMS gate when unset
 #   KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED optional; defaults to true after read-only property access
@@ -39,7 +39,7 @@
 #
 # Required Google Cloud setup:
 #   - Artifact Registry repo exists
-#   - Cloud Run beta/prod services exist
+#   - Cloud Run production service exists
 #   - Runtime service account has Firestore access
 #   - Deployer service account can deploy Cloud Run and push images
 
@@ -51,18 +51,9 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      target:
-        description: "Deployment target"
-        required: true
-        default: "production"
-        type: choice
-        options:
-          - production
-          - beta
 
 concurrency:
-  group: deploy-cloud-run-${{ github.ref }}-${{ github.event.inputs.target || 'production' }}
+  group: deploy-cloud-run-${{ github.ref }}-production
   cancel-in-progress: false
 
 jobs:
@@ -115,6 +106,7 @@ jobs:
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED || 'false' }}
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED || 'false' }}
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT || '' }}
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: ${{ vars.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES || '' }}
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
       KNOWLEDGE_CMS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEO_ENABLED || vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
       KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED || 'true' }}
@@ -126,7 +118,7 @@ jobs:
       SEARCH_CONSOLE_SITE_URL: ${{ vars.SEARCH_CONSOLE_SITE_URL || 'sc-domain:medicareinspokane.com' }}
       KNOWLEDGE_CMS_AI_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_MODEL || 'gpt-5.6-terra' }}
       KNOWLEDGE_CMS_AI_DEEP_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MODEL || 'gpt-5.6-sol' }}
-      TARGET: ${{ github.event.inputs.target || 'production' }}
+      TARGET: production
 
     steps:
       - uses: actions/checkout@v5
@@ -134,17 +126,10 @@ jobs:
       - name: Resolve target config
         id: cfg
         run: |
-          if [ "$TARGET" = "production" ]; then
-            service="${{ vars.CLOUD_RUN_SERVICE }}"
-            echo "site_url=https://www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
-            echo "site_host=www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
-            echo "site_env=production" >> "$GITHUB_OUTPUT"
-          else
-            service="${{ vars.CLOUD_RUN_SERVICE_BETA }}"
-            echo "site_url=https://beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
-            echo "site_host=beta.medicareinspokane.com" >> "$GITHUB_OUTPUT"
-            echo "site_env=staging" >> "$GITHUB_OUTPUT"
-          fi
+          service="${{ vars.CLOUD_RUN_SERVICE }}"
+          echo "site_url=https://www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+          echo "site_host=www.medicareinspokane.com" >> "$GITHUB_OUTPUT"
+          echo "site_env=production" >> "$GITHUB_OUTPUT"
 
           revision_suffix="r-${GITHUB_SHA:0:8}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           echo "service=$service" >> "$GITHUB_OUTPUT"
@@ -270,7 +255,6 @@ jobs:
             false)
               ;;
             true)
-              test "$TARGET" = "beta" || (echo "::error::Public cutover approval may be created only on beta" && exit 1)
               test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::Public cutover approval requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
               test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" = "shadow" || (echo "::error::Public cutover approval requires exact shadow mode" && exit 1)
               test "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED" = "false" || (echo "::error::Public cutover approval requires the cutover gate false" && exit 1)
@@ -286,6 +270,7 @@ jobs:
           case "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED" in
             false)
               test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" != "cutover" || (echo "::error::Renderer cutover requires KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true" && exit 1)
+              test -z "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES" || (echo "::error::Cutover routes must be empty while public cutover is disabled" && exit 1)
               ;;
             true)
               test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::Public cutover requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
@@ -295,6 +280,7 @@ jobs:
               test "$KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires supporting execution false" && exit 1)
               test "$KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires rendering execution false" && exit 1)
               test "${#KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT}" -eq 64 || (echo "::error::Public cutover approval receipt must be exactly 64 lowercase hex characters" && exit 1)
+              test -n "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES" || (echo "::error::Public cutover requires at least one explicitly selected route" && exit 1)
               case "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT" in
                 *[!0-9a-f]*) echo "::error::Public cutover approval receipt must be lowercase hexadecimal"; exit 1 ;;
               esac
@@ -390,7 +376,7 @@ jobs:
       - name: Push container image
         run: docker push "${{ steps.cfg.outputs.image }}"
 
-      - name: Deploy standard or beta-canary revision
+      - name: Deploy standard production revision
         id: deploy_standard
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
         uses: google-github-actions/deploy-cloudrun@v3
@@ -424,6 +410,7 @@ jobs:
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
             KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
             KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
@@ -514,6 +501,7 @@ jobs:
           service: ${{ steps.cfg.outputs.service }}
           region: ${{ env.REGION }}
           image: ${{ steps.cfg.outputs.image }}
+          suffix: ${{ steps.cfg.outputs.revision_suffix }}
           flags: >-
             --service-account=${{ env.RUNTIME_SA }}
             --ingress=all
@@ -540,6 +528,7 @@ jobs:
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED }}
             KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT }}
+            KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES }}
             KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=${{ env.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE }}
             KNOWLEDGE_CMS_SEO_ENABLED=${{ env.KNOWLEDGE_CMS_SEO_ENABLED }}
             KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=${{ env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED }}
@@ -556,6 +545,63 @@ jobs:
           secrets: |
             ${{ steps.cfg.outputs.openai_secret }}
             ${{ steps.cfg.outputs.seo_cron_secret }}
+
+      - name: Resolve production cutover candidate URL
+        id: cutover_candidate
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' }}
+        run: |
+          service_json="$(gcloud run services describe "${{ steps.cfg.outputs.service }}" \
+            --region "$REGION" \
+            --project "$PROJECT_ID" \
+            --format=json)"
+          candidate_url="$(printf '%s' "$service_json" | node -e '
+            let value = "";
+            process.stdin.on("data", (chunk) => { value += chunk; });
+            process.stdin.on("end", () => {
+              const service = JSON.parse(value);
+              const candidate = (service.status?.traffic ?? []).find((item) => item.tag === "cms-cutover-candidate");
+              if (!candidate?.url) process.exit(1);
+              process.stdout.write(candidate.url);
+            });
+          ')"
+          echo "url=$candidate_url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify production cutover candidate before traffic
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' }}
+        run: |
+          node scripts/verify-cloud-run-health.mjs \
+            --url "${{ steps.cutover_candidate.outputs.url }}/api/deployment-health" \
+            --commit "${{ github.sha }}" \
+            --target production \
+            --attempts 24 \
+            --delay-ms 5000 \
+            --timeout-ms 10000
+          node scripts/verify-knowledge-cms-production-routes.mjs \
+            --url "${{ steps.cutover_candidate.outputs.url }}" \
+            --routes "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES"
+
+      - name: Promote verified production cutover revision
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' }}
+        run: >-
+          gcloud run services update-traffic "${{ steps.cfg.outputs.service }}"
+          --region "$REGION"
+          --project "$PROJECT_ID"
+          --to-revisions "${{ steps.cfg.outputs.revision }}=100"
+          --quiet
+
+      - name: Verify promoted production CMS routes
+        if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED == 'true' }}
+        run: |
+          node scripts/verify-cloud-run-health.mjs \
+            --url "https://www.medicareinspokane.com/api/deployment-health" \
+            --commit "${{ github.sha }}" \
+            --target production \
+            --attempts 36 \
+            --delay-ms 5000 \
+            --timeout-ms 10000
+          node scripts/verify-knowledge-cms-production-routes.mjs \
+            --url "https://www.medicareinspokane.com" \
+            --routes "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES"
 
       - name: Verify deployed Cloud Run service health
         if: ${{ (env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production') && steps.service_state.outputs.direct_public == 'true' }}

@@ -85,7 +85,7 @@ export function assertKnowledgeCmsPublicCutoverApprovalExecutionEnabled(): void 
   if (!isKnowledgeCmsPublicCutoverApprovalExecutionEnabled()) {
     throw new KnowledgeCmsPublicCutoverApprovalError(
       "approval_disabled",
-      "Public cutover approval execution is disabled or its beta-only prerequisites are not exact.",
+      "Public cutover approval execution is disabled or its production prerequisites are not exact.",
     );
   }
 }

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import KnowledgeCmsPublishedArticle from "@/components/KnowledgeCmsPublishedArticle";
 import {
   getKnowledgeCmsNativeRepresentationControl,
+  validateKnowledgeCmsNativeRepresentationArtifact,
 } from "@/lib/knowledgeCmsNativeRepresentation";
 import {
-  renderKnowledgeCmsNativeRepresentation,
   renderKnowledgeCmsNativeRepresentationBody,
 } from "@/lib/knowledgeCmsNativeRepresentationRenderer";
 import {
@@ -38,15 +38,21 @@ export async function generateMetadata({
       robots: { index: false, follow: false, nocache: true },
     };
   }
+  const result = await loadKnowledgeCmsPublicRoute({ entryId });
+  const article = result.outcome === "cms_candidate" ? result.article : undefined;
   const metadata = control.target.metadata;
+  const canonicalUrl = article?.discoverability.canonicalPath
+    ? new URL(article.discoverability.canonicalPath, metadata.canonicalUrl).toString()
+    : metadata.canonicalUrl;
   return {
-    title: metadata.pageTitle,
-    description: metadata.description,
-    alternates: { canonical: metadata.canonicalUrl },
+    title: article?.discoverability.pageTitle ?? metadata.pageTitle,
+    description: article?.discoverability.description ?? metadata.description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: metadata.openGraphTitle,
-      description: metadata.openGraphDescription,
-      url: metadata.openGraphUrl,
+      title: article?.discoverability.pageTitle ?? metadata.openGraphTitle,
+      description:
+        article?.discoverability.description ?? metadata.openGraphDescription,
+      url: canonicalUrl,
     },
   };
 }
@@ -74,14 +80,15 @@ export default async function KnowledgeCmsPublicRoute({ params }: PageProps) {
   }
 
   let result = await loadKnowledgeCmsPublicRoute({ entryId });
-  let renderedCandidate: ReactNode | undefined;
   if (result.outcome === "cms_candidate") {
-    try {
-      renderedCandidate = renderKnowledgeCmsNativeRepresentation(
-        result.artifact,
-        result.article,
-      );
-    } catch {
+    // Keep the immutable artifact validation as the fail-closed structure,
+    // form, schema, canonical, and rollback proof. The approved article is
+    // the public editorial body once that proof passes.
+    const artifactErrors = validateKnowledgeCmsNativeRepresentationArtifact(
+      result.artifact,
+      result.article,
+    );
+    if (artifactErrors.length > 0) {
       result = {
         outcome: "static_fallback",
         entryId,
@@ -93,7 +100,12 @@ export default async function KnowledgeCmsPublicRoute({ params }: PageProps) {
   }
   if (result.outcome === "cms_candidate") {
     emitKnowledgeCmsPublicRendererEvent(result);
-    return <>{renderedCandidate}</>;
+    return (
+      <KnowledgeCmsPublishedArticle
+        article={result.article}
+        path={expectedPath}
+      />
+    );
   }
   emitKnowledgeCmsPublicRendererEvent(result);
   return (

@@ -822,10 +822,15 @@ function summarizeMigrationEvidence(
         !verification.rollout.indexingChanged &&
         !verification.rollout.cutoverEligible,
     );
+    const legacyAdvancedEvidence = Boolean(
+      histories.length === 0 &&
+        verification?.status === "record_advanced" &&
+        (articleVerificationMatches || supportingVerificationMatches),
+    );
     const verified = Boolean(
       observedPresent &&
         controlVerified &&
-        historyMatches &&
+        (historyMatches || legacyAdvancedEvidence) &&
         (articleVerificationMatches || supportingVerificationMatches) &&
         unexpectedBlockers.length === 0,
     );
@@ -838,6 +843,8 @@ function summarizeMigrationEvidence(
           : "verified_private_draft",
       detail: !verified
         ? "The present target is missing one exact execution event or a current artifact verification failed."
+        : legacyAdvancedEvidence
+          ? "The advanced legacy record has no historical creation event, but its immutable identity, locks, current record verification, review state, and zero-write public-safety evidence agree."
         : verification?.status === "record_advanced"
           ? "The migration creation evidence and current advanced record state are internally consistent."
           : "The revision-one private draft, required locks, audit event, and search evidence are verified.",

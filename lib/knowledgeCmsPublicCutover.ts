@@ -19,7 +19,7 @@ import {
   knowledgeCmsRendererRollbackPlan,
 } from "./knowledgeCmsRendererContract";
 
-export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_PREVIEW_WRITE_COUNT = 0 as const;
 export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_WRITE_COUNT = 2 as const;
 export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_EVIDENCE_MAX_AGE_MS =
@@ -71,7 +71,7 @@ export interface KnowledgeCmsPublicCutoverApprovalControl {
     reason: "control_is_not_execution_authority";
   };
   rollout: {
-    betaCanaryRequired: true;
+    productionRouteBatchesRequired: true;
     productionNoTrafficDeploymentRequired: true;
     perRequestRevalidation: true;
     perRequestStaticFallback: true;
@@ -135,7 +135,7 @@ export interface KnowledgeCmsPublicCutoverPreview {
     variablesChanged: false;
     deploymentStarted: false;
     trafficMoved: false;
-    betaCanaryRequired: true;
+    productionRouteBatchesRequired: true;
     productionNoTrafficDeploymentRequired: true;
     variables: readonly [
       "KNOWLEDGE_CMS_ENABLED=true",
@@ -146,6 +146,7 @@ export interface KnowledgeCmsPublicCutoverPreview {
       "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover",
       "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true",
       string,
+      "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=<one-or-more-governed-entry-ids>",
     ];
   };
   rollback: {
@@ -318,7 +319,7 @@ export function buildKnowledgeCmsPublicCutoverApprovalControl(input: {
       reason: "control_is_not_execution_authority",
     },
     rollout: {
-      betaCanaryRequired: true,
+      productionRouteBatchesRequired: true,
       productionNoTrafficDeploymentRequired: true,
       perRequestRevalidation: true,
       perRequestStaticFallback: true,
@@ -518,7 +519,7 @@ export function buildKnowledgeCmsPublicCutoverPreview(input: {
       variablesChanged: false as const,
       deploymentStarted: false as const,
       trafficMoved: false as const,
-      betaCanaryRequired: true as const,
+      productionRouteBatchesRequired: true as const,
       productionNoTrafficDeploymentRequired: true as const,
       variables: [
         "KNOWLEDGE_CMS_ENABLED=true",
@@ -529,6 +530,7 @@ export function buildKnowledgeCmsPublicCutoverPreview(input: {
         "KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover",
         "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true",
         receiptVariable,
+        "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=<one-or-more-governed-entry-ids>",
       ] as KnowledgeCmsPublicCutoverPreview["activation"]["variables"],
     },
     rollback: {
@@ -542,7 +544,7 @@ export function buildKnowledgeCmsPublicCutoverPreview(input: {
       deletesCmsRecords: false as const,
       writeCount: 0 as const,
       triggers: [
-        "Any CMS candidate falls back during the canary window.",
+        "Any CMS candidate falls back during a production route batch.",
         "A governed route returns a non-200 response or exceeds the latency budget.",
         "HTML, metadata, canonical, schema, form, FAQ, or indexing evidence drifts.",
         "The approval expires or no longer matches the current article revision and artifact.",
@@ -597,7 +599,7 @@ export function validateKnowledgeCmsPublicCutoverApprovalControl(
     control.execution.status !== "disabled" ||
     control.execution.readyToExecute ||
     control.execution.writeCount !== 0 ||
-    !control.rollout.betaCanaryRequired ||
+    !control.rollout.productionRouteBatchesRequired ||
     !control.rollout.productionNoTrafficDeploymentRequired ||
     !control.rollout.perRequestRevalidation ||
     !control.rollout.perRequestStaticFallback ||
@@ -701,13 +703,13 @@ export function validateKnowledgeCmsPublicCutoverPreview(
     preview.activation.variablesChanged ||
     preview.activation.deploymentStarted ||
     preview.activation.trafficMoved ||
-    !preview.activation.betaCanaryRequired ||
+    !preview.activation.productionRouteBatchesRequired ||
     !preview.activation.productionNoTrafficDeploymentRequired ||
     preview.rollback.writeCount !== 0 ||
     preview.rollback.deletesCmsRecords ||
     !preview.rollback.preservesCmsRecords
   ) {
-    errors.push("Public cutover preview must remain zero-mutation and canary-gated.");
+    errors.push("Public cutover preview must remain zero-mutation and production-route-gated.");
   }
   if (
     preview.fingerprint.algorithm !== "sha256" ||
@@ -735,10 +737,15 @@ export function validateKnowledgeCmsPublicCutoverPreview(
       "KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=",
     ),
   );
+  const routeVariable = preview.activation.variables.find((value) =>
+    value.startsWith("KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES="),
+  );
   if (
-    preview.activation.variables.length !== 8 ||
+    preview.activation.variables.length !== 9 ||
     receiptVariable !==
       `KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=${getKnowledgeCmsPublicCutoverReceipt(preview.approvalControl)}` ||
+    routeVariable !==
+      "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=<one-or-more-governed-entry-ids>" ||
     preview.monitoring.routeCount !== 22 ||
     preview.monitoring.outcomes.join(",") !==
       "cms_candidate,static_fallback"

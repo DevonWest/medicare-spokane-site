@@ -7,6 +7,8 @@ export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT_ENV =
   "KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT" as const;
 export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED_ENV =
   "KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED" as const;
+export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES_ENV =
+  "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES" as const;
 export const KNOWLEDGE_CMS_INTERNAL_RENDERER_PREFIX =
   "/cms-render" as const;
 export const KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTE_HEADER =
@@ -22,6 +24,7 @@ export interface KnowledgeCmsPublicRoutingEnvironment {
   cutoverEnabled?: string;
   approvalReceipt?: string;
   approvalExecutionEnabled?: string;
+  cutoverRoutes?: string;
   articleMigrationExecutionEnabled?: string;
   supportingMigrationExecutionEnabled?: string;
   nativeRepresentationExecutionEnabled?: string;
@@ -35,9 +38,11 @@ export interface KnowledgeCmsPublicRoutingResolution {
   routingEnabled: boolean;
   configurationValid: boolean;
   environment: "beta" | "invalid" | "production";
+  activeEntryIds: readonly string[];
   approvalReceipt?: string;
   reason:
     | "cutover_approved"
+    | "cutover_no_routes"
     | "cutover_configuration_invalid"
     | "default_static"
     | "explicit_static"
@@ -58,6 +63,24 @@ const pathByEntry = new Map(
     contract.path,
   ]),
 );
+
+function parseCutoverRoutes(value: string | undefined): {
+  activeEntryIds: string[];
+  valid: boolean;
+} {
+  if (value === undefined || value.trim() === "") {
+    return { activeEntryIds: [], valid: true };
+  }
+  const activeEntryIds = [...new Set(
+    value.split(",").map((item) => item.trim()).filter(Boolean),
+  )];
+  return {
+    activeEntryIds,
+    valid:
+      activeEntryIds.length > 0 &&
+      activeEntryIds.every((entryId) => pathByEntry.has(entryId)),
+  };
+}
 
 function deploymentEnvironment(
   siteEnvironment: string | undefined,
@@ -90,6 +113,7 @@ export function getKnowledgeCmsPublicRoutingEnvironment(): KnowledgeCmsPublicRou
       process.env[
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED_ENV
       ],
+    cutoverRoutes: process.env[KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES_ENV],
     articleMigrationExecutionEnabled:
       process.env.KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED,
     supportingMigrationExecutionEnabled:
@@ -117,6 +141,7 @@ export function resolveKnowledgeCmsPublicRouting(
     environment.siteEnvironment,
     environment.siteUrl,
   );
+  const routes = parseCutoverRoutes(environment.cutoverRoutes);
 
   if (requestedMode === "invalid") {
     return {
@@ -125,6 +150,7 @@ export function resolveKnowledgeCmsPublicRouting(
       routingEnabled: false,
       configurationValid: false,
       environment: target,
+      activeEntryIds: [],
       reason: "invalid_mode",
     };
   }
@@ -143,6 +169,7 @@ export function resolveKnowledgeCmsPublicRouting(
       routingEnabled: false,
       configurationValid: cutoverGateSafe && approvalGateSafe,
       environment: target,
+      activeEntryIds: [],
       ...(environment.approvalReceipt
         ? { approvalReceipt: environment.approvalReceipt }
         : {}),
@@ -155,30 +182,42 @@ export function resolveKnowledgeCmsPublicRouting(
     };
   }
 
-  const valid = Boolean(
+  const baseValid = Boolean(
     environment.cmsEnabled === "true" &&
       environment.cutoverEnabled === "true" &&
       environment.approvalExecutionEnabled === "false" &&
       environment.articleMigrationExecutionEnabled === "false" &&
       environment.supportingMigrationExecutionEnabled === "false" &&
       environment.nativeRepresentationExecutionEnabled === "false" &&
-      target !== "invalid" &&
+      target === "production" &&
+      routes.valid &&
       environment.approvalReceipt &&
       receiptPattern.test(environment.approvalReceipt),
   );
+  const valid = baseValid && routes.activeEntryIds.length > 0;
   return {
     requestedMode,
     effectiveMode: valid ? "cutover" : "static",
     routingEnabled: valid,
-    configurationValid: valid,
+    configurationValid: baseValid,
     environment: target,
+    activeEntryIds: valid ? routes.activeEntryIds : [],
     ...(environment.approvalReceipt
       ? { approvalReceipt: environment.approvalReceipt }
       : {}),
     reason: valid
       ? "cutover_approved"
-      : "cutover_configuration_invalid",
+      : baseValid
+        ? "cutover_no_routes"
+        : "cutover_configuration_invalid",
   };
+}
+
+export function isKnowledgeCmsPublicRouteEnabled(
+  entryId: string,
+  routing: KnowledgeCmsPublicRoutingResolution,
+): boolean {
+  return routing.routingEnabled && routing.activeEntryIds.includes(entryId);
 }
 
 export function getKnowledgeCmsEntryIdForPublicPath(
@@ -234,6 +273,7 @@ export function validateKnowledgeCmsInternalRendererRequest(input: {
   const expectedPath = pathByEntry.get(input.entryId);
   if (
     !routing.routingEnabled ||
+    !isKnowledgeCmsPublicRouteEnabled(input.entryId, routing) ||
     !routing.approvalReceipt ||
     !expectedPath ||
     input.pathHeader !== expectedPath

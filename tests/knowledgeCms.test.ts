@@ -1891,7 +1891,7 @@ function listTypeScriptFiles(directory: string): string[] {
   });
 }
 
-test("the CMS remains isolated from every public route and component", () => {
+test("the CMS remains isolated except for the guarded published-article renderer", () => {
   const publicFiles = [
     ...listTypeScriptFiles(join(root, "app")),
     ...listTypeScriptFiles(join(root, "components")),
@@ -1903,5 +1903,7 @@ test("the CMS remains isolated from every public route and component", () => {
     .filter((path) => /\bknowledgeCms\b/.test(readFileSync(path, "utf8")))
     .map((path) => relative(root, path));
 
-  assert.deepEqual(imports, []);
+  assert.deepEqual(imports, [
+    "components/KnowledgeCmsPublishedArticle.tsx",
+  ]);
 });
