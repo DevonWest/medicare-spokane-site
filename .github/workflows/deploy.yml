@@ -23,9 +23,9 @@
 #   KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED optional; defaults to false
 #   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED optional; defaults to false
-#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT required only for cutover
-#   KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES pipe-separated governed entry IDs; empty keeps every route static
-#   KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE optional; static, private shadow, or guarded cutover
+#   Public CMS routing is controlled by the checked-in rollout file. Steady state
+#   derives an internal route-proof fingerprint from its route set and does not
+#   retain the temporary approval receipt.
 #   KNOWLEDGE_CMS_SEO_ENABLED optional; follows the private CMS gate when unset
 #   KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED optional; defaults to true after read-only property access
 #   KNOWLEDGE_CMS_AI_ENABLED optional; defaults to false

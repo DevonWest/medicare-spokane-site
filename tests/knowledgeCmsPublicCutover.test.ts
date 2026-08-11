@@ -265,7 +265,8 @@ test("approval receipt remains stable while immutable evidence is unchanged", as
     fingerprint: { value: string };
   };
   laterReadiness.fingerprint.value = "b".repeat(64);
-  const laterShadow = structuredClone(fixture.shadowPreview);
+  const laterShadow = structuredClone(fixture.shadowPreview) as
+    typeof fixture.shadowPreview & { observedAt?: string };
   laterShadow.observedAt = new Date(NOW.getTime() + 60_000).toISOString();
   laterShadow.betaParityApproval.fingerprint = "c".repeat(64);
   const laterControl = cutover.buildKnowledgeCmsPublicCutoverApprovalControl({
