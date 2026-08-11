@@ -25,8 +25,8 @@ if (!config || typeof config !== "object" || Array.isArray(config)) {
 const phase = config.phase;
 const approvalReceipt = config.approvalReceipt ?? "";
 const routes = config.routes ?? [];
-if (!["static", "approval", "cutover"].includes(phase)) {
-  fail('phase must be exactly "static", "approval", or "cutover"');
+if (!["static", "artifacts", "approval", "cutover"].includes(phase)) {
+  fail('phase must be exactly "static", "artifacts", "approval", or "cutover"');
 }
 if (typeof approvalReceipt !== "string") {
   fail("approvalReceipt must be a string");
@@ -51,8 +51,18 @@ if (
   fail("cutover requires a lowercase 64-character receipt and at least one route");
 }
 
-const values = phase === "approval"
+const values = phase === "artifacts"
   ? {
+      KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "true",
+      KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "shadow",
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "false",
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "false",
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: "",
+      KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: "",
+    }
+  : phase === "approval"
+  ? {
+      KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "shadow",
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "true",
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "false",
@@ -61,6 +71,7 @@ const values = phase === "approval"
     }
   : phase === "cutover"
     ? {
+        KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
         KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "cutover",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "false",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "true",
@@ -68,6 +79,7 @@ const values = phase === "approval"
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: routes.join(","),
       }
     : {
+        KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
         KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "static",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "false",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "false",
