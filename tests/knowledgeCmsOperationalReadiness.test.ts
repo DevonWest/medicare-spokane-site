@@ -618,7 +618,7 @@ test("all 45 verified records complete migration with both execution gates disab
   assert.equal(report.readBoundary.writeCount, 0);
 });
 
-test("advanced legacy records remain valid when current immutable evidence replaces unavailable creation history", async () => {
+test("advanced legacy records remain valid when current evidence replaces obsolete creation controls", async () => {
   const [readiness] = await loadReadinessModules();
   const complete = structuredClone(await completeWorkspace());
   const articleId = complete.articleVerifications[0].recordId;
@@ -626,21 +626,26 @@ test("advanced legacy records remain valid when current immutable evidence repla
     complete.supportingVerifications.slice(0, 6).map((item) => item.recordId),
   );
 
-  complete.workspace.executionHistory.entries =
-    complete.workspace.executionHistory.entries.filter(
-      (entry) => entry.recordId !== articleId,
-    );
-  complete.workspace.executionHistory.summary.eventsObserved -= 1;
-  complete.workspace.executionHistory.summary.validEvents -= 1;
-  complete.workspace.supportingExecutionHistory!.entries =
-    complete.workspace.supportingExecutionHistory!.entries.filter(
-      (entry) => !supportingIds.has(entry.recordId),
-    );
-  complete.workspace.supportingExecutionHistory!.summary.eventsObserved -= 6;
-  complete.workspace.supportingExecutionHistory!.summary.validEvents -= 6;
+  const articleHistory = complete.workspace.executionHistory.entries.find(
+    (entry) => entry.recordId === articleId,
+  )!;
+  articleHistory.control.validation = "mismatch";
+  const supportingHistory = complete.workspace.supportingExecutionHistory!.entries
+    .filter((entry) => supportingIds.has(entry.recordId));
+  for (const entry of supportingHistory) entry.controlValidation = "mismatch";
   complete.articleVerifications[0].result!.status = "record_advanced";
   for (const verification of complete.supportingVerifications.slice(0, 6)) {
     verification.result!.status = "record_advanced";
+  }
+  for (const candidate of complete.workspace.preview.candidates) {
+    const candidateKey = `${candidate.target.kind}:${candidate.target.id}`;
+    if (candidateKey === `article:${articleId}` || supportingIds.has(candidate.target.id)) {
+      candidate.issues.push({
+        code: "existing_content_conflict",
+        severity: "blocker",
+        message: "Legacy content predates the current deterministic control.",
+      });
+    }
   }
 
   const report = readiness.buildKnowledgeCmsOperationalReadinessReport({
@@ -655,13 +660,13 @@ test("advanced legacy records remain valid when current immutable evidence repla
   assert.equal(report.migration.targets.verifiedAdvancedRecords, 7);
   assert.equal(report.migration.targets.verifiedPrivateDrafts, 38);
   assert.equal(report.migration.completion.status, "complete");
-  assert.equal(report.migration.history.validEvents, 38);
+  assert.equal(report.migration.history.validEvents, 45);
   assert.match(
     report.migration.targetEvidence
       .filter((target) => target.status === "verified_advanced_record")
       .map((target) => target.detail)
       .join(" "),
-    /no historical creation event/i,
+    /predates the current deterministic creation control/i,
   );
 });
 

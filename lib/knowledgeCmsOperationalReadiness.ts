@@ -13,6 +13,7 @@ import {
   type KnowledgeCmsRole,
 } from "./knowledgeCms";
 import { resolveKnowledgeCmsActor } from "./knowledgeCmsAdminAuth";
+import type { KnowledgeCmsMigrationIssue } from "./knowledgeCmsMigration";
 import type { KnowledgeCmsMigrationWorkspacePreview } from "./knowledgeCmsMigrationDal";
 import type {
   KnowledgeCmsArticleMigrationPostCreateVerification,
@@ -717,6 +718,7 @@ function summarizeMigrationEvidence(
     (item) => !targetKeys.has(keyFor(item.kind, item.recordId)),
   ).length;
   const targetEvidence: KnowledgeCmsOperationalTargetEvidence[] = [];
+  const compatibleLegacyKeys = new Set<string>();
 
   for (const candidate of orderedCandidates) {
     const target = candidate.target;
@@ -823,16 +825,25 @@ function summarizeMigrationEvidence(
         !verification.rollout.cutoverEligible,
     );
     const legacyAdvancedEvidence = Boolean(
-      histories.length === 0 &&
-        verification?.status === "record_advanced" &&
-        (articleVerificationMatches || supportingVerificationMatches),
+      verification?.status === "record_advanced" &&
+        (articleVerificationMatches || supportingVerificationMatches) &&
+        (histories.length === 0 ||
+          (histories.length === 1 && !historyMatches)),
+    );
+    if (legacyAdvancedEvidence) compatibleLegacyKeys.add(key);
+    const incompatibleBlockers = unexpectedBlockers.filter(
+      (item) =>
+        !(
+          legacyAdvancedEvidence &&
+          item.code === "existing_content_conflict"
+        ),
     );
     const verified = Boolean(
       observedPresent &&
         controlVerified &&
         (historyMatches || legacyAdvancedEvidence) &&
         (articleVerificationMatches || supportingVerificationMatches) &&
-        unexpectedBlockers.length === 0,
+        incompatibleBlockers.length === 0,
     );
     targetEvidence.push({
       ...base,
@@ -844,20 +855,33 @@ function summarizeMigrationEvidence(
       detail: !verified
         ? "The present target is missing one exact execution event or a current artifact verification failed."
         : legacyAdvancedEvidence
-          ? "The advanced legacy record has no historical creation event, but its immutable identity, locks, current record verification, review state, and zero-write public-safety evidence agree."
+          ? "The advanced legacy record predates the current deterministic creation control, but its immutable identity, locks, current record verification, review state, and zero-write public-safety evidence agree."
         : verification?.status === "record_advanced"
           ? "The migration creation evidence and current advanced record state are internally consistent."
           : "The revision-one private draft, required locks, audit event, and search evidence are verified.",
     });
   }
 
-  const sourceOrRouteBlockers = [
-    ...preview.issues,
-    ...preview.candidates.flatMap((candidate) => candidate.issues),
-  ].filter(
-    (item) =>
-      item.severity === "blocker" &&
-      item.code !== intentionalPublicCutoverBlocker,
+  const migrationIssues: Array<{
+    item: KnowledgeCmsMigrationIssue;
+    candidateKey?: string;
+  }> = [
+    ...preview.issues.map((item) => ({ item })),
+    ...preview.candidates.flatMap((candidate) =>
+      candidate.issues.map((item) => ({
+        item,
+        candidateKey: keyFor(candidate.target.kind, candidate.target.id),
+      })),
+    ),
+  ];
+  const sourceOrRouteBlockers = migrationIssues.filter(({ item, candidateKey }) =>
+    item.severity === "blocker" &&
+    item.code !== intentionalPublicCutoverBlocker &&
+    !(
+      item.code === "existing_content_conflict" &&
+      candidateKey &&
+      compatibleLegacyKeys.has(candidateKey)
+    )
   ).length;
   const publicRepresentationBlockers = articleCandidates
     .flatMap((candidate) => candidate.issues)
@@ -907,6 +931,18 @@ function summarizeMigrationEvidence(
       supportingControls.writeCount === 0 &&
       supportingControlsVerified === supportingCandidates.length,
   );
+  const incompatibleControlMismatches = [
+    ...executionHistory.entries.map((entry) => ({
+      key: keyFor("article", entry.recordId),
+      mismatch: entry.control.validation === "mismatch",
+    })),
+    ...(supportingExecutionHistory?.entries ?? []).map((entry) => ({
+      key: keyFor(entry.kind, entry.recordId),
+      mismatch: entry.controlValidation === "mismatch",
+    })),
+  ].filter(
+    (entry) => entry.mismatch && !compatibleLegacyKeys.has(entry.key),
+  ).length;
   const blockedTargets = targetEvidence.filter(
     (target) => target.status === "blocked",
   ).length;
@@ -918,9 +954,7 @@ function summarizeMigrationEvidence(
       executionHistory.summary.invalidEvents +
           supportingExecutionHistory.summary.invalidEvents ===
         0 &&
-      executionHistory.summary.controlsMismatched +
-          supportingExecutionHistory.summary.controlsMismatched ===
-        0 &&
+      incompatibleControlMismatches === 0 &&
       !executionHistory.summary.truncated &&
       !supportingExecutionHistory.summary.truncated &&
       duplicateRecordEvents === 0 &&

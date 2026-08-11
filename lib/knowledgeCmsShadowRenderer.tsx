@@ -1,11 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import {
-  knowledgeEntries,
-  knowledgeSources,
-  type KnowledgeEntry,
-} from "./knowledgeCenter";
+import { knowledgeEntries } from "./knowledgeCenter";
 import {
   validateKnowledgeCmsPublishReadiness,
   type KnowledgeCmsArticle,
@@ -127,28 +123,6 @@ function canonicalJson(value: unknown): string {
     .join(",")}}`;
 }
 
-function expectedArticleRelationships(entry: KnowledgeEntry) {
-  return {
-    articleIds: (entry.relationships?.entryPaths ?? []).flatMap((path) => {
-      const related = knowledgeEntries.find(
-        (candidate) => candidate.path === path,
-      );
-      return related ? [`resource-entry--${related.id}`] : [];
-    }),
-    topicIds: [
-      `resource-category--${entry.categoryId}`,
-      ...entry.topicSlugs.map((slug) => `resource-topic--${slug}`),
-    ],
-    faqIds: (entry.relationships?.faqIds ?? []).map(
-      (id) => `resource-faq--${id}`,
-    ),
-    citySlugs: [...(entry.relationships?.citySlugs ?? [])],
-    agentSlugs: [...(entry.relationships?.agentSlugs ?? [])],
-    carrierNames: [...(entry.relationships?.carrierNames ?? [])],
-    existingPaths: [entry.path],
-  };
-}
-
 export function isKnowledgeCmsPrivateShadowEnabled(
   value: string | undefined = process.env
     .KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE,
@@ -188,19 +162,6 @@ export function validateKnowledgeCmsShadowRecord(
   if (record.status !== "published") {
     errors.push("The candidate record is not published.");
   }
-  if (record.title !== entry.title || record.summary !== entry.summary) {
-    errors.push(
-      "The candidate title or summary does not match the governed Resource Library entry.",
-    );
-  }
-  if (
-    record.discoverability.pageTitle !== control.target.metadata.pageTitle ||
-    record.discoverability.description !== control.target.metadata.description
-  ) {
-    errors.push(
-      "The candidate page title or description does not match the CMS-native representation.",
-    );
-  }
   if (
     record.discoverability.canonicalPath !== contract.path ||
     !record.relationships.existingPaths.includes(contract.path)
@@ -209,47 +170,12 @@ export function validateKnowledgeCmsShadowRecord(
       "The candidate canonical path and existing-route relationship must match the renderer contract.",
     );
   }
-  const expectedSearchTerms = [
-    ...new Set([...entry.tags, ...entry.topicSlugs]),
-  ];
-  if (!arraysEqual(record.searchTerms, expectedSearchTerms)) {
-    errors.push(
-      "The candidate search terms do not match the governed Resource Library entry.",
-    );
-  }
-  const expectedRelationships = expectedArticleRelationships(entry);
-  for (const key of Object.keys(
-    expectedRelationships,
-  ) as Array<keyof typeof expectedRelationships>) {
-    if (!arraysEqual(record.relationships[key], expectedRelationships[key])) {
-      errors.push(
-        `The candidate ${key} relationships do not match the governed Resource Library entry.`,
-      );
-    }
-  }
-  const expectedSourceIds = entry.sourceIds ?? [];
-  if (!arraysEqual(record.sources.map((source) => source.id), expectedSourceIds)) {
-    errors.push(
-      "The candidate source lineage does not match the governed Resource Library entry.",
-    );
-  } else {
-    for (const source of record.sources) {
-      const expected = knowledgeSources.find(
-        (candidate) => candidate.id === source.id,
-      );
-      if (
-        !expected ||
-        source.kind !== "official" ||
-        source.title !== expected.title ||
-        source.publisher !== expected.publisher ||
-        source.url !== expected.url
-      ) {
-        errors.push(
-          `The candidate source "${source.id}" does not match the governed source registry.`,
-        );
-      }
-    }
-  }
+  // Title, summary, page metadata, search terms, relationships, sources, and
+  // body are governed editorial fields. Requiring them to equal the legacy
+  // static registry would make every legitimate CMS revision ineligible for
+  // rendering. Publish readiness below validates the current revision while
+  // identity, slug, canonical route, review, publication, and rollback stay
+  // independently locked.
   errors.push(...validateKnowledgeCmsPublishReadiness(record, asOf));
   return uniqueErrors(errors);
 }
