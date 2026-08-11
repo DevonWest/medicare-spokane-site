@@ -43,6 +43,21 @@ test("main pushes and manual runs deploy production only", () => {
   assert.doesNotMatch(workflow, /beta\.medicareinspokane\.com/);
 });
 
+test("production rollout phase is checked in and resolved before validation", () => {
+  assert.match(
+    workflow,
+    /- name: Resolve checked-in Knowledge CMS rollout phase/,
+  );
+  assert.match(
+    workflow,
+    /node scripts\/resolve-knowledge-cms-rollout-config\.mjs\n\s+config\/knowledge-cms-production-rollout\.json\n\s+>> "\$GITHUB_ENV"/,
+  );
+  assert.ok(
+    workflow.indexOf("- name: Resolve checked-in Knowledge CMS rollout phase") <
+      workflow.indexOf("- name: Validate required variables"),
+  );
+});
+
 test("Search Console evidence is enabled by default with an explicit kill switch", () => {
   assert.match(
     workflow,
