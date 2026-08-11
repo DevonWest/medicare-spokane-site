@@ -5,6 +5,11 @@ target is `https://www.medicareinspokane.com`.
 
 ## Deployment sequence
 
+The auditable phase and selected route batch live in
+`config/knowledge-cms-production-rollout.json`. The deploy workflow validates
+that file and resolves the five routing variables before any Cloud Run action.
+Repository variables cannot silently override the checked-in rollout state.
+
 1. Deploy the production image with `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false`
    and `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES` empty. Every governed route keeps
    using its checked-in static page.
