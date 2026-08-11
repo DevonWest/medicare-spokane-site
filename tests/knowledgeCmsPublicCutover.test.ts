@@ -189,7 +189,15 @@ async function cutoverFixture() {
     approvedAt: NOW,
   });
   const receipt = cutover.getKnowledgeCmsPublicCutoverReceipt(control);
-  return { records, artifacts, control, approval, receipt };
+  return {
+    records,
+    artifacts,
+    readinessStub,
+    shadowPreview,
+    control,
+    approval,
+    receipt,
+  };
 }
 
 const cutoverEnvKeys = [
@@ -248,6 +256,29 @@ test("approval execution is limited to the exact production shadow state", async
     );
     process.env[key] = previous;
   }
+});
+
+test("approval receipt remains stable while immutable evidence is unchanged", async () => {
+  const [, , cutover] = await loadModules();
+  const fixture = await cutoverFixture();
+  const laterControl = cutover.buildKnowledgeCmsPublicCutoverApprovalControl({
+    readiness: fixture.readinessStub,
+    shadow: fixture.shadowPreview,
+    observedAt: new Date(NOW.getTime() + 60_000),
+  });
+
+  assert.equal(
+    cutover.getKnowledgeCmsPublicCutoverReceipt(laterControl),
+    fixture.receipt,
+  );
+  assert.equal(
+    laterControl.validity.validFrom,
+    fixture.control.validity.validFrom,
+  );
+  assert.equal(
+    laterControl.validity.expiresAt,
+    fixture.control.validity.expiresAt,
+  );
 });
 
 test("public routing requires the complete exact cutover configuration", async () => {
