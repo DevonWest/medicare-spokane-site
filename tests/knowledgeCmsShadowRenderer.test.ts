@@ -433,7 +433,7 @@ test("missing, malformed, and stale rendering artifacts fail closed", async () =
   assert.equal(preview.summary.passed, 0);
 });
 
-test("stale, non-published, or mismatched articles fail before artifact comparison", async () => {
+test("editorial metadata may change while publication and canonical identity stay guarded", async () => {
   const { buildKnowledgeCmsShadowPreview } = await loadShadowRenderer();
   const draft = articleRecord("turning-65-spokane", {
     status: "draft",
@@ -470,12 +470,33 @@ test("stale, non-published, or mismatched articles fail before artifact comparis
   assert.equal(
     preview.results.find((result) => result.entryId === "compare-options")
       ?.status,
-    "record_contract_mismatch",
+    "representation_missing",
   );
   assert.ok(
     preview.results
       .find((result) => result.entryId === "medicare-advantage")
       ?.errors.some((message) => /review is due/i.test(message)),
+  );
+});
+
+test("canonical route drift still fails before artifact comparison", async () => {
+  const { buildKnowledgeCmsShadowPreview } = await loadShadowRenderer();
+  const wrongCanonical = articleRecord("compare-options", {
+    discoverability: {
+      pageTitle: "An approved editorial title",
+      description: "An approved editorial description.",
+      canonicalPath: "/wrong-route",
+      indexing: "blocked",
+    },
+  });
+  const preview = buildKnowledgeCmsShadowPreview([wrongCanonical], [], {
+    asOf: NOW,
+    rendererMode: "shadow",
+  });
+  assert.equal(
+    preview.results.find((result) => result.entryId === "compare-options")
+      ?.status,
+    "record_contract_mismatch",
   );
 });
 
