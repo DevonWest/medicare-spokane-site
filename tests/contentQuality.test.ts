@@ -38,6 +38,7 @@ const excludedPathParts = [
   join("lib", "knowledgeCmsCopilotActivation.ts"),
   join("lib", "knowledgeCmsCopilotReadiness.ts"),
   join("lib", "knowledgeCmsSearchConsole.ts"),
+  join("lib", "knowledgeCmsSchedulerAuth.ts"),
   join("lib", "knowledgeCmsSeo.ts"),
   join("lib", "knowledgeCmsSeoCrawler.ts"),
   join("lib", "knowledgeCmsSeoDal.ts"),

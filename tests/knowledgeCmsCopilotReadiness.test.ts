@@ -50,7 +50,6 @@ test("copilot readiness distinguishes disabled features from blocked dependencie
 
 test("fully configured readiness reports capability without exposing secret values", async () => {
   const apiKey = "private-api-key-test-value";
-  const schedulerToken = "x".repeat(48);
   const result = await readiness({
     KNOWLEDGE_CMS_ENABLED: "true",
     KNOWLEDGE_CMS_SEO_ENABLED: "true",
@@ -61,14 +60,15 @@ test("fully configured readiness reports capability without exposing secret valu
     KNOWLEDGE_CMS_AI_MODEL: "gpt-5.6-terra",
     KNOWLEDGE_CMS_AI_DEEP_MODEL: "gpt-5.6-sol",
     KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: "true",
-    KNOWLEDGE_CMS_SEO_CRON_TOKEN: schedulerToken,
+    KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY:
+      "DevonWest/medicare-spokane-site",
   });
   assert.equal(result.readyCount, result.totalCount);
   const serialized = JSON.stringify(result);
   assert.doesNotMatch(serialized, new RegExp(apiKey));
-  assert.doesNotMatch(serialized, new RegExp(schedulerToken));
   assert.match(serialized, /gpt-5\.6-terra/);
   assert.match(serialized, /gpt-5\.6-sol/);
+  assert.match(serialized, /GitHub OIDC protected/);
 });
 
 test("invalid model and Search Console values fail closed", async () => {

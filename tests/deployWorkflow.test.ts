@@ -90,6 +90,23 @@ test("Search Console API setup stays outside the least-privilege deploy workflow
   );
 });
 
+test("weekly SEO uses repository-bound OIDC without granting secret-administration powers", () => {
+  const schedulerWorkflow = readFileSync(
+    join(root, ".github/workflows/weekly-seo-scan.yml"),
+    "utf8",
+  );
+  assert.match(workflow, /KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY/);
+  assert.doesNotMatch(workflow, /gcloud secrets|secretmanager\.secrets\.create/);
+  assert.match(schedulerWorkflow, /actions\/github-script@v8/);
+  assert.match(schedulerWorkflow, /core\.getIDToken\(process\.env\.SEO_SCAN_URL\)/);
+  assert.match(schedulerWorkflow, /GITHUB_REF.*refs\/heads\/main/);
+  assert.match(schedulerWorkflow, /Authorization: Bearer \$SCHEDULER_ID_TOKEN/);
+  assert.doesNotMatch(
+    schedulerWorkflow,
+    /gcloud secrets|SEO_CRON_SECRET|google-github-actions\/auth/,
+  );
+});
+
 test("Cloud Run deployments use compatible maintained actions and Cloud SDK", () => {
   assert.doesNotMatch(workflow, /actions\/checkout@v4/);
   assert.doesNotMatch(workflow, /actions\/setup-node@v4/);

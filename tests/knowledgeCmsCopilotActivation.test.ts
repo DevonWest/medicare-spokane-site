@@ -27,7 +27,8 @@ const FULL_RUNTIME = {
   KNOWLEDGE_CMS_AI_MODEL: "gpt-5.6-terra",
   KNOWLEDGE_CMS_AI_DEEP_MODEL: "gpt-5.6-sol",
   KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: "true",
-  KNOWLEDGE_CMS_SEO_CRON_TOKEN: "x".repeat(48),
+  KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY:
+    "DevonWest/medicare-spokane-site",
 } as const;
 
 class MemoryActivationStore implements KnowledgeCmsCopilotActivationStore {
@@ -79,7 +80,7 @@ test("live activation verifies read-only integrations and strips secrets and act
   const serialized = JSON.stringify(view);
   assert.doesNotMatch(serialized, /cms-admin/);
   assert.doesNotMatch(serialized, /private-test-key/);
-  assert.doesNotMatch(serialized, /x{32}/);
+  assert.doesNotMatch(serialized, /DevonWest/);
   assert.equal("configurationFingerprint" in view, false);
 });
 

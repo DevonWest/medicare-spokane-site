@@ -1,38 +1,17 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { isKnowledgeCmsEnabled } from "@/lib/knowledgeCmsRepository";
 import {
   isKnowledgeCmsSeoEnabled,
   runKnowledgeCmsSeoScan,
 } from "@/lib/knowledgeCmsSeoDal";
-import { env } from "@/lib/runtimeValues";
 import { hasCurrentKnowledgeCmsContinuousSeoActivation } from "@/lib/knowledgeCmsCopilotActivation";
+import { isAuthorizedKnowledgeCmsSchedulerRequest } from "@/lib/knowledgeCmsSchedulerAuth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 function continuousSeoEnabled(): boolean {
   return process.env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED === "true";
-}
-
-function suppliedToken(request: Request): string | undefined {
-  const authorization = request.headers.get("authorization")?.trim();
-  if (authorization?.startsWith("Bearer ")) {
-    return authorization.slice("Bearer ".length).trim() || undefined;
-  }
-  return request.headers.get("x-knowledge-cms-seo-token")?.trim() || undefined;
-}
-
-function validToken(request: Request): boolean {
-  const expected = env("KNOWLEDGE_CMS_SEO_CRON_TOKEN");
-  const supplied = suppliedToken(request);
-  if (!expected || expected.length < 32 || !supplied) return false;
-  const expectedBytes = Buffer.from(expected);
-  const suppliedBytes = Buffer.from(supplied);
-  return (
-    expectedBytes.length === suppliedBytes.length &&
-    timingSafeEqual(expectedBytes, suppliedBytes)
-  );
 }
 
 export async function POST(request: Request) {
@@ -43,7 +22,7 @@ export async function POST(request: Request) {
   ) {
     return new NextResponse(null, { status: 404 });
   }
-  if (!validToken(request)) {
+  if (!(await isAuthorizedKnowledgeCmsSchedulerRequest(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!(await hasCurrentKnowledgeCmsContinuousSeoActivation())) {
