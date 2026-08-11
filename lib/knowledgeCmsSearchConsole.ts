@@ -34,9 +34,22 @@ export interface KnowledgeCmsSearchConsoleSnapshot {
   siteUrl?: string;
   currentPeriod?: KnowledgeCmsSearchConsolePeriod;
   previousPeriod?: KnowledgeCmsSearchConsolePeriod;
+  currentTotals?: KnowledgeCmsSearchConsoleTotals;
+  previousTotals?: KnowledgeCmsSearchConsoleTotals;
+  currentPageRows: KnowledgeCmsSearchMetricRow[];
+  previousPageRows: KnowledgeCmsSearchMetricRow[];
+  currentQueryRows: KnowledgeCmsSearchMetricRow[];
+  previousQueryRows: KnowledgeCmsSearchMetricRow[];
   currentRows: KnowledgeCmsSearchMetricRow[];
   previousRows: KnowledgeCmsSearchMetricRow[];
   errorCode?: KnowledgeCmsSearchConsoleErrorCode;
+}
+
+export interface KnowledgeCmsSearchConsoleTotals {
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
 }
 
 export interface KnowledgeCmsSearchConsoleAccessCheck {
@@ -162,20 +175,45 @@ function numeric(value: number | null | undefined): number {
 
 function normalizeRows(
   rows: SearchConsoleQueryResult["data"]["rows"],
+  dimensions: ReadonlyArray<"page" | "query">,
 ): KnowledgeCmsSearchMetricRow[] {
   if (!rows) {
     return [];
   }
   return rows
-    .map((row) => ({
-      page: row.keys?.[0]?.trim() ?? "",
-      query: row.keys?.[1]?.trim() ?? "",
-      clicks: numeric(row.clicks),
-      impressions: numeric(row.impressions),
-      ctr: numeric(row.ctr),
-      position: numeric(row.position),
-    }))
-    .filter((row) => row.page && row.query && row.impressions > 0);
+    .map((row) => {
+      const keys = row.keys ?? [];
+      const values = Object.fromEntries(
+        dimensions.map((dimension, index) => [
+          dimension,
+          keys[index]?.trim() ?? "",
+        ]),
+      );
+      return {
+        page: values.page ?? "",
+        query: values.query ?? "",
+        clicks: numeric(row.clicks),
+        impressions: numeric(row.impressions),
+        ctr: numeric(row.ctr),
+        position: numeric(row.position),
+      };
+    })
+    .filter(
+      (row) =>
+        dimensions.every((dimension) => row[dimension]) && row.impressions > 0,
+    );
+}
+
+function normalizeTotals(
+  rows: SearchConsoleQueryResult["data"]["rows"],
+): KnowledgeCmsSearchConsoleTotals {
+  const row = rows?.[0];
+  return {
+    clicks: numeric(row?.clicks),
+    impressions: numeric(row?.impressions),
+    ctr: numeric(row?.ctr),
+    position: numeric(row?.position),
+  };
 }
 
 function errorStatus(error: unknown): number | undefined {
@@ -255,6 +293,10 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   if (!enabled) {
     return {
       status: "disabled",
+      currentPageRows: [],
+      previousPageRows: [],
+      currentQueryRows: [],
+      previousQueryRows: [],
       currentRows: [],
       previousRows: [],
     };
@@ -265,6 +307,10 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   if (!siteUrl) {
     return {
       status: "unconfigured",
+      currentPageRows: [],
+      previousPageRows: [],
+      currentQueryRows: [],
+      previousQueryRows: [],
       currentRows: [],
       previousRows: [],
       errorCode: configuredSiteUrl ? "invalid_configuration" : undefined,
@@ -274,32 +320,56 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   const periods = buildKnowledgeCmsSearchConsolePeriods(options.now);
   const client = options.client ?? createClient();
   const rowLimit = configuredRowLimit(options.rowLimit);
-  const request = (period: KnowledgeCmsSearchConsolePeriod) =>
+  const request = (
+    period: KnowledgeCmsSearchConsolePeriod,
+    dimensions: Array<"page" | "query">,
+  ) =>
     client.query({
       siteUrl,
       requestBody: {
         startDate: period.startDate,
         endDate: period.endDate,
-        dimensions: ["page", "query"],
+        ...(dimensions.length > 0 ? { dimensions } : {}),
         dataState: "final",
         type: "web",
-        rowLimit,
+        rowLimit: dimensions.length > 0 ? rowLimit : 1,
         startRow: 0,
       },
     });
 
   try {
-    const [current, previous] = await Promise.all([
-      request(periods.current),
-      request(periods.previous),
+    const [
+      currentTotals,
+      previousTotals,
+      currentPages,
+      previousPages,
+      currentQueries,
+      previousQueries,
+      currentPairs,
+      previousPairs,
+    ] = await Promise.all([
+      request(periods.current, []),
+      request(periods.previous, []),
+      request(periods.current, ["page"]),
+      request(periods.previous, ["page"]),
+      request(periods.current, ["query"]),
+      request(periods.previous, ["query"]),
+      request(periods.current, ["page", "query"]),
+      request(periods.previous, ["page", "query"]),
     ]);
     return {
       status: "available",
       siteUrl,
       currentPeriod: periods.current,
       previousPeriod: periods.previous,
-      currentRows: normalizeRows(current.data.rows),
-      previousRows: normalizeRows(previous.data.rows),
+      currentTotals: normalizeTotals(currentTotals.data.rows),
+      previousTotals: normalizeTotals(previousTotals.data.rows),
+      currentPageRows: normalizeRows(currentPages.data.rows, ["page"]),
+      previousPageRows: normalizeRows(previousPages.data.rows, ["page"]),
+      currentQueryRows: normalizeRows(currentQueries.data.rows, ["query"]),
+      previousQueryRows: normalizeRows(previousQueries.data.rows, ["query"]),
+      currentRows: normalizeRows(currentPairs.data.rows, ["page", "query"]),
+      previousRows: normalizeRows(previousPairs.data.rows, ["page", "query"]),
     };
   } catch (error) {
     console.error("[knowledge-cms-seo] Search Console request failed.", {
@@ -310,6 +380,10 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
       siteUrl,
       currentPeriod: periods.current,
       previousPeriod: periods.previous,
+      currentPageRows: [],
+      previousPageRows: [],
+      currentQueryRows: [],
+      previousQueryRows: [],
       currentRows: [],
       previousRows: [],
       errorCode: classifyError(error),

@@ -180,6 +180,9 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
   assert.match(page, /immutable/);
   assert.match(page, /static public/);
   assert.match(page, /AI proposal history/);
+  assert.match(page, /Top pages/);
+  assert.match(page, /Top queries/);
+  assert.match(page, /cannot be attributed to a/);
   assert.match(controls, /Continue refining this proposal/);
   assert.match(provider, /previousProposal/);
   assert.match(controls, /Verify live connections/);

@@ -25,6 +25,7 @@ import {
   compareKnowledgeCmsSearchMetrics,
   sortAndLimitKnowledgeCmsSeoOpportunities,
   summarizeKnowledgeCmsSearchMetrics,
+  summarizeKnowledgeCmsSearchTotals,
   summarizeKnowledgeCmsSeoOpportunities,
   type KnowledgeCmsSearchMetricsSummary,
   type KnowledgeCmsSeoOpportunity,
@@ -61,6 +62,10 @@ export interface KnowledgeCmsSeoScan {
   currentPeriod?: KnowledgeCmsSearchConsolePeriod;
   previousPeriod?: KnowledgeCmsSearchConsolePeriod;
   searchMetrics: KnowledgeCmsSearchMetricsSummary;
+  searchEvidence?: {
+    pages: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
+    queries: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
+  };
   site: KnowledgeCmsSeoSiteObservation;
   pages: KnowledgeCmsSeoPageObservation[];
   opportunities: KnowledgeCmsSeoOpportunity[];
@@ -211,11 +216,22 @@ export async function runKnowledgeCmsSeoScan(
     searchConsole.currentRows,
     searchConsole.previousRows,
   );
+  const pageComparisons = compareKnowledgeCmsSearchMetrics(
+    searchConsole.currentPageRows,
+    searchConsole.previousPageRows,
+  );
+  const queryComparisons = compareKnowledgeCmsSearchMetrics(
+    searchConsole.currentQueryRows,
+    searchConsole.previousQueryRows,
+  );
   const opportunities = sortAndLimitKnowledgeCmsSeoOpportunities([
     ...buildKnowledgeCmsTechnicalOpportunities(crawl.pages, crawl.site, {
       expectIndexing: isProduction(),
     }),
     ...buildKnowledgeCmsRecordOpportunities(records, started),
+    ...buildKnowledgeCmsSearchOpportunities(pageComparisons, {
+      evidenceThrough: searchConsole.currentPeriod?.endDate,
+    }),
     ...buildKnowledgeCmsSearchOpportunities(comparisons, {
       evidenceThrough: searchConsole.currentPeriod?.endDate,
     }),
@@ -245,9 +261,22 @@ export async function runKnowledgeCmsSeoScan(
       ? { previousPeriod: searchConsole.previousPeriod }
       : {}),
     searchMetrics:
-      comparisons.length > 0
-        ? summarizeKnowledgeCmsSearchMetrics(comparisons)
-        : emptyMetrics(),
+      searchConsole.currentTotals && searchConsole.previousTotals
+        ? summarizeKnowledgeCmsSearchTotals(
+            searchConsole.currentTotals,
+            searchConsole.previousTotals,
+          )
+        : comparisons.length > 0
+          ? summarizeKnowledgeCmsSearchMetrics(comparisons)
+          : emptyMetrics(),
+    searchEvidence: {
+      pages: [...pageComparisons]
+        .sort((left, right) => right.impressions - left.impressions)
+        .slice(0, 100),
+      queries: [...queryComparisons]
+        .sort((left, right) => right.impressions - left.impressions)
+        .slice(0, 100),
+    },
     site: crawl.site,
     pages: crawl.pages,
     opportunities,

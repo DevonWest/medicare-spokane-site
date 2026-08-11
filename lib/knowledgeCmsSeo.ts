@@ -219,6 +219,29 @@ export function summarizeKnowledgeCmsSearchMetrics(
   };
 }
 
+export function summarizeKnowledgeCmsSearchTotals(
+  current: Pick<
+    KnowledgeCmsSearchMetricsSummary,
+    "clicks" | "impressions" | "ctr" | "position"
+  >,
+  previous: Pick<KnowledgeCmsSearchMetricsSummary, "clicks" | "impressions">,
+): KnowledgeCmsSearchMetricsSummary {
+  const clicks = finiteNonNegative(current.clicks);
+  const impressions = finiteNonNegative(current.impressions);
+  const previousClicks = finiteNonNegative(previous.clicks);
+  const previousImpressions = finiteNonNegative(previous.impressions);
+  return {
+    clicks,
+    impressions,
+    ctr: finiteNonNegative(current.ctr),
+    position: finitePosition(current.position),
+    previousClicks,
+    previousImpressions,
+    clickChange: percentageChange(clicks, previousClicks),
+    impressionChange: percentageChange(impressions, previousImpressions),
+  };
+}
+
 function pagePath(page: string): string {
   try {
     const parsed = new URL(page);
@@ -258,18 +281,26 @@ export function buildKnowledgeCmsSearchOpportunities(
     }
     const score = searchImpact(row);
 
-    if (
-      row.impressions >= 50 &&
-      row.position > 0 &&
-      row.position <= 10 &&
-      row.ctr < 0.03
-    ) {
+    const pageAggregate = Boolean(row.page && !row.query);
+    const lowCtr = pageAggregate
+      ? row.impressions >= 50 &&
+        row.position > 0 &&
+        row.position <= 30 &&
+        row.ctr < 0.01
+      : row.impressions >= 50 &&
+        row.position > 0 &&
+        row.position <= 10 &&
+        row.ctr < 0.03;
+    const subject = row.query ? `“${row.query}”` : path;
+
+    if (lowCtr) {
       opportunities.push({
         id: opportunityId("low_click_through_rate", row.page, row.query),
         kind: "low_click_through_rate",
-        priority: row.impressions >= 250 ? "high" : "medium",
-        title: `Improve the search result for “${row.query}”`,
-        reason: `${path} appears on page one but earns ${(row.ctr * 100).toFixed(1)}% CTR from ${Math.round(row.impressions)} impressions.`,
+        priority:
+          row.impressions >= 250 || row.position <= 10 ? "high" : "medium",
+        title: `Improve the search result for ${subject}`,
+        reason: `${path || "This query"} averages position ${row.position.toFixed(1)} but earns ${(row.ctr * 100).toFixed(1)}% CTR from ${Math.round(row.impressions)} impressions.`,
         recommendation:
           "Align the title and description with the query's intent, make the local value clearer, and verify that the page answers the query immediately.",
         score: score + 500,
@@ -287,7 +318,7 @@ export function buildKnowledgeCmsSearchOpportunities(
     }
 
     if (
-      row.impressions >= 25 &&
+      row.impressions >= (pageAggregate ? 50 : 25) &&
       row.position > 4 &&
       row.position <= 20
     ) {
@@ -296,7 +327,7 @@ export function buildKnowledgeCmsSearchOpportunities(
         kind: "striking_distance",
         priority:
           row.impressions >= 200 && row.position <= 12 ? "high" : "medium",
-        title: `Move “${row.query}” into stronger visibility`,
+        title: `Move ${subject} into stronger visibility`,
         reason: `${path} averages position ${row.position.toFixed(1)} with ${Math.round(row.impressions)} impressions.`,
         recommendation:
           "Strengthen the relevant section, add useful Spokane-specific expertise, improve internal links to this page, and keep the answer focused on visitor needs.",
@@ -327,7 +358,7 @@ export function buildKnowledgeCmsSearchOpportunities(
           row.previousClicks >= 20 || row.previousImpressions >= 500
             ? "high"
             : "medium",
-        title: `Investigate decline for “${row.query}”`,
+        title: `Investigate decline for ${subject}`,
         reason: `${path} changed from ${Math.round(row.previousClicks)} to ${Math.round(row.clicks)} clicks and ${Math.round(row.previousImpressions)} to ${Math.round(row.impressions)} impressions between comparison periods.`,
         recommendation:
           "Check whether search intent, competing results, page content, or technical visibility changed before editing. Preserve content that still serves visitors well.",
