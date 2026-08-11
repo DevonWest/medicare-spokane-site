@@ -204,7 +204,10 @@ export default function KnowledgeCmsPublishedArticle({
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath={path} />
+      <KnowledgePageEnhancements
+        currentPath={path}
+        includeCmsParityContent
+      />
     </div>
   );
 }
