@@ -31,7 +31,10 @@ import {
   isKnowledgeCmsSeoEnabled,
   type KnowledgeCmsSeoScan,
 } from "@/lib/knowledgeCmsSeoDal";
-import type { KnowledgeCmsSeoPriority } from "@/lib/knowledgeCmsSeo";
+import type {
+  KnowledgeCmsSearchMetricComparison,
+  KnowledgeCmsSeoPriority,
+} from "@/lib/knowledgeCmsSeo";
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -44,6 +47,23 @@ function formatDate(value: string): string {
 function percent(value: number | null): string {
   if (value === null) return "Not comparable";
   return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
+}
+
+function metricPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function evidenceLabel(
+  row: KnowledgeCmsSearchMetricComparison,
+  dimension: "page" | "query",
+): string {
+  if (dimension === "query") return row.query;
+  try {
+    const url = new URL(row.page);
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return row.page;
+  }
 }
 
 const priorityClasses: Record<KnowledgeCmsSeoPriority, string> = {
@@ -233,7 +253,79 @@ function ScanDashboard({
           Search Console: {scan.searchConsoleStatus.replaceAll("_", " ")}
           {scan.currentPeriod ? ` · ${scan.currentPeriod.startDate} through ${scan.currentPeriod.endDate}` : ""}
         </p>
+        <p className="mt-1">
+          Site totals include Search Console data that cannot be attributed to a
+          named query. Page and query tables below are diagnostic evidence and
+          may therefore add up to less than the site total.
+        </p>
       </div>
+      {scan.searchEvidence ? (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {(
+            [
+              ["Top pages", "page", scan.searchEvidence.pages],
+              ["Top queries", "query", scan.searchEvidence.queries],
+            ] as const
+          ).map(([title, dimension, rows]) => (
+            <section
+              className="overflow-hidden rounded-xl border border-slate-200"
+              key={dimension}
+            >
+              <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <h3 className="font-bold text-slate-950">{title}</h3>
+                <p className="mt-1 text-xs text-slate-600">
+                  Current 28-day evidence, ordered by impressions.
+                </p>
+              </div>
+              {rows.length === 0 ? (
+                <p className="p-4 text-sm text-slate-600">
+                  No attributed {dimension} evidence was returned.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2">{dimension}</th>
+                        <th className="px-3 py-2 text-right">Clicks</th>
+                        <th className="px-3 py-2 text-right">Impressions</th>
+                        <th className="px-3 py-2 text-right">CTR</th>
+                        <th className="px-3 py-2 text-right">Position</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {rows.slice(0, 12).map((row) => (
+                        <tr key={`${dimension}-${evidenceLabel(row, dimension)}`}>
+                          <td className="max-w-64 break-words px-3 py-2 font-medium text-slate-900">
+                            {evidenceLabel(row, dimension)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {Math.round(row.clicks)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {Math.round(row.impressions)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {metricPercent(row.ctr)}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {row.position.toFixed(1)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950">
+          This scan predates page and query evidence. Run a fresh SEO scan after
+          the evidence upgrade is deployed.
+        </p>
+      )}
       <div className="space-y-3">
         {scan.opportunities.length === 0 ? (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">

@@ -7,6 +7,7 @@ import {
   buildKnowledgeCmsTechnicalOpportunities,
   compareKnowledgeCmsSearchMetrics,
   summarizeKnowledgeCmsSearchMetrics,
+  summarizeKnowledgeCmsSearchTotals,
 } from "../lib/knowledgeCmsSeo";
 
 function article(overrides: Partial<KnowledgeCmsArticle> = {}): KnowledgeCmsArticle {
@@ -90,6 +91,18 @@ test("Search Console rows compare exact page-query pairs and summarize performan
   assert.equal(summary.position, 7);
 });
 
+test("site-wide Search Console totals remain authoritative when query rows are privacy-filtered", () => {
+  const summary = summarizeKnowledgeCmsSearchTotals(
+    { clicks: 26, impressions: 3_696, ctr: 26 / 3_696, position: 23.6 },
+    { clicks: 32, impressions: 3_500 },
+  );
+
+  assert.equal(summary.clicks, 26);
+  assert.equal(summary.impressions, 3_696);
+  assert.equal(summary.clickChange, -0.1875);
+  assert.equal(summary.position, 23.6);
+});
+
 test("search evidence finds low CTR, striking distance, and material declines", () => {
   const opportunities = buildKnowledgeCmsSearchOpportunities(
     [
@@ -115,6 +128,35 @@ test("search evidence finds low CTR, striking distance, and material declines", 
       "striking_distance",
       "declining_performance",
     ]),
+  );
+});
+
+test("page-level evidence surfaces high-impression low-CTR pages even without a named query", () => {
+  const opportunities = buildKnowledgeCmsSearchOpportunities(
+    [
+      {
+        page: "https://www.medicareinspokane.com/medicare-supplements",
+        query: "",
+        clicks: 0,
+        impressions: 185,
+        ctr: 0,
+        position: 18,
+        previousClicks: 0,
+        previousImpressions: 150,
+        previousCtr: 0,
+        previousPosition: 20,
+      },
+    ],
+    { interventions: [] },
+  );
+
+  assert.ok(
+    opportunities.some(
+      (item) =>
+        item.kind === "low_click_through_rate" &&
+        item.page?.endsWith("/medicare-supplements") &&
+        item.query === "",
+    ),
   );
 });
 

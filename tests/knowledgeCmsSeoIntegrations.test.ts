@@ -62,6 +62,40 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
     client: {
       async query(input) {
         calls.push(input as unknown as Record<string, unknown>);
+        const dimensions = input.requestBody.dimensions ?? [];
+        if (dimensions.length === 0) {
+          return {
+            data: {
+              rows: [{ clicks: 26, impressions: 3_696, ctr: 26 / 3_696, position: 23.6 }],
+            },
+          };
+        }
+        if (dimensions.length === 1 && dimensions[0] === "page") {
+          return {
+            data: {
+              rows: [{
+                keys: ["https://www.medicareinspokane.com/part-d"],
+                clicks: 5,
+                impressions: 100,
+                ctr: 0.05,
+                position: 8,
+              }],
+            },
+          };
+        }
+        if (dimensions.length === 1 && dimensions[0] === "query") {
+          return {
+            data: {
+              rows: [{
+                keys: ["part d spokane"],
+                clicks: 5,
+                impressions: 100,
+                ctr: 0.05,
+                position: 8,
+              }],
+            },
+          };
+        }
         return {
           data: {
             rows: [
@@ -87,7 +121,13 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
     startDate: "2026-06-04",
     endDate: "2026-07-01",
   });
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 8);
+  assert.equal(snapshot.currentTotals?.clicks, 26);
+  assert.equal(snapshot.currentTotals?.impressions, 3_696);
+  assert.equal(snapshot.currentPageRows[0].page, "https://www.medicareinspokane.com/part-d");
+  assert.equal(snapshot.currentPageRows[0].query, "");
+  assert.equal(snapshot.currentQueryRows[0].page, "");
+  assert.equal(snapshot.currentQueryRows[0].query, "part d spokane");
   assert.equal(snapshot.currentRows[0].query, "part d spokane");
 });
 
@@ -231,6 +271,40 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
         }),
         searchConsole: async () => ({
           status: "available",
+          currentTotals: {
+            clicks: 26,
+            impressions: 3_696,
+            ctr: 26 / 3_696,
+            position: 23.6,
+          },
+          previousTotals: {
+            clicks: 20,
+            impressions: 3_200,
+            ctr: 20 / 3_200,
+            position: 25,
+          },
+          currentPageRows: [
+            {
+              page: "https://www.medicareinspokane.com/part-d",
+              query: "",
+              clicks: 2,
+              impressions: 100,
+              ctr: 0.02,
+              position: 9,
+            },
+          ],
+          previousPageRows: [],
+          currentQueryRows: [
+            {
+              page: "",
+              query: "part d spokane",
+              clicks: 2,
+              impressions: 100,
+              ctr: 0.02,
+              position: 9,
+            },
+          ],
+          previousQueryRows: [],
           currentRows: [
             {
               page: "https://www.medicareinspokane.com/part-d",
@@ -255,6 +329,10 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
     );
     assert.equal(scan.trigger, "scheduled");
     assert.equal(scan.searchConsoleStatus, "available");
+    assert.equal(scan.searchMetrics.clicks, 26);
+    assert.equal(scan.searchMetrics.impressions, 3_696);
+    assert.equal(scan.searchEvidence?.pages[0].query, "");
+    assert.equal(scan.searchEvidence?.queries[0].query, "part d spokane");
     assert.equal(scan.summary.recordsAudited, 1);
     assert.ok(scan.opportunities.some((item) => item.kind === "low_click_through_rate"));
     assert.equal(saved?.id, scan.id);
