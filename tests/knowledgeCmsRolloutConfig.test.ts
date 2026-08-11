@@ -17,12 +17,13 @@ function resolve(config: unknown): string {
   return execFileSync(process.execPath, [resolver, path], { encoding: "utf8" });
 }
 
-test("the checked-in phase exposes approval without routing public traffic", () => {
+test("the checked-in phase enables one-record artifacts without routing public traffic", () => {
   const config = JSON.parse(readFileSync(checkedInConfig, "utf8"));
-  assert.equal(config.phase, "approval");
+  assert.equal(config.phase, "artifacts");
   const output = resolve(config);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=shadow/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=true/);
+  assert.match(output, /KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=true/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=\n/);
 });
