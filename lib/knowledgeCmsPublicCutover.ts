@@ -297,6 +297,29 @@ export function buildKnowledgeCmsPublicCutoverApprovalControl(input: {
     latestArtifactCreatedAt +
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_LIFETIME_MS,
   ).toISOString();
+  const operationalReadinessFingerprint = fingerprint({
+    version: input.readiness.version,
+    inventory: input.readiness.migration.inventory,
+    controls: input.readiness.migration.controls,
+    targets: input.readiness.migration.targets,
+    history: input.readiness.migration.history,
+    verifications: input.readiness.migration.verifications,
+    evidence: input.readiness.migration.evidence,
+    completion: input.readiness.migration.completion
+      ? {
+          status: input.readiness.migration.completion.status,
+          prepared: input.readiness.migration.completion.prepared,
+          verified: input.readiness.migration.completion.verified,
+          writeCount: input.readiness.migration.completion.writeCount,
+        }
+      : undefined,
+    targetEvidence: input.readiness.migration.targetEvidence,
+  });
+  const shadowParityFingerprint = fingerprint({
+    version: input.shadow.version,
+    status: input.shadow.betaParityApproval.status,
+    routes,
+  });
   const unsigned: UnsignedControl = {
     version: KNOWLEDGE_CMS_PUBLIC_CUTOVER_VERSION,
     mode: "control_only",
@@ -310,11 +333,9 @@ export function buildKnowledgeCmsPublicCutoverApprovalControl(input: {
     },
     evidence: {
       operationalReadinessVersion: input.readiness.version,
-      operationalReadinessFingerprint:
-        input.readiness.fingerprint.value,
+      operationalReadinessFingerprint,
       shadowPreviewVersion: input.shadow.version,
-      shadowParityFingerprint:
-        input.shadow.betaParityApproval.fingerprint,
+      shadowParityFingerprint,
       rendererContractVersion:
         KNOWLEDGE_CMS_RENDERER_CONTRACT_VERSION,
       recordsVerified:
