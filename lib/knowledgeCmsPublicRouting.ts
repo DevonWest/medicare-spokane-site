@@ -72,7 +72,7 @@ function parseCutoverRoutes(value: string | undefined): {
     return { activeEntryIds: [], valid: true };
   }
   const activeEntryIds = [...new Set(
-    value.split(",").map((item) => item.trim()).filter(Boolean),
+    value.split(/[|,]/).map((item) => item.trim()).filter(Boolean),
   )];
   return {
     activeEntryIds,
