@@ -107,8 +107,7 @@ still fails closed until an administrator records current live activation eviden
 
 1. For an initial environment, keep AI disabled and set the continuous-SEO
    kill switch while confirming public `/api/deployment-health` plus the existing
-   CMS still work. Cloud Run keeps using `/healthz` internally for container
-   probes.
+   CMS still work. Cloud Run keeps using `/healthz` internally for container probes.
 2. The manual deterministic scanner follows the private CMS gate when
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
