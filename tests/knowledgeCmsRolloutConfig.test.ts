@@ -35,7 +35,7 @@ test("the checked-in phase activates the guarded core Medicare route batch", () 
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=turning-65-spokane,compare-options,medicare-advantage,medicare-supplements,appointment-checklist,part-d\n/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=turning-65-spokane\\|compare-options\\|medicare-advantage\\|medicare-supplements\\|appointment-checklist\\|part-d\n/);
 });
 
 test("cutover requires a receipt and explicit unique routes", () => {
