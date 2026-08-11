@@ -333,6 +333,13 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
     assert.equal(scan.searchMetrics.impressions, 3_696);
     assert.equal(scan.searchEvidence?.pages[0].query, "");
     assert.equal(scan.searchEvidence?.queries[0].query, "part d spokane");
+    assert.equal(
+      scan.searchEvidence?.queries[0].page,
+      "https://www.medicareinspokane.com/part-d",
+    );
+    assert.ok(
+      scan.observationHolds?.some((hold) => hold.path === "/resources"),
+    );
     assert.equal(scan.summary.recordsAudited, 1);
     assert.ok(scan.opportunities.some((item) => item.kind === "low_click_through_rate"));
     assert.equal(saved?.id, scan.id);

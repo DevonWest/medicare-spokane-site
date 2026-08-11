@@ -19,10 +19,12 @@ import {
 } from "./knowledgeCmsRepository";
 import {
   KNOWLEDGE_CMS_SEO_SCAN_SCHEMA_VERSION,
+  assignKnowledgeCmsQueryPageOwnership,
   buildKnowledgeCmsRecordOpportunities,
   buildKnowledgeCmsSearchOpportunities,
   buildKnowledgeCmsTechnicalOpportunities,
   compareKnowledgeCmsSearchMetrics,
+  getKnowledgeCmsSeoObservationHolds,
   sortAndLimitKnowledgeCmsSeoOpportunities,
   summarizeKnowledgeCmsSearchMetrics,
   summarizeKnowledgeCmsSearchTotals,
@@ -66,6 +68,7 @@ export interface KnowledgeCmsSeoScan {
     pages: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
     queries: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
   };
+  observationHolds?: ReturnType<typeof getKnowledgeCmsSeoObservationHolds>;
   site: KnowledgeCmsSeoSiteObservation;
   pages: KnowledgeCmsSeoPageObservation[];
   opportunities: KnowledgeCmsSeoOpportunity[];
@@ -224,12 +227,22 @@ export async function runKnowledgeCmsSeoScan(
     searchConsole.currentQueryRows,
     searchConsole.previousQueryRows,
   );
+  const ownedQueryComparisons = assignKnowledgeCmsQueryPageOwnership(
+    queryComparisons,
+    comparisons,
+  );
+  const observationHolds = getKnowledgeCmsSeoObservationHolds(
+    searchConsole.currentPeriod?.endDate,
+  );
   const opportunities = sortAndLimitKnowledgeCmsSeoOpportunities([
     ...buildKnowledgeCmsTechnicalOpportunities(crawl.pages, crawl.site, {
       expectIndexing: isProduction(),
     }),
     ...buildKnowledgeCmsRecordOpportunities(records, started),
     ...buildKnowledgeCmsSearchOpportunities(pageComparisons, {
+      evidenceThrough: searchConsole.currentPeriod?.endDate,
+    }),
+    ...buildKnowledgeCmsSearchOpportunities(ownedQueryComparisons, {
       evidenceThrough: searchConsole.currentPeriod?.endDate,
     }),
     ...buildKnowledgeCmsSearchOpportunities(comparisons, {
@@ -273,10 +286,11 @@ export async function runKnowledgeCmsSeoScan(
       pages: [...pageComparisons]
         .sort((left, right) => right.impressions - left.impressions)
         .slice(0, 100),
-      queries: [...queryComparisons]
+      queries: [...ownedQueryComparisons]
         .sort((left, right) => right.impressions - left.impressions)
         .slice(0, 100),
     },
+    observationHolds,
     site: crawl.site,
     pages: crawl.pages,
     opportunities,

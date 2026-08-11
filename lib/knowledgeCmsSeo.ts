@@ -118,6 +118,17 @@ export const KNOWLEDGE_CMS_SEO_INTERVENTIONS: ReadonlyArray<KnowledgeCmsSeoInter
   },
 ];
 
+export function getKnowledgeCmsSeoObservationHolds(
+  evidenceThrough?: string,
+  interventions: ReadonlyArray<KnowledgeCmsSeoIntervention> =
+    KNOWLEDGE_CMS_SEO_INTERVENTIONS,
+): KnowledgeCmsSeoIntervention[] {
+  return interventions.filter(
+    (intervention) =>
+      !evidenceThrough || evidenceThrough < intervention.evaluateAfter,
+  );
+}
+
 export interface KnowledgeCmsSeoScanSummary {
   totalOpportunities: number;
   critical: number;
@@ -181,6 +192,36 @@ export function compareKnowledgeCmsSearchMetrics(
       previousPosition: finitePosition(previous?.position ?? 0),
     };
   });
+}
+
+export function assignKnowledgeCmsQueryPageOwnership(
+  queryComparisons: ReadonlyArray<KnowledgeCmsSearchMetricComparison>,
+  pairComparisons: ReadonlyArray<KnowledgeCmsSearchMetricComparison>,
+): KnowledgeCmsSearchMetricComparison[] {
+  const dominantPairByQuery = new Map<
+    string,
+    KnowledgeCmsSearchMetricComparison
+  >();
+
+  for (const pair of pairComparisons) {
+    if (!pair.page || !pair.query) continue;
+    const current = dominantPairByQuery.get(pair.query);
+    if (
+      !current ||
+      pair.impressions > current.impressions ||
+      (pair.impressions === current.impressions &&
+        (pair.clicks > current.clicks ||
+          (pair.clicks === current.clicks &&
+            pair.page.localeCompare(current.page) < 0)))
+    ) {
+      dominantPairByQuery.set(pair.query, pair);
+    }
+  }
+
+  return queryComparisons.map((row) => ({
+    ...row,
+    page: dominantPairByQuery.get(row.query)?.page ?? "",
+  }));
 }
 
 function percentageChange(current: number, previous: number): number | null {
@@ -265,18 +306,19 @@ export function buildKnowledgeCmsSearchOpportunities(
 ): KnowledgeCmsSeoOpportunity[] {
   const opportunities: KnowledgeCmsSeoOpportunity[] = [];
   const interventions = options.interventions ?? KNOWLEDGE_CMS_SEO_INTERVENTIONS;
+  const heldPaths = new Set(
+    getKnowledgeCmsSeoObservationHolds(
+      options.evidenceThrough,
+      interventions,
+    ).map((intervention) => intervention.path),
+  );
 
   for (const row of comparisons) {
     const path = pagePath(row.page);
     if (/\bfmo\b/i.test(row.query)) {
       continue;
     }
-    const intervention = interventions.find((item) => item.path === path);
-    if (
-      intervention &&
-      (!options.evidenceThrough ||
-        options.evidenceThrough < intervention.evaluateAfter)
-    ) {
+    if (heldPaths.has(path)) {
       continue;
     }
     const score = searchImpact(row);
@@ -887,12 +929,18 @@ export function sortAndLimitKnowledgeCmsSeoOpportunities(
     medium: 2,
     low: 1,
   };
-  return [...opportunities]
-    .sort(
-      (left, right) =>
-        priorityWeight[right.priority] - priorityWeight[left.priority] ||
-        right.score - left.score ||
-        left.title.localeCompare(right.title),
-    )
+  const ranked = [...opportunities].sort(
+    (left, right) =>
+      priorityWeight[right.priority] - priorityWeight[left.priority] ||
+      right.score - left.score ||
+      left.title.localeCompare(right.title),
+  );
+  const seen = new Set<string>();
+  return ranked
+    .filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
     .slice(0, Math.max(1, Math.min(limit, 500)));
 }
