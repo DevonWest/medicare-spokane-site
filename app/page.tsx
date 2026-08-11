@@ -374,9 +374,13 @@ export default function HomePage() {
             Serving Spokane &amp; Surrounding Communities
           </h2>
           <p className="text-gray-700 leading-relaxed text-lg max-w-3xl mx-auto">
-            Helping Spokane-area residents navigate Medicare year-round — including{" "}
-            <strong>Spokane Valley</strong>, <strong>Liberty Lake</strong>,{" "}
-            <strong>Cheney</strong>, Airway Heights, Medical Lake, Mead, and Deer Park.
+            Start with our{" "}
+            <Link href="/medicare-spokane" className="font-semibold text-blue-700 hover:underline">
+              Medicare help in Spokane guide
+            </Link>
+            , then review nearby service areas including Spokane Valley, Liberty Lake, Cheney,
+            Airway Heights, Medical Lake, Mead, and Deer Park. Our Spokane-based team provides
+            year-round help in person, by phone, or remotely.
           </p>
         </div>
       </section>

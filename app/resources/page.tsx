@@ -39,7 +39,11 @@ export default function ResourcesPage() {
           <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">Local Medicare Guides</h2>
           <p className="mb-10 max-w-2xl text-gray-600">
             Helping Spokane-area residents review Medicare with large-text, easy-to-scan guides and
-            clear next steps.
+            clear next steps. If you want local plan-comparison help first, start with our{" "}
+            <Link href="/medicare-spokane" className="font-semibold text-blue-700 hover:underline">
+              Medicare help in Spokane guide
+            </Link>
+            .
           </p>
           <div className="space-y-12">
             {resourceSections.map((section) => (
