@@ -10,6 +10,11 @@ The auditable phase and selected route batch live in
 that file and resolves the five routing variables before any Cloud Run action.
 Repository variables cannot silently override the checked-in rollout state.
 
+The `artifacts` phase enables only one-record, immutable rendering-artifact
+creation in private shadow mode. The `approval` phase disables artifact writes
+before exposing the expiring cutover approval action. Neither phase routes a
+public article through the CMS.
+
 1. Deploy the production image with `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false`
    and `KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES` empty. Every governed route keeps
    using its checked-in static page.
