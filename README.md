@@ -197,7 +197,7 @@ lib/
 | `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | OpenAI request timeout; deployment accepts 30,000–240,000 milliseconds. | `180000` |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | Runtime gate for the protected scheduled-scan endpoint. Production derives this as `true`; deployment requires Search Console, and execution requires current live activation evidence for the exact environment/configuration. | `true` |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH` | Repository-level emergency control. Set to `true` to deploy the runtime continuous-SEO gate as `false`. | `false` |
-| `KNOWLEDGE_CMS_SEO_CRON_TOKEN` | Random 32+ character bearer token supplied from Secret Manager to the scheduled endpoint. The deployment creates the isolated secret when absent; the weekly GitHub Actions workflow reads it through workload identity. | _managed when continuous SEO is enabled_ |
+| `KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY` | Exact GitHub `owner/name` identity allowed to call the scheduled endpoint with a short-lived, audience-bound OIDC token. Production derives this from `github.repository`. | _required when continuous SEO is enabled_ |
 | `NEXT_PUBLIC_GTM_ID` | Google Tag Manager container ID (e.g. `GTM-XXXXXXX`). When set, GTM is loaded site-wide and lead submissions fire a `generate_lead` dataLayer event. Empty disables GTM entirely. | _optional_ |
 | `NEXT_PUBLIC_SITE_ENV` | `production`, `staging`, `beta`, `preview`, or `development`. Anything other than `production` forces `noindex,nofollow` on every page and a blanket `Disallow: /` in `robots.txt`. The conversion event is tagged with this so you can filter staging traffic out of GA4 / Ads. | `production` |
 

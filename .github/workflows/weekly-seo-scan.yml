@@ -17,41 +17,32 @@ jobs:
     timeout-minutes: 20
 
     permissions:
-      contents: read
       id-token: write
 
     env:
-      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      SEO_CRON_SECRET_NAME: ${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET || 'knowledge-cms-seo-cron-token' }}
       SEO_SCAN_URL: https://www.medicareinspokane.com/api/knowledge-cms/seo-scan
 
     steps:
       - name: Validate configuration
         run: |
-          test -n "$PROJECT_ID" || (echo "::error::GCP_PROJECT_ID is missing" && exit 1)
-          case "$SEO_CRON_SECRET_NAME" in
-            ''|*[!A-Za-z0-9_-]*) echo "::error::KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET must name a Secret Manager secret"; exit 1 ;;
-          esac
+          test "$GITHUB_REPOSITORY" = "DevonWest/medicare-spokane-site" || (echo "::error::Weekly scan must run from the production repository" && exit 1)
+          test "$GITHUB_REF" = "refs/heads/main" || (echo "::error::Weekly scan must run from main" && exit 1)
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
+      - name: Request GitHub scheduler identity
+        id: scheduler_auth
+        uses: actions/github-script@v8
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          version: "latest"
+          script: |
+            const idToken = await core.getIDToken(process.env.SEO_SCAN_URL);
+            core.setSecret(idToken);
+            core.setOutput("id_token", idToken);
 
       - name: Run weekly evidence scan
+        env:
+          SCHEDULER_ID_TOKEN: ${{ steps.scheduler_auth.outputs.id_token }}
         run: |
-          scheduler_token="$(gcloud secrets versions access latest \
-            --secret "$SEO_CRON_SECRET_NAME" \
-            --project "$PROJECT_ID")"
-          test "${#scheduler_token}" -ge 32 || (echo "::error::SEO scheduler token must be at least 32 characters" && exit 1)
-          echo "::add-mask::$scheduler_token"
+          test -n "$SCHEDULER_ID_TOKEN" || (echo "::error::GitHub OIDC did not issue a scheduler ID token" && exit 1)
+          echo "::add-mask::$SCHEDULER_ID_TOKEN"
 
           response_file="$(mktemp)"
           trap 'rm -f "$response_file"' EXIT
@@ -67,10 +58,10 @@ jobs:
             --write-out '%{http_code}' \
             --request POST \
             --header "Content-Type: application/json" \
-            --header "x-knowledge-cms-seo-token: $scheduler_token" \
+            --header "Authorization: Bearer $SCHEDULER_ID_TOKEN" \
             --data '{}' \
             "$SEO_SCAN_URL")"
-          unset scheduler_token
+          unset SCHEDULER_ID_TOKEN
 
           if [ "$status_code" != "200" ]; then
             echo "::error::Weekly SEO scan failed with HTTP $status_code"

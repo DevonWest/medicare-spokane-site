@@ -127,7 +127,7 @@ test("copilot refinement binds a valid prior run without accepting forged IDs", 
   );
 });
 
-test("copilot UI and scheduled endpoint preserve explicit human and secret gates", () => {
+test("copilot UI and scheduled endpoint preserve explicit human and repository OIDC gates", () => {
   const controls = readFileSync(
     join(root, "app/admin/knowledge/components/KnowledgeCmsCopilotControls.tsx"),
     "utf8",
@@ -156,7 +156,7 @@ test("copilot UI and scheduled endpoint preserve explicit human and secret gates
   assert.match(controls, /apply_private_draft/);
   assert.match(controls, /start_private_revision/);
   assert.match(controls, /will not submit, approve, publish, or enable indexing/);
-  assert.match(route, /timingSafeEqual/);
+  assert.match(route, /isAuthorizedKnowledgeCmsSchedulerRequest/);
   assert.match(route, /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED/);
   assert.match(route, /hasCurrentKnowledgeCmsContinuousSeoActivation/);
   assert.match(route, /search_console_unavailable/);

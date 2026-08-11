@@ -34,6 +34,12 @@ function configured(value: string | undefined): boolean {
   return Boolean(value?.trim());
 }
 
+function validSchedulerRepository(value: string | undefined): boolean {
+  return /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(
+    value?.trim() ?? "",
+  );
+}
+
 function validModel(value: string | undefined, fallback: string): string | undefined {
   const candidate = value?.trim() || fallback;
   return /^gpt-[A-Za-z0-9._-]{1,80}$/.test(candidate) ? candidate : undefined;
@@ -162,16 +168,20 @@ export function getKnowledgeCmsCopilotReadiness(
         ? "disabled"
         : cmsEnabled &&
             seoEnabled &&
-            (runtime.KNOWLEDGE_CMS_SEO_CRON_TOKEN?.length ?? 0) >= 32
+            validSchedulerRepository(
+              runtime.KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY,
+            )
           ? "ready"
           : "blocked",
       !continuousEnabled
         ? "The scheduled endpoint gate is off."
         : !cmsEnabled || !seoEnabled
           ? "Recurring scans require both the private CMS and SEO scanner."
-          : (runtime.KNOWLEDGE_CMS_SEO_CRON_TOKEN?.length ?? 0) < 32
-            ? "The server-side scheduler token is missing or too short."
-            : "The protected scheduled-scan endpoint is configured.",
+          : !validSchedulerRepository(
+                runtime.KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY,
+              )
+            ? "The GitHub OIDC scheduler repository is missing or invalid."
+            : "The GitHub OIDC protected scheduled-scan endpoint is configured.",
     ),
   ];
 

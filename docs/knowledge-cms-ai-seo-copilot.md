@@ -98,9 +98,9 @@ to ask the AI to turn current evidence into a strategy or draft.
 Search Console evidence defaults to enabled for this repository now that the
 production runtime account has Restricted property access; an explicit repository
 value of `false` remains the kill switch for that read-only integration. AI still
-defaults to `false`. Continuous scanning defaults to `true`; deployment maintains
-its isolated token and the repository runs the protected endpoint weekly through
-GitHub Actions. `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` remains the
+defaults to `false`. Continuous scanning defaults to `true`; the weekly workflow
+uses GitHub OIDC to call the protected endpoint with
+a short-lived, audience-bound ID token. `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` remains the
 emergency stop for recurring execution. The manual deterministic scanner follows
 the private CMS gate when its own repository variable is unset. Recurring execution
 still fails closed until an administrator records current live activation evidence.
@@ -124,11 +124,11 @@ still fails closed until an administrator records current live activation eviden
    connections** again; it retrieves metadata for both configured models
    without sending a prompt or making a generation request. Then test site
    strategy on beta and one new private draft before applying anything.
-5. Deploy with continuous SEO enabled. The workflow creates the isolated
-   scheduler token when absent and the checked-in weekly workflow calls the
-   protected production endpoint.
+5. Deploy with continuous SEO enabled. The checked-in weekly workflow requests
+   a short-lived GitHub OIDC token for the production repository and `main`, then
+   calls the protected production endpoint.
    Immediately rerun **Verify live connections** so current evidence binds the
-   scheduler token state and exact deployment configuration before the first
+   scheduler identity and exact deployment configuration before the first
    scheduled call.
 6. Repeat the checks on production. The public renderer and cutover gates are
    independent and remain unchanged.
@@ -178,14 +178,14 @@ Repository variables:
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` (derived runtime gate) |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH` | `false` |
-| `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` |
 
-`OPENAI_API_KEY_SECRET` and `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` are Secret
-Manager secret names, not secret values. The deploy workflow attaches their
-latest versions to Cloud Run as `OPENAI_API_KEY` and
-`KNOWLEDGE_CMS_SEO_CRON_TOKEN`. The deployer needs permission to bind the
-secrets, and the runtime service account needs `Secret Manager Secret
-Accessor` on these two secrets.
+`OPENAI_API_KEY_SECRET` is a Secret Manager secret name, not a secret value.
+The deploy workflow attaches its latest version to Cloud Run as
+`OPENAI_API_KEY`; the runtime service account needs `Secret Manager Secret
+Accessor` on that secret. The workflow derives
+`KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY` from `github.repository`. Recurring SEO
+does not require a repository variable and does not create, read, or bind a
+scheduler secret.
 
 Example secret creation (enter the values without committing them):
 
@@ -197,10 +197,9 @@ printf '%s' "$OPENAI_KEY_VALUE" | \
 
 ```
 
-The deployment creates `knowledge-cms-seo-cron-token` with a random 64-character
-hex value when the secret is absent, grants Secret Accessor only to the runtime and GitHub deploy service accounts,
-and reuses the existing value on later deployments. It never
-reuses the OpenAI key, Firebase credentials, or a user password.
+The weekly workflow uses GitHub's native OIDC provider to mint a short-lived
+token. The endpoint accepts only the production repository, `main`, the exact
+weekly workflow path, and the exact production scan URL as the token audience.
 
 ## Search Console access
 
@@ -237,14 +236,14 @@ without leaking credentials.
 
 ## Recurring scan
 
-Create a Cloud Scheduler HTTP job that sends `POST` to:
+The checked-in weekly workflow sends `POST` to:
 
 `https://www.medicareinspokane.com/api/knowledge-cms/seo-scan`
 
-Send the same Secret Manager token as either:
-
-- `Authorization: Bearer <token>`; or
-- `x-knowledge-cms-seo-token: <token>`.
+It sends a GitHub-signed OIDC token as
+`Authorization: Bearer <id-token>`. The token is short-lived, bound to that exact
+URL as its audience, and must identify the configured repository, `main`, and
+the checked-in weekly workflow.
 
 The repository's `Weekly SEO evidence scan` workflow runs every Monday at 14:00
 UTC (6:00 AM Pacific Standard Time / 7:00 AM Pacific Daylight Time) and can also
@@ -252,7 +251,7 @@ be dispatched manually. A weekly cadence fits Search Console's reporting delay
 and avoids reacting to daily noise. Deployment refuses
 continuous SEO unless Search Console is enabled. The endpoint returns 404
 unless the CMS, SEO, and continuous-scan gates are all exact `true`; an invalid
-token returns 401; missing, expired, or configuration-mismatched live evidence
+identity token returns 401; missing, expired, or configuration-mismatched live evidence
 returns 503 `activation_unverified`. If the configured Search Console request
 fails, the evidence scan is retained but the endpoint returns 503
 `search_console_unavailable` so Scheduler can alert instead of silently
@@ -295,7 +294,8 @@ The controls are independent and fail closed:
 3. Set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=false` to keep deterministic
    scans without search data.
 4. Set `KNOWLEDGE_CMS_SEO_ENABLED=false` to disable the workbench scanners.
-5. Revoke or rotate either secret if it may have been exposed.
+5. Set the continuous-SEO kill switch and review GitHub Actions permissions if
+   scheduler authorization may have been compromised.
 
 Disabling these features does not delete scans, proposals, CMS records, audit
 events, public pages, or Search Console data. It does not alter the public

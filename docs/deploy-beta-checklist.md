@@ -65,12 +65,13 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` | Secret Manager **name**, never the key value. Required only when the AI gate is true. |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` | Derived production runtime gate for the protected recurring-scan endpoint; activation requires Search Console plus current live evidence for the exact deployment. |
 | `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH` | `false` | **Optional emergency control.** Set `true` to deploy the runtime recurring-scan gate as `false`. |
-| `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Deployment creates this isolated secret when absent and grants access only to the runtime and GitHub deploy service accounts. |
 
 Keep AI disabled until its separate drafting rollout is approved. Continuous
 SEO now defaults on for production and remains fail-closed until the live
 connection verification is current. Set `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` for an initial
-staging-only deployment.
+staging-only deployment. The deploy workflow derives
+`KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY` from `github.repository`; do not create
+a repository variable or scheduler secret for it.
 
 ### 1b. Authentication — pick ONE of these two options
 
@@ -402,8 +403,8 @@ What happens:
   - `KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=static` unless exact private `shadow`
     or fully gated `cutover` is intentionally configured
   - all AI/SEO gates default false; when deliberately enabled, the workflow
-    validates their dependencies and attaches the OpenAI/scheduler values from
-    Secret Manager rather than repository plaintext
+    validates their dependencies, attaches only the OpenAI key from Secret
+    Manager, and records the exact GitHub OIDC scheduler repository
   - continuous SEO cannot deploy without Search Console enabled and cannot
     execute until an administrator records current live activation evidence
   - `APP_COMMIT_SHA=<current Git commit>` so the public health check can prove

@@ -160,8 +160,8 @@ function configurationFingerprint(
         openAiKeyAttached: Boolean(runtime.OPENAI_API_KEY?.trim()),
         continuous:
           runtime.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED === "true",
-        schedulerTokenAttached:
-          (runtime.KNOWLEDGE_CMS_SEO_CRON_TOKEN?.length ?? 0) >= 32,
+        schedulerRepository:
+          runtime.KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY?.trim() || null,
       }),
     )
     .digest("hex");
