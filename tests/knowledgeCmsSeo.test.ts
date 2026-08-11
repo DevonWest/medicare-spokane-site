@@ -91,20 +91,23 @@ test("Search Console rows compare exact page-query pairs and summarize performan
 });
 
 test("search evidence finds low CTR, striking distance, and material declines", () => {
-  const opportunities = buildKnowledgeCmsSearchOpportunities([
-    {
-      page: "https://www.medicareinspokane.com/part-d",
-      query: "medicare part d spokane",
-      clicks: 4,
-      impressions: 300,
-      ctr: 0.013,
-      position: 7,
-      previousClicks: 20,
-      previousImpressions: 500,
-      previousCtr: 0.04,
-      previousPosition: 5,
-    },
-  ]);
+  const opportunities = buildKnowledgeCmsSearchOpportunities(
+    [
+      {
+        page: "https://www.medicareinspokane.com/part-d",
+        query: "medicare part d spokane",
+        clicks: 4,
+        impressions: 300,
+        ctr: 0.013,
+        position: 7,
+        previousClicks: 20,
+        previousImpressions: 500,
+        previousCtr: 0.04,
+        previousPosition: 5,
+      },
+    ],
+    { interventions: [] },
+  );
   assert.deepEqual(
     new Set(opportunities.map((item) => item.kind)),
     new Set([
@@ -113,6 +116,64 @@ test("search evidence finds low CTR, striking distance, and material declines", 
       "declining_performance",
     ]),
   );
+});
+
+test("search evidence waits for the observation window after a recorded SEO intervention", () => {
+  const row = {
+    page: "https://www.medicareinspokane.com/contact",
+    query: "medicare spokane",
+    clicks: 0,
+    impressions: 100,
+    ctr: 0,
+    position: 7,
+    previousClicks: 0,
+    previousImpressions: 80,
+    previousCtr: 0,
+    previousPosition: 9,
+  };
+  const interventions = [
+    {
+      path: "/contact",
+      effectiveDate: "2026-08-10",
+      evaluateAfter: "2026-08-24",
+    },
+  ];
+
+  assert.equal(
+    buildKnowledgeCmsSearchOpportunities([row], {
+      evidenceThrough: "2026-08-08",
+      interventions,
+    }).length,
+    0,
+  );
+  assert.ok(
+    buildKnowledgeCmsSearchOpportunities([row], {
+      evidenceThrough: "2026-08-24",
+      interventions,
+    }).length > 0,
+  );
+});
+
+test("search evidence ignores FMO queries that do not match the consumer site", () => {
+  const opportunities = buildKnowledgeCmsSearchOpportunities(
+    [
+      {
+        page: "https://www.medicareinspokane.com/",
+        query: "medicare fmo in spokane",
+        clicks: 0,
+        impressions: 100,
+        ctr: 0,
+        position: 5,
+        previousClicks: 0,
+        previousImpressions: 50,
+        previousCtr: 0,
+        previousPosition: 8,
+      },
+    ],
+    { interventions: [] },
+  );
+
+  assert.equal(opportunities.length, 0);
 });
 
 test("record audit prioritizes expired governed sources and incomplete content", () => {
@@ -142,6 +203,23 @@ test("record audit prioritizes expired governed sources and incomplete content",
   assert.ok(opportunities.some((item) => item.priority === "high" && item.kind === "source_freshness"));
   assert.ok(opportunities.some((item) => item.title.startsWith("Build out")));
   assert.ok(opportunities.some((item) => item.title.startsWith("Connect")));
+});
+
+test("record audit does not treat a published indexing-blocked control note as public body content", () => {
+  const control = article({
+    status: "published",
+    body: "Private migration control note only.",
+    discoverability: {
+      ...article().discoverability,
+      indexing: "blocked",
+    },
+  });
+  const opportunities = buildKnowledgeCmsRecordOpportunities([control]);
+
+  assert.equal(
+    opportunities.some((item) => item.title.startsWith("Build out")),
+    false,
+  );
 });
 
 test("technical audit respects beta noindex and still catches production noindex", () => {
