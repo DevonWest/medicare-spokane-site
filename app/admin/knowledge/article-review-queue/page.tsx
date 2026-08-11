@@ -46,10 +46,10 @@ export default async function KnowledgeCmsArticleReviewQueuePage() {
           </h1>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
             Advance one of the 22 migrated articles at a time. The server
-            rechecks the immutable migration control, current sources,
-            revision, reviewer evidence, and static-route parity before every
-            action. Each article still receives separate review-submission,
-            approval, and private-publication audit events.
+            rechecks the immutable migrated route identity, current edited
+            revision, sources, reviewer evidence, and static-route rollback
+            contract before every action. Each article still receives separate
+            review-submission, approval, and private-publication audit events.
           </p>
         </header>
 
@@ -86,8 +86,8 @@ export default async function KnowledgeCmsArticleReviewQueuePage() {
           <aside className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-6 text-red-950 shadow-sm md:p-8">
             <h2 className="text-lg font-bold">Queue blocked</h2>
             <p className="mt-3 text-sm leading-7">
-              At least one governed article differs from its control or has
-              stale workflow evidence. No queue action is available until the
+              At least one governed article has route-identity drift or stale
+              workflow evidence. No queue action is available until the
               blocked rows below are resolved.
             </p>
           </aside>
