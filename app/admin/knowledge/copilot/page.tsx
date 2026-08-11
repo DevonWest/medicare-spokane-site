@@ -44,6 +44,13 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function formatDateOnly(value: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
 function percent(value: number | null): string {
   if (value === null) return "Not comparable";
   return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
@@ -287,6 +294,9 @@ function ScanDashboard({
                     <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
                       <tr>
                         <th className="px-3 py-2">{dimension}</th>
+                        {dimension === "query" ? (
+                          <th className="px-3 py-2">Owning page</th>
+                        ) : null}
                         <th className="px-3 py-2 text-right">Clicks</th>
                         <th className="px-3 py-2 text-right">Impressions</th>
                         <th className="px-3 py-2 text-right">CTR</th>
@@ -299,6 +309,11 @@ function ScanDashboard({
                           <td className="max-w-64 break-words px-3 py-2 font-medium text-slate-900">
                             {evidenceLabel(row, dimension)}
                           </td>
+                          {dimension === "query" ? (
+                            <td className="max-w-48 break-words px-3 py-2 text-slate-600">
+                              {evidenceLabel(row, "page") || "Unattributed"}
+                            </td>
+                          ) : null}
                           <td className="px-3 py-2 text-right">
                             {Math.round(row.clicks)}
                           </td>
@@ -326,6 +341,26 @@ function ScanDashboard({
           the evidence upgrade is deployed.
         </p>
       )}
+      {scan.observationHolds?.length ? (
+        <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-950">
+          <h3 className="font-bold">Observation holds</h3>
+          <p className="mt-1 text-sm">
+            These pages changed recently. Search opportunities stay suppressed
+            until the listed evidence date so the scanner does not react to
+            pre-change performance.
+          </p>
+          <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+            {scan.observationHolds.map((hold) => (
+              <li className="rounded-lg border border-blue-200 bg-white/70 px-3 py-2" key={hold.path}>
+                <span className="font-semibold">{hold.path}</span>
+                <span className="block text-xs text-blue-800">
+                  Evaluate after {formatDateOnly(hold.evaluateAfter)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <div className="space-y-3">
         {scan.opportunities.length === 0 ? (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
