@@ -460,6 +460,69 @@ test("public route loading serves only matching live evidence and otherwise fall
   assert.equal(timedOut.outcome === "static_fallback" && timedOut.reason, "timeout");
 });
 
+test("steady-state routing serves the current revision artifact without an expiring approval", async () => {
+  const [, , , publicRenderer, routing] = await loadModules();
+  const fixture = await cutoverFixture();
+  const entryId = knowledgeCmsRouteParityManifest[0].entryId;
+  const record = fixture.records.find(
+    (candidate) => candidate.id === knowledgeCmsRendererContracts[0].record.id,
+  );
+  const artifact = fixture.artifacts.find(
+    (candidate) => candidate.article.id === record?.id,
+  );
+  assert.ok(record);
+  assert.ok(artifact);
+  const proof = routing.createKnowledgeCmsSteadyStateProof([entryId]);
+  const environment = {
+    ...cutoverEnvironment(proof),
+    rendererMode: "steady",
+  };
+  let approvalReads = 0;
+  const provider = {
+    getApproval: async () => {
+      approvalReads += 1;
+      return undefined;
+    },
+    getArticle: async (id: string) => id === record.id ? record : undefined,
+    getRepresentation: async (id: string) => id === artifact.id ? artifact : undefined,
+  };
+
+  const candidate = await publicRenderer.loadKnowledgeCmsPublicRoute({
+    entryId,
+    now: new Date("2026-08-19T00:00:00.000Z"),
+    provider,
+    environment,
+  });
+  assert.equal(candidate.outcome, "cms_candidate");
+  assert.equal(approvalReads, 0);
+
+  const invalidProof = routing.resolveKnowledgeCmsPublicRouting({
+    ...environment,
+    approvalReceipt: "f".repeat(64),
+  });
+  assert.equal(invalidProof.routingEnabled, false);
+  assert.equal(invalidProof.reason, "steady_configuration_invalid");
+
+  const missingCurrentArtifact = await publicRenderer.loadKnowledgeCmsPublicRoute({
+    entryId,
+    now: NOW,
+    provider: {
+      ...provider,
+      getArticle: async () => ({
+        ...record,
+        audit: { ...record.audit, revision: record.audit.revision + 1 },
+      }),
+    },
+    environment,
+  });
+  assert.equal(missingCurrentArtifact.outcome, "static_fallback");
+  assert.equal(
+    missingCurrentArtifact.outcome === "static_fallback" &&
+      missingCurrentArtifact.reason,
+    "artifact_missing",
+  );
+});
+
 test("proxy rewrites only governed cutover paths and blocks direct internal URLs", async () => {
   Object.assign(process.env, {
     KNOWLEDGE_CMS_ENABLED: "true",

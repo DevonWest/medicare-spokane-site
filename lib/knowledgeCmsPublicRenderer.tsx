@@ -17,6 +17,7 @@ import {
   type KnowledgeCmsPublicRoutingEnvironment,
 } from "./knowledgeCmsPublicRouting";
 import type { KnowledgeCmsNativeRepresentationArtifact } from "./knowledgeCmsNativeRepresentation";
+import { getKnowledgeCmsNativeRepresentationArtifactId } from "./knowledgeCmsNativeRepresentation";
 import { getKnowledgeCmsRendererContract } from "./knowledgeCmsRendererContract";
 import { compareKnowledgeCmsShadowCandidate } from "./knowledgeCmsShadowRenderer";
 
@@ -40,7 +41,7 @@ export type KnowledgeCmsPublicRendererResult =
       outcome: "cms_candidate";
       entryId: string;
       path: string;
-      approval: KnowledgeCmsPublicCutoverApproval;
+      approval?: KnowledgeCmsPublicCutoverApproval;
       article: KnowledgeCmsArticle;
       artifact: KnowledgeCmsNativeRepresentationArtifact;
       elapsedMilliseconds: number;
@@ -133,6 +134,69 @@ async function loadKnowledgeCmsPublicRouteUnsafe(input: {
     !receipt
   ) {
     return fallback(input.entryId, path, "routing_disabled", input.startedAt);
+  }
+  if (routing.effectiveMode === "steady") {
+    const articleData = await input.provider.getArticle(contract.record.id);
+    if (!articleData) {
+      return fallback(input.entryId, path, "article_missing", input.startedAt);
+    }
+    let article: KnowledgeCmsArticle;
+    try {
+      const record = parseKnowledgeCmsRecord(articleData);
+      if (record.kind !== "article") {
+        return fallback(input.entryId, path, "article_invalid", input.startedAt);
+      }
+      article = record;
+    } catch {
+      return fallback(input.entryId, path, "article_invalid", input.startedAt);
+    }
+    const representationId = getKnowledgeCmsNativeRepresentationArtifactId(
+      input.entryId,
+      article.audit.revision,
+    );
+    const representationData = await input.provider.getRepresentation(
+      representationId,
+    );
+    if (!representationData) {
+      return fallback(input.entryId, path, "artifact_missing", input.startedAt);
+    }
+    const comparison = compareKnowledgeCmsShadowCandidate(
+      contract,
+      article,
+      [{ id: representationId, data: representationData }],
+      input.now,
+    );
+    if (
+      comparison.status !== "parity_passed" ||
+      !comparison.representationArtifact ||
+      comparison.recordRevision !== article.audit.revision
+    ) {
+      return fallback(
+        input.entryId,
+        path,
+        comparison.status === "representation_invalid"
+          ? "artifact_invalid"
+          : "evidence_mismatch",
+        input.startedAt,
+      );
+    }
+    const artifact = comparison.representationArtifact;
+    if (
+      artifact.id !== representationId ||
+      artifact.article.id !== article.id ||
+      artifact.article.revision !== article.audit.revision ||
+      artifact.metadata.canonicalUrl !== contract.legacy.canonicalUrl
+    ) {
+      return fallback(input.entryId, path, "evidence_mismatch", input.startedAt);
+    }
+    return {
+      outcome: "cms_candidate",
+      entryId: input.entryId,
+      path,
+      article,
+      artifact,
+      elapsedMilliseconds: Date.now() - input.startedAt,
+    };
   }
   const approvalData = await input.provider.getApproval(
     `public-cutover--${receipt}`,

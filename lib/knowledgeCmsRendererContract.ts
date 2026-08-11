@@ -22,7 +22,8 @@ export const KNOWLEDGE_CMS_PRIVATE_SHADOW_ACTIVATION_ALLOWED =
 export type KnowledgeCmsPublicRendererMode =
   | "static"
   | "shadow"
-  | "cutover";
+  | "cutover"
+  | "steady";
 
 export type KnowledgeCmsRendererEvidenceKind =
   | "candidate_record_published"
@@ -437,6 +438,17 @@ export function resolveKnowledgeCmsPublicRendererMode(
     };
   }
   if (value === "cutover") {
+    return {
+      configuredValue: value,
+      requestedMode: value,
+      effectiveMode: "static",
+      configurationValid: true,
+      activationAllowed: false,
+      privateShadowEnabled: false,
+      reason: "cutover_requires_runtime_approval",
+    };
+  }
+  if (value === "steady") {
     return {
       configuredValue: value,
       requestedMode: value,
