@@ -96,11 +96,12 @@ to ask the AI to turn current evidence into a strategy or draft.
 ## Activation order
 
 Search Console evidence defaults to enabled for this repository now that the
-production runtime account has Restricted property access; an explicit repository
-value of `false` remains the kill switch. AI and continuous scanning still default
-to `false`. The manual deterministic scanner follows the private CMS gate when its
-own repository variable is unset. Merge and deployment alone do not activate a
-paid or scheduled integration.
+production runtime account has Restricted property access;
+`KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` remains the emergency stop. AI still defaults to `false`. Continuous
+scanning defaults to `true`; deployment maintains its isolated token and the
+repository runs the protected endpoint weekly through GitHub Actions. The manual deterministic scanner follows the private
+CMS gate when its own repository variable is unset. Recurring execution still
+fails closed until an administrator records current live activation evidence.
 
 1. Deploy with all four new gates false and confirm public
    `/api/deployment-health` plus the existing CMS still work. Cloud Run keeps
@@ -121,10 +122,12 @@ paid or scheduled integration.
    connections** again; it retrieves metadata for both configured models
    without sending a prompt or making a generation request. Then test site
    strategy on beta and one new private draft before applying anything.
-5. Create the scheduler token secret and job, then set both Search Console and
-   `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=true`. Deploy and immediately rerun
-   **Verify live connections** so current evidence binds the scheduler token
-   state and exact deployment configuration before the first scheduled call.
+5. Deploy with continuous SEO enabled. The workflow creates the isolated
+   scheduler token when absent and the checked-in weekly workflow calls the
+   protected production endpoint.
+   Immediately rerun **Verify live connections** so current evidence binds the
+   scheduler token state and exact deployment configuration before the first
+   scheduled call.
 6. Repeat the checks on production. The public renderer and cutover gates are
    independent and remain unchanged.
 
@@ -171,7 +174,8 @@ Repository variables:
 | `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | `24000` |
 | `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | `180000` |
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` |
-| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` (derived runtime gate) |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH` | `false` |
 | `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` |
 
 `OPENAI_API_KEY_SECRET` and `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` are Secret
@@ -189,12 +193,12 @@ gcloud services enable secretmanager.googleapis.com
 printf '%s' "$OPENAI_KEY_VALUE" | \
   gcloud secrets create knowledge-cms-openai-api-key --data-file=-
 
-printf '%s' "$SEO_CRON_TOKEN_VALUE" | \
-  gcloud secrets create knowledge-cms-seo-cron-token --data-file=-
 ```
 
-Use a randomly generated scheduler token of at least 32 characters. Do not
-reuse the OpenAI key, Firebase credentials, or a user password.
+The deployment creates `knowledge-cms-seo-cron-token` with a random 64-character
+hex value when the secret is absent, grants Secret Accessor only to the runtime and GitHub deploy service accounts,
+and reuses the existing value on later deployments. It never
+reuses the OpenAI key, Firebase credentials, or a user password.
 
 ## Search Console access
 
@@ -240,8 +244,10 @@ Send the same Secret Manager token as either:
 - `Authorization: Bearer <token>`; or
 - `x-knowledge-cms-seo-token: <token>`.
 
-A weekly schedule is a good initial cadence because Search Console data is not
-real time and Medicare content should not be churned daily. Deployment refuses
+The repository's `Weekly SEO evidence scan` workflow runs every Monday at 14:00
+UTC (6:00 AM Pacific Standard Time / 7:00 AM Pacific Daylight Time) and can also
+be dispatched manually. A weekly cadence fits Search Console's reporting delay
+and avoids reacting to daily noise. Deployment refuses
 continuous SEO unless Search Console is enabled. The endpoint returns 404
 unless the CMS, SEO, and continuous-scan gates are all exact `true`; an invalid
 token returns 401; missing, expired, or configuration-mismatched live evidence
@@ -281,7 +287,7 @@ After each environment is activated:
 
 The controls are independent and fail closed:
 
-1. Set `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED=false` to stop scheduled writes.
+1. Set `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` to deploy the recurring endpoint disabled and stop scheduled writes.
 2. Set `KNOWLEDGE_CMS_AI_ENABLED=false` to remove generation/application
    authority while preserving prior proposals and drafts.
 3. Set `KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=false` to keep deterministic
