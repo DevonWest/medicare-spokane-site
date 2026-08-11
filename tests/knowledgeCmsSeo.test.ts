@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { KnowledgeCmsArticle } from "../lib/knowledgeCms";
 import {
+  assignKnowledgeCmsQueryPageOwnership,
   buildKnowledgeCmsRecordOpportunities,
   buildKnowledgeCmsSearchOpportunities,
   buildKnowledgeCmsTechnicalOpportunities,
   compareKnowledgeCmsSearchMetrics,
+  getKnowledgeCmsSeoObservationHolds,
+  sortAndLimitKnowledgeCmsSeoOpportunities,
   summarizeKnowledgeCmsSearchMetrics,
   summarizeKnowledgeCmsSearchTotals,
 } from "../lib/knowledgeCmsSeo";
@@ -101,6 +104,73 @@ test("site-wide Search Console totals remain authoritative when query rows are p
   assert.equal(summary.impressions, 3_696);
   assert.equal(summary.clickChange, -0.1875);
   assert.equal(summary.position, 23.6);
+});
+
+test("query aggregates inherit their dominant page, deduplicate pair findings, and expose observation holds", () => {
+  const queryComparisons = compareKnowledgeCmsSearchMetrics(
+    [
+      {
+        page: "",
+        query: "health insurance",
+        clicks: 1,
+        impressions: 350,
+        ctr: 1 / 350,
+        position: 3.5,
+      },
+    ],
+    [],
+  );
+  const pairComparisons = compareKnowledgeCmsSearchMetrics(
+    [
+      {
+        page: "https://www.medicareinspokane.com/resources",
+        query: "health insurance",
+        clicks: 1,
+        impressions: 220,
+        ctr: 1 / 220,
+        position: 3.2,
+      },
+      {
+        page: "https://www.medicareinspokane.com/contact",
+        query: "health insurance",
+        clicks: 0,
+        impressions: 130,
+        ctr: 0,
+        position: 4,
+      },
+    ],
+    [],
+  );
+  const owned = assignKnowledgeCmsQueryPageOwnership(
+    queryComparisons,
+    pairComparisons,
+  );
+
+  assert.equal(
+    owned[0].page,
+    "https://www.medicareinspokane.com/resources",
+  );
+
+  const opportunities = sortAndLimitKnowledgeCmsSeoOpportunities([
+    ...buildKnowledgeCmsSearchOpportunities(owned, { interventions: [] }),
+    ...buildKnowledgeCmsSearchOpportunities(pairComparisons.slice(0, 1), {
+      interventions: [],
+    }),
+  ]);
+  assert.equal(
+    opportunities.filter(
+      (item) => item.kind === "low_click_through_rate",
+    ).length,
+    1,
+  );
+
+  assert.ok(
+    getKnowledgeCmsSeoObservationHolds("2026-08-09").some(
+      (hold) =>
+        hold.path === "/resources" && hold.evaluateAfter === "2026-08-24",
+    ),
+  );
+  assert.equal(getKnowledgeCmsSeoObservationHolds("2026-08-24").length, 0);
 });
 
 test("search evidence finds low CTR, striking distance, and material declines", () => {
