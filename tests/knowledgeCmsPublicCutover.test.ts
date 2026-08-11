@@ -298,6 +298,16 @@ test("public routing requires the complete exact cutover configuration", async (
   assert.equal(valid.environment, "production");
   assert.deepEqual(valid.activeEntryIds, ["turning-65-spokane"]);
 
+  const multiRoute = routing.resolveKnowledgeCmsPublicRouting({
+    ...cutoverEnvironment(RECEIPT_HASH),
+    cutoverRoutes: "turning-65-spokane|compare-options",
+  });
+  assert.equal(multiRoute.routingEnabled, true);
+  assert.deepEqual(multiRoute.activeEntryIds, [
+    "turning-65-spokane",
+    "compare-options",
+  ]);
+
   const dormant = routing.resolveKnowledgeCmsPublicRouting({
     ...cutoverEnvironment(RECEIPT_HASH),
     cutoverRoutes: "",
