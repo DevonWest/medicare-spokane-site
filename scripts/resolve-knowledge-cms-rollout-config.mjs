@@ -76,7 +76,7 @@ const values = phase === "artifacts"
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "false",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "true",
         KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: approvalReceipt,
-        KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: routes.join(","),
+        KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: routes.join("|"),
       }
     : {
         KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
