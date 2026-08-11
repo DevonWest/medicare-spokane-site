@@ -216,7 +216,9 @@ export async function runKnowledgeCmsSeoScan(
       expectIndexing: isProduction(),
     }),
     ...buildKnowledgeCmsRecordOpportunities(records, started),
-    ...buildKnowledgeCmsSearchOpportunities(comparisons),
+    ...buildKnowledgeCmsSearchOpportunities(comparisons, {
+      evidenceThrough: searchConsole.currentPeriod?.endDate,
+    }),
   ]);
   const completed = now();
   if (!Number.isFinite(completed.getTime())) {
