@@ -1,5 +1,12 @@
 {
   "phase": "cutover",
   "approvalReceipt": "a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2",
-  "routes": ["appointment-checklist"]
+  "routes": [
+    "turning-65-spokane",
+    "compare-options",
+    "medicare-advantage",
+    "medicare-supplements",
+    "appointment-checklist",
+    "part-d"
+  ]
 }
