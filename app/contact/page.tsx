@@ -9,14 +9,14 @@ const directionsHref =
   "https://www.google.com/maps/search/?api=1&query=Providence%20Medical%20Building%20820%20South%20McClellan%20Spokane%20WA%2099204";
 
 export const metadata: Metadata = {
-  title: "Contact Health Insurance Options | Spokane Insurance Help",
+  title: "Spokane Medicare Office | Contact Health Insurance Options",
   description:
-    "Call or message Health Insurance Options LLC in Spokane for local help with Medicare or individual and family health insurance. No-cost consultations.",
+    "Visit, call, or message our Spokane Medicare and health insurance office at 820 South McClellan for no-cost help from licensed local agents.",
   alternates: { canonical: `${siteConfig.url}/contact` },
   openGraph: {
-    title: "Contact Health Insurance Options | Spokane Insurance Help",
+    title: "Spokane Medicare Office | Contact Health Insurance Options",
     description:
-      "Reach a licensed independent insurance agency for Medicare help in Spokane, WA.",
+      "Visit, call, or message our Spokane office for local Medicare and health insurance help from licensed agents.",
     url: `${siteConfig.url}/contact`,
   },
 };
@@ -37,11 +37,12 @@ export default function ContactPage() {
             <span>Contact</span>
           </nav>
           <h1 className="text-4xl landscape-mobile:text-2xl landscape-mobile:leading-snug md:text-5xl font-extrabold leading-tight mb-4 landscape-mobile:mb-2">
-            Contact Us
+            Contact Our Spokane Medicare &amp; Health Insurance Office
           </h1>
           <p className="text-xl landscape-mobile:text-base text-blue-100 max-w-2xl">
-            Talk to a licensed independent Medicare agent serving Spokane, Spokane Valley, Liberty Lake, Cheney, Airway
-            Heights, Medical Lake, Mead, Deer Park, and the surrounding Eastern Washington area.
+            Talk to a licensed independent Medicare agent at our Spokane office or get help by
+            phone. We serve Spokane, Spokane Valley, Liberty Lake, Cheney, Airway Heights, Medical
+            Lake, Mead, Deer Park, and the surrounding Eastern Washington area.
           </p>
         </div>
       </section>
@@ -60,7 +61,12 @@ export default function ContactPage() {
                   </h2>
                   <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-700">
                     Our office is located inside the Providence Medical Building in Spokane. You can
-                    meet with a licensed insurance agent in person or request help by phone.
+                    meet with a licensed insurance agent in person or request help by phone. Learn
+                    more about the local questions we can help with in our{" "}
+                    <Link href="/medicare-spokane" className="font-semibold text-blue-700 hover:underline">
+                      Spokane Medicare guide
+                    </Link>
+                    .
                   </p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
