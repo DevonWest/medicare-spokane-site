@@ -84,6 +84,40 @@ export interface KnowledgeCmsSeoSiteObservation {
   healthOk: boolean;
 }
 
+export interface KnowledgeCmsSeoIntervention {
+  path: string;
+  effectiveDate: string;
+  evaluateAfter: string;
+}
+
+export const KNOWLEDGE_CMS_SEO_INTERVENTIONS: ReadonlyArray<KnowledgeCmsSeoIntervention> = [
+  {
+    path: "/",
+    effectiveDate: "2026-08-10",
+    evaluateAfter: "2026-08-24",
+  },
+  {
+    path: "/contact",
+    effectiveDate: "2026-08-10",
+    evaluateAfter: "2026-08-24",
+  },
+  {
+    path: "/medicare-spokane",
+    effectiveDate: "2026-08-10",
+    evaluateAfter: "2026-08-24",
+  },
+  {
+    path: "/our-team",
+    effectiveDate: "2026-08-10",
+    evaluateAfter: "2026-08-24",
+  },
+  {
+    path: "/resources",
+    effectiveDate: "2026-08-10",
+    evaluateAfter: "2026-08-24",
+  },
+];
+
 export interface KnowledgeCmsSeoScanSummary {
   totalOpportunities: number;
   critical: number;
@@ -201,11 +235,27 @@ function searchImpact(row: KnowledgeCmsSearchMetricComparison): number {
 
 export function buildKnowledgeCmsSearchOpportunities(
   comparisons: ReadonlyArray<KnowledgeCmsSearchMetricComparison>,
+  options: {
+    evidenceThrough?: string;
+    interventions?: ReadonlyArray<KnowledgeCmsSeoIntervention>;
+  } = {},
 ): KnowledgeCmsSeoOpportunity[] {
   const opportunities: KnowledgeCmsSeoOpportunity[] = [];
+  const interventions = options.interventions ?? KNOWLEDGE_CMS_SEO_INTERVENTIONS;
 
   for (const row of comparisons) {
     const path = pagePath(row.page);
+    if (/\bfmo\b/i.test(row.query)) {
+      continue;
+    }
+    const intervention = interventions.find((item) => item.path === path);
+    if (
+      intervention &&
+      (!options.evidenceThrough ||
+        options.evidenceThrough < intervention.evaluateAfter)
+    ) {
+      continue;
+    }
     const score = searchImpact(row);
 
     if (
@@ -491,7 +541,10 @@ export function buildKnowledgeCmsRecordOpportunities(
 
     if (record.kind === "article") {
       const bodyWords = words(record.body);
-      if (bodyWords < 350) {
+      const isPublishedPrivateControl =
+        record.status === "published" &&
+        record.discoverability.indexing === "blocked";
+      if (bodyWords < 350 && !isPublishedPrivateControl) {
         addRecordOpportunity(opportunities, record, {
           discriminator: "thin-article",
           kind: "record_quality",
