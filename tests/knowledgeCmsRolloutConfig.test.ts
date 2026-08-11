@@ -17,15 +17,18 @@ function resolve(config: unknown): string {
   return execFileSync(process.execPath, [resolver, path], { encoding: "utf8" });
 }
 
-test("the checked-in phase enables approval without routing public traffic", () => {
+test("the checked-in phase activates only the approved Appointment Checklist route", () => {
   const config = JSON.parse(readFileSync(checkedInConfig, "utf8"));
-  assert.equal(config.phase, "approval");
+  assert.equal(config.phase, "cutover");
+  assert.equal(config.approvalReceipt, "a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2");
+  assert.deepEqual(config.routes, ["appointment-checklist"]);
   const output = resolve(config);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=shadow/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover/);
   assert.match(output, /KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=true/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=false/);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=\n/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED=false/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT=a303b95ef581b927aab2ec00ffdffbf5677fd8957f37ac5043547c105a04fbd2/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES=appointment-checklist\n/);
 });
 
 test("cutover requires a receipt and explicit unique routes", () => {
@@ -43,12 +46,12 @@ test("cutover requires a receipt and explicit unique routes", () => {
   const output = resolve({
     phase: "cutover",
     approvalReceipt: receipt,
-    routes: ["resource-entry--appointment-checklist"],
+    routes: ["appointment-checklist"],
   });
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover/);
   assert.match(output, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED=true/);
   assert.match(output, new RegExp(`APPROVAL_RECEIPT=${receipt}`));
-  assert.match(output, /CUTOVER_ROUTES=resource-entry--appointment-checklist/);
+  assert.match(output, /CUTOVER_ROUTES=appointment-checklist/);
 
   const directory = mkdtempSync(join(tmpdir(), "knowledge-rollout-invalid-"));
   const path = join(directory, "config.json");
