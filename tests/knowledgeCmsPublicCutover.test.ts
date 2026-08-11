@@ -136,8 +136,9 @@ function cutoverEnvironment(receipt: string) {
     articleMigrationExecutionEnabled: "false",
     supportingMigrationExecutionEnabled: "false",
     nativeRepresentationExecutionEnabled: "false",
-    siteEnvironment: "staging",
-    siteUrl: "https://beta.medicareinspokane.com",
+    cutoverRoutes: "turning-65-spokane",
+    siteEnvironment: "production",
+    siteUrl: "https://www.medicareinspokane.com",
   };
 }
 
@@ -200,6 +201,7 @@ const cutoverEnvKeys = [
   "KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED",
   "KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED",
   "KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED",
+  "KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES",
   "NEXT_PUBLIC_SITE_ENV",
   "NEXT_PUBLIC_SITE_URL",
 ] as const;
@@ -217,21 +219,27 @@ test("public routing requires the complete exact cutover configuration", async (
   );
   assert.equal(valid.routingEnabled, true);
   assert.equal(valid.effectiveMode, "cutover");
-  assert.equal(valid.environment, "beta");
-  const production = routing.resolveKnowledgeCmsPublicRouting({
+  assert.equal(valid.environment, "production");
+  assert.deepEqual(valid.activeEntryIds, ["turning-65-spokane"]);
+
+  const dormant = routing.resolveKnowledgeCmsPublicRouting({
     ...cutoverEnvironment(RECEIPT_HASH),
-    siteEnvironment: "production",
-    siteUrl: "https://www.medicareinspokane.com",
+    cutoverRoutes: "",
   });
-  assert.equal(production.routingEnabled, true);
-  assert.equal(production.environment, "production");
+  assert.equal(dormant.routingEnabled, false);
+  assert.equal(dormant.configurationValid, true);
+  assert.equal(dormant.reason, "cutover_no_routes");
 
   for (const change of [
     { cutoverEnabled: "false" },
     { approvalExecutionEnabled: "true" },
     { articleMigrationExecutionEnabled: "true" },
     { approvalReceipt: "invalid" },
-    { siteUrl: "https://www.medicareinspokane.com" },
+    { cutoverRoutes: "unknown-entry" },
+    {
+      siteEnvironment: "staging",
+      siteUrl: "https://beta.medicareinspokane.com",
+    },
   ]) {
     const result = routing.resolveKnowledgeCmsPublicRouting({
       ...cutoverEnvironment(RECEIPT_HASH),
@@ -375,14 +383,15 @@ test("proxy rewrites only governed cutover paths and blocks direct internal URLs
     KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED: "false",
     KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED: "false",
     KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
-    NEXT_PUBLIC_SITE_ENV: "staging",
-    NEXT_PUBLIC_SITE_URL: "https://beta.medicareinspokane.com",
+    KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES: "turning-65-spokane",
+    NEXT_PUBLIC_SITE_ENV: "production",
+    NEXT_PUBLIC_SITE_URL: "https://www.medicareinspokane.com",
   });
   const [, , , , routing] = await loadModules();
   const { proxy } = await import("../proxy");
   const governed = proxy(
     new NextRequest(
-      "https://beta.medicareinspokane.com/turning-65-medicare-spokane",
+      "https://www.medicareinspokane.com/turning-65-medicare-spokane",
     ),
   );
   assert.match(
@@ -391,14 +400,22 @@ test("proxy rewrites only governed cutover paths and blocks direct internal URLs
   );
   assert.equal(governed.headers.get("x-knowledge-cms-cutover"), "routed");
 
+  const governedButNotSelected = proxy(
+    new NextRequest("https://www.medicareinspokane.com/compare-medicare-options"),
+  );
+  assert.equal(
+    governedButNotSelected.headers.get("x-middleware-rewrite"),
+    null,
+  );
+
   const protectedRoute = proxy(
-    new NextRequest("https://beta.medicareinspokane.com/medicare-spokane"),
+    new NextRequest("https://www.medicareinspokane.com/medicare-spokane"),
   );
   assert.equal(protectedRoute.headers.get("x-middleware-rewrite"), null);
 
   const internal = proxy(
     new NextRequest(
-      "https://beta.medicareinspokane.com/cms-render/turning-65-spokane",
+      "https://www.medicareinspokane.com/cms-render/turning-65-spokane",
     ),
   );
   assert.equal(internal.status, 404);
@@ -408,7 +425,7 @@ test("proxy rewrites only governed cutover paths and blocks direct internal URLs
   const entryId = "turning-65-spokane";
   const trustedInternal = proxy(
     new NextRequest(
-      `https://beta.medicareinspokane.com/cms-render/${entryId}`,
+      `https://www.medicareinspokane.com/cms-render/${entryId}`,
       {
         headers: {
           "x-knowledge-cms-cutover-route": path,
@@ -430,7 +447,7 @@ test("proxy rewrites only governed cutover paths and blocks direct internal URLs
 
   const forgedInternal = proxy(
     new NextRequest(
-      `https://beta.medicareinspokane.com/cms-render/${entryId}`,
+      `https://www.medicareinspokane.com/cms-render/${entryId}`,
       {
         headers: { "x-knowledge-cms-cutover-route": path },
       },
@@ -476,16 +493,22 @@ test("approval, deployment, and direct-route boundaries remain explicit and fail
   const cutoverDeployStart = workflow.indexOf(
     "- name: Deploy production cutover candidate with no traffic",
   );
-  const serviceVerificationStart = workflow.indexOf(
-    "- name: Verify deployed Cloud Run service health",
+  const candidateResolutionStart = workflow.indexOf(
+    "- name: Resolve production cutover candidate URL",
   );
   assert.ok(cutoverDeployStart >= 0);
-  assert.ok(serviceVerificationStart > cutoverDeployStart);
+  assert.ok(candidateResolutionStart > cutoverDeployStart);
   const cutoverDeploy = workflow.slice(
     cutoverDeployStart,
-    serviceVerificationStart,
+    candidateResolutionStart,
   );
   assert.doesNotMatch(cutoverDeploy, /update-traffic|--to-revisions/);
+  assert.ok(
+    workflow.indexOf("- name: Verify production cutover candidate before traffic") <
+      workflow.indexOf("- name: Promote verified production cutover revision"),
+  );
+  assert.match(workflow, /verify-knowledge-cms-production-routes\.mjs/);
+  assert.match(workflow, /KNOWLEDGE_CMS_PUBLIC_CUTOVER_ROUTES/);
   assert.match(
     foundation,
     /## Guarded public cutover and rollback contract/,

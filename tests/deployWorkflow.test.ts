@@ -28,24 +28,19 @@ test("pull requests run the full CI job without deploying", () => {
   );
 });
 
-test("main pushes and manual runs default to production", () => {
-  assert.match(workflow, /default: "production"/);
+test("main pushes and manual runs deploy production only", () => {
+  assert.match(workflow, /workflow_dispatch:\n/);
   assert.match(
     workflow,
-    /group: deploy-cloud-run-\$\{\{ github\.ref \}\}-\$\{\{ github\.event\.inputs\.target \|\| 'production' \}\}/,
+    /group: deploy-cloud-run-\$\{\{ github\.ref \}\}-production/,
   );
-  assert.match(
-    workflow,
-    /TARGET: \$\{\{ github\.event\.inputs\.target \|\| 'production' \}\}/,
-  );
+  assert.match(workflow, /TARGET: production/);
   assert.match(
     workflow,
     /- name: Build sanity check\n        run: npm run build\n        env:\n          NEXT_PUBLIC_SITE_URL: https:\/\/www\.medicareinspokane\.com\n          NEXT_PUBLIC_SITE_ENV: production/,
   );
-  assert.doesNotMatch(
-    workflow,
-    /github\.event\.inputs\.target \|\| 'beta'/,
-  );
+  assert.doesNotMatch(workflow, /CLOUD_RUN_SERVICE_BETA|event\.inputs\.target/);
+  assert.doesNotMatch(workflow, /beta\.medicareinspokane\.com/);
 });
 
 test("Search Console evidence is enabled by default with an explicit kill switch", () => {

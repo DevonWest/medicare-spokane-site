@@ -12,6 +12,7 @@ import {
 } from "./knowledgeCmsPublicCutover";
 import {
   getKnowledgeCmsPublicPathForEntryId,
+  isKnowledgeCmsPublicRouteEnabled,
   resolveKnowledgeCmsPublicRouting,
   type KnowledgeCmsPublicRoutingEnvironment,
 } from "./knowledgeCmsPublicRouting";
@@ -126,7 +127,11 @@ async function loadKnowledgeCmsPublicRouteUnsafe(input: {
   }
   const routing = resolveKnowledgeCmsPublicRouting(input.environment);
   const receipt = routing.approvalReceipt;
-  if (!routing.routingEnabled || !receipt) {
+  if (
+    !routing.routingEnabled ||
+    !isKnowledgeCmsPublicRouteEnabled(input.entryId, routing) ||
+    !receipt
+  ) {
     return fallback(input.entryId, path, "routing_disabled", input.startedAt);
   }
   const approvalData = await input.provider.getApproval(

@@ -163,7 +163,7 @@ export default async function KnowledgeCmsPublicCutoverPage({
           ) : (
             <p className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               Approval execution is unavailable. It requires an administrator,
-              exact beta shadow mode, all three migration/artifact gates false,
+              exact private shadow mode, all three migration/artifact gates false,
               the cutover gate false, and the separate approval gate true.
             </p>
           )}
@@ -193,7 +193,7 @@ export default async function KnowledgeCmsPublicCutoverPage({
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               Apply only after the matching immutable approval exists. Beta is
-              the required canary; production deploys with no traffic.
+              the first selected route batch; the production candidate deploys with no traffic.
             </p>
             <ul className="mt-5 space-y-2">
               {preview.activation.variables.map((variable) => (
@@ -232,7 +232,7 @@ export default async function KnowledgeCmsPublicCutoverPage({
           <p className="mt-3 text-sm leading-7 text-blue-950">
             Cloud Run emits one structured {preview.monitoring.structuredLogEvent}
             event per governed request with either cms_candidate or
-            static_fallback. Any fallback during canary is a rollback trigger.
+            static_fallback. Any fallback during a production route batch is a rollback trigger.
             The approval expires automatically, and the homepage,
             /medicare-spokane, and /resources remain protected static paths.
           </p>

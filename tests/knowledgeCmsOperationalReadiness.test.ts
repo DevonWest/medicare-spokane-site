@@ -618,6 +618,53 @@ test("all 45 verified records complete migration with both execution gates disab
   assert.equal(report.readBoundary.writeCount, 0);
 });
 
+test("advanced legacy records remain valid when current immutable evidence replaces unavailable creation history", async () => {
+  const [readiness] = await loadReadinessModules();
+  const complete = structuredClone(await completeWorkspace());
+  const articleId = complete.articleVerifications[0].recordId;
+  const supportingIds = new Set(
+    complete.supportingVerifications.slice(0, 6).map((item) => item.recordId),
+  );
+
+  complete.workspace.executionHistory.entries =
+    complete.workspace.executionHistory.entries.filter(
+      (entry) => entry.recordId !== articleId,
+    );
+  complete.workspace.executionHistory.summary.eventsObserved -= 1;
+  complete.workspace.executionHistory.summary.validEvents -= 1;
+  complete.workspace.supportingExecutionHistory!.entries =
+    complete.workspace.supportingExecutionHistory!.entries.filter(
+      (entry) => !supportingIds.has(entry.recordId),
+    );
+  complete.workspace.supportingExecutionHistory!.summary.eventsObserved -= 6;
+  complete.workspace.supportingExecutionHistory!.summary.validEvents -= 6;
+  complete.articleVerifications[0].result!.status = "record_advanced";
+  for (const verification of complete.supportingVerifications.slice(0, 6)) {
+    verification.result!.status = "record_advanced";
+  }
+
+  const report = readiness.buildKnowledgeCmsOperationalReadinessReport({
+    actor: ACTOR,
+    observedAt: NOW,
+    configuration: configuration(false),
+    roleDirectory: await completeRoleDirectory(),
+    workspaceEvidence: { status: "available", ...complete },
+  });
+
+  assert.equal(report.migration.targets.blocked, 0);
+  assert.equal(report.migration.targets.verifiedAdvancedRecords, 7);
+  assert.equal(report.migration.targets.verifiedPrivateDrafts, 38);
+  assert.equal(report.migration.completion.status, "complete");
+  assert.equal(report.migration.history.validEvents, 38);
+  assert.match(
+    report.migration.targetEvidence
+      .filter((target) => target.status === "verified_advanced_record")
+      .map((target) => target.detail)
+      .join(" "),
+    /no historical creation event/i,
+  );
+});
+
 test("complete 45-record readiness and all-22 shadow parity produce only a guarded approval preview", async () => {
   mockServerOnlyModule();
   const [readiness] = await loadReadinessModules();

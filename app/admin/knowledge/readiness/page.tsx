@@ -60,9 +60,9 @@ export default async function KnowledgeCmsReadinessPage() {
           </Link>
           <Link
             className="text-sm font-semibold text-blue-700 hover:underline"
-            href="/admin/knowledge/beta-activation"
+            href="/admin/knowledge/public-cutover"
           >
-            Beta activation preview
+            Production cutover
           </Link>
         </div>
 
