@@ -630,12 +630,24 @@ test("advanced legacy records remain valid when current evidence replaces obsole
     (entry) => entry.recordId === articleId,
   )!;
   articleHistory.control.validation = "mismatch";
+  const articleReceipt = complete.workspace.articleMaterializationDryRun.receipts.find(
+    (receipt) => receipt.target.id === articleId,
+  )!;
+  articleReceipt.control.validation = "blocked";
   const supportingHistory = complete.workspace.supportingExecutionHistory!.entries
     .filter((entry) => supportingIds.has(entry.recordId));
   for (const entry of supportingHistory) entry.controlValidation = "mismatch";
-  complete.articleVerifications[0].result!.status = "record_advanced";
+  const articleVerification = complete.articleVerifications[0].result!;
+  articleVerification.status = "failed";
+  articleVerification.currentRevision = 5;
+  for (const check of articleVerification.checks) {
+    if (["deterministic_control", "record_fingerprint"].includes(check.code)) {
+      check.status = "failed";
+    }
+  }
   for (const verification of complete.supportingVerifications.slice(0, 6)) {
     verification.result!.status = "record_advanced";
+    verification.result!.currentRevision = 3;
   }
   for (const candidate of complete.workspace.preview.candidates) {
     const candidateKey = `${candidate.target.kind}:${candidate.target.id}`;
@@ -645,6 +657,7 @@ test("advanced legacy records remain valid when current evidence replaces obsole
         severity: "blocker",
         message: "Legacy content predates the current deterministic control.",
       });
+      if (supportingIds.has(candidate.target.id)) candidate.state = "blocked";
     }
   }
 
@@ -661,6 +674,8 @@ test("advanced legacy records remain valid when current evidence replaces obsole
   assert.equal(report.migration.targets.verifiedPrivateDrafts, 38);
   assert.equal(report.migration.completion.status, "complete");
   assert.equal(report.migration.history.validEvents, 45);
+  assert.equal(report.migration.verifications.passed, 45);
+  assert.equal(report.migration.verifications.failed, 0);
   assert.match(
     report.migration.targetEvidence
       .filter((target) => target.status === "verified_advanced_record")
@@ -668,6 +683,44 @@ test("advanced legacy records remain valid when current evidence replaces obsole
       .join(" "),
     /predates the current deterministic creation control/i,
   );
+});
+
+test("legacy compatibility rejects any additional current-record verification failure", async () => {
+  const [readiness] = await loadReadinessModules();
+  const complete = structuredClone(await completeWorkspace());
+  const articleId = complete.articleVerifications[0].recordId;
+  const articleHistory = complete.workspace.executionHistory.entries.find(
+    (entry) => entry.recordId === articleId,
+  )!;
+  articleHistory.control.validation = "mismatch";
+  const articleReceipt = complete.workspace.articleMaterializationDryRun.receipts.find(
+    (receipt) => receipt.target.id === articleId,
+  )!;
+  articleReceipt.control.validation = "blocked";
+  const verification = complete.articleVerifications[0].result!;
+  verification.status = "failed";
+  verification.currentRevision = 5;
+  for (const check of verification.checks) {
+    if (
+      ["deterministic_control", "record_fingerprint", "canonical_lock"].includes(
+        check.code,
+      )
+    ) {
+      check.status = "failed";
+    }
+  }
+
+  const report = readiness.buildKnowledgeCmsOperationalReadinessReport({
+    actor: ACTOR,
+    observedAt: NOW,
+    configuration: configuration(false),
+    roleDirectory: await completeRoleDirectory(),
+    workspaceEvidence: { status: "available", ...complete },
+  });
+
+  assert.equal(report.migration.targets.blocked, 1);
+  assert.equal(report.migration.verifications.failed, 1);
+  assert.equal(report.migration.completion.status, "blocked");
 });
 
 test("advanced editorial revisions remain valid with matching creation controls", async () => {
