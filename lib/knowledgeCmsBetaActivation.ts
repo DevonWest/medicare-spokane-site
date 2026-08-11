@@ -62,6 +62,7 @@ export interface KnowledgeCmsBetaActivationVariablePlan {
     | "invalid"
     | "shadow"
     | "static"
+    | "steady"
     | "true";
   proposed: "false" | "shadow" | "true";
   changeRequired: boolean;

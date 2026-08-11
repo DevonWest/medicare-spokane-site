@@ -216,10 +216,10 @@ jobs:
             esac
           fi
           case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
-            static|shadow|cutover)
+            static|shadow|cutover|steady)
               ;;
             *)
-              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, or cutover"
+              echo "::error::KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, cutover, or steady"
               exit 1
               ;;
           esac
@@ -280,7 +280,10 @@ jobs:
               ;;
             true)
               test "$KNOWLEDGE_CMS_ENABLED" = "true" || (echo "::error::Public cutover requires KNOWLEDGE_CMS_ENABLED=true" && exit 1)
-              test "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" = "cutover" || (echo "::error::Public cutover requires KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover" && exit 1)
+              case "$KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE" in
+                cutover|steady) ;;
+                *) echo "::error::Public CMS routing requires cutover or steady renderer mode"; exit 1 ;;
+              esac
               test "$KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires approval execution false" && exit 1)
               test "$KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires article execution false" && exit 1)
               test "$KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED" = "false" || (echo "::error::Public cutover requires supporting execution false" && exit 1)

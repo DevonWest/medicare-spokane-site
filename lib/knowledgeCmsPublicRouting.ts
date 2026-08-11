@@ -33,8 +33,8 @@ export interface KnowledgeCmsPublicRoutingEnvironment {
 }
 
 export interface KnowledgeCmsPublicRoutingResolution {
-  requestedMode: "cutover" | "invalid" | "shadow" | "static";
-  effectiveMode: "cutover" | "static";
+  requestedMode: "cutover" | "invalid" | "shadow" | "static" | "steady";
+  effectiveMode: "cutover" | "static" | "steady";
   routingEnabled: boolean;
   configurationValid: boolean;
   environment: "beta" | "invalid" | "production";
@@ -44,6 +44,9 @@ export interface KnowledgeCmsPublicRoutingResolution {
     | "cutover_approved"
     | "cutover_no_routes"
     | "cutover_configuration_invalid"
+    | "steady_approved"
+    | "steady_no_routes"
+    | "steady_configuration_invalid"
     | "default_static"
     | "explicit_static"
     | "invalid_mode"
@@ -51,6 +54,7 @@ export interface KnowledgeCmsPublicRoutingResolution {
 }
 
 const receiptPattern = /^[a-f0-9]{64}$/;
+const steadyStateProofPrefix = "knowledge-cms-steady-state-v1";
 const routeByPath = new Map(
   knowledgeCmsRendererContracts.map((contract) => [
     contract.path,
@@ -129,13 +133,14 @@ export function resolveKnowledgeCmsPublicRouting(
   environment: KnowledgeCmsPublicRoutingEnvironment =
     getKnowledgeCmsPublicRoutingEnvironment(),
 ): KnowledgeCmsPublicRoutingResolution {
-  const requestedMode = ["static", "shadow", "cutover"].includes(
+  const requestedMode = ["static", "shadow", "cutover", "steady"].includes(
     environment.rendererMode ?? "static",
   )
     ? (environment.rendererMode ?? "static") as
         | "cutover"
         | "shadow"
         | "static"
+        | "steady"
     : "invalid";
   const target = deploymentEnvironment(
     environment.siteEnvironment,
@@ -154,7 +159,7 @@ export function resolveKnowledgeCmsPublicRouting(
       reason: "invalid_mode",
     };
   }
-  if (requestedMode !== "cutover") {
+  if (!["cutover", "steady"].includes(requestedMode)) {
     const cutoverGateSafe =
       environment.cutoverEnabled === undefined ||
       environment.cutoverEnabled === "false";
@@ -179,6 +184,38 @@ export function resolveKnowledgeCmsPublicRouting(
           : requestedMode === "static"
             ? "explicit_static"
             : "private_shadow",
+    };
+  }
+
+  if (requestedMode === "steady") {
+    const proof = createKnowledgeCmsSteadyStateProof(routes.activeEntryIds);
+    const baseValid = Boolean(
+      environment.cmsEnabled === "true" &&
+        environment.cutoverEnabled === "true" &&
+        environment.approvalExecutionEnabled === "false" &&
+        environment.articleMigrationExecutionEnabled === "false" &&
+        environment.supportingMigrationExecutionEnabled === "false" &&
+        environment.nativeRepresentationExecutionEnabled === "false" &&
+        target === "production" &&
+        routes.valid &&
+        environment.approvalReceipt === proof,
+    );
+    const valid = baseValid && routes.activeEntryIds.length > 0;
+    return {
+      requestedMode,
+      effectiveMode: valid ? "steady" : "static",
+      routingEnabled: valid,
+      configurationValid: baseValid,
+      environment: target,
+      activeEntryIds: valid ? routes.activeEntryIds : [],
+      ...(environment.approvalReceipt
+        ? { approvalReceipt: environment.approvalReceipt }
+        : {}),
+      reason: valid
+        ? "steady_approved"
+        : baseValid
+          ? "steady_no_routes"
+          : "steady_configuration_invalid",
     };
   }
 
@@ -211,6 +248,14 @@ export function resolveKnowledgeCmsPublicRouting(
         ? "cutover_no_routes"
         : "cutover_configuration_invalid",
   };
+}
+
+export function createKnowledgeCmsSteadyStateProof(
+  entryIds: readonly string[],
+): string {
+  return createHash("sha256")
+    .update(`${steadyStateProofPrefix}\0${entryIds.join("\0")}`)
+    .digest("hex");
 }
 
 export function isKnowledgeCmsPublicRouteEnabled(

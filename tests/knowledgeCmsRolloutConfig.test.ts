@@ -47,7 +47,7 @@ test("the checked-in steady state preserves all 22 governed CMS routes without t
   assert.equal(config.approvalReceipt, "");
   assert.deepEqual(config.routes, expectedRoutes);
   const output = resolve(config);
-  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=cutover/);
+  assert.match(output, /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE=steady/);
   assert.match(output, /KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_ARTICLE_MIGRATION_EXECUTION_ENABLED=false/);
   assert.match(output, /KNOWLEDGE_CMS_SUPPORTING_MIGRATION_EXECUTION_ENABLED=false/);

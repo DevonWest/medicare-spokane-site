@@ -877,7 +877,7 @@ test("admin routes remain default-off and publication stays private and server-a
   assert.match(deployWorkflow, /KNOWLEDGE_CMS_ENABLED must be exactly true or false/);
   assert.match(
     deployWorkflow,
-    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, or cutover/,
+    /KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE must be exactly static, shadow, cutover, or steady/,
   );
   assert.match(
     deployWorkflow,

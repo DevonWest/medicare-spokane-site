@@ -599,7 +599,7 @@ test("private shadow UI is isolated while the guarded internal renderer avoids l
   assert.doesNotMatch(dal, /\.save\s*\(/);
   assert.doesNotMatch(dal, /\.transition\s*\(/);
   assert.doesNotMatch(dal, /\.create\s*\(/);
-  assert.match(workflow, /static\|shadow\|cutover/);
+  assert.match(workflow, /static\|shadow\|cutover\|steady/);
   assert.match(workflow, /approval receipt must be exactly 64/);
   assert.match(workflow, /Deploy production cutover candidate with no traffic/);
   assert.match(

@@ -91,7 +91,7 @@ const phaseValues = phase === "artifacts"
     : phase === "steady"
       ? {
           KNOWLEDGE_CMS_NATIVE_REPRESENTATION_EXECUTION_ENABLED: "false",
-          KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "cutover",
+          KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: "steady",
           KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_EXECUTION_ENABLED: "false",
           KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED: "true",
           KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_RECEIPT: steadyStateProof,
