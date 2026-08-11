@@ -281,9 +281,20 @@ export function buildKnowledgeCmsPublicCutoverApprovalControl(input: {
   observedAt: Date;
 }): KnowledgeCmsPublicCutoverApprovalControl {
   const routes = routeEvidence(input.shadow);
-  const validFrom = input.observedAt.toISOString();
+  const artifactCreatedAt = input.shadow.results.flatMap((result) =>
+    result.status === "parity_passed" && result.representationArtifact
+      ? [new Date(result.representationArtifact.audit.createdAt).getTime()]
+      : [],
+  );
+  const latestArtifactCreatedAt =
+    routes.length > 0 &&
+    artifactCreatedAt.length === routes.length &&
+    artifactCreatedAt.every((value) => Number.isFinite(value))
+      ? Math.max(...artifactCreatedAt)
+      : input.observedAt.getTime();
+  const validFrom = new Date(latestArtifactCreatedAt).toISOString();
   const expiresAt = new Date(
-    input.observedAt.getTime() +
+    latestArtifactCreatedAt +
       KNOWLEDGE_CMS_PUBLIC_CUTOVER_APPROVAL_LIFETIME_MS,
   ).toISOString();
   const unsigned: UnsignedControl = {
