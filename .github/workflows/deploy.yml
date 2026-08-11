@@ -32,7 +32,8 @@
 #   KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS optional; defaults to 16000
 #   KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS optional; defaults to 24000
 #   KNOWLEDGE_CMS_AI_TIMEOUT_MS optional; defaults to 180000
-#   KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED is derived as true for production
+#   KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH optional; set true to force it false
 #   OPENAI_API_KEY_SECRET required when the AI gate is true (Secret Manager name)
 #   KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET required when continuous SEO is true
 #   recurring SEO also requires a current live activation check from the admin workspace
@@ -96,6 +97,7 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       AR_REPO: ${{ vars.ARTIFACT_REGISTRY_REPO }}
       RUNTIME_SA: ${{ vars.RUNTIME_SERVICE_ACCOUNT }}
+      DEPLOY_SA: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
       FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -114,7 +116,8 @@ jobs:
       KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS || '16000' }}
       KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS || '24000' }}
       KNOWLEDGE_CMS_AI_TIMEOUT_MS: ${{ vars.KNOWLEDGE_CMS_AI_TIMEOUT_MS || '180000' }}
-      KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH == 'true' && 'false' || 'true' }}
+      KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET: ${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET || 'knowledge-cms-seo-cron-token' }}
       SEARCH_CONSOLE_SITE_URL: ${{ vars.SEARCH_CONSOLE_SITE_URL || 'sc-domain:medicareinspokane.com' }}
       KNOWLEDGE_CMS_AI_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_MODEL || 'gpt-5.6-terra' }}
       KNOWLEDGE_CMS_AI_DEEP_MODEL: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MODEL || 'gpt-5.6-sol' }}
@@ -142,7 +145,7 @@ jobs:
             echo "openai_secret=" >> "$GITHUB_OUTPUT"
           fi
           if [ "$KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED" = "true" ]; then
-            echo "seo_cron_secret=KNOWLEDGE_CMS_SEO_CRON_TOKEN=${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET }}:latest" >> "$GITHUB_OUTPUT"
+            echo "seo_cron_secret=KNOWLEDGE_CMS_SEO_CRON_TOKEN=${KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET}:latest" >> "$GITHUB_OUTPUT"
           else
             echo "seo_cron_secret=" >> "$GITHUB_OUTPUT"
           fi
@@ -211,7 +214,7 @@ jobs:
           if [ "$KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED" = "true" ]; then
             test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
             test "$KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED requires KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED=true" && exit 1)
-            case "${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET }}" in
+            case "$KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET" in
               ''|*[!A-Za-z0-9_-]*) echo "::error::KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET must name a Secret Manager secret"; exit 1 ;;
             esac
           fi
@@ -312,6 +315,32 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           version: "latest"
+
+      - name: Ensure recurring SEO scheduler secret
+        if: ${{ env.KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED == 'true' }}
+        run: |
+          secret_name="$KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET"
+          if ! gcloud secrets describe "$secret_name" \
+            --project "$PROJECT_ID" >/dev/null 2>&1; then
+            generated_token="$(openssl rand -hex 32)"
+            printf '%s' "$generated_token" | gcloud secrets create "$secret_name" \
+              --project "$PROJECT_ID" \
+              --replication-policy=automatic \
+              --data-file=- \
+              --quiet
+            unset generated_token
+          fi
+
+          gcloud secrets versions access latest \
+            --secret "$secret_name" \
+            --project "$PROJECT_ID" >/dev/null
+          for service_account in "$RUNTIME_SA" "$DEPLOY_SA"; do
+            gcloud secrets add-iam-policy-binding "$secret_name" \
+              --project "$PROJECT_ID" \
+              --member "serviceAccount:$service_account" \
+              --role roles/secretmanager.secretAccessor \
+              --quiet >/dev/null
+          done
 
       - name: Verify target custom-domain DNS
         if: ${{ env.KNOWLEDGE_CMS_PUBLIC_CUTOVER_ENABLED != 'true' || env.TARGET != 'production' }}
