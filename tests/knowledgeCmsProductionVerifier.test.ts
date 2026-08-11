@@ -87,3 +87,20 @@ test("steady-state verifier does not require FAQ schema without governed visible
     assert.match(result.stdout, /Verified CMS, canonical, indexing, schema, and forms/);
   });
 });
+
+test("steady-state verifier requires the shared CMS help form on the FAQ route", async () => {
+  await withServer({
+    path: "/medicare-faq",
+    schemas: ["BreadcrumbList", "WebPage", "FAQPage"],
+    link: "/resources",
+  }, async (baseUrl) => {
+    const result = await run(process.execPath, [
+      verifier,
+      "--url",
+      baseUrl,
+      "--routes",
+      "medicare-faq",
+    ]);
+    assert.match(result.stdout, /Verified CMS, canonical, indexing, schema, and forms/);
+  });
+});
