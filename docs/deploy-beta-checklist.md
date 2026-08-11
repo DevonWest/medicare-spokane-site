@@ -63,12 +63,14 @@ There are two tabs there: **Variables** (non-sensitive, shows in logs) and **Sec
 | `KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS` | `24000` | Deep-research request output ceiling; accepted range is 4,000–40,000. |
 | `KNOWLEDGE_CMS_AI_TIMEOUT_MS` | `180000` | OpenAI request timeout; accepted range is 30,000–240,000 milliseconds. |
 | `OPENAI_API_KEY_SECRET` | `knowledge-cms-openai-api-key` | Secret Manager **name**, never the key value. Required only when the AI gate is true. |
-| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `false` | **Optional.** Enables the protected recurring-scan endpoint; requires Search Console plus current live activation evidence for the exact deployment. |
-| `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Required only when recurring scans are true. |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED` | `true` | Derived production runtime gate for the protected recurring-scan endpoint; activation requires Search Console plus current live evidence for the exact deployment. |
+| `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH` | `false` | **Optional emergency control.** Set `true` to deploy the runtime recurring-scan gate as `false`. |
+| `KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET` | `knowledge-cms-seo-cron-token` | Secret Manager **name**, never the token value. Deployment creates this isolated secret when absent and grants access only to the runtime and GitHub deploy service accounts. |
 
-Leave the four new feature gates false for the first deployment. Activate them
-in the verified sequence in
-[`knowledge-cms-ai-seo-copilot.md`](knowledge-cms-ai-seo-copilot.md).
+Keep AI disabled until its separate drafting rollout is approved. Continuous
+SEO now defaults on for production and remains fail-closed until the live
+connection verification is current. Set `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` for an initial
+staging-only deployment.
 
 ### 1b. Authentication — pick ONE of these two options
 

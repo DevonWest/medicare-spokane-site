@@ -1,0 +1,90 @@
+name: Weekly SEO evidence scan
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-seo-evidence-production
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    if: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH != 'true' }}
+    name: Run protected production scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      SEO_CRON_SECRET_NAME: ${{ vars.KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET || 'knowledge-cms-seo-cron-token' }}
+      SEO_SCAN_URL: https://www.medicareinspokane.com/api/knowledge-cms/seo-scan
+
+    steps:
+      - name: Validate configuration
+        run: |
+          test -n "$PROJECT_ID" || (echo "::error::GCP_PROJECT_ID is missing" && exit 1)
+          case "$SEO_CRON_SECRET_NAME" in
+            ''|*[!A-Za-z0-9_-]*) echo "::error::KNOWLEDGE_CMS_SEO_CRON_TOKEN_SECRET must name a Secret Manager secret"; exit 1 ;;
+          esac
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          version: "latest"
+
+      - name: Run weekly evidence scan
+        run: |
+          scheduler_token="$(gcloud secrets versions access latest \
+            --secret "$SEO_CRON_SECRET_NAME" \
+            --project "$PROJECT_ID")"
+          test "${#scheduler_token}" -ge 32 || (echo "::error::SEO scheduler token must be at least 32 characters" && exit 1)
+          echo "::add-mask::$scheduler_token"
+
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          status_code="$(curl \
+            --silent \
+            --show-error \
+            --retry 2 \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --connect-timeout 30 \
+            --max-time 900 \
+            --output "$response_file" \
+            --write-out '%{http_code}' \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "x-knowledge-cms-seo-token: $scheduler_token" \
+            --data '{}' \
+            "$SEO_SCAN_URL")"
+          unset scheduler_token
+
+          if [ "$status_code" != "200" ]; then
+            echo "::error::Weekly SEO scan failed with HTTP $status_code"
+            sed -n '1,20p' "$response_file"
+            exit 1
+          fi
+
+          node - "$response_file" <<'NODE'
+          const fs = require("node:fs");
+          const payload = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (payload.status !== "ok" || typeof payload.scanId !== "string") {
+            throw new Error("Weekly SEO scan returned an invalid success response.");
+          }
+          console.log(
+            `Weekly SEO evidence saved: ${payload.scanId} (${payload.opportunities} prioritized opportunities).`,
+          );
+          NODE
