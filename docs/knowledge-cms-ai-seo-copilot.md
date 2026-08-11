@@ -96,16 +96,19 @@ to ask the AI to turn current evidence into a strategy or draft.
 ## Activation order
 
 Search Console evidence defaults to enabled for this repository now that the
-production runtime account has Restricted property access;
-`KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` remains the emergency stop. AI still defaults to `false`. Continuous
-scanning defaults to `true`; deployment maintains its isolated token and the
-repository runs the protected endpoint weekly through GitHub Actions. The manual deterministic scanner follows the private
-CMS gate when its own repository variable is unset. Recurring execution still
-fails closed until an administrator records current live activation evidence.
+production runtime account has Restricted property access; an explicit repository
+value of `false` remains the kill switch for that read-only integration. AI still
+defaults to `false`. Continuous scanning defaults to `true`; deployment maintains
+its isolated token and the repository runs the protected endpoint weekly through
+GitHub Actions. `KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH=true` remains the
+emergency stop for recurring execution. The manual deterministic scanner follows
+the private CMS gate when its own repository variable is unset. Recurring execution
+still fails closed until an administrator records current live activation evidence.
 
-1. Deploy with all four new gates false and confirm public
-   `/api/deployment-health` plus the existing CMS still work. Cloud Run keeps
-   using `/healthz` internally for container probes.
+1. For an initial environment, keep AI disabled and set the continuous-SEO
+   kill switch while confirming public `/api/deployment-health` plus the existing
+   CMS still work. Cloud Run keeps using `/healthz` internally for container
+   probes.
 2. The manual deterministic scanner follows the private CMS gate when
    `KNOWLEDGE_CMS_SEO_ENABLED` is unset. Deploy beta, run one manual scan, and
    inspect the technical/CMS findings. Set the variable explicitly to `false`
