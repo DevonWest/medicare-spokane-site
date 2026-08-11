@@ -149,6 +149,12 @@ jobs:
 
           echo "image=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REGISTRY_REPO }}/site-${TARGET}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve checked-in Knowledge CMS rollout phase
+        run: >-
+          node scripts/resolve-knowledge-cms-rollout-config.mjs
+          config/knowledge-cms-production-rollout.json
+          >> "$GITHUB_ENV"
+
       - name: Validate required variables
         run: |
           test -n "${{ env.PROJECT_ID }}" || (echo "::error::GCP_PROJECT_ID is missing" && exit 1)
