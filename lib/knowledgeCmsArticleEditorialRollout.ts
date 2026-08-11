@@ -10,7 +10,7 @@ import {
 } from "./knowledgeCmsMigration";
 import { knowledgeCmsRouteParityManifest } from "./knowledgeCmsRouteParity";
 
-export const KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_VERSION = 1 as const;
+export const KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_VERSION = 2 as const;
 export const KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_PATH =
   "/admin/knowledge/article-review-queue" as const;
 export const KNOWLEDGE_CMS_ARTICLE_EDITORIAL_ROLLOUT_TOTAL = 22 as const;
@@ -86,31 +86,19 @@ function canonicalJson(value: unknown): string {
     .join(",")}}`;
 }
 
-function articleEditorialPayload(
-  record: KnowledgeCmsArticle,
+function migrationIdentity(
+  record: Pick<
+    KnowledgeCmsArticle,
+    "bodyFormat" | "discoverability" | "id" | "kind" | "schemaVersion" | "slug"
+  >,
 ) {
   return {
     schemaVersion: record.schemaVersion,
     id: record.id,
     kind: record.kind,
     slug: record.slug,
-    status: "draft",
-    title: record.title,
-    summary: record.summary,
-    body: record.body,
     bodyFormat: record.bodyFormat,
-    searchTerms: [...record.searchTerms],
-    relationships: {
-      articleIds: [...record.relationships.articleIds],
-      topicIds: [...record.relationships.topicIds],
-      faqIds: [...record.relationships.faqIds],
-      citySlugs: [...record.relationships.citySlugs],
-      agentSlugs: [...record.relationships.agentSlugs],
-      carrierNames: [...record.relationships.carrierNames],
-      existingPaths: [...record.relationships.existingPaths],
-    },
-    sources: record.sources.map((source) => ({ ...source })),
-    discoverability: { ...record.discoverability },
+    canonicalPath: record.discoverability.canonicalPath,
   };
 }
 
@@ -211,11 +199,11 @@ function validateTarget(
     return issues;
   }
   if (
-    canonicalJson(articleEditorialPayload(record)) !==
-    canonicalJson(control.target.payload)
+    canonicalJson(migrationIdentity(record)) !==
+    canonicalJson(migrationIdentity(control.target.payload))
   ) {
     issues.push(
-      "The CMS article no longer exactly matches its governed migration control.",
+      "The CMS article no longer matches the immutable route identity in its governed migration control.",
     );
   }
   if (record.changeRequest) {

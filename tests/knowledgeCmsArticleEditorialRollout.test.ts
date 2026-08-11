@@ -170,26 +170,59 @@ test("the rollout preview recognizes one published proof record and queues the o
   });
 });
 
-test("any governed article mismatch blocks the deterministic queue", () => {
+test("a legitimate edited draft remains eligible for the deterministic queue", () => {
   const records = governedArticleDrafts();
   records[0] = {
     ...records[0],
-    body: `${records[0].body}\nUnexpected editorial drift.`,
+    title: "Updated editorial title",
+    summary: "Updated editorial summary with current Spokane guidance.",
+    body: `${records[0].body}\n\nA reviewed editorial improvement.`,
+    searchTerms: [...records[0].searchTerms, "updated search term"],
+    audit: {
+      ...records[0].audit,
+      revision: 2,
+      updatedAt: "2026-08-01T12:05:00.000Z",
+    },
   };
   const preview = buildKnowledgeCmsArticleEditorialRolloutPreview(
     records,
     NOW,
   );
 
-  assert.equal(preview.summary.blocked, 1);
-  assert.equal(preview.next, undefined);
-  const blocked = preview.targets.find(
+  assert.equal(preview.summary.blocked, 0);
+  const edited = preview.targets.find(
     (target) => target.id === records[0].id,
   );
+  assert.ok(edited);
+  assert.deepEqual(edited.issues, []);
+  assert.equal(edited.revision, 2);
+  assert.equal(edited.action, "submit_approve_publish");
+});
+
+test("route identity drift still blocks the deterministic queue", () => {
+  const records = governedArticleDrafts();
+  records[0] = {
+    ...records[0],
+    slug: `${records[0].slug}-moved`,
+    discoverability: {
+      ...records[0].discoverability,
+      canonicalPath: `${records[0].discoverability.canonicalPath}-moved`,
+    },
+    audit: {
+      ...records[0].audit,
+      revision: 2,
+      updatedAt: "2026-08-01T12:05:00.000Z",
+    },
+  };
+  const preview = buildKnowledgeCmsArticleEditorialRolloutPreview(records, NOW);
+
+  assert.equal(preview.summary.blocked, 1);
+  assert.equal(preview.next, undefined);
+  const blocked = preview.targets.find((target) => target.id === records[0].id);
   assert.ok(blocked);
   assert.match(
     blocked.issues.join(" "),
-    /no longer exactly matches/i,
+    /immutable route identity/i,
   );
 });
 
