@@ -21,9 +21,9 @@ const routeByEntryId = new Map([
   ["enrollment-resources", ["/medicare-enrollment-resources", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
   ["moving-to-spokane", ["/moving-to-spokane-medicare", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
   ["medicare-savings-extra-help", ["/medicare-savings-program-extra-help-washington", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
-  ["medicare-faq", ["/medicare-faq", ["BreadcrumbList", "WebPage", "FAQPage"], 0]],
+  ["medicare-faq", ["/medicare-faq", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
   ["advantage-vs-supplement", ["/medicare-advantage-vs-supplement-spokane", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
-  ["represented-carriers", ["/carriers", ["BreadcrumbList", "WebPage", "FAQPage"], 0]],
+  ["represented-carriers", ["/carriers", ["BreadcrumbList", "WebPage", "FAQPage"], 1]],
 ]);
 
 function argument(name) {
