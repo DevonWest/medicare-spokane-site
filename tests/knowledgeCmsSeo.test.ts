@@ -201,6 +201,52 @@ test("search evidence finds low CTR, striking distance, and material declines", 
   );
 });
 
+test("search evidence suppresses low-volume zero-click impression declines outside actionable rankings", () => {
+  const lowVolume = buildKnowledgeCmsSearchOpportunities(
+    [
+      {
+        page: "https://www.medicareinspokane.com/medicare-spokane-valley",
+        query: "",
+        clicks: 0,
+        impressions: 50,
+        ctr: 0,
+        position: 60,
+        previousClicks: 0,
+        previousImpressions: 109,
+        previousCtr: 0,
+        previousPosition: 55,
+      },
+    ],
+    { interventions: [] },
+  );
+  assert.equal(
+    lowVolume.some((item) => item.kind === "declining_performance"),
+    false,
+  );
+
+  const materialVolume = buildKnowledgeCmsSearchOpportunities(
+    [
+      {
+        page: "https://www.medicareinspokane.com/established-page",
+        query: "",
+        clicks: 0,
+        impressions: 300,
+        ctr: 0,
+        position: 60,
+        previousClicks: 0,
+        previousImpressions: 600,
+        previousCtr: 0,
+        previousPosition: 55,
+      },
+    ],
+    { interventions: [] },
+  );
+  assert.equal(
+    materialVolume.some((item) => item.kind === "declining_performance"),
+    true,
+  );
+});
+
 test("page-level evidence surfaces high-impression low-CTR pages even without a named query", () => {
   const opportunities = buildKnowledgeCmsSearchOpportunities(
     [
