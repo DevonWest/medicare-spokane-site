@@ -12,7 +12,10 @@ This first release provides one end-to-end system:
 - deterministic checks of public HTML, canonicals, robots, sitemap, health,
   CMS completeness, source freshness, and editorial-review currency;
 - two stable 28-day Search Console page/query periods, ending three days ago,
-  for CTR, position, decline, and striking-distance opportunities;
+  for CTR, position, and striking-distance opportunities; impression-only
+  declines additionally require click history, top-30 visibility in either
+  period, or at least 500 prior impressions so low-volume ranking noise is not
+  promoted into AI work;
 - OpenAI web research and strict JSON-schema responses for site strategy,
   complete new article drafts, and improvements to an existing article;
 - a stored proposal with sources and a before-apply preview;
