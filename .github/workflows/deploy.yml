@@ -28,7 +28,8 @@
 #   retain the temporary approval receipt.
 #   KNOWLEDGE_CMS_SEO_ENABLED optional; follows the private CMS gate when unset
 #   KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED optional; defaults to true after read-only property access
-#   KNOWLEDGE_CMS_AI_ENABLED optional; defaults to false
+#   KNOWLEDGE_CMS_AI_ENABLED is derived as true for production drafting
+#   KNOWLEDGE_CMS_AI_KILL_SWITCH optional; set true to force drafting off
 #   KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS optional; defaults to 16000
 #   KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS optional; defaults to 24000
 #   KNOWLEDGE_CMS_AI_TIMEOUT_MS optional; defaults to 180000
@@ -111,10 +112,11 @@ jobs:
       KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE: ${{ vars.KNOWLEDGE_CMS_PUBLIC_RENDERER_MODE || 'static' }}
       KNOWLEDGE_CMS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEO_ENABLED || vars.KNOWLEDGE_CMS_ENABLED || 'false' }}
       KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED: ${{ vars.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED || 'true' }}
-      KNOWLEDGE_CMS_AI_ENABLED: ${{ vars.KNOWLEDGE_CMS_AI_ENABLED || 'false' }}
+      KNOWLEDGE_CMS_AI_ENABLED: ${{ vars.KNOWLEDGE_CMS_AI_KILL_SWITCH == 'true' && 'false' || 'true' }}
       KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_MAX_OUTPUT_TOKENS || '16000' }}
       KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS: ${{ vars.KNOWLEDGE_CMS_AI_DEEP_MAX_OUTPUT_TOKENS || '24000' }}
       KNOWLEDGE_CMS_AI_TIMEOUT_MS: ${{ vars.KNOWLEDGE_CMS_AI_TIMEOUT_MS || '180000' }}
+      OPENAI_API_KEY_SECRET: ${{ vars.OPENAI_API_KEY_SECRET || 'openai-api-key' }}
       KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH == 'true' && 'false' || 'true' }}
       KNOWLEDGE_CMS_SEO_SCHEDULER_REPOSITORY: ${{ github.repository }}
       SEARCH_CONSOLE_SITE_URL: ${{ vars.SEARCH_CONSOLE_SITE_URL || 'sc-domain:medicareinspokane.com' }}
@@ -139,7 +141,7 @@ jobs:
           echo "revision=${service}-${revision_suffix}" >> "$GITHUB_OUTPUT"
 
           if [ "$KNOWLEDGE_CMS_AI_ENABLED" = "true" ]; then
-            echo "openai_secret=OPENAI_API_KEY=${{ vars.OPENAI_API_KEY_SECRET }}:latest" >> "$GITHUB_OUTPUT"
+            echo "openai_secret=OPENAI_API_KEY=${OPENAI_API_KEY_SECRET}:latest" >> "$GITHUB_OUTPUT"
           else
             echo "openai_secret=" >> "$GITHUB_OUTPUT"
           fi
@@ -189,7 +191,7 @@ jobs:
           fi
           if [ "$KNOWLEDGE_CMS_AI_ENABLED" = "true" ]; then
             test "$KNOWLEDGE_CMS_SEO_ENABLED" = "true" || (echo "::error::KNOWLEDGE_CMS_AI_ENABLED requires KNOWLEDGE_CMS_SEO_ENABLED=true" && exit 1)
-            case "${{ vars.OPENAI_API_KEY_SECRET }}" in
+            case "$OPENAI_API_KEY_SECRET" in
               ''|*[!A-Za-z0-9_-]*) echo "::error::OPENAI_API_KEY_SECRET must name a Secret Manager secret"; exit 1 ;;
             esac
           fi
