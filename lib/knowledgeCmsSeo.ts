@@ -389,9 +389,16 @@ export function buildKnowledgeCmsSearchOpportunities(
 
     const clicksDeclined =
       row.previousClicks >= 5 && row.clicks <= row.previousClicks * 0.7;
+    const hasActionableImpressionSignal =
+      row.clicks > 0 ||
+      row.previousClicks > 0 ||
+      (row.position > 0 && row.position <= 30) ||
+      (row.previousPosition > 0 && row.previousPosition <= 30) ||
+      row.previousImpressions >= 500;
     const impressionsDeclined =
       row.previousImpressions >= 100 &&
-      row.impressions <= row.previousImpressions * 0.65;
+      row.impressions <= row.previousImpressions * 0.65 &&
+      hasActionableImpressionSignal;
     if (clicksDeclined || impressionsDeclined) {
       opportunities.push({
         id: opportunityId("declining_performance", row.page, row.query),
