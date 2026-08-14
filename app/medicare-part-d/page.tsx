@@ -109,7 +109,10 @@ export default function MedicarePartDPage() {
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath="/medicare-part-d" />
+      <KnowledgePageEnhancements
+        currentPath="/medicare-part-d"
+        includeBreadcrumbSchema={false}
+      />
 
       <CTASection />
     </>

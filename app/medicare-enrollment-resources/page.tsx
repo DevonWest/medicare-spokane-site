@@ -134,7 +134,10 @@ export default function EnrollmentResourcesPage() {
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath="/medicare-enrollment-resources" />
+      <KnowledgePageEnhancements
+        currentPath="/medicare-enrollment-resources"
+        includeBreadcrumbSchema={false}
+      />
 
       <CTASection />
     </>

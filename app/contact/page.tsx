@@ -5,9 +5,6 @@ import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
 import { siteConfig, telHref } from "@/lib/site";
 
-const directionsHref =
-  "https://www.google.com/maps/search/?api=1&query=Providence%20Medical%20Building%20820%20South%20McClellan%20Spokane%20WA%2099204";
-
 export const metadata: Metadata = {
   title: "Spokane Medicare Office | Contact Health Insurance Options",
   description:
@@ -76,7 +73,7 @@ export default function ContactPage() {
                   Call {siteConfig.phone}
                 </a>
                 <a
-                  href={directionsHref}
+                  href={siteConfig.mapUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-5 py-3 text-base font-semibold text-blue-700 transition-colors hover:bg-blue-100"
@@ -162,7 +159,7 @@ export default function ContactPage() {
                   </p>
                 </div>
                 <a
-                  href={directionsHref}
+                  href={siteConfig.mapUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-5 inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-800"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import KnowledgeAuthority from "@/components/KnowledgeAuthority";
@@ -79,6 +80,12 @@ const faqs: FAQItem[] = [
 export default function WorkingPastSixtyFivePage() {
   return (
     <>
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Working Past 65 & Medicare" },
+        ]}
+      />
       <KnowledgePageSchema currentPath="/working-past-65-medicare" />
 
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">

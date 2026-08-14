@@ -7,12 +7,14 @@ import { getKnowledgeGraph } from "@/lib/knowledgeCenter";
 
 interface KnowledgePageEnhancementsProps {
   currentPath: string;
+  includeBreadcrumbSchema?: boolean;
   includeCmsParityContent?: boolean;
   relatedLimit?: number;
 }
 
 export default function KnowledgePageEnhancements({
   currentPath,
+  includeBreadcrumbSchema = true,
   includeCmsParityContent = false,
   relatedLimit,
 }: KnowledgePageEnhancementsProps) {
@@ -36,7 +38,7 @@ export default function KnowledgePageEnhancements({
   return (
     <>
       <KnowledgePageSchema currentPath={currentPath} />
-      {includeCmsParityContent ? (
+      {includeBreadcrumbSchema ? (
         <BreadcrumbSchema
           items={[
             { name: "Home", path: "/" },

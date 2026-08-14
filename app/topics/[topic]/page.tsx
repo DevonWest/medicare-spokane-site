@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTopicBySlug, getAllTopicSlugs, medicareTopics } from "@/lib/topics";
 import { siteConfig } from "@/lib/site";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import CTASection from "@/components/CTASection";
 
 interface Props {
@@ -49,24 +50,14 @@ export default async function TopicPage({ params }: Props) {
 
   const otherTopics = medicareTopics.filter((t) => t.slug !== topic.slug);
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: topic.benefits.map((benefit) => ({
-      "@type": "Question",
-      name: `What is a benefit of ${topic.title}?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: benefit,
-      },
-    })),
-  };
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Resources", path: "/resources" },
+          { name: topic.title },
+        ]}
       />
 
       {/* Hero */}
@@ -74,6 +65,8 @@ export default async function TopicPage({ params }: Props) {
         <div className="max-w-4xl mx-auto">
           <nav className="text-blue-200 text-sm mb-4">
             <Link href="/" className="hover:text-white">Home</Link>
+            <span className="mx-2">/</span>
+            <Link href="/resources" className="hover:text-white">Resources</Link>
             <span className="mx-2">/</span>
             <span>{topic.title}</span>
           </nav>

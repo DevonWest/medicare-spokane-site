@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 import {
   getLegacyDirectoryRedirect,
   getLegacyPathResolution,
-  isKnownDirectoryPath,
+  getKnownDirectoryRedirect,
+  getZipRedirectDestination,
 } from "@/lib/legacyRedirects";
 import {
   KNOWLEDGE_CMS_INTERNAL_RENDERER_PREFIX,
@@ -116,32 +117,33 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(redirectUrl, 301);
     }
 
-    if (isKnownDirectoryPath(normalizedLowerPath)) {
-      const needsPathRewrite = pathname !== normalizedLowerPath;
-      const hasFromQuery = request.nextUrl.searchParams.has("from");
+    const knownDirectoryDestination = getKnownDirectoryRedirect(normalizedLowerPath);
 
-      if (needsPathRewrite || hasFromQuery) {
-        const redirectUrl = new URL(request.url);
-        redirectUrl.pathname = normalizedLowerPath;
+    if (knownDirectoryDestination) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = knownDirectoryDestination;
+      redirectUrl.searchParams.delete("from");
 
-        if (hasFromQuery) {
-          redirectUrl.searchParams.delete("from");
-        }
-
-        if (!redirectUrl.searchParams.size) {
-          redirectUrl.search = "";
-        }
-
-        return NextResponse.redirect(redirectUrl, 301);
+      if (!redirectUrl.searchParams.size) {
+        redirectUrl.search = "";
       }
 
-      return NextResponse.next();
+      return NextResponse.redirect(redirectUrl, 301);
     }
 
     // Unknown legacy /directory/* path → 410 Gone regardless of case or
     // query string so Search Console drops it cleanly without producing a
     // soft-404 redirect chain.
     return new NextResponse(null, { status: 410 });
+  }
+
+  const zipDestination = getZipRedirectDestination(pathname);
+
+  if (zipDestination) {
+    const redirectUrl = new URL(request.url);
+    redirectUrl.pathname = zipDestination;
+
+    return NextResponse.redirect(redirectUrl, 301);
   }
 
   // Resolve every known legacy path before generic slash normalization.

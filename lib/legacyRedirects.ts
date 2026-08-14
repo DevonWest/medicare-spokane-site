@@ -1,4 +1,9 @@
-import { getAllDirectorySlugs, getDirectoryPath } from "./cities";
+import {
+  getAllDirectorySlugs,
+  getCityByDirectorySlug,
+  getLocalMedicarePath,
+} from "./cities";
+import { getZipArea } from "./zips";
 
 export const legacyRedirects = {
   "/about": "/our-team",
@@ -25,11 +30,19 @@ export const legacyRedirects = {
 export type LegacyRedirectPath = keyof typeof legacyRedirects;
 
 export const localDirectoryPages = Object.fromEntries(
-  getAllDirectorySlugs().map((directorySlug) => [
-    `/directory/${directorySlug}`,
-    getDirectoryPath(directorySlug),
-  ]),
-) as Record<`/directory/${string}`, `/directory/${string}`>;
+  getAllDirectorySlugs().map((directorySlug) => {
+    const city = getCityByDirectorySlug(directorySlug);
+
+    if (!city) {
+      throw new Error(`Missing city for directory slug: ${directorySlug}`);
+    }
+
+    return [
+      `/directory/${directorySlug}`,
+      getLocalMedicarePath(city.slug),
+    ];
+  }),
+) as Record<`/directory/${string}`, `/medicare-${string}`>;
 
 type LocalDirectoryPath = keyof typeof localDirectoryPages;
 
@@ -78,6 +91,25 @@ export function isKnownDirectoryPath(pathname: string): boolean {
   const normalizedPath = normalizeLegacyPath(pathname).toLowerCase();
 
   return Boolean(localDirectoryPages[normalizedPath as LocalDirectoryPath]);
+}
+
+export function getKnownDirectoryRedirect(pathname: string): string | null {
+  const normalizedPath = normalizeLegacyPath(pathname).toLowerCase();
+
+  return localDirectoryPages[normalizedPath as LocalDirectoryPath] ?? null;
+}
+
+export function getZipRedirectDestination(pathname: string): string | null {
+  const normalizedPath = normalizeLegacyPath(pathname).toLowerCase();
+  const match = /^\/zip\/(\d{5})$/.exec(normalizedPath);
+
+  if (!match) {
+    return null;
+  }
+
+  const area = getZipArea(match[1]);
+
+  return area ? getLocalMedicarePath(area.citySlug) : null;
 }
 
 export function getLegacyDirectoryRedirect(pathname: string): string | null {

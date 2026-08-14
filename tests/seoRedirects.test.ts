@@ -7,8 +7,10 @@ import robots from "../app/robots";
 import sitemap from "../app/sitemap";
 import {
   getCanonicalDirectoryDestination,
+  getKnownDirectoryRedirect,
   getLegacyPathResolution,
   getLegacyRedirectDestination,
+  getZipRedirectDestination,
   legacyRedirects,
   isKnownDirectoryPath,
   localDirectoryPages,
@@ -68,14 +70,14 @@ test("proxy returns 301 redirects for legacy URLs", () => {
 
 test("local directory pages include required canonical destinations", () => {
   assert.deepEqual(localDirectoryPages, {
-    "/directory/spokane-wa": "/directory/spokane-wa",
-    "/directory/spokane-valley-wa": "/directory/spokane-valley-wa",
-    "/directory/cheney-wa": "/directory/cheney-wa",
-    "/directory/airway-heights-wa": "/directory/airway-heights-wa",
-    "/directory/liberty-lake-wa": "/directory/liberty-lake-wa",
-    "/directory/medical-lake-wa": "/directory/medical-lake-wa",
-    "/directory/mead-wa": "/directory/mead-wa",
-    "/directory/deer-park-wa": "/directory/deer-park-wa",
+    "/directory/spokane-wa": "/medicare-spokane",
+    "/directory/spokane-valley-wa": "/medicare-spokane-valley",
+    "/directory/cheney-wa": "/medicare-cheney",
+    "/directory/airway-heights-wa": "/medicare-airway-heights",
+    "/directory/liberty-lake-wa": "/medicare-liberty-lake",
+    "/directory/medical-lake-wa": "/medicare-medical-lake",
+    "/directory/mead-wa": "/medicare-mead",
+    "/directory/deer-park-wa": "/medicare-deer-park",
   });
 });
 
@@ -90,6 +92,11 @@ test("directory helpers normalize case, trailing slash, and supported locations"
   assert.equal(getCanonicalDirectoryDestination("/contact"), null);
   assert.equal(isKnownDirectoryPath("/directory/deer-park-wa/"), true);
   assert.equal(isKnownDirectoryPath("/directory/steptoe-wa/"), false);
+  assert.equal(getKnownDirectoryRedirect("/Directory/deer-park-wa/"), "/medicare-deer-park");
+  assert.equal(getKnownDirectoryRedirect("/directory/steptoe-wa/"), null);
+  assert.equal(getZipRedirectDestination("/zip/99206"), "/medicare-spokane");
+  assert.equal(getZipRedirectDestination("/zip/99019/"), "/medicare-liberty-lake");
+  assert.equal(getZipRedirectDestination("/zip/00000"), null);
 });
 
 test("proxy redirects /home to the canonical homepage", () => {
@@ -137,14 +144,17 @@ test("proxy redirects /profiles/rose-records to /our-team", () => {
   assert.equal(response.headers.get("location"), "https://www.medicareinspokane.com/our-team");
 });
 
-test("proxy allows canonical lowercase directory URLs to render", () => {
+test("proxy redirects lowercase directory duplicates to primary local pages", () => {
   const response = proxy(new NextRequest("https://www.medicareinspokane.com/directory/cheney-wa"));
 
-  assert.notEqual(response.status, 301);
-  assert.equal(response.headers.get("location"), null);
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.medicareinspokane.com/medicare-cheney",
+  );
 });
 
-test("proxy redirects old uppercase directory URLs to lowercase directory URLs without from", () => {
+test("proxy redirects old uppercase directory URLs directly to primary local pages without from", () => {
   const response = proxy(
     new NextRequest("https://www.medicareinspokane.com/Directory/deer-park-wa?from=deer-park-wa"),
   );
@@ -152,7 +162,7 @@ test("proxy redirects old uppercase directory URLs to lowercase directory URLs w
   assert.equal(response.status, 301);
   assert.equal(
     response.headers.get("location"),
-    "https://www.medicareinspokane.com/directory/deer-park-wa",
+    "https://www.medicareinspokane.com/medicare-deer-park",
   );
 });
 
@@ -409,23 +419,46 @@ test("proxy returns 410 for unknown canonical directory URLs instead of 5xx or 4
   assert.equal(response.headers.get("location"), null);
 });
 
-test("proxy allows canonical supported directory URLs to render", () => {
+test("proxy redirects supported directory duplicates to the canonical local page", () => {
   const response = proxy(
     new NextRequest("https://www.medicareinspokane.com/directory/deer-park-wa"),
   );
 
-  assert.notEqual(response.status, 301);
-  assert.equal(response.headers.get("location"), null);
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.medicareinspokane.com/medicare-deer-park",
+  );
 });
 
-test("directory page metadata uses a self-referencing canonical URL", async () => {
+test("directory page metadata points to the primary local canonical URL", async () => {
   const metadata = await generateDirectoryMetadata({
     params: Promise.resolve({ location: "deer-park-wa" }),
   });
 
   assert.equal(
     metadata.alternates?.canonical,
-    "https://www.medicareinspokane.com/directory/deer-park-wa",
+    "https://www.medicareinspokane.com/medicare-deer-park",
+  );
+});
+
+test("proxy permanently consolidates known ZIP pages into their city guides", () => {
+  const spokane = proxy(
+    new NextRequest("https://www.medicareinspokane.com/zip/99206?source=google"),
+  );
+  const libertyLake = proxy(
+    new NextRequest("https://www.medicareinspokane.com/zip/99019/"),
+  );
+
+  assert.equal(spokane.status, 301);
+  assert.equal(
+    spokane.headers.get("location"),
+    "https://www.medicareinspokane.com/medicare-spokane?source=google",
+  );
+  assert.equal(libertyLake.status, 301);
+  assert.equal(
+    libertyLake.headers.get("location"),
+    "https://www.medicareinspokane.com/medicare-liberty-lake",
   );
 });
 
@@ -552,6 +585,15 @@ test("sitemap only includes canonical request, team, and prescription URLs", () 
   assert.equal(sitemapUrls.has(`${siteConfig.url}/rx-drug-lookup-form`), false);
   assert.equal(Array.from(sitemapUrls).some((url) => url.includes("/directory/")), false);
   assert.equal(Array.from(sitemapUrls).some((url) => url.includes("/Directory/")), false);
+  assert.equal(Array.from(sitemapUrls).some((url) => url.includes("/zip/")), false);
+});
+
+test("sitemap omits unverified freshness and ignored priority hints", () => {
+  for (const entry of sitemap()) {
+    assert.equal(entry.lastModified, undefined);
+    assert.equal(entry.changeFrequency, undefined);
+    assert.equal(entry.priority, undefined);
+  }
 });
 
 

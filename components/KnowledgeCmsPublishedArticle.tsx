@@ -4,9 +4,14 @@ import remarkGfm from "remark-gfm";
 import Disclaimer from "@/components/Disclaimer";
 import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
+import { resolveVerifiedEditorialReviewer } from "@/lib/editorial";
 import type { KnowledgeCmsArticle } from "@/lib/knowledgeCms";
 import { LEAD_SOURCES, type LeadSource } from "@/lib/leadSources";
 import { siteConfig, telHref } from "@/lib/site";
+import {
+  getTeamMemberPersonId,
+  getTeamMemberProfilePath,
+} from "@/lib/team";
 
 function leadSourceForPath(path: string): LeadSource {
   const candidate = path.replace(/^\//, "");
@@ -27,6 +32,30 @@ function sourceDate(value: string): string {
       }).format(parsed);
 }
 
+function publicationDate(value: string): string {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(parsed);
+}
+
+function articleImagePath(path: string): string {
+  const imageByPath: Record<string, string> = {
+    "/compare-medicare-options": "/illustrations/compare-options.png",
+    "/helping-parent-with-medicare": "/illustrations/helping-parent.png",
+    "/medicare-appointment-checklist": "/illustrations/turning-65-checklist.png",
+    "/medicare-plan-review-spokane": "/illustrations/annual-plan-review.png",
+    "/rx-drug-review": "/illustrations/prescription-review.png",
+  };
+
+  return imageByPath[path] ?? "/illustrations/homepage-guidance.png";
+}
+
 export default function KnowledgeCmsPublishedArticle({
   article,
   path,
@@ -34,11 +63,57 @@ export default function KnowledgeCmsPublishedArticle({
   article: KnowledgeCmsArticle;
   path: string;
 }) {
+  const reviewer = article.review
+    ? resolveVerifiedEditorialReviewer(
+        article.review.reviewerAgentSlug,
+        article.review.reviewerVerificationId,
+      )
+    : undefined;
+  const articleUrl = `${siteConfig.url}${path}`;
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${articleUrl}#article`,
+    url: articleUrl,
+    headline: article.title,
+    description: article.summary,
+    mainEntityOfPage: { "@id": `${articleUrl}#webpage` },
+    image: [`${siteConfig.url}${articleImagePath(path)}`],
+    inLanguage: "en-US",
+    isAccessibleForFree: true,
+    ...(article.publication
+      ? { datePublished: article.publication.publishedAt }
+      : {}),
+    dateModified: article.audit.updatedAt,
+    author: { "@id": `${siteConfig.url}#organization` },
+    publisher: { "@id": `${siteConfig.url}#organization` },
+    publishingPrinciples: `${siteConfig.url}${siteConfig.editorialStandardsPath}`,
+    citation: article.sources.map((source) => source.url),
+    ...(reviewer
+      ? {
+          reviewedBy: {
+            "@type": "Person",
+            "@id": getTeamMemberPersonId(reviewer),
+            name: reviewer.name,
+            jobTitle: reviewer.title,
+            url: getTeamMemberPersonId(reviewer),
+            worksFor: { "@id": `${siteConfig.url}#organization` },
+          },
+        }
+      : {}),
+  };
+
   return (
     <div
       data-knowledge-cms-article={article.id}
       data-knowledge-cms-revision={article.audit.revision}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c"),
+        }}
+      />
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">
         <div className="mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="mb-4 text-sm text-blue-200">
@@ -59,6 +134,31 @@ export default function KnowledgeCmsPublishedArticle({
             <p className="mt-5 max-w-3xl text-xl leading-8 text-blue-100">
               {article.summary}
             </p>
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-blue-100">
+              {article.publication ? (
+                <span>
+                  Published by {siteConfig.legalName} on{" "}
+                  <time dateTime={article.publication.publishedAt}>
+                    {publicationDate(article.publication.publishedAt)}
+                  </time>
+                </span>
+              ) : null}
+              {reviewer && article.review ? (
+                <span>
+                  Reviewed for accuracy by{" "}
+                  <Link
+                    href={getTeamMemberProfilePath(reviewer)}
+                    className="font-semibold text-white underline decoration-blue-300 underline-offset-2"
+                  >
+                    {reviewer.name}
+                  </Link>{" "}
+                  on{" "}
+                  <time dateTime={article.review.reviewedAt}>
+                    {publicationDate(article.review.reviewedAt)}
+                  </time>
+                </span>
+              ) : null}
+            </div>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <a
                 href={telHref}

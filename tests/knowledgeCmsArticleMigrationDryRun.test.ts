@@ -174,7 +174,7 @@ test("fixed server inputs produce deterministic control and batch bindings", () 
   assert.ok(turning65);
   assert.equal(
     turning65.control.fingerprint,
-    "cef618e106cf22a644c1dabb98c53f0206c3396052725fcea21349faf6d2c940",
+    "58f4af70928efd7bfc833edbb1fd83737318f3670a4e1df475616f6198a14ddd",
   );
   assert.equal(
     turning65.materialization.record?.audit.createdAt,
