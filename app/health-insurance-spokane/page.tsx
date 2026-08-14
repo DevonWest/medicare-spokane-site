@@ -302,7 +302,10 @@ export default function HealthInsuranceSpokanePage() {
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath="/health-insurance-spokane" />
+      <KnowledgePageEnhancements
+        currentPath="/health-insurance-spokane"
+        includeBreadcrumbSchema={false}
+      />
     </>
   );
 }

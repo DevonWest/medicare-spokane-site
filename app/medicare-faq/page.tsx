@@ -39,7 +39,10 @@ export default function MedicareFaqPage() {
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath="/medicare-faq" />
+      <KnowledgePageEnhancements
+        currentPath="/medicare-faq"
+        includeBreadcrumbSchema={false}
+      />
 
       <CTASection
         heading="Have a Question We Did Not Cover?"

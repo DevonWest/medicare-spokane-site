@@ -165,12 +165,12 @@ test("a control pins the deterministic record identity and route evidence", () =
   );
   assert.equal(
     control.provenance.renderedBodySha256,
-    "b1d53f57def98f6dd71f59bba2e7c4b2a1ba7693e81843e6c5b653f4b863eca3",
+    "3901bac6bada43c0a89e88ecd943febd9bc5a8cc6bcf8dea1227c96a7fe7ec34",
   );
   assert.equal(control.provenance.rendererContractVersion, 2);
   assert.equal(
     control.fingerprint.value,
-    "cef618e106cf22a644c1dabb98c53f0206c3396052725fcea21349faf6d2c940",
+    "58f4af70928efd7bfc833edbb1fd83737318f3670a4e1df475616f6198a14ddd",
   );
   assert.match(
     control.target.payload.body,

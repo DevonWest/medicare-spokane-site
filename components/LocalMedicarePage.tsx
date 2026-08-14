@@ -148,27 +148,42 @@ export default function LocalMedicarePage({
     },
   ];
 
+  const pageUrl = `${siteConfig.url}${canonicalPath}`;
   const localSchema = {
     "@context": "https://schema.org",
-    "@type": ["InsuranceAgency", "LocalBusiness"],
-    "@id": `${siteConfig.url}${canonicalPath}`,
-    name: `${siteConfig.legalName} – Medicare Help in ${city.name}`,
-    description: city.localIntro,
-    url: `${siteConfig.url}${canonicalPath}`,
-    telephone: siteConfig.phone,
-    areaServed: {
-      "@type": "City",
-      name: city.name,
-      containedInPlace: {
-        "@type": "AdministrativeArea",
-        name: `${city.county}, ${city.state}`,
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: `Medicare Help in ${city.name}, ${city.stateCode}`,
+        description: city.localIntro,
+        isPartOf: { "@id": `${siteConfig.url}#website` },
+        about: { "@id": `${pageUrl}#service` },
+        publisher: { "@id": `${siteConfig.url}#organization` },
       },
-    },
-    serviceType: [
-      "Medicare Advantage",
-      "Medicare Supplement",
-      "Medicare Part D",
-      "Supplemental insurance",
+      {
+        "@type": "Service",
+        "@id": `${pageUrl}#service`,
+        name: `Medicare guidance in ${city.name}`,
+        description: city.localIntro,
+        url: pageUrl,
+        provider: { "@id": `${siteConfig.url}#organization` },
+        areaServed: {
+          "@type": "City",
+          name: city.name,
+          containedInPlace: {
+            "@type": "AdministrativeArea",
+            name: `${city.county}, ${city.state}`,
+          },
+        },
+        serviceType: [
+          "Medicare Advantage",
+          "Medicare Supplement",
+          "Medicare Part D",
+          "Supplemental insurance",
+        ],
+      },
     ],
   };
 
@@ -183,7 +198,9 @@ export default function LocalMedicarePage({
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localSchema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localSchema).replace(/</g, "\\u003c"),
+        }}
       />
 
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">

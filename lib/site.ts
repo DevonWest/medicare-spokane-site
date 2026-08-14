@@ -35,6 +35,8 @@ export const siteConfig = {
     postalCode: "99204",
     addressCountry: "US",
   },
+  mapUrl:
+    "https://www.google.com/maps/search/?api=1&query=Providence%20Medical%20Building%20820%20South%20McClellan%20Spokane%20WA%2099204",
   social: {
     facebook: "",
   },

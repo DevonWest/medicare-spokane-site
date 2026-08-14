@@ -75,7 +75,10 @@ export default function CarriersPage() {
         </div>
       </section>
 
-      <KnowledgePageEnhancements currentPath="/carriers" />
+      <KnowledgePageEnhancements
+        currentPath="/carriers"
+        includeBreadcrumbSchema={false}
+      />
 
       <CTASection
         heading="Want Help Reviewing Carrier Options?"

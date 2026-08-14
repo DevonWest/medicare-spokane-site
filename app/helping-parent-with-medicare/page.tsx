@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
@@ -81,6 +82,13 @@ const faqs: FAQItem[] = [
 export default function HelpingParentWithMedicarePage() {
   return (
     <>
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Resources", path: "/resources" },
+          { name: "Helping a Parent with Medicare" },
+        ]}
+      />
       <KnowledgePageSchema currentPath="/helping-parent-with-medicare" />
 
       <section className="bg-gradient-to-br from-blue-800 to-blue-600 px-4 py-16 text-white">

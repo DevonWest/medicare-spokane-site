@@ -89,6 +89,9 @@ test("the production CMS renderer uses the approved Markdown body and preserves 
   assert.match(html, /Plan availability/);
   assert.match(html, /Official sources/);
   assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /"@type":"Article"/);
+  assert.match(html, /"datePublished":"2026-08-10T12:30:00.000Z"/);
+  assert.match(html, /Published by Health Insurance Options LLC/);
   assert.match(html, /"@type":"FAQPage"/);
   assert.match(html, /"@type":"BreadcrumbList"/);
   assert.doesNotMatch(html, /<h1[^>]*>CMS body heading/);
