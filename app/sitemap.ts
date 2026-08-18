@@ -30,6 +30,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/2027-medicare-changes-spokane`,
+      lastModified: "2026-08-18",
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/costco-scan-medicare-spokane`,
+      lastModified: "2026-08-18",
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/medicare-appointment-checklist`,
       lastModified: now,
       changeFrequency: "weekly",
