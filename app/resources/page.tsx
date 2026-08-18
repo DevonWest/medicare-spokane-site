@@ -34,6 +34,51 @@ export default function ResourcesPage() {
         crumbs={[{ href: "/", label: "Home" }, { label: "Resources" }]}
       />
 
+      <section className="border-b border-blue-100 bg-blue-50 px-4 py-12">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+            New for 2027
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">
+                Spokane Medicare Market Updates
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-gray-700">
+                Follow confirmed 2027 announcements and see which details are still unconfirmed for
+                Spokane County.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Link
+                href="/2027-medicare-changes-spokane"
+                className="rounded-2xl border border-blue-200 bg-white p-5 transition-colors hover:border-blue-400"
+              >
+                <h3 className="text-lg font-semibold text-gray-900">2027 changes tracker</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                  A running Spokane-focused status page.
+                </p>
+                <span className="mt-3 inline-block text-sm font-semibold text-blue-700">
+                  View tracker →
+                </span>
+              </Link>
+              <Link
+                href="/costco-scan-medicare-spokane"
+                className="rounded-2xl border border-blue-200 bg-white p-5 transition-colors hover:border-blue-400"
+              >
+                <h3 className="text-lg font-semibold text-gray-900">Costco and SCAN update</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                  What is known and what is not confirmed locally.
+                </p>
+                <span className="mt-3 inline-block text-sm font-semibold text-blue-700">
+                  Read update →
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white px-4 py-16">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-3 text-2xl font-bold text-gray-900 md:text-3xl">Local Medicare Guides</h2>
