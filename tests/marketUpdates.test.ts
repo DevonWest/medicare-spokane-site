@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import sitemap from "../app/sitemap";
+import { publicMonitoringPaths } from "../lib/publicMonitoringPaths";
 import { siteConfig } from "../lib/site";
 
 const article = readFileSync(
@@ -18,6 +19,10 @@ test("market update routes are discoverable and cross-linked", () => {
 
   assert.ok(sitemapUrls.has(`${siteConfig.url}/2027-medicare-changes-spokane`));
   assert.ok(sitemapUrls.has(`${siteConfig.url}/costco-scan-medicare-spokane`));
+  assert.deepEqual(publicMonitoringPaths, [
+    "/2027-medicare-changes-spokane",
+    "/costco-scan-medicare-spokane",
+  ]);
   assert.match(hub, /href="\/costco-scan-medicare-spokane"/);
   assert.match(article, /href="\/2027-medicare-changes-spokane"/);
 });

@@ -10,7 +10,9 @@ publishing authority. It is an admin-only private workspace at
 This first release provides one end-to-end system:
 
 - deterministic checks of public HTML, canonicals, robots, sitemap, health,
-  CMS completeness, source freshness, and editorial-review currency;
+  CMS completeness, source freshness, and editorial-review currency; the crawl
+  also includes registered public pages that intentionally live outside the
+  CMS, such as time-sensitive Spokane market updates;
 - two stable 28-day Search Console page/query periods, ending three days ago,
   for CTR, position, and striking-distance opportunities; impression-only
   declines additionally require click history, top-30 visibility in either

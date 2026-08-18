@@ -197,7 +197,7 @@ test("crawler extracts rendered SEO signals and never follows off-origin links",
       return new Response("User-agent: *\nAllow: /", { status: 200 });
     }
     return new Response(
-      '<html><head><title>Part D Spokane</title><meta name="description" content="Useful help"><meta name="robots" content="index,follow"><link href="https://www.medicareinspokane.com/part-d" rel="canonical"></head><body><h1>Part D</h1><a href="/contact">Contact</a><a href="https://competitor.example/page">Other</a></body></html>',
+      `<html><head><title>Part D Spokane</title><meta name="description" content="Useful help"><meta name="robots" content="index,follow"><link href="${url.origin}${url.pathname}" rel="canonical"></head><body><h1>Part D</h1><a href="/contact">Contact</a><a href="https://competitor.example/page">Other</a></body></html>`,
       { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
     );
   };
@@ -219,7 +219,60 @@ test("crawler extracts rendered SEO signals and never follows off-origin links",
     requested.includes("https://www.medicareinspokane.com/healthz"),
     false,
   );
+  assert.equal(
+    requested.includes(
+      "https://www.medicareinspokane.com/2027-medicare-changes-spokane",
+    ),
+    true,
+  );
+  assert.equal(
+    requested.includes(
+      "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+    ),
+    true,
+  );
   assert.equal(requested.some((url) => url.includes("competitor.example")), false);
+});
+
+test("crawler reserves its page budget for safe non-CMS monitoring routes", async () => {
+  mockServerOnlyModule();
+  const crawler = await import("../lib/knowledgeCmsSeoCrawler");
+  const requestedPaths: string[] = [];
+  const fakeFetch: typeof fetch = async (input) => {
+    const url = input instanceof URL ? input : new URL(String(input));
+    requestedPaths.push(url.pathname);
+    if (url.pathname === "/api/deployment-health") {
+      return new Response('{"status":"ok"}', { status: 200 });
+    }
+    if (url.pathname === "/sitemap.xml") {
+      return new Response("<urlset></urlset>", { status: 200 });
+    }
+    if (url.pathname === "/robots.txt") {
+      return new Response("User-agent: *\nAllow: /", { status: 200 });
+    }
+    return new Response(
+      `<html><head><title>${url.pathname}</title><link href="${url.origin}${url.pathname}" rel="canonical"></head><body><h1>Page</h1></body></html>`,
+      { status: 200, headers: { "content-type": "text/html" } },
+    );
+  };
+
+  const result = await crawler.crawlKnowledgeCmsSite([record()], {
+    origin: "https://www.medicareinspokane.com",
+    fetcher: fakeFetch,
+    monitoringPaths: [
+      "/costco-scan-medicare-spokane",
+      "https://competitor.example/page",
+      "//competitor.example/page",
+      "/../admin",
+    ],
+    pageLimit: 2,
+  });
+
+  assert.deepEqual(
+    result.pages.map((page) => page.path),
+    ["/part-d", "/costco-scan-medicare-spokane"],
+  );
+  assert.equal(requestedPaths.includes("/admin"), false);
 });
 
 test("crawler rejects a configured origin containing a path or insecure public protocol", async () => {
