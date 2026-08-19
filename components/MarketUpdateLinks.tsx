@@ -12,11 +12,11 @@ export default function MarketUpdateLinks({ currentPath }: { currentPath: string
       className="rounded-2xl border border-blue-200 bg-blue-50 p-6"
     >
       <h2 id="related-market-updates" className="text-xl font-bold text-gray-900">
-        Related Spokane Medicare updates
+        Related Spokane coverage updates
       </h2>
       <p className="mt-3 leading-relaxed text-gray-700">
-        Follow the central tracker for confirmed Spokane County information and every dated market
-        update we publish.
+        Follow the central tracker for confirmed Spokane County and Washington information across
+        Medicare and health insurance market changes.
       </p>
       <ul className="mt-4 space-y-3">
         <li>
@@ -33,7 +33,7 @@ export default function MarketUpdateLinks({ currentPath }: { currentPath: string
         ))}
         <li>
           <Link href="/resources" className="font-semibold text-blue-700 hover:underline">
-            Spokane Medicare Resource Library
+            Spokane Medicare and health insurance resources
           </Link>
         </li>
       </ul>

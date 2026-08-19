@@ -17,6 +17,13 @@ const article = readFileSync(
   new URL("../app/costco-scan-medicare-spokane/page.tsx", import.meta.url),
   "utf8",
 );
+const providenceArticle = readFileSync(
+  new URL(
+    "../app/providence-health-plan-ending-2027-washington/page.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const hub = readFileSync(
   new URL("../app/2027-medicare-changes-spokane/page.tsx", import.meta.url),
   "utf8",
@@ -62,11 +69,18 @@ test("news sitemap automatically includes only updates from the latest two days"
   assert.match(current, /<loc>https:\/\/www\.medicareinspokane\.com\/costco-scan-medicare-spokane<\/loc>/);
   assert.match(current, /<news:publication_date>2026-08-18<\/news:publication_date>/);
   assert.match(current, /<news:title>Costco and SCAN Medicare Partnership/);
+  assert.match(
+    current,
+    /<loc>https:\/\/www\.medicareinspokane\.com\/providence-health-plan-ending-2027-washington<\/loc>/,
+  );
+  assert.match(current, /<news:publication_date>2026-08-19<\/news:publication_date>/);
+  assert.match(current, /<news:title>Providence Health Plan Ending Most Coverage/);
 
   const expired = buildMarketUpdatesNewsSitemap(
     new Date("2026-08-21T00:00:00Z"),
   );
   assert.doesNotMatch(expired, /costco-scan-medicare-spokane/);
+  assert.doesNotMatch(expired, /providence-health-plan-ending-2027-washington/);
   assert.match(expired, /<urlset[^>]*>[\s\S]*<\/urlset>/);
 });
 
@@ -83,4 +97,16 @@ test("Costco and SCAN article preserves the Spokane confirmation guardrail", () 
   assert.match(article, /does not recommend or compare/);
   assert.match(article, /"@type": "NewsArticle"/);
   assert.match(article, /datePublished: publishedDate/);
+});
+
+test("Providence article separates confirmed Washington changes from pending Medicare details", () => {
+  assert.match(providenceArticle, /Washington status: confirmed for individual coverage/);
+  assert.match(providenceArticle, /will not offer individual and family health insurance/);
+  assert.match(providenceArticle, /Medicare Advantage and Medicare Supplement details remain pending/);
+  assert.match(
+    providenceArticle,
+    /does\s+not\s+mean Providence hospitals or clinics are closing/,
+  );
+  assert.match(providenceArticle, /"@type": "NewsArticle"/);
+  assert.match(providenceArticle, /datePublished: marketUpdate\.publishedDate/);
 });

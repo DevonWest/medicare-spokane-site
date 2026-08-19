@@ -321,6 +321,12 @@ test("crawler extracts rendered SEO signals and never follows off-origin links",
     ),
     true,
   );
+  assert.equal(
+    requested.includes(
+      "https://www.medicareinspokane.com/providence-health-plan-ending-2027-washington",
+    ),
+    true,
+  );
   assert.equal(requested.some((url) => url.includes("competitor.example")), false);
 });
 

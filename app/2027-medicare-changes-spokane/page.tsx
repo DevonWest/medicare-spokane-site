@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: marketUpdatesHub.title,
     description:
-      "A Spokane-focused tracker separating confirmed 2027 Medicare announcements from details that have not been announced locally.",
+      "A Spokane-focused tracker separating confirmed 2027 Medicare and health insurance changes from details that have not been announced locally.",
     url: pageUrl,
     type: "website",
   },
@@ -93,7 +93,7 @@ export default function MedicareChangesSpokane2027Page() {
 
       <PageHero
         title="2027 Medicare Changes in Spokane"
-        subtitle="A local tracker for confirmed market announcements, with a clear line between what is known nationally and what is actually confirmed for Spokane County."
+        subtitle="A local tracker for confirmed Medicare and health insurance announcements, with a clear line between national reporting and changes confirmed for Spokane County or Washington."
         crumbs={[
           { href: "/", label: "Home" },
           { href: "/resources", label: "Resources" },
@@ -120,8 +120,8 @@ export default function MedicareChangesSpokane2027Page() {
           <div className="mt-10 max-w-3xl">
             <h2 className="text-3xl font-bold text-gray-900">Latest Spokane market updates</h2>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              New reports are listed here with a dated Spokane status so readers can distinguish a
-              confirmed partnership or national announcement from confirmed local availability.
+              New reports are listed here with a dated local status so readers can distinguish a
+              national announcement from a change confirmed for Spokane County or Washington.
             </p>
           </div>
 
