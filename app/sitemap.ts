@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { getAllLocalMedicarePaths } from "@/lib/cities";
+import { getMarketUpdateSitemapEntries } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 import { getAllTopicSlugs } from "@/lib/topics";
 import { getAllZips } from "@/lib/zips";
@@ -26,18 +27,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${baseUrl}/medicare-plan-review-spokane`,
       lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/2027-medicare-changes-spokane`,
-      lastModified: "2026-08-18",
-      changeFrequency: "weekly",
-      priority: 0.85,
-    },
-    {
-      url: `${baseUrl}/costco-scan-medicare-spokane`,
-      lastModified: "2026-08-18",
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -154,5 +143,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...topicPages, ...localPages, ...zipPages];
+  return [
+    ...staticPages,
+    ...getMarketUpdateSitemapEntries(),
+    ...topicPages,
+    ...localPages,
+    ...zipPages,
+  ];
 }

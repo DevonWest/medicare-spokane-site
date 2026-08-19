@@ -7,6 +7,7 @@ import {
   getFeaturedKnowledgeSources,
   getKnowledgeSections,
 } from "@/lib/knowledgeCenter";
+import { getMarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   const resourceSections = getKnowledgeSections();
   const officialResources = getFeaturedKnowledgeSources();
+  const marketUpdates = getMarketUpdatesNewestFirst();
 
   return (
     <>
@@ -39,41 +41,37 @@ export default function ResourcesPage() {
           <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
             New for 2027
           </p>
-          <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
-                Spokane Medicare Market Updates
-              </h2>
+              <h2 className="text-3xl font-bold text-gray-900">{marketUpdatesHub.shortTitle}</h2>
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
                 Follow confirmed 2027 announcements and see which details are still unconfirmed for
                 Spokane County.
               </p>
+              <Link
+                href={marketUpdatesHub.path}
+                className="mt-5 inline-block font-semibold text-blue-700 hover:underline"
+              >
+                View the complete 2027 changes tracker →
+              </Link>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Link
-                href="/2027-medicare-changes-spokane"
-                className="rounded-2xl border border-blue-200 bg-white p-5 transition-colors hover:border-blue-400"
-              >
-                <h3 className="text-lg font-semibold text-gray-900">2027 changes tracker</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-700">
-                  A running Spokane-focused status page.
-                </p>
-                <span className="mt-3 inline-block text-sm font-semibold text-blue-700">
-                  View tracker →
-                </span>
-              </Link>
-              <Link
-                href="/costco-scan-medicare-spokane"
-                className="rounded-2xl border border-blue-200 bg-white p-5 transition-colors hover:border-blue-400"
-              >
-                <h3 className="text-lg font-semibold text-gray-900">Costco and SCAN update</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-700">
-                  What is known and what is not confirmed locally.
-                </p>
-                <span className="mt-3 inline-block text-sm font-semibold text-blue-700">
-                  Read update →
-                </span>
-              </Link>
+            <div className="grid grid-cols-1 gap-4">
+              {marketUpdates.map((update) => (
+                <Link
+                  key={update.path}
+                  href={update.path}
+                  className="rounded-2xl border border-blue-200 bg-white p-5 transition-colors hover:border-blue-400"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+                    {update.publishedLabel} · {update.spokaneStatusLabel}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-gray-900">{update.shortTitle}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-700">{update.summary}</p>
+                  <span className="mt-3 inline-block text-sm font-semibold text-blue-700">
+                    Read update →
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
         </div>

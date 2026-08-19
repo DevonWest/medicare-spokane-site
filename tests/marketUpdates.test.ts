@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import robots from "../app/robots";
 import sitemap from "../app/sitemap";
+import {
+  buildMarketUpdatesNewsSitemap,
+  getMarketUpdateMonitoringPaths,
+  getMarketUpdateSitemapEntries,
+  marketUpdates,
+  marketUpdatesHub,
+} from "../lib/marketUpdates";
 import { publicMonitoringPaths } from "../lib/publicMonitoringPaths";
 import { siteConfig } from "../lib/site";
 
@@ -13,18 +21,60 @@ const hub = readFileSync(
   new URL("../app/2027-medicare-changes-spokane/page.tsx", import.meta.url),
   "utf8",
 );
+const homepage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const resources = readFileSync(
+  new URL("../app/resources/page.tsx", import.meta.url),
+  "utf8",
+);
+const relatedLinks = readFileSync(
+  new URL("../components/MarketUpdateLinks.tsx", import.meta.url),
+  "utf8",
+);
 
-test("market update routes are discoverable and cross-linked", () => {
+test("one market-update registry drives discovery, monitoring, and internal links", () => {
   const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
+  const registrySitemapUrls = getMarketUpdateSitemapEntries().map((entry) => entry.url);
 
-  assert.ok(sitemapUrls.has(`${siteConfig.url}/2027-medicare-changes-spokane`));
-  assert.ok(sitemapUrls.has(`${siteConfig.url}/costco-scan-medicare-spokane`));
-  assert.deepEqual(publicMonitoringPaths, [
-    "/2027-medicare-changes-spokane",
-    "/costco-scan-medicare-spokane",
+  assert.deepEqual(publicMonitoringPaths, getMarketUpdateMonitoringPaths());
+  assert.deepEqual(registrySitemapUrls, [
+    `${siteConfig.url}${marketUpdatesHub.path}`,
+    ...marketUpdates.map((update) => `${siteConfig.url}${update.path}`),
   ]);
-  assert.match(hub, /href="\/costco-scan-medicare-spokane"/);
-  assert.match(article, /href="\/2027-medicare-changes-spokane"/);
+  for (const url of registrySitemapUrls) {
+    assert.ok(sitemapUrls.has(url), `${url} should be in the standard sitemap`);
+  }
+
+  assert.match(homepage, /getLatestMarketUpdate/);
+  assert.match(homepage, /href=\{marketUpdatesHub\.path\}/);
+  assert.match(resources, /getMarketUpdatesNewestFirst/);
+  assert.match(resources, /marketUpdates\.map/);
+  assert.match(hub, /marketUpdates\.map/);
+  assert.match(article, /MarketUpdateLinks/);
+  assert.match(relatedLinks, /relatedUpdates\.map/);
+  assert.match(relatedLinks, /href=\{marketUpdatesHub\.path\}/);
+});
+
+test("news sitemap automatically includes only updates from the latest two days", () => {
+  const current = buildMarketUpdatesNewsSitemap(
+    new Date("2026-08-19T12:00:00Z"),
+  );
+  assert.match(current, /xmlns:news="http:\/\/www\.google\.com\/schemas\/sitemap-news\/0\.9"/);
+  assert.match(current, /<loc>https:\/\/www\.medicareinspokane\.com\/costco-scan-medicare-spokane<\/loc>/);
+  assert.match(current, /<news:publication_date>2026-08-18<\/news:publication_date>/);
+  assert.match(current, /<news:title>Costco and SCAN Medicare Partnership/);
+
+  const expired = buildMarketUpdatesNewsSitemap(
+    new Date("2026-08-21T00:00:00Z"),
+  );
+  assert.doesNotMatch(expired, /costco-scan-medicare-spokane/);
+  assert.match(expired, /<urlset[^>]*>[\s\S]*<\/urlset>/);
+});
+
+test("robots advertises both standard and news sitemaps", () => {
+  assert.deepEqual(robots().sitemap, [
+    `${siteConfig.url}/sitemap.xml`,
+    `${siteConfig.url}/news-sitemap.xml`,
+  ]);
 });
 
 test("Costco and SCAN article preserves the Spokane confirmation guardrail", () => {

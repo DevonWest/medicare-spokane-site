@@ -3,21 +3,22 @@ import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
+import { getMarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 
-const pagePath = "/2027-medicare-changes-spokane";
+const pagePath = marketUpdatesHub.path;
 const pageUrl = `${siteConfig.url}${pagePath}`;
+const marketUpdates = getMarketUpdatesNewestFirst();
 
 const pageSchema = {
   "@context": "https://schema.org",
-  "@type": "WebPage",
+  "@type": "CollectionPage",
   "@id": `${pageUrl}#webpage`,
   url: pageUrl,
-  name: "2027 Medicare Changes in Spokane",
-  description:
-    "A Spokane-focused tracker separating confirmed 2027 Medicare announcements from details that have not been announced locally.",
+  name: marketUpdatesHub.title,
+  description: marketUpdatesHub.description,
   datePublished: "2026-08-18",
-  dateModified: "2026-08-18",
+  dateModified: marketUpdatesHub.modifiedDate,
   isPartOf: {
     "@type": "WebSite",
     "@id": `${siteConfig.url}#website`,
@@ -29,15 +30,24 @@ const pageSchema = {
     "@id": `${siteConfig.url}#organization`,
     name: siteConfig.legalName,
   },
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: marketUpdates.length,
+    itemListElement: marketUpdates.map((update, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${siteConfig.url}${update.path}`,
+      name: update.title,
+    })),
+  },
 };
 
 export const metadata: Metadata = {
-  title: "2027 Medicare Changes in Spokane",
-  description:
-    "Track confirmed 2027 Medicare market announcements and what remains unconfirmed for Spokane County, Washington.",
+  title: marketUpdatesHub.title,
+  description: marketUpdatesHub.description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "2027 Medicare Changes in Spokane",
+    title: marketUpdatesHub.title,
     description:
       "A Spokane-focused tracker separating confirmed 2027 Medicare announcements from details that have not been announced locally.",
     url: pageUrl,
@@ -108,31 +118,31 @@ export default function MedicareChangesSpokane2027Page() {
           </div>
 
           <div className="mt-10 max-w-3xl">
-            <h2 className="text-3xl font-bold text-gray-900">Latest confirmed update</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Latest Spokane market updates</h2>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              Costco and SCAN Group have expanded their Medicare-focused partnership, and current
-              reporting describes jointly branded Medicare products planned for a limited number of
-              states. The states and launch timing have not been disclosed, so Spokane availability
-              is not confirmed.
+              New reports are listed here with a dated Spokane status so readers can distinguish a
+              confirmed partnership or national announcement from confirmed local availability.
             </p>
           </div>
 
-          <Link
-            href="/costco-scan-medicare-spokane"
-            className="mt-7 block rounded-2xl border border-blue-200 bg-blue-50 p-6 transition-colors hover:border-blue-400 hover:bg-blue-100"
-          >
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-              August 18, 2026
-            </p>
-            <h3 className="mt-2 text-2xl font-bold text-gray-900">
-              Costco and SCAN Medicare Partnership: Spokane Update
-            </h3>
-            <p className="mt-3 leading-relaxed text-gray-700">
-              See what was announced, what remains unknown, and what Spokane residents should wait
-              to verify.
-            </p>
-            <span className="mt-4 inline-block font-semibold text-blue-700">Read the update →</span>
-          </Link>
+          <div className="mt-7 space-y-5">
+            {marketUpdates.map((update) => (
+              <Link
+                key={update.path}
+                href={update.path}
+                className="block rounded-2xl border border-blue-200 bg-blue-50 p-6 transition-colors hover:border-blue-400 hover:bg-blue-100"
+              >
+                <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                  {update.publishedLabel} · {update.spokaneStatusLabel}
+                </p>
+                <h3 className="mt-2 text-2xl font-bold text-gray-900">{update.shortTitle}</h3>
+                <p className="mt-3 leading-relaxed text-gray-700">{update.summary}</p>
+                <span className="mt-4 inline-block font-semibold text-blue-700">
+                  Read the update →
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
