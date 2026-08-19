@@ -9,6 +9,7 @@ import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
 import TeamPreviewGrid from "@/components/TeamPreviewGrid";
 import TrustBenefits from "@/components/TrustBenefits";
+import { getLatestMarketUpdate, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig, telHref } from "@/lib/site";
 import { getHomepageTeamPreviewMembers } from "@/lib/team";
 
@@ -66,6 +67,8 @@ const whatHappensNextSteps: string[] = [
   "We help compare options from the plans we represent.",
   "There is no cost or obligation.",
 ];
+
+const latestMarketUpdate = getLatestMarketUpdate();
 
 export default function HomePage() {
   const previewMembers = getHomepageTeamPreviewMembers();
@@ -210,6 +213,45 @@ export default function HomePage() {
               Request a Consultation
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Timely market updates — direct homepage discovery path for crawlers and readers */}
+      <section className="border-b border-amber-200 bg-amber-50 px-4 py-8">
+        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
+              Spokane Medicare market watch
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-gray-900">
+              Follow confirmed 2027 announcements
+            </h2>
+            <p className="mt-2 leading-relaxed text-gray-700">
+              We separate national reports from changes that are actually confirmed for Spokane
+              County.
+            </p>
+            <Link
+              href={marketUpdatesHub.path}
+              className="mt-4 inline-block font-semibold text-blue-700 hover:underline"
+            >
+              View all Spokane Medicare market updates →
+            </Link>
+          </div>
+          <Link
+            href={latestMarketUpdate.path}
+            className="rounded-2xl border border-amber-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-md"
+          >
+            <p className="text-sm font-semibold text-amber-800">
+              Latest update · {latestMarketUpdate.publishedLabel}
+            </p>
+            <h3 className="mt-2 text-xl font-bold text-gray-900">
+              {latestMarketUpdate.shortTitle}
+            </h3>
+            <p className="mt-3 leading-relaxed text-gray-700">
+              {latestMarketUpdate.summary}
+            </p>
+            <span className="mt-4 inline-block font-semibold text-blue-700">Read the update →</span>
+          </Link>
         </div>
       </section>
 

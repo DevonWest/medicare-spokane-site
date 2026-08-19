@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
+import MarketUpdateLinks from "@/components/MarketUpdateLinks";
 import PageHero from "@/components/PageHero";
+import { getMarketUpdateByPath, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 
 const pagePath = "/costco-scan-medicare-spokane";
 const pageUrl = `${siteConfig.url}${pagePath}`;
-const publishedDate = "2026-08-18";
+const marketUpdate = getMarketUpdateByPath(pagePath) ?? (() => {
+  throw new Error(`Missing market update registry entry for ${pagePath}.`);
+})();
+const publishedDate = marketUpdate.publishedDate;
 
 const reportingUrl =
   "https://www.wsj.com/health/healthcare/costco-sells-vacations-gas-and-soon-medicare-plans-c0e1470e";
@@ -15,18 +20,18 @@ const partnershipUrl =
   "https://www.scanhealthplan.com/en/about-scan/press-releases/costco-partnership";
 
 export const metadata: Metadata = {
-  title: "Costco and SCAN Medicare Partnership: Spokane Update",
+  title: marketUpdate.shortTitle,
   description:
     "What the Costco and SCAN Medicare announcement means for Spokane, including what is confirmed and what remains unknown.",
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Costco and SCAN Medicare Partnership: What Spokane Residents Should Know",
+    title: marketUpdate.title,
     description:
       "The partnership is confirmed, but no Costco-SCAN Medicare product has been announced for Spokane County.",
     url: pageUrl,
     type: "article",
     publishedTime: `${publishedDate}T12:00:00-07:00`,
-    modifiedTime: `${publishedDate}T12:00:00-07:00`,
+    modifiedTime: `${marketUpdate.modifiedDate}T12:00:00-07:00`,
   },
 };
 
@@ -34,11 +39,11 @@ const articleSchema = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
   "@id": `${pageUrl}#article`,
-  headline: "Costco and SCAN Medicare Partnership: What Spokane Residents Should Know",
+  headline: marketUpdate.title,
   description:
     "What the Costco and SCAN Medicare announcement means for Spokane, including what is confirmed and what remains unknown.",
   datePublished: publishedDate,
-  dateModified: publishedDate,
+  dateModified: marketUpdate.modifiedDate,
   mainEntityOfPage: pageUrl,
   author: {
     "@type": "Organization",
@@ -87,7 +92,7 @@ export default function CostcoScanMedicareSpokanePage() {
       <BreadcrumbSchema
         items={[
           { name: "Home", path: "/" },
-          { name: "2027 Medicare Changes", path: "/2027-medicare-changes-spokane" },
+          { name: "2027 Medicare Changes", path: marketUpdatesHub.path },
           { name: "Costco and SCAN Partnership" },
         ]}
       />
@@ -97,7 +102,7 @@ export default function CostcoScanMedicareSpokanePage() {
         subtitle="The partnership and planned expansion are real. A Spokane launch is not confirmed."
         crumbs={[
           { href: "/", label: "Home" },
-          { href: "/2027-medicare-changes-spokane", label: "2027 Medicare Changes" },
+          { href: marketUpdatesHub.path, label: "2027 Medicare Changes" },
           { label: "Costco and SCAN" },
         ]}
       />
@@ -106,8 +111,8 @@ export default function CostcoScanMedicareSpokanePage() {
         <section className="bg-white px-4 py-12">
           <div className="mx-auto max-w-4xl">
             <p className="text-sm text-gray-500">
-              Published <time dateTime={publishedDate}>August 18, 2026</time> · Last updated{" "}
-              <time dateTime={publishedDate}>August 18, 2026</time>
+              Published <time dateTime={publishedDate}>{marketUpdate.publishedLabel}</time> · Last updated{" "}
+              <time dateTime={marketUpdate.modifiedDate}>{marketUpdate.modifiedLabel}</time>
             </p>
 
             <div className="mt-7 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-amber-950">
@@ -201,7 +206,7 @@ export default function CostcoScanMedicareSpokanePage() {
               </p>
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
                 Our{" "}
-                <Link href="/2027-medicare-changes-spokane" className="font-semibold text-blue-700 hover:underline">
+                <Link href={marketUpdatesHub.path} className="font-semibold text-blue-700 hover:underline">
                   2027 Spokane Medicare changes tracker
                 </Link>{" "}
                 will be updated when a source identifies Spokane County or another applicable local
@@ -253,10 +258,12 @@ export default function CostcoScanMedicareSpokanePage() {
             <div>
               <h2 className="text-xl font-bold text-gray-900">Update log</h2>
               <p className="mt-3 leading-relaxed text-gray-700">
-                <time dateTime={publishedDate}>August 18, 2026</time> — Published with Spokane
+                <time dateTime={publishedDate}>{marketUpdate.publishedLabel}</time> — Published with Spokane
                 availability marked as unconfirmed.
               </p>
             </div>
+
+            <MarketUpdateLinks currentPath={pagePath} />
 
             <Disclaimer />
           </div>

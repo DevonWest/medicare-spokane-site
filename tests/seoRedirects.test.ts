@@ -525,7 +525,10 @@ test("site metadata, sitemap, and robots use the canonical www production URL", 
   assert.equal(siteConfig.url, "https://www.medicareinspokane.com");
   assert.equal(homeMetadata.alternates?.canonical, "https://www.medicareinspokane.com");
   assert.equal(homeMetadata.openGraph?.url, "https://www.medicareinspokane.com");
-  assert.equal(robots().sitemap, "https://www.medicareinspokane.com/sitemap.xml");
+  assert.deepEqual(robots().sitemap, [
+    "https://www.medicareinspokane.com/sitemap.xml",
+    "https://www.medicareinspokane.com/news-sitemap.xml",
+  ]);
 
   const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
 
