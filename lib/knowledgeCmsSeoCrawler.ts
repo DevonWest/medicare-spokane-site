@@ -8,6 +8,7 @@ import {
   type KnowledgeCmsSeoPageObservation,
   type KnowledgeCmsSeoSiteObservation,
 } from "./knowledgeCmsSeo";
+import { publicMonitoringPaths } from "./publicMonitoringPaths";
 import { env } from "./runtimeValues";
 
 /*
@@ -31,6 +32,7 @@ export interface KnowledgeCmsSeoCrawlResult {
 
 export interface CrawlKnowledgeCmsSiteOptions {
   fetcher?: CrawlerFetch;
+  monitoringPaths?: ReadonlyArray<string>;
   origin?: string;
   pageLimit?: number;
 }
@@ -63,20 +65,42 @@ function configuredPageLimit(value: number | undefined): number {
   return Math.min(value, MAX_CRAWL_PAGES);
 }
 
-function canonicalPaths(records: ReadonlyArray<KnowledgeCmsRecord>, limit: number): string[] {
-  const paths = new Set<string>();
+function isSafePublicPath(path: string): boolean {
+  return (
+    /^\/(?!\/)[A-Za-z0-9/_-]*$/.test(path) &&
+    !path.includes("..")
+  );
+}
+
+function canonicalPaths(
+  records: ReadonlyArray<KnowledgeCmsRecord>,
+  monitoringPaths: ReadonlyArray<string>,
+  limit: number,
+): string[] {
+  const recordPaths = new Set<string>();
   for (const record of records) {
     const path = record.discoverability.canonicalPath;
     if (
       path &&
-      /^\/(?!\/)[A-Za-z0-9/_-]*$/.test(path) &&
-      !path.includes("..") &&
+      isSafePublicPath(path) &&
       record.relationships.existingPaths.includes(path)
     ) {
-      paths.add(path);
+      recordPaths.add(path);
     }
   }
-  return [...paths].sort().slice(0, limit);
+
+  const governedPaths = [...recordPaths].sort();
+  const supplementaryPaths = [...new Set(monitoringPaths)]
+    .filter(isSafePublicPath)
+    .filter((path) => !recordPaths.has(path))
+    .sort();
+  const supplementaryBudget = Math.min(supplementaryPaths.length, limit);
+  const governedBudget = limit - supplementaryBudget;
+
+  return [
+    ...governedPaths.slice(0, governedBudget),
+    ...supplementaryPaths.slice(0, supplementaryBudget),
+  ];
 }
 
 function decodeHtml(value: string): string {
@@ -245,7 +269,11 @@ export async function crawlKnowledgeCmsSite(
 ): Promise<KnowledgeCmsSeoCrawlResult> {
   const origin = resolveOrigin(options.origin ?? env("NEXT_PUBLIC_SITE_URL"));
   const fetcher = options.fetcher ?? fetch;
-  const paths = canonicalPaths(records, configuredPageLimit(options.pageLimit));
+  const paths = canonicalPaths(
+    records,
+    options.monitoringPaths ?? publicMonitoringPaths,
+    configuredPageLimit(options.pageLimit),
+  );
 
   const [pages, healthOk, sitemapOk, robotsOk] = await Promise.all([
     Promise.all(paths.map((path) => crawlPage(fetcher, origin, path))),
