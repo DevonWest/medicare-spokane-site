@@ -17,9 +17,9 @@ export interface MarketUpdate {
 export const marketUpdatesHub = {
   path: "/2027-medicare-changes-spokane" as const,
   title: "2027 Medicare Changes in Spokane",
-  shortTitle: "Spokane Medicare Market Updates",
+  shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
-    "Track confirmed 2027 Medicare market announcements and what remains unconfirmed for Spokane County, Washington.",
+    "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
   modifiedDate: "2026-08-19",
 };
 
@@ -32,6 +32,19 @@ export const marketUpdatesHub = {
  * recurring Search Console monitoring set.
  */
 export const marketUpdates: readonly MarketUpdate[] = [
+  {
+    path: "/providence-health-plan-ending-2027-washington",
+    title: "Providence Health Plan Ending Most Coverage in 2027: What Spokane and Washington Members Should Know",
+    shortTitle: "Providence Health Plan 2027 Changes in Washington",
+    summary:
+      "Providence individual and family coverage is ending, while Medicare Advantage and Medicare Supplement details are still pending.",
+    publishedDate: "2026-08-19",
+    publishedLabel: "August 19, 2026",
+    modifiedDate: "2026-08-19",
+    modifiedLabel: "August 19, 2026",
+    spokaneStatus: "confirmed",
+    spokaneStatusLabel: "Washington individual coverage ending",
+  },
   {
     path: "/costco-scan-medicare-spokane",
     title: "Costco and SCAN Medicare Partnership: What Spokane Residents Should Know",

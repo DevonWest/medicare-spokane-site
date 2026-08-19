@@ -45,8 +45,8 @@ export default function ResourcesPage() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900">{marketUpdatesHub.shortTitle}</h2>
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                Follow confirmed 2027 announcements and see which details are still unconfirmed for
-                Spokane County.
+                Follow confirmed 2027 Medicare and health insurance announcements for Spokane and
+                Washington, with clear labels for details that remain unconfirmed.
               </p>
               <Link
                 href={marketUpdatesHub.path}
