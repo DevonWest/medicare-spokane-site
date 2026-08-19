@@ -160,6 +160,7 @@ test("copilot UI and scheduled endpoint preserve explicit human and repository O
   assert.match(route, /KNOWLEDGE_CMS_CONTINUOUS_SEO_ENABLED/);
   assert.match(route, /hasCurrentKnowledgeCmsContinuousSeoActivation/);
   assert.match(route, /search_console_unavailable/);
+  assert.match(route, /url_inspection_unavailable/);
   assert.match(provider, /store: false/);
   assert.match(provider, /allowed_domains/);
   assert.match(provider, /max_output_tokens/);

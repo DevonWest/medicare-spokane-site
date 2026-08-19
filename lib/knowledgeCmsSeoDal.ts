@@ -23,6 +23,7 @@ import {
   buildKnowledgeCmsRecordOpportunities,
   buildKnowledgeCmsSearchOpportunities,
   buildKnowledgeCmsTechnicalOpportunities,
+  buildKnowledgeCmsUrlInspectionOpportunities,
   compareKnowledgeCmsSearchMetrics,
   getKnowledgeCmsSeoObservationHolds,
   sortAndLimitKnowledgeCmsSeoOpportunities,
@@ -30,10 +31,13 @@ import {
   summarizeKnowledgeCmsSearchTotals,
   summarizeKnowledgeCmsSeoOpportunities,
   type KnowledgeCmsSearchMetricsSummary,
+  type KnowledgeCmsSearchMetricComparison,
   type KnowledgeCmsSeoOpportunity,
   type KnowledgeCmsSeoPageObservation,
   type KnowledgeCmsSeoScanSummary,
   type KnowledgeCmsSeoSiteObservation,
+  type KnowledgeCmsUrlInspectionObservation,
+  type KnowledgeCmsUrlInspectionStatus,
 } from "./knowledgeCmsSeo";
 import {
   crawlKnowledgeCmsSite,
@@ -45,6 +49,7 @@ import {
   type KnowledgeCmsSearchConsoleSnapshot,
   type KnowledgeCmsSearchConsoleStatus,
 } from "./knowledgeCmsSearchConsole";
+import { publicMonitoringPaths } from "./publicMonitoringPaths";
 
 const RECORD_KINDS: KnowledgeCmsRecordKind[] = ["article", "topic", "faq"];
 
@@ -61,6 +66,8 @@ export interface KnowledgeCmsSeoScan {
   origin: string;
   searchConsoleStatus: KnowledgeCmsSearchConsoleStatus;
   searchConsoleErrorCode?: KnowledgeCmsSearchConsoleSnapshot["errorCode"];
+  urlInspectionStatus?: KnowledgeCmsUrlInspectionStatus;
+  urlInspectionErrorCode?: KnowledgeCmsSearchConsoleSnapshot["urlInspectionErrorCode"];
   currentPeriod?: KnowledgeCmsSearchConsolePeriod;
   previousPeriod?: KnowledgeCmsSearchConsolePeriod;
   searchMetrics: KnowledgeCmsSearchMetricsSummary;
@@ -68,11 +75,20 @@ export interface KnowledgeCmsSeoScan {
     pages: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
     queries: ReturnType<typeof compareKnowledgeCmsSearchMetrics>;
   };
+  watchedPages?: KnowledgeCmsSeoWatchedPageEvidence[];
   observationHolds?: ReturnType<typeof getKnowledgeCmsSeoObservationHolds>;
   site: KnowledgeCmsSeoSiteObservation;
   pages: KnowledgeCmsSeoPageObservation[];
   opportunities: KnowledgeCmsSeoOpportunity[];
   summary: KnowledgeCmsSeoScanSummary;
+}
+
+export interface KnowledgeCmsSeoWatchedPageEvidence {
+  path: string;
+  url: string;
+  inspection?: KnowledgeCmsUrlInspectionObservation;
+  searchMetrics?: KnowledgeCmsSearchMetricComparison;
+  queries: KnowledgeCmsSearchMetricComparison[];
 }
 
 export interface KnowledgeCmsSeoScanStore {
@@ -191,6 +207,56 @@ function emptyMetrics(): KnowledgeCmsSearchMetricsSummary {
   };
 }
 
+function evidencePath(page: string): string {
+  try {
+    const parsed = new URL(page);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return page;
+  }
+}
+
+function buildWatchedPageEvidence(input: {
+  origin: string;
+  inspections: ReadonlyArray<KnowledgeCmsUrlInspectionObservation>;
+  pageComparisons: ReadonlyArray<KnowledgeCmsSearchMetricComparison>;
+  pairComparisons: ReadonlyArray<KnowledgeCmsSearchMetricComparison>;
+}): KnowledgeCmsSeoWatchedPageEvidence[] {
+  const inspectionsByPath = new Map(
+    input.inspections.map((inspection) => [inspection.path, inspection]),
+  );
+  const pageComparisonsByPath = new Map(
+    input.pageComparisons.map((comparison) => [
+      evidencePath(comparison.page),
+      comparison,
+    ]),
+  );
+
+  return publicMonitoringPaths.map((path) => {
+    const inspection = inspectionsByPath.get(path);
+    const searchMetrics = pageComparisonsByPath.get(path);
+    const queries = input.pairComparisons
+      .filter(
+        (comparison) =>
+          evidencePath(comparison.page) === path && Boolean(comparison.query),
+      )
+      .sort(
+        (left, right) =>
+          right.impressions - left.impressions ||
+          right.clicks - left.clicks ||
+          left.query.localeCompare(right.query),
+      )
+      .slice(0, 10);
+    return {
+      path,
+      url: new URL(path, input.origin).toString(),
+      ...(inspection ? { inspection } : {}),
+      ...(searchMetrics ? { searchMetrics } : {}),
+      queries,
+    };
+  });
+}
+
 export async function runKnowledgeCmsSeoScan(
   options: RunKnowledgeCmsSeoScanOptions = {},
   dependencies: KnowledgeCmsSeoDalDependencies = {},
@@ -234,10 +300,18 @@ export async function runKnowledgeCmsSeoScan(
   const observationHolds = getKnowledgeCmsSeoObservationHolds(
     searchConsole.currentPeriod?.endDate,
   );
+  const urlInspections = searchConsole.urlInspections ?? [];
+  const watchedPages = buildWatchedPageEvidence({
+    origin: crawl.origin,
+    inspections: urlInspections,
+    pageComparisons,
+    pairComparisons: comparisons,
+  });
   const opportunities = sortAndLimitKnowledgeCmsSeoOpportunities([
     ...buildKnowledgeCmsTechnicalOpportunities(crawl.pages, crawl.site, {
       expectIndexing: isProduction(),
     }),
+    ...buildKnowledgeCmsUrlInspectionOpportunities(urlInspections),
     ...buildKnowledgeCmsRecordOpportunities(records, started),
     ...buildKnowledgeCmsSearchOpportunities(pageComparisons, {
       evidenceThrough: searchConsole.currentPeriod?.endDate,
@@ -267,6 +341,12 @@ export async function runKnowledgeCmsSeoScan(
     ...(searchConsole.errorCode
       ? { searchConsoleErrorCode: searchConsole.errorCode }
       : {}),
+    ...(searchConsole.urlInspectionStatus
+      ? { urlInspectionStatus: searchConsole.urlInspectionStatus }
+      : {}),
+    ...(searchConsole.urlInspectionErrorCode
+      ? { urlInspectionErrorCode: searchConsole.urlInspectionErrorCode }
+      : {}),
     ...(searchConsole.currentPeriod
       ? { currentPeriod: searchConsole.currentPeriod }
       : {}),
@@ -290,6 +370,7 @@ export async function runKnowledgeCmsSeoScan(
         .sort((left, right) => right.impressions - left.impressions)
         .slice(0, 100),
     },
+    watchedPages,
     observationHolds,
     site: crawl.site,
     pages: crawl.pages,

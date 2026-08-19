@@ -6,6 +6,7 @@ import {
   buildKnowledgeCmsRecordOpportunities,
   buildKnowledgeCmsSearchOpportunities,
   buildKnowledgeCmsTechnicalOpportunities,
+  buildKnowledgeCmsUrlInspectionOpportunities,
   compareKnowledgeCmsSearchMetrics,
   getKnowledgeCmsSeoObservationHolds,
   sortAndLimitKnowledgeCmsSeoOpportunities,
@@ -421,5 +422,69 @@ test("technical audit reports the public deployment endpoint instead of the inte
   assert.match(
     health?.recommendation ?? "",
     /Keep \/healthz reserved for container probes/,
+  );
+});
+
+test("Google URL inspection flags exclusions, crawl blockers, and canonical conflicts", () => {
+  const opportunities = buildKnowledgeCmsUrlInspectionOpportunities([
+    {
+      path: "/2027-medicare-changes-spokane",
+      url: "https://www.medicareinspokane.com/2027-medicare-changes-spokane",
+      status: "available",
+      verdict: "NEUTRAL",
+      coverageState: "Discovered - currently not indexed",
+      robotsTxtState: "ALLOWED",
+      indexingState: "INDEXING_ALLOWED",
+      userCanonical:
+        "https://www.medicareinspokane.com/2027-medicare-changes-spokane",
+      sitemaps: [],
+      referringUrls: [],
+    },
+    {
+      path: "/costco-scan-medicare-spokane",
+      url: "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+      status: "available",
+      verdict: "PASS",
+      coverageState: "Submitted and indexed",
+      robotsTxtState: "ALLOWED",
+      indexingState: "INDEXING_ALLOWED",
+      pageFetchState: "SUCCESSFUL",
+      googleCanonical: "https://www.medicareinspokane.com/resources",
+      userCanonical:
+        "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+      sitemaps: ["https://www.medicareinspokane.com/sitemap.xml"],
+      referringUrls: [],
+    },
+    {
+      path: "/blocked",
+      url: "https://www.medicareinspokane.com/blocked",
+      status: "available",
+      verdict: "FAIL",
+      robotsTxtState: "DISALLOWED",
+      indexingState: "INDEXING_ALLOWED",
+      pageFetchState: "BLOCKED_ROBOTS_TXT",
+      sitemaps: [],
+      referringUrls: [],
+    },
+  ]);
+
+  assert.ok(
+    opportunities.some(
+      (item) =>
+        item.page === "/2027-medicare-changes-spokane" &&
+        item.title.startsWith("Get "),
+    ),
+  );
+  assert.ok(
+    opportunities.some(
+      (item) =>
+        item.page === "/costco-scan-medicare-spokane" &&
+        item.title.startsWith("Align Google's canonical"),
+    ),
+  );
+  assert.ok(
+    opportunities.some(
+      (item) => item.page === "/blocked" && item.priority === "critical",
+    ),
   );
 });
