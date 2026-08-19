@@ -55,9 +55,12 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
   mockServerOnlyModule();
   const searchConsole = await import("../lib/knowledgeCmsSearchConsole");
   const calls: Array<Record<string, unknown>> = [];
+  const inspectionCalls: Array<Record<string, unknown>> = [];
   const snapshot = await searchConsole.loadKnowledgeCmsSearchConsoleSnapshot({
     enabled: "true",
     siteUrl: "sc-domain:medicareinspokane.com",
+    origin: "https://www.medicareinspokane.com",
+    inspectionPaths: ["/part-d"],
     now: new Date("2026-08-01T12:00:00.000Z"),
     client: {
       async query(input) {
@@ -111,6 +114,29 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
         };
       },
     },
+    inspectionClient: {
+      async inspect(input) {
+        inspectionCalls.push(input as unknown as Record<string, unknown>);
+        return {
+          data: {
+            inspectionResult: {
+              inspectionResultLink: "https://search.google.com/search-console/inspect/example",
+              indexStatusResult: {
+                verdict: "PASS",
+                coverageState: "Submitted and indexed",
+                robotsTxtState: "ALLOWED",
+                indexingState: "INDEXING_ALLOWED",
+                pageFetchState: "SUCCESSFUL",
+                lastCrawlTime: "2026-07-29T10:00:00Z",
+                googleCanonical: "https://www.medicareinspokane.com/part-d",
+                userCanonical: "https://www.medicareinspokane.com/part-d",
+                sitemap: ["https://www.medicareinspokane.com/sitemap.xml"],
+              },
+            },
+          },
+        };
+      },
+    },
   });
   assert.equal(snapshot.status, "available");
   assert.deepEqual(snapshot.currentPeriod, {
@@ -122,6 +148,18 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
     endDate: "2026-07-01",
   });
   assert.equal(calls.length, 8);
+  assert.equal(inspectionCalls.length, 1);
+  assert.deepEqual(inspectionCalls[0].requestBody, {
+    inspectionUrl: "https://www.medicareinspokane.com/part-d",
+    siteUrl: "sc-domain:medicareinspokane.com",
+    languageCode: "en-US",
+  });
+  assert.equal(snapshot.urlInspectionStatus, "available");
+  assert.equal(snapshot.urlInspections?.[0].verdict, "PASS");
+  assert.equal(
+    snapshot.urlInspections?.[0].googleCanonical,
+    "https://www.medicareinspokane.com/part-d",
+  );
   assert.equal(snapshot.currentTotals?.clicks, 26);
   assert.equal(snapshot.currentTotals?.impressions, 3_696);
   assert.equal(snapshot.currentPageRows[0].page, "https://www.medicareinspokane.com/part-d");
@@ -129,6 +167,58 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
   assert.equal(snapshot.currentQueryRows[0].page, "");
   assert.equal(snapshot.currentQueryRows[0].query, "part d spokane");
   assert.equal(snapshot.currentRows[0].query, "part d spokane");
+});
+
+test("URL inspection retains exact watched routes and reports partial API failures", async () => {
+  mockServerOnlyModule();
+  const searchConsole = await import("../lib/knowledgeCmsSearchConsole");
+  const snapshot = await searchConsole.loadKnowledgeCmsSearchConsoleSnapshot({
+    enabled: "true",
+    siteUrl: "sc-domain:medicareinspokane.com",
+    origin: "https://www.medicareinspokane.com",
+    inspectionPaths: [
+      "/2027-medicare-changes-spokane",
+      "/costco-scan-medicare-spokane",
+    ],
+    client: {
+      async query() {
+        return { data: {} };
+      },
+    },
+    inspectionClient: {
+      async inspect(input) {
+        if (input.requestBody.inspectionUrl?.includes("costco")) {
+          throw Object.assign(new Error("quota"), { code: 429 });
+        }
+        return {
+          data: {
+            inspectionResult: {
+              indexStatusResult: {
+                verdict: "NEUTRAL",
+                coverageState: "Discovered - currently not indexed",
+                robotsTxtState: "ALLOWED",
+                indexingState: "INDEXING_ALLOWED",
+              },
+            },
+          },
+        };
+      },
+    },
+  });
+
+  assert.equal(snapshot.status, "available");
+  assert.equal(snapshot.urlInspectionStatus, "partial");
+  assert.equal(snapshot.urlInspectionErrorCode, "quota_exceeded");
+  assert.deepEqual(
+    snapshot.urlInspections?.map((inspection) => [
+      inspection.path,
+      inspection.status,
+    ]),
+    [
+      ["/2027-medicare-changes-spokane", "available"],
+      ["/costco-scan-medicare-spokane", "unavailable"],
+    ],
+  );
 });
 
 test("Search Console fails closed when the feature is disabled or site property is invalid", async () => {
@@ -324,6 +414,36 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
         }),
         searchConsole: async () => ({
           status: "available",
+          urlInspectionStatus: "available",
+          urlInspections: [
+            {
+              path: "/2027-medicare-changes-spokane",
+              url: "https://www.medicareinspokane.com/2027-medicare-changes-spokane",
+              status: "available",
+              verdict: "NEUTRAL",
+              coverageState: "Discovered - currently not indexed",
+              robotsTxtState: "ALLOWED",
+              indexingState: "INDEXING_ALLOWED",
+              sitemaps: [],
+              referringUrls: [],
+            },
+            {
+              path: "/costco-scan-medicare-spokane",
+              url: "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+              status: "available",
+              verdict: "PASS",
+              coverageState: "Submitted and indexed",
+              robotsTxtState: "ALLOWED",
+              indexingState: "INDEXING_ALLOWED",
+              pageFetchState: "SUCCESSFUL",
+              googleCanonical:
+                "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+              userCanonical:
+                "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+              sitemaps: ["https://www.medicareinspokane.com/sitemap.xml"],
+              referringUrls: [],
+            },
+          ],
           currentTotals: {
             clicks: 26,
             impressions: 3_696,
@@ -344,6 +464,15 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
               impressions: 100,
               ctr: 0.02,
               position: 9,
+            },
+            {
+              page:
+                "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+              query: "",
+              clicks: 1,
+              impressions: 45,
+              ctr: 1 / 45,
+              position: 11,
             },
           ],
           previousPageRows: [],
@@ -367,6 +496,15 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
               ctr: 0.02,
               position: 9,
             },
+            {
+              page:
+                "https://www.medicareinspokane.com/costco-scan-medicare-spokane",
+              query: "costco scan medicare spokane",
+              clicks: 1,
+              impressions: 45,
+              ctr: 1 / 45,
+              position: 11,
+            },
           ],
           previousRows: [],
         }),
@@ -382,6 +520,7 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
     );
     assert.equal(scan.trigger, "scheduled");
     assert.equal(scan.searchConsoleStatus, "available");
+    assert.equal(scan.urlInspectionStatus, "available");
     assert.equal(scan.searchMetrics.clicks, 26);
     assert.equal(scan.searchMetrics.impressions, 3_696);
     assert.equal(scan.searchEvidence?.pages[0].query, "");
@@ -389,6 +528,22 @@ test("SEO scan orchestrates CMS, crawl, and Search Console evidence into one sav
     assert.equal(
       scan.searchEvidence?.queries[0].page,
       "https://www.medicareinspokane.com/part-d",
+    );
+    const watchedCostco = scan.watchedPages?.find(
+      (page) => page.path === "/costco-scan-medicare-spokane",
+    );
+    assert.equal(watchedCostco?.inspection?.verdict, "PASS");
+    assert.equal(watchedCostco?.searchMetrics?.impressions, 45);
+    assert.equal(
+      watchedCostco?.queries[0].query,
+      "costco scan medicare spokane",
+    );
+    assert.ok(
+      scan.opportunities.some(
+        (item) =>
+          item.page === "/2027-medicare-changes-spokane" &&
+          item.title.startsWith("Get "),
+      ),
     );
     assert.ok(
       scan.observationHolds?.some((hold) => hold.path === "/resources"),

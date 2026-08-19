@@ -73,6 +73,30 @@ function evidenceLabel(
   }
 }
 
+function googleIndexLabel(
+  inspection: NonNullable<KnowledgeCmsSeoScan["watchedPages"]>[number]["inspection"],
+): string {
+  if (!inspection) return "No inspection evidence";
+  if (inspection.status === "unavailable") return "Inspection unavailable";
+  if (inspection.verdict === "PASS") return "Indexed";
+  return inspection.coverageState ?? inspection.verdict ?? "Not indexed";
+}
+
+function canonicalStatus(
+  inspection: NonNullable<KnowledgeCmsSeoScan["watchedPages"]>[number]["inspection"],
+): string {
+  if (!inspection || inspection.status === "unavailable") return "Not verified";
+  if (!inspection.googleCanonical) return "No Google canonical yet";
+  try {
+    return new URL(inspection.googleCanonical).toString() ===
+      new URL(inspection.url).toString()
+      ? "Canonical matches"
+      : "Canonical differs";
+  } catch {
+    return "Canonical differs";
+  }
+}
+
 const priorityClasses: Record<KnowledgeCmsSeoPriority, string> = {
   critical: "border-red-200 bg-red-50 text-red-800",
   high: "border-orange-200 bg-orange-50 text-orange-800",
@@ -266,6 +290,103 @@ function ScanDashboard({
           may therefore add up to less than the site total.
         </p>
       </div>
+      {scan.watchedPages ? (
+        <section className="overflow-hidden rounded-xl border border-slate-200">
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+            <h3 className="font-bold text-slate-950">Watched market pages</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              Exact Google index evidence and attributed 28-day search performance.
+              Index inspection: {scan.urlInspectionStatus?.replaceAll("_", " ") ?? "not collected"}.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="px-3 py-2">Page</th>
+                  <th className="px-3 py-2">Google index</th>
+                  <th className="px-3 py-2">Last crawl</th>
+                  <th className="px-3 py-2 text-right">Impressions</th>
+                  <th className="px-3 py-2 text-right">Clicks</th>
+                  <th className="px-3 py-2 text-right">Position</th>
+                  <th className="px-3 py-2">Top queries</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {scan.watchedPages.map((item) => (
+                  <tr key={item.path}>
+                    <td className="max-w-64 break-words px-3 py-3 align-top">
+                      <Link className="font-semibold text-blue-800 hover:underline" href={item.path}>
+                        {item.path}
+                      </Link>
+                      {item.inspection?.inspectionResultLink ? (
+                        <a
+                          className="mt-1 block text-xs text-violet-700 hover:underline"
+                          href={item.inspection.inspectionResultLink}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Open URL Inspection ↗
+                        </a>
+                      ) : null}
+                    </td>
+                    <td className="max-w-64 px-3 py-3 align-top">
+                      <span className="font-semibold text-slate-900">
+                        {googleIndexLabel(item.inspection)}
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        {canonicalStatus(item.inspection)}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 align-top">
+                      {item.inspection?.lastCrawlTime
+                        ? formatDate(item.inspection.lastCrawlTime)
+                        : "Not reported"}
+                    </td>
+                    <td className="px-3 py-3 text-right align-top">
+                      {item.searchMetrics
+                        ? Math.round(item.searchMetrics.impressions)
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-3 text-right align-top">
+                      {item.searchMetrics
+                        ? Math.round(item.searchMetrics.clicks)
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-3 text-right align-top">
+                      {item.searchMetrics?.position
+                        ? item.searchMetrics.position.toFixed(1)
+                        : "—"}
+                    </td>
+                    <td className="max-w-72 px-3 py-3 align-top text-xs">
+                      {item.queries.length > 0 ? (
+                        <ul className="space-y-1">
+                          {item.queries.slice(0, 3).map((query) => (
+                            <li key={query.query}>
+                              <span className="font-medium text-slate-900">
+                                {query.query}
+                              </span>{" "}
+                              · {Math.round(query.impressions)} impressions · position{" "}
+                              {query.position.toFixed(1)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        "No attributed queries yet"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            Google index evidence reflects the version currently in Google, not a live
+            URL test. Search Console can delay performance data and withhold some query
+            details for privacy.
+          </p>
+        </section>
+      ) : null}
       {scan.searchEvidence ? (
         <div className="grid gap-5 lg:grid-cols-2">
           {(

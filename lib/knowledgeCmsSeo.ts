@@ -78,6 +78,37 @@ export interface KnowledgeCmsSeoPageObservation {
   errorCode?: "fetch_failed" | "invalid_content_type" | "response_too_large";
 }
 
+export type KnowledgeCmsUrlInspectionStatus =
+  | "available"
+  | "partial"
+  | "disabled"
+  | "unavailable"
+  | "unconfigured";
+
+export interface KnowledgeCmsUrlInspectionObservation {
+  path: string;
+  url: string;
+  status: "available" | "unavailable";
+  errorCode?:
+    | "access_denied"
+    | "invalid_configuration"
+    | "quota_exceeded"
+    | "request_failed"
+    | "site_not_found";
+  verdict?: string;
+  coverageState?: string;
+  robotsTxtState?: string;
+  indexingState?: string;
+  lastCrawlTime?: string;
+  pageFetchState?: string;
+  googleCanonical?: string;
+  userCanonical?: string;
+  crawledAs?: string;
+  sitemaps: string[];
+  referringUrls: string[];
+  inspectionResultLink?: string;
+}
+
 export interface KnowledgeCmsSeoSiteObservation {
   robotsOk: boolean;
   sitemapOk: boolean;
@@ -902,6 +933,138 @@ export function buildKnowledgeCmsTechnicalOpportunities(
           }),
         );
       }
+    }
+  }
+
+  return opportunities.sort(
+    (left, right) => right.score - left.score || left.title.localeCompare(right.title),
+  );
+}
+
+function sameCanonicalUrl(left: string, right: string): boolean {
+  try {
+    const leftUrl = new URL(left);
+    const rightUrl = new URL(right);
+    leftUrl.hash = "";
+    rightUrl.hash = "";
+    return leftUrl.toString() === rightUrl.toString();
+  } catch {
+    return false;
+  }
+}
+
+export function buildKnowledgeCmsUrlInspectionOpportunities(
+  observations: ReadonlyArray<KnowledgeCmsUrlInspectionObservation>,
+): KnowledgeCmsSeoOpportunity[] {
+  const opportunities: KnowledgeCmsSeoOpportunity[] = [];
+
+  for (const observation of observations) {
+    if (observation.status === "unavailable") {
+      opportunities.push(
+        technicalOpportunity({
+          discriminator: `google-inspection:${observation.errorCode ?? "unavailable"}`,
+          priority: "medium",
+          title: `Restore Google index monitoring for ${observation.path}`,
+          reason:
+            "The weekly scan could not read Google's indexed-version evidence for this watched page.",
+          recommendation:
+            "Verify Search Console property access and quota, then rerun the scan so indexing, crawl, and canonical status are observable.",
+          score: 760,
+          page: observation.path,
+        }),
+      );
+      continue;
+    }
+
+    const robotsBlocked = observation.robotsTxtState === "DISALLOWED";
+    const indexingBlocked = Boolean(
+      observation.indexingState?.startsWith("BLOCKED_"),
+    );
+    const fetchFailed = Boolean(
+      observation.pageFetchState &&
+        observation.pageFetchState !== "SUCCESSFUL" &&
+        observation.pageFetchState !== "PAGE_FETCH_STATE_UNSPECIFIED",
+    );
+
+    if (robotsBlocked || indexingBlocked || fetchFailed) {
+      const blockers = [
+        robotsBlocked ? "robots.txt blocks crawling" : undefined,
+        indexingBlocked
+          ? `indexing is ${observation.indexingState?.toLowerCase().replaceAll("_", " ")}`
+          : undefined,
+        fetchFailed
+          ? `Google's fetch state is ${observation.pageFetchState?.toLowerCase().replaceAll("_", " ")}`
+          : undefined,
+      ].filter(Boolean);
+      opportunities.push(
+        technicalOpportunity({
+          discriminator: `google-blocked:${blockers.join("|")}`,
+          priority: "critical",
+          title: `Remove Google's indexing blocker from ${observation.path}`,
+          reason: `Google reports that ${blockers.join(", ")}.`,
+          recommendation:
+            "Correct the public response or crawl directive, verify the live URL in Search Console, and request indexing after the fix is deployed.",
+          score: 1_850,
+          page: observation.path,
+        }),
+      );
+      continue;
+    }
+
+    if (
+      !observation.userCanonical ||
+      !sameCanonicalUrl(observation.userCanonical, observation.url)
+    ) {
+      opportunities.push(
+        technicalOpportunity({
+          discriminator: `google-user-canonical:${observation.userCanonical ?? "missing"}`,
+          priority: "high",
+          title: `Correct the indexed canonical signal for ${observation.path}`,
+          reason: observation.userCanonical
+            ? `Google read ${observation.userCanonical} as the declared canonical instead of the watched URL.`
+            : "Google's indexed-version evidence does not contain a declared canonical for this page.",
+          recommendation:
+            "Keep the rendered canonical, sitemap URL, and internal links aligned to the exact watched HTTPS URL, then request indexing in Search Console.",
+          score: 1_260,
+          page: observation.path,
+        }),
+      );
+    }
+
+    if (observation.verdict !== "PASS") {
+      opportunities.push(
+        technicalOpportunity({
+          discriminator: `google-index:${observation.verdict ?? "unknown"}:${observation.coverageState ?? "unknown"}`,
+          priority: observation.verdict === "FAIL" ? "high" : "medium",
+          title: `Get ${observation.path} into Google's index`,
+          reason: `Google currently reports ${observation.coverageState ?? observation.verdict ?? "no indexed verdict"} for this watched page.`,
+          recommendation:
+            "Inspect the exact URL in Search Console, resolve any reported exclusion, and request indexing after confirming the live canonical page is complete.",
+          score: observation.verdict === "FAIL" ? 1_300 : 850,
+          page: observation.path,
+        }),
+      );
+      continue;
+    }
+
+    if (
+      !observation.googleCanonical ||
+      !sameCanonicalUrl(observation.googleCanonical, observation.url)
+    ) {
+      opportunities.push(
+        technicalOpportunity({
+          discriminator: `google-selected-canonical:${observation.googleCanonical ?? "missing"}`,
+          priority: "high",
+          title: `Align Google's canonical for ${observation.path}`,
+          reason: observation.googleCanonical
+            ? `Google selected ${observation.googleCanonical} instead of the watched URL.`
+            : "Google reports the page as indexed but did not return a selected canonical.",
+          recommendation:
+            "Remove conflicting canonical signals and strengthen internal links to the exact preferred URL before requesting another crawl.",
+          score: 1_240,
+          page: observation.path,
+        }),
+      );
     }
   }
 

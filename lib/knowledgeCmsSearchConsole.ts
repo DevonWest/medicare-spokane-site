@@ -5,7 +5,12 @@ import {
   searchconsole,
   type searchconsole_v1,
 } from "@googleapis/searchconsole";
-import type { KnowledgeCmsSearchMetricRow } from "./knowledgeCmsSeo";
+import type {
+  KnowledgeCmsSearchMetricRow,
+  KnowledgeCmsUrlInspectionObservation,
+  KnowledgeCmsUrlInspectionStatus,
+} from "./knowledgeCmsSeo";
+import { publicMonitoringPaths } from "./publicMonitoringPaths";
 import { env } from "./runtimeValues";
 
 export const KNOWLEDGE_CMS_SEARCH_CONSOLE_SCOPE =
@@ -31,6 +36,9 @@ export interface KnowledgeCmsSearchConsolePeriod {
 
 export interface KnowledgeCmsSearchConsoleSnapshot {
   status: KnowledgeCmsSearchConsoleStatus;
+  urlInspectionStatus?: KnowledgeCmsUrlInspectionStatus;
+  urlInspectionErrorCode?: KnowledgeCmsSearchConsoleErrorCode;
+  urlInspections?: KnowledgeCmsUrlInspectionObservation[];
   siteUrl?: string;
   currentPeriod?: KnowledgeCmsSearchConsolePeriod;
   previousPeriod?: KnowledgeCmsSearchConsolePeriod;
@@ -77,17 +85,30 @@ export interface KnowledgeCmsSearchConsoleClient {
   }): Promise<SearchConsoleQueryResult>;
 }
 
+interface SearchConsoleInspectionResult {
+  data: searchconsole_v1.Schema$InspectUrlIndexResponse;
+}
+
+export interface KnowledgeCmsUrlInspectionClient {
+  inspect(input: {
+    requestBody: searchconsole_v1.Schema$InspectUrlIndexRequest;
+  }): Promise<SearchConsoleInspectionResult>;
+}
+
 export interface LoadKnowledgeCmsSearchConsoleOptions {
   client?: KnowledgeCmsSearchConsoleClient;
   enabled?: string;
+  inspectionClient?: KnowledgeCmsUrlInspectionClient;
+  inspectionPaths?: ReadonlyArray<string>;
   now?: Date;
+  origin?: string;
   rowLimit?: number;
   siteUrl?: string;
 }
 
 export type VerifyKnowledgeCmsSearchConsoleAccessOptions = Omit<
   LoadKnowledgeCmsSearchConsoleOptions,
-  "rowLimit"
+  "inspectionClient" | "inspectionPaths" | "origin" | "rowLimit"
 >;
 
 export function isKnowledgeCmsSearchConsoleEnabled(
@@ -156,7 +177,10 @@ function configuredRowLimit(value: number | undefined): number {
   return candidate;
 }
 
-function createClient(): KnowledgeCmsSearchConsoleClient {
+function createClients(): {
+  analytics: KnowledgeCmsSearchConsoleClient;
+  inspection: KnowledgeCmsUrlInspectionClient;
+} {
   const googleAuth = new auth.GoogleAuth({
     scopes: [KNOWLEDGE_CMS_SEARCH_CONSOLE_SCOPE],
   });
@@ -164,7 +188,10 @@ function createClient(): KnowledgeCmsSearchConsoleClient {
     version: "v1",
     auth: googleAuth,
   });
-  return client.searchanalytics;
+  return {
+    analytics: client.searchanalytics,
+    inspection: client.urlInspection.index,
+  };
 }
 
 function numeric(value: number | null | undefined): number {
@@ -242,6 +269,175 @@ function classifyError(error: unknown): KnowledgeCmsSearchConsoleErrorCode {
   return "request_failed";
 }
 
+function boundedString(
+  value: string | null | undefined,
+  maxLength = 2_000,
+): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : undefined;
+}
+
+function boundedStrings(
+  values: string[] | null | undefined,
+  limit = 25,
+): string[] {
+  return (values ?? [])
+    .map((value) => boundedString(value))
+    .filter((value): value is string => Boolean(value))
+    .slice(0, limit);
+}
+
+function inspectionTargets(
+  originValue: string | undefined,
+  paths: ReadonlyArray<string>,
+): Array<{ path: string; url: string }> | undefined {
+  if (paths.length === 0) return [];
+  const configuredOrigin = originValue?.trim();
+  if (!configuredOrigin) return undefined;
+  try {
+    const origin = new URL(configuredOrigin);
+    if (
+      origin.protocol !== "https:" ||
+      origin.username ||
+      origin.password ||
+      origin.pathname !== "/" ||
+      origin.search ||
+      origin.hash
+    ) {
+      return undefined;
+    }
+    const uniquePaths = [...new Set(paths)];
+    if (
+      uniquePaths.length > 25 ||
+      uniquePaths.some(
+        (path) =>
+          !/^\/(?!\/)[A-Za-z0-9/_-]*$/.test(path) || path.includes(".."),
+      )
+    ) {
+      return undefined;
+    }
+    return uniquePaths.map((path) => ({
+      path,
+      url: new URL(path, origin).toString(),
+    }));
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeInspection(
+  target: { path: string; url: string },
+  response: SearchConsoleInspectionResult,
+): KnowledgeCmsUrlInspectionObservation {
+  const result = response.data.inspectionResult;
+  const index = result?.indexStatusResult;
+  return {
+    path: target.path,
+    url: target.url,
+    status: "available",
+    ...(boundedString(index?.verdict, 100)
+      ? { verdict: boundedString(index?.verdict, 100) }
+      : {}),
+    ...(boundedString(index?.coverageState, 500)
+      ? { coverageState: boundedString(index?.coverageState, 500) }
+      : {}),
+    ...(boundedString(index?.robotsTxtState, 100)
+      ? { robotsTxtState: boundedString(index?.robotsTxtState, 100) }
+      : {}),
+    ...(boundedString(index?.indexingState, 100)
+      ? { indexingState: boundedString(index?.indexingState, 100) }
+      : {}),
+    ...(boundedString(index?.lastCrawlTime, 100)
+      ? { lastCrawlTime: boundedString(index?.lastCrawlTime, 100) }
+      : {}),
+    ...(boundedString(index?.pageFetchState, 100)
+      ? { pageFetchState: boundedString(index?.pageFetchState, 100) }
+      : {}),
+    ...(boundedString(index?.googleCanonical)
+      ? { googleCanonical: boundedString(index?.googleCanonical) }
+      : {}),
+    ...(boundedString(index?.userCanonical)
+      ? { userCanonical: boundedString(index?.userCanonical) }
+      : {}),
+    ...(boundedString(index?.crawledAs, 100)
+      ? { crawledAs: boundedString(index?.crawledAs, 100) }
+      : {}),
+    sitemaps: boundedStrings(index?.sitemap),
+    referringUrls: boundedStrings(index?.referringUrls),
+    ...(boundedString(result?.inspectionResultLink)
+      ? { inspectionResultLink: boundedString(result?.inspectionResultLink) }
+      : {}),
+  };
+}
+
+async function loadUrlInspections(input: {
+  client: KnowledgeCmsUrlInspectionClient;
+  siteUrl: string;
+  targets: ReadonlyArray<{ path: string; url: string }>;
+}): Promise<{
+  status: KnowledgeCmsUrlInspectionStatus;
+  inspections: KnowledgeCmsUrlInspectionObservation[];
+  errorCode?: KnowledgeCmsSearchConsoleErrorCode;
+}> {
+  if (input.targets.length === 0) {
+    return { status: "disabled", inspections: [] };
+  }
+
+  const settled = await Promise.allSettled(
+    input.targets.map(async (target) => {
+      try {
+        const response = await input.client.inspect({
+          requestBody: {
+            inspectionUrl: target.url,
+            siteUrl: input.siteUrl,
+            languageCode: "en-US",
+          },
+        });
+        return normalizeInspection(target, response);
+      } catch (error) {
+        const errorCode = classifyError(error);
+        console.error("[knowledge-cms-seo] URL inspection request failed.", {
+          errorCode,
+          path: target.path,
+        });
+        return {
+          path: target.path,
+          url: target.url,
+          status: "unavailable" as const,
+          errorCode,
+          sitemaps: [],
+          referringUrls: [],
+        };
+      }
+    }),
+  );
+  const inspections = settled.map((result, index) =>
+    result.status === "fulfilled"
+      ? result.value
+      : {
+          path: input.targets[index].path,
+          url: input.targets[index].url,
+          status: "unavailable" as const,
+          errorCode: "request_failed" as const,
+          sitemaps: [],
+          referringUrls: [],
+        },
+  );
+  const failures = inspections.filter(
+    (inspection) => inspection.status === "unavailable",
+  );
+  return {
+    status:
+      failures.length === 0
+        ? "available"
+        : failures.length === inspections.length
+          ? "unavailable"
+          : "partial",
+    inspections,
+    ...(failures[0]?.errorCode ? { errorCode: failures[0].errorCode } : {}),
+  };
+}
+
 export async function verifyKnowledgeCmsSearchConsoleAccess(
   options: VerifyKnowledgeCmsSearchConsoleAccessOptions = {},
 ): Promise<KnowledgeCmsSearchConsoleAccessCheck> {
@@ -258,7 +454,7 @@ export async function verifyKnowledgeCmsSearchConsoleAccess(
   }
 
   const current = buildKnowledgeCmsSearchConsolePeriods(options.now).current;
-  const client = options.client ?? createClient();
+  const client = options.client ?? createClients().analytics;
   try {
     await client.query({
       siteUrl,
@@ -293,6 +489,8 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   if (!enabled) {
     return {
       status: "disabled",
+      urlInspectionStatus: "disabled",
+      urlInspections: [],
       currentPageRows: [],
       previousPageRows: [],
       currentQueryRows: [],
@@ -307,6 +505,8 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   if (!siteUrl) {
     return {
       status: "unconfigured",
+      urlInspectionStatus: "unconfigured",
+      urlInspections: [],
       currentPageRows: [],
       previousPageRows: [],
       currentQueryRows: [],
@@ -318,7 +518,35 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
   }
 
   const periods = buildKnowledgeCmsSearchConsolePeriods(options.now);
-  const client = options.client ?? createClient();
+  let defaultClients:
+    | ReturnType<typeof createClients>
+    | undefined;
+  const defaults = () => {
+    defaultClients ??= createClients();
+    return defaultClients;
+  };
+  const client = options.client ?? defaults().analytics;
+  const targets = inspectionTargets(
+    options.origin ?? env("NEXT_PUBLIC_SITE_URL"),
+    options.inspectionPaths ?? publicMonitoringPaths,
+  );
+  const inspectionPromise: Promise<{
+    status: KnowledgeCmsUrlInspectionStatus;
+    inspections: KnowledgeCmsUrlInspectionObservation[];
+    errorCode?: KnowledgeCmsSearchConsoleErrorCode;
+  }> = !targets
+    ? Promise.resolve({
+        status: "unconfigured",
+        inspections: [],
+        errorCode: "invalid_configuration",
+      })
+    : targets.length === 0
+      ? Promise.resolve({ status: "disabled", inspections: [] })
+      : loadUrlInspections({
+          client: options.inspectionClient ?? defaults().inspection,
+          siteUrl,
+          targets,
+        });
   const rowLimit = configuredRowLimit(options.rowLimit);
   const request = (
     period: KnowledgeCmsSearchConsolePeriod,
@@ -338,6 +566,19 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
     });
 
   try {
+    const [analytics, inspection] = await Promise.all([
+      Promise.all([
+        request(periods.current, []),
+        request(periods.previous, []),
+        request(periods.current, ["page"]),
+        request(periods.previous, ["page"]),
+        request(periods.current, ["query"]),
+        request(periods.previous, ["query"]),
+        request(periods.current, ["page", "query"]),
+        request(periods.previous, ["page", "query"]),
+      ]),
+      inspectionPromise,
+    ]);
     const [
       currentTotals,
       previousTotals,
@@ -347,18 +588,14 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
       previousQueries,
       currentPairs,
       previousPairs,
-    ] = await Promise.all([
-      request(periods.current, []),
-      request(periods.previous, []),
-      request(periods.current, ["page"]),
-      request(periods.previous, ["page"]),
-      request(periods.current, ["query"]),
-      request(periods.previous, ["query"]),
-      request(periods.current, ["page", "query"]),
-      request(periods.previous, ["page", "query"]),
-    ]);
+    ] = analytics;
     return {
       status: "available",
+      urlInspectionStatus: inspection.status,
+      ...(inspection.errorCode
+        ? { urlInspectionErrorCode: inspection.errorCode }
+        : {}),
+      urlInspections: inspection.inspections,
       siteUrl,
       currentPeriod: periods.current,
       previousPeriod: periods.previous,
@@ -372,11 +609,17 @@ export async function loadKnowledgeCmsSearchConsoleSnapshot(
       previousRows: normalizeRows(previousPairs.data.rows, ["page", "query"]),
     };
   } catch (error) {
+    const inspection = await inspectionPromise;
     console.error("[knowledge-cms-seo] Search Console request failed.", {
       errorCode: classifyError(error),
     });
     return {
       status: "unavailable",
+      urlInspectionStatus: inspection.status,
+      ...(inspection.errorCode
+        ? { urlInspectionErrorCode: inspection.errorCode }
+        : {}),
+      urlInspections: inspection.inspections,
       siteUrl,
       currentPeriod: periods.current,
       previousPeriod: periods.previous,

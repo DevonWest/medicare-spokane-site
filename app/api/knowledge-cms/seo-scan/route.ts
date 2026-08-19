@@ -42,10 +42,16 @@ export async function POST(request: Request) {
     });
     if (
       process.env.KNOWLEDGE_CMS_SEARCH_CONSOLE_ENABLED === "true" &&
-      scan.searchConsoleStatus !== "available"
+      (scan.searchConsoleStatus !== "available" ||
+        scan.urlInspectionStatus !== "available")
     ) {
       return NextResponse.json(
-        { error: "search_console_unavailable" },
+        {
+          error:
+            scan.searchConsoleStatus !== "available"
+              ? "search_console_unavailable"
+              : "url_inspection_unavailable",
+        },
         { status: 503 },
       );
     }
