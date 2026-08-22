@@ -3,6 +3,7 @@ import { siteConfig } from "@/lib/site";
 
 export interface MarketUpdate {
   path: `/${string}`;
+  category: "2027-market" | "local-medicare-news";
   title: string;
   shortTitle: string;
   summary: string;
@@ -20,33 +21,51 @@ export const marketUpdatesHub = {
   shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
     "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
-  modifiedDate: "2026-08-19",
+  modifiedDate: "2026-08-22",
 };
 
 /**
  * Source of truth for time-sensitive Spokane market coverage.
  *
  * Adding a published article here automatically adds it to the standard
- * sitemap, the two-day Google News sitemap window, the market-update hub,
- * homepage and Resources discovery links, related-article links, and the
- * recurring Search Console monitoring set.
+ * sitemap, the two-day Google News sitemap window, homepage and Resources
+ * discovery links, related-article links, and the recurring Search Console
+ * monitoring set. Articles in the 2027 market category also appear in the
+ * dedicated 2027 tracker.
  */
 export const marketUpdates: readonly MarketUpdate[] = [
   {
+    path: "/spokane-wildfire-medicare-help-2026",
+    category: "local-medicare-news",
+    title:
+      "Spokane Wildfire Medicare Help: Prescriptions, Equipment, Dialysis and Enrollment Rights",
+    shortTitle: "Spokane Wildfire Medicare Help and Enrollment Rights",
+    summary:
+      "Official Medicare protections are active for Washington wildfires affecting Spokane County, including help with prescriptions, equipment, dialysis and some missed enrollment periods.",
+    publishedDate: "2026-08-22",
+    publishedLabel: "August 22, 2026",
+    modifiedDate: "2026-08-22",
+    modifiedLabel: "August 22, 2026",
+    spokaneStatus: "confirmed",
+    spokaneStatusLabel: "CMS protections active in Spokane County",
+  },
+  {
     path: "/providence-health-plan-ending-2027-washington",
+    category: "2027-market",
     title: "Providence Health Plan Ending Most Coverage in 2027: What Spokane and Washington Members Should Know",
     shortTitle: "Providence Health Plan 2027 Changes in Washington",
     summary:
       "Providence individual and family coverage is ending, while Medicare Advantage and Medicare Supplement details are still pending.",
     publishedDate: "2026-08-19",
     publishedLabel: "August 19, 2026",
-    modifiedDate: "2026-08-19",
-    modifiedLabel: "August 19, 2026",
+    modifiedDate: "2026-08-22",
+    modifiedLabel: "August 22, 2026",
     spokaneStatus: "confirmed",
     spokaneStatusLabel: "Washington individual coverage ending",
   },
   {
     path: "/costco-scan-medicare-spokane",
+    category: "2027-market",
     title: "Costco and SCAN Medicare Partnership: What Spokane Residents Should Know",
     shortTitle: "Costco and SCAN Medicare Partnership: Spokane Update",
     summary:
@@ -74,6 +93,12 @@ export function getLatestMarketUpdate(): MarketUpdate {
     throw new Error("At least one Spokane market update must be configured.");
   }
   return latest;
+}
+
+export function get2027MarketUpdatesNewestFirst(): readonly MarketUpdate[] {
+  return getMarketUpdatesNewestFirst().filter(
+    (update) => update.category === "2027-market",
+  );
 }
 
 export function getMarketUpdateByPath(path: string): MarketUpdate | undefined {

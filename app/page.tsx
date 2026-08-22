@@ -221,14 +221,14 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
-              Spokane insurance market watch
+              Spokane Medicare and insurance updates
             </p>
             <h2 className="mt-2 text-2xl font-bold text-gray-900">
-              Follow confirmed 2027 coverage announcements
+              Follow timely local coverage news
             </h2>
             <p className="mt-2 leading-relaxed text-gray-700">
-              We separate national reports from Medicare and health insurance changes confirmed
-              for Spokane County or Washington.
+              Read current Medicare alerts and track health insurance changes confirmed for
+              Spokane County or Washington.
             </p>
             <Link
               href={marketUpdatesHub.path}
