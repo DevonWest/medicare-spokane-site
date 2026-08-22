@@ -3,12 +3,12 @@ import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
 import PageHero from "@/components/PageHero";
-import { getMarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
+import { get2027MarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 
 const pagePath = marketUpdatesHub.path;
 const pageUrl = `${siteConfig.url}${pagePath}`;
-const marketUpdates = getMarketUpdatesNewestFirst();
+const marketUpdates = get2027MarketUpdatesNewestFirst();
 
 const pageSchema = {
   "@context": "https://schema.org",

@@ -5,6 +5,7 @@ import robots from "../app/robots";
 import sitemap from "../app/sitemap";
 import {
   buildMarketUpdatesNewsSitemap,
+  get2027MarketUpdatesNewestFirst,
   getMarketUpdateMonitoringPaths,
   getMarketUpdateSitemapEntries,
   marketUpdates,
@@ -20,6 +21,13 @@ const article = readFileSync(
 const providenceArticle = readFileSync(
   new URL(
     "../app/providence-health-plan-ending-2027-washington/page.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const wildfireArticle = readFileSync(
+  new URL(
+    "../app/spokane-wildfire-medicare-help-2026/page.tsx",
     import.meta.url,
   ),
   "utf8",
@@ -55,10 +63,15 @@ test("one market-update registry drives discovery, monitoring, and internal link
   assert.match(homepage, /href=\{marketUpdatesHub\.path\}/);
   assert.match(resources, /getMarketUpdatesNewestFirst/);
   assert.match(resources, /marketUpdates\.map/);
-  assert.match(hub, /marketUpdates\.map/);
+  assert.match(hub, /get2027MarketUpdatesNewestFirst/);
+  assert.deepEqual(
+    get2027MarketUpdatesNewestFirst().map((update) => update.category),
+    ["2027-market", "2027-market"],
+  );
   assert.match(article, /MarketUpdateLinks/);
   assert.match(relatedLinks, /relatedUpdates\.map/);
   assert.match(relatedLinks, /href=\{marketUpdatesHub\.path\}/);
+  assert.match(wildfireArticle, /MarketUpdateLinks/);
 });
 
 test("news sitemap automatically includes only updates from the latest two days", () => {
@@ -82,6 +95,17 @@ test("news sitemap automatically includes only updates from the latest two days"
   assert.doesNotMatch(expired, /costco-scan-medicare-spokane/);
   assert.doesNotMatch(expired, /providence-health-plan-ending-2027-washington/);
   assert.match(expired, /<urlset[^>]*>[\s\S]*<\/urlset>/);
+
+  const wildfireCurrent = buildMarketUpdatesNewsSitemap(
+    new Date("2026-08-22T12:00:00Z"),
+  );
+  assert.match(
+    wildfireCurrent,
+    /<loc>https:\/\/www\.medicareinspokane\.com\/spokane-wildfire-medicare-help-2026<\/loc>/,
+  );
+  assert.match(wildfireCurrent, /<news:publication_date>2026-08-22<\/news:publication_date>/);
+  assert.doesNotMatch(wildfireCurrent, /costco-scan-medicare-spokane/);
+  assert.doesNotMatch(wildfireCurrent, /providence-health-plan-ending-2027-washington/);
 });
 
 test("robots advertises both standard and news sitemaps", () => {
@@ -109,4 +133,16 @@ test("Providence article separates confirmed Washington changes from pending Med
   );
   assert.match(providenceArticle, /"@type": "NewsArticle"/);
   assert.match(providenceArticle, /datePublished: marketUpdate\.publishedDate/);
+  assert.match(providenceArticle, /more\s+details\s+will\s+be\s+shared/);
+  assert.doesNotMatch(providenceArticle, /potential agreement with another carrier/);
+});
+
+test("wildfire article explains active Spokane protections without overstating enrollment rights", () => {
+  assert.match(wildfireArticle, /Spokane County status: federal protections active/);
+  assert.match(wildfireArticle, /This is not automatic for every Spokane-area resident/);
+  assert.match(wildfireArticle, /1-800-MEDICARE/);
+  assert.match(wildfireArticle, /ESRD Network 16/);
+  assert.match(wildfireArticle, /refill-too-soon/);
+  assert.match(wildfireArticle, /"@type": "NewsArticle"/);
+  assert.match(wildfireArticle, /"@type": "FAQPage"/);
 });

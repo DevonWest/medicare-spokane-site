@@ -85,7 +85,7 @@ const confirmedChanges = [
 ];
 
 const pendingDetails = [
-  "Providence Medicare Advantage members may be able to keep coverage through a potential agreement with another carrier, but final 2027 details have not been announced.",
+  "Providence says current Medicare Advantage coverage remains in effect through 2026 and that it will share 2027 details as they become available and regulations allow.",
   "Providence says current Medicare Supplement coverage remains in effect, with individual notice to come before any 2027 change.",
   "Some large-group or employer arrangements may continue into 2027, so employees should rely on information from their employer.",
   "A replacement plan's provider network, prescriptions, premium, deductible, and out-of-pocket costs cannot be assumed before 2027 options are released.",
@@ -149,7 +149,7 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
               <h2 className="text-3xl font-bold text-gray-900">What Providence announced</h2>
               <p>
                 Providence Health Plan announced that it will transition out of most health
-                insurance lines beginning in 2027. The company&apos;s July update says individual and
+                insurance lines beginning in 2027. The company&apos;s August 20 update says individual and
                 family policies will be discontinued effective January 1, 2027, and will not be
                 offered in 2027 or later.
               </p>
@@ -307,9 +307,11 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                     Are Providence Medicare Advantage plans ending in 2027?
                   </h3>
                   <p className="mt-2 leading-relaxed text-gray-700">
-                    That has not been confirmed as a blanket outcome. Providence says it is working
-                    on a potential agreement with another carrier that may let current members keep
-                    coverage. Members should wait for official plan-specific information.
+                    Providence has not confirmed one blanket outcome for 2027. Its August 20 update
+                    says current Medicare Advantage coverage continues through 2026 and that more
+                    details will be shared as they become available and regulations allow. Members
+                    should use their official plan notices and Medicare.gov for plan-specific
+                    information.
                   </p>
                 </div>
                 <div>
@@ -376,6 +378,11 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
 
             <div>
               <h2 className="text-xl font-bold text-gray-900">Update log</h2>
+              <p className="mt-3 leading-relaxed text-gray-700">
+                <time dateTime="2026-08-22">August 22, 2026</time> — Updated the Medicare Advantage
+                section to match Providence&apos;s August 20 status page and removed earlier wording
+                about a possible carrier agreement that no longer appears in the official update.
+              </p>
               <p className="mt-3 leading-relaxed text-gray-700">
                 <time dateTime={marketUpdate.publishedDate}>{marketUpdate.publishedLabel}</time> —
                 Published with Washington individual-market changes marked confirmed and Medicare

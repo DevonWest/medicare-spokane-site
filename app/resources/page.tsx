@@ -39,14 +39,14 @@ export default function ResourcesPage() {
       <section className="border-b border-blue-100 bg-blue-50 px-4 py-12">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-            New for 2027
+            Spokane coverage updates
           </p>
           <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">{marketUpdatesHub.shortTitle}</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Timely Medicare and insurance news</h2>
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                Follow confirmed 2027 Medicare and health insurance announcements for Spokane and
-                Washington, with clear labels for details that remain unconfirmed.
+                Find current Medicare alerts and confirmed health insurance announcements for
+                Spokane and Washington, with clear labels for details that remain unconfirmed.
               </p>
               <Link
                 href={marketUpdatesHub.path}
