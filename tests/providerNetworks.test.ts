@@ -4,6 +4,7 @@ import sitemap from "../app/sitemap";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
   PROVIDER_NETWORK_GUIDE_PATH,
+  getProviderNetworkStatusLabel,
   getProviderNetworkMonitoringPaths,
   getProviderNetworkSource,
   getProviderSystem,
@@ -58,6 +59,13 @@ test("high-intent Spokane network answers retain product-level wording", () => {
   assert.match(multicareMolina?.productScope ?? "", /D-SNP/);
   assert.equal(providenceScan?.status, "not-listed");
   assert.equal(chasScan?.status, "not-in-network");
+});
+
+test("product-specific provider listings use positive detail-forward wording", () => {
+  assert.equal(
+    getProviderNetworkStatusLabel("limited"),
+    "Listed products — see details below",
+  );
 });
 
 test("network hub and system guides are discoverable in the sitemap", () => {

@@ -535,7 +535,7 @@ export function getProviderNetworkStatusLabel(
     case "listed":
       return "Listed by provider";
     case "limited":
-      return "Limited products";
+      return "Listed products — see details below";
     case "not-listed":
       return "Not listed";
     case "not-in-network":
