@@ -116,7 +116,8 @@ export async function isAuthorizedKnowledgeCmsSchedulerRequest(
       identity.ref === "refs/heads/main" &&
       identity.workflow_ref === expectedWorkflow &&
       (identity.event_name === "schedule" ||
-        identity.event_name === "workflow_dispatch")
+        identity.event_name === "workflow_dispatch" ||
+        identity.event_name === "workflow_run")
     );
   } catch {
     return false;

@@ -519,6 +519,15 @@ export function getProviderNetworkEntriesForSystem(
   return providerNetworkEntries.filter((entry) => entry.systemId === systemId);
 }
 
+export function getProviderNetworkMonitoringPaths(): readonly `/${string}`[] {
+  return [
+    PROVIDER_NETWORK_GUIDE_PATH,
+    ...providerSystems.flatMap((system) =>
+      system.detailPath ? [system.detailPath] : [],
+    ),
+  ];
+}
+
 export function getProviderNetworkStatusLabel(
   status: ProviderNetworkStatus,
 ): string {

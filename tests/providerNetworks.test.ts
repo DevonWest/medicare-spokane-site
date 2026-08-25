@@ -4,6 +4,7 @@ import sitemap from "../app/sitemap";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
   PROVIDER_NETWORK_GUIDE_PATH,
+  getProviderNetworkMonitoringPaths,
   getProviderNetworkSource,
   getProviderSystem,
   providerNetworkEntries,
@@ -11,6 +12,7 @@ import {
   providerSystems,
 } from "../lib/providerNetworks";
 import { siteConfig } from "../lib/site";
+import { publicMonitoringPaths } from "../lib/publicMonitoringPaths";
 
 test("provider network registry preserves unique source-backed entries", () => {
   assert.equal(
@@ -69,5 +71,18 @@ test("network hub and system guides are discoverable in the sitemap", () => {
 
   for (const path of paths) {
     assert.ok(sitemapUrls.has(`${siteConfig.url}${path}`), `${path} should be in the sitemap`);
+  }
+});
+
+test("CMS technical and Search Console scans monitor every network guide", () => {
+  const monitoringPaths = getProviderNetworkMonitoringPaths();
+
+  assert.deepEqual(monitoringPaths, [
+    PROVIDER_NETWORK_GUIDE_PATH,
+    "/providence-medicare-advantage-plans-spokane",
+    "/multicare-medicare-advantage-plans-spokane",
+  ]);
+  for (const path of monitoringPaths) {
+    assert.ok(publicMonitoringPaths.includes(path), `${path} should be monitored`);
   }
 });

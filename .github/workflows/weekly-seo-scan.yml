@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 14 * * 1"
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Deploy to Cloud Run
+    types:
+      - completed
 
 concurrency:
   group: weekly-seo-evidence-production
@@ -11,7 +16,21 @@ concurrency:
 
 jobs:
   scan:
-    if: ${{ vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH != 'true' }}
+    if: >-
+      ${{
+        vars.KNOWLEDGE_CMS_CONTINUOUS_SEO_KILL_SWITCH != 'true' &&
+        (
+          github.event_name != 'workflow_run' ||
+          (
+            github.event.workflow_run.conclusion == 'success' &&
+            github.event.workflow_run.head_branch == 'main' &&
+            (
+              github.event.workflow_run.event == 'push' ||
+              github.event.workflow_run.event == 'workflow_dispatch'
+            )
+          )
+        )
+      }}
     name: Run protected production scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
