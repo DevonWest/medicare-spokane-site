@@ -1,6 +1,10 @@
 import { MetadataRoute } from "next";
 import { getAllLocalMedicarePaths } from "@/lib/cities";
 import { getMarketUpdateSitemapEntries } from "@/lib/marketUpdates";
+import {
+  PROVIDER_NETWORK_CHECKED_AT,
+  PROVIDER_NETWORK_GUIDE_PATH,
+} from "@/lib/providerNetworks";
 import { siteConfig } from "@/lib/site";
 import { getAllTopicSlugs } from "@/lib/topics";
 import { getAllZips } from "@/lib/zips";
@@ -29,6 +33,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}${PROVIDER_NETWORK_GUIDE_PATH}`,
+      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/providence-medicare-advantage-plans-spokane`,
+      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/multicare-medicare-advantage-plans-spokane`,
+      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      changeFrequency: "weekly",
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/medicare-appointment-checklist`,
