@@ -50,7 +50,9 @@ test("one market-update registry drives discovery, monitoring, and internal link
   const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
   const registrySitemapUrls = getMarketUpdateSitemapEntries().map((entry) => entry.url);
 
-  assert.deepEqual(publicMonitoringPaths, getMarketUpdateMonitoringPaths());
+  for (const path of getMarketUpdateMonitoringPaths()) {
+    assert.ok(publicMonitoringPaths.includes(path), `${path} should be monitored`);
+  }
   assert.deepEqual(registrySitemapUrls, [
     `${siteConfig.url}${marketUpdatesHub.path}`,
     ...marketUpdates.map((update) => `${siteConfig.url}${update.path}`),

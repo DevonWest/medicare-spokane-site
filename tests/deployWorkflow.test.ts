@@ -100,6 +100,9 @@ test("weekly SEO uses repository-bound OIDC without granting secret-administrati
   assert.match(schedulerWorkflow, /actions\/github-script@v8/);
   assert.match(schedulerWorkflow, /core\.getIDToken\(process\.env\.SEO_SCAN_URL\)/);
   assert.match(schedulerWorkflow, /GITHUB_REF.*refs\/heads\/main/);
+  assert.match(schedulerWorkflow, /workflow_run:/);
+  assert.match(schedulerWorkflow, /workflow_run\.conclusion == 'success'/);
+  assert.match(schedulerWorkflow, /workflow_run\.head_branch == 'main'/);
   assert.match(schedulerWorkflow, /Authorization: Bearer \$SCHEDULER_ID_TOKEN/);
   assert.doesNotMatch(
     schedulerWorkflow,

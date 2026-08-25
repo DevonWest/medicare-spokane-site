@@ -50,6 +50,30 @@ test("weekly scheduler accepts only a verified workload identity for the exact e
   ]);
 });
 
+test("successful production deploy follow-ups can run the same protected scan", async () => {
+  const scheduler = await import("../lib/knowledgeCmsSchedulerAuth");
+  const authorized = await scheduler.isAuthorizedKnowledgeCmsSchedulerRequest(
+    new Request(
+      "https://www.medicareinspokane.com/api/knowledge-cms/seo-scan",
+      { headers: { authorization: "Bearer header.payload.signature" } },
+    ),
+    {
+      runtime,
+      async verifyIdToken() {
+        return {
+          repository: "DevonWest/medicare-spokane-site",
+          ref: "refs/heads/main",
+          workflow_ref:
+            "DevonWest/medicare-spokane-site/.github/workflows/weekly-seo-scan.yml@refs/heads/main",
+          event_name: "workflow_run",
+        };
+      },
+    },
+  );
+
+  assert.equal(authorized, true);
+});
+
 test("weekly scheduler fails closed for forged, forked, or non-main identities", async () => {
   const scheduler = await import("../lib/knowledgeCmsSchedulerAuth");
   const request = new Request(
