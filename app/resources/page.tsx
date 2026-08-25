@@ -8,6 +8,7 @@ import {
   getKnowledgeSections,
 } from "@/lib/knowledgeCenter";
 import { getMarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
+import { PROVIDER_NETWORK_GUIDE_PATH } from "@/lib/providerNetworks";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -88,6 +89,39 @@ export default function ResourcesPage() {
             </Link>
             .
           </p>
+          <div className="mb-12 rounded-2xl border-2 border-blue-200 bg-blue-50 p-6 md:p-8">
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+              New local reference
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Spokane Medicare Advantage Provider Networks
+                </h3>
+                <p className="mt-3 text-lg leading-relaxed text-gray-700">
+                  Search dated, source-linked carrier information for Providence, MultiCare,
+                  Rockwood Clinic, CHAS Health, and selected Inland Northwest providers. Product
+                  limits for HMO, PPO, group-retiree, and D-SNP plans are shown separately.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                <Link
+                  href={PROVIDER_NETWORK_GUIDE_PATH}
+                  className="rounded-xl bg-blue-700 px-5 py-3 text-center font-semibold text-white transition-colors hover:bg-blue-800"
+                >
+                  Search the network guide
+                </Link>
+                <div className="flex justify-center gap-4 text-sm font-semibold text-blue-700 lg:justify-start">
+                  <Link href="/providence-medicare-advantage-plans-spokane" className="hover:underline">
+                    Providence
+                  </Link>
+                  <Link href="/multicare-medicare-advantage-plans-spokane" className="hover:underline">
+                    MultiCare / Rockwood
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="space-y-12">
             {resourceSections.map((section) => (
               <section key={section.title}>
