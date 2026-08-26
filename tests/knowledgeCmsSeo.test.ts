@@ -107,6 +107,79 @@ test("site-wide Search Console totals remain authoritative when query rows are p
   assert.equal(summary.position, 23.6);
 });
 
+test("Search Console evidence consolidates UTM variants without removing functional parameters", () => {
+  const comparisons = compareKnowledgeCmsSearchMetrics(
+    [
+      {
+        page:
+          "https://www.medicareinspokane.com/?utm_source=google&utm_medium=organic",
+        query: "health insurance",
+        clicks: 1,
+        impressions: 100,
+        ctr: 0.01,
+        position: 5,
+      },
+      {
+        page: "https://www.medicareinspokane.com/",
+        query: "health insurance",
+        clicks: 2,
+        impressions: 200,
+        ctr: 0.01,
+        position: 7,
+      },
+      {
+        page:
+          "https://www.medicareinspokane.com/directory?county=spokane&utm_campaign=local",
+        query: "provider directory",
+        clicks: 1,
+        impressions: 40,
+        ctr: 0.025,
+        position: 9,
+      },
+    ],
+    [
+      {
+        page: "https://www.medicareinspokane.com/?utm_campaign=gbp",
+        query: "health insurance",
+        clicks: 4,
+        impressions: 250,
+        ctr: 0.016,
+        position: 6,
+      },
+    ],
+  );
+
+  assert.equal(comparisons.length, 2);
+  assert.deepEqual(comparisons[0], {
+    page: "https://www.medicareinspokane.com/",
+    query: "health insurance",
+    clicks: 3,
+    impressions: 300,
+    ctr: 0.01,
+    position: 19 / 3,
+    previousClicks: 4,
+    previousImpressions: 250,
+    previousCtr: 0.016,
+    previousPosition: 6,
+  });
+  assert.equal(
+    comparisons[1].page,
+    "https://www.medicareinspokane.com/directory?county=spokane",
+  );
+
+  const opportunities = buildKnowledgeCmsSearchOpportunities(comparisons, {
+    interventions: [],
+  });
+  assert.ok(opportunities.length > 0);
+  assert.ok(
+    opportunities.every(
+      (opportunity) =>
+        !opportunity.page?.includes("utm_") &&
+        !opportunity.reason.includes("utm_"),
+    ),
+  );
+});
+
 test("query aggregates inherit their dominant page, deduplicate pair findings, and expose observation holds", () => {
   const queryComparisons = compareKnowledgeCmsSearchMetrics(
     [
@@ -171,7 +244,13 @@ test("query aggregates inherit their dominant page, deduplicate pair findings, a
         hold.path === "/resources" && hold.evaluateAfter === "2026-08-24",
     ),
   );
-  assert.equal(getKnowledgeCmsSeoObservationHolds("2026-08-24").length, 0);
+  assert.deepEqual(
+    getKnowledgeCmsSeoObservationHolds("2026-08-24").map(
+      (hold) => hold.path,
+    ),
+    ["/providence-health-plan-ending-2027-washington"],
+  );
+  assert.equal(getKnowledgeCmsSeoObservationHolds("2026-09-08").length, 0);
 });
 
 test("search evidence finds low CTR, striking distance, and material declines", () => {

@@ -26,6 +26,7 @@ import {
   buildKnowledgeCmsUrlInspectionOpportunities,
   compareKnowledgeCmsSearchMetrics,
   getKnowledgeCmsSeoObservationHolds,
+  knowledgeCmsSearchPagePath,
   sortAndLimitKnowledgeCmsSeoOpportunities,
   summarizeKnowledgeCmsSearchMetrics,
   summarizeKnowledgeCmsSearchTotals,
@@ -207,15 +208,6 @@ function emptyMetrics(): KnowledgeCmsSearchMetricsSummary {
   };
 }
 
-function evidencePath(page: string): string {
-  try {
-    const parsed = new URL(page);
-    return `${parsed.pathname}${parsed.search}`;
-  } catch {
-    return page;
-  }
-}
-
 function buildWatchedPageEvidence(input: {
   origin: string;
   inspections: ReadonlyArray<KnowledgeCmsUrlInspectionObservation>;
@@ -227,7 +219,7 @@ function buildWatchedPageEvidence(input: {
   );
   const pageComparisonsByPath = new Map(
     input.pageComparisons.map((comparison) => [
-      evidencePath(comparison.page),
+      knowledgeCmsSearchPagePath(comparison.page),
       comparison,
     ]),
   );
@@ -238,7 +230,8 @@ function buildWatchedPageEvidence(input: {
     const queries = input.pairComparisons
       .filter(
         (comparison) =>
-          evidencePath(comparison.page) === path && Boolean(comparison.query),
+          knowledgeCmsSearchPagePath(comparison.page) === path &&
+          Boolean(comparison.query),
       )
       .sort(
         (left, right) =>

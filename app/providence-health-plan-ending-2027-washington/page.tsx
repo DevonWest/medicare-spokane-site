@@ -21,9 +21,9 @@ const washingtonHealthplanfinderUrl =
   "https://www.wahealthplanfinder.org/us/en/health-coverage/new/federal-changes-and-updates.html";
 
 export const metadata: Metadata = {
-  title: "Providence Health Plan 2027 Changes",
+  title: "Providence Health Plan 2027 Changes in Washington",
   description:
-    "Providence Health Plan will end Washington individual and family coverage after 2026. See what Spokane members should know about group and Medicare coverage.",
+    "Providence Health Plan is ending Washington individual coverage after 2026. See confirmed 2027 changes and what Medicare Advantage members should know.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: marketUpdate.title,
@@ -105,13 +105,13 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
           { name: "Home", path: "/" },
           { name: "Resources", path: "/resources" },
           { name: "2027 Coverage Updates", path: marketUpdatesHub.path },
-          { name: "Providence Health Plan 2027 Changes" },
+          { name: "Providence Health Plan 2027 Changes in Washington" },
         ]}
       />
 
       <PageHero
-        title="Providence Health Plan Ending Most Coverage in 2027: What Spokane and Washington Members Should Know"
-        subtitle="Washington individual and family coverage is ending after 2026. Medicare Advantage and Medicare Supplement members should wait for plan-specific 2027 details."
+        title="Providence Health Plan 2027 Changes in Washington: What Spokane Members Should Know"
+        subtitle="Providence will not offer individual and family plans in Washington for 2027. Current Medicare Advantage coverage continues through 2026, with 2027 details still pending."
         crumbs={[
           { href: "/", label: "Home" },
           { href: "/resources", label: "Resources" },
@@ -277,12 +277,19 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
                 <h2 className="text-xl font-bold text-gray-900">Medicare coverage</h2>
                 <p className="mt-3 leading-relaxed text-gray-700">
-                  Wait for plan-specific information, then compare doctors, prescriptions, and
-                  total costs during the applicable Medicare enrollment period.
+                  Review current Providence network information, wait for plan-specific 2027
+                  details, and then compare doctors, prescriptions, and total costs during the
+                  applicable Medicare enrollment period.
                 </p>
                 <Link
+                  href="/providence-medicare-advantage-plans-spokane"
+                  className="mt-4 block font-semibold text-blue-700 hover:underline"
+                >
+                  Providence Medicare Advantage network guide →
+                </Link>
+                <Link
                   href="/medicare-plan-review-spokane"
-                  className="mt-4 inline-block font-semibold text-blue-700 hover:underline"
+                  className="mt-3 inline-block font-semibold text-blue-700 hover:underline"
                 >
                   Prepare for a Medicare plan review →
                 </Link>
