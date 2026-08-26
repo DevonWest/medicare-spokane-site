@@ -52,6 +52,15 @@ test("high-intent Spokane network answers retain product-level wording", () => {
     (entry) => entry.id === "providence-scan",
   );
   const chasScan = providerNetworkEntries.find((entry) => entry.id === "chas-scan");
+  const inlandImagingHumana = providerNetworkEntries.find(
+    (entry) => entry.id === "inland-imaging-humana",
+  );
+  const inlandImagingAmerigroup = providerNetworkEntries.find(
+    (entry) => entry.id === "inland-imaging-amerigroup",
+  );
+  const inlandImagingScan = providerNetworkEntries.find(
+    (entry) => entry.id === "inland-imaging-scan",
+  );
 
   assert.equal(multicareHumana?.status, "limited");
   assert.match(multicareHumana?.productScope ?? "", /group-retiree/i);
@@ -59,12 +68,21 @@ test("high-intent Spokane network answers retain product-level wording", () => {
   assert.match(multicareMolina?.productScope ?? "", /D-SNP/);
   assert.equal(providenceScan?.status, "not-listed");
   assert.equal(chasScan?.status, "not-in-network");
+  assert.equal(inlandImagingHumana?.status, "limited");
+  assert.equal(inlandImagingHumana?.productScope, "Humana Medicare");
+  assert.equal(inlandImagingAmerigroup?.status, "pending");
+  assert.match(inlandImagingAmerigroup?.productScope ?? "", /pending/i);
+  assert.equal(inlandImagingScan?.status, "not-listed");
 });
 
 test("product-specific provider listings use positive detail-forward wording", () => {
   assert.equal(
     getProviderNetworkStatusLabel("limited"),
     "Listed products — see details below",
+  );
+  assert.equal(
+    getProviderNetworkStatusLabel("pending"),
+    "Pending — verify before service",
   );
 });
 
@@ -89,6 +107,7 @@ test("CMS technical and Search Console scans monitor every network guide", () =>
     PROVIDER_NETWORK_GUIDE_PATH,
     "/providence-medicare-advantage-plans-spokane",
     "/multicare-medicare-advantage-plans-spokane",
+    "/inland-imaging-medicare-plans-spokane",
   ]);
   for (const path of monitoringPaths) {
     assert.ok(publicMonitoringPaths.includes(path), `${path} should be monitored`);

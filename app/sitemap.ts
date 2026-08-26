@@ -53,6 +53,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
     {
+      url: `${baseUrl}/inland-imaging-medicare-plans-spokane`,
+      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
       url: `${baseUrl}/medicare-appointment-checklist`,
       lastModified: now,
       changeFrequency: "weekly",

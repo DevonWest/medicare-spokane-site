@@ -17,6 +17,7 @@ import {
 const statusStyles: Record<ProviderNetworkStatus, string> = {
   listed: "border-emerald-200 bg-emerald-50 text-emerald-800",
   limited: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  pending: "border-amber-200 bg-amber-50 text-amber-900",
   "not-listed": "border-slate-300 bg-slate-100 text-slate-700",
   "not-in-network": "border-rose-200 bg-rose-50 text-rose-800",
 };
@@ -126,6 +127,7 @@ export default function ProviderNetworkDirectory({
               <option value="all">All statuses</option>
               <option value="listed">Listed by provider</option>
               <option value="limited">Listed products — see details below</option>
+              <option value="pending">Pending — verify before service</option>
               <option value="not-listed">Not listed</option>
               <option value="not-in-network">Not in network for listed product</option>
             </select>

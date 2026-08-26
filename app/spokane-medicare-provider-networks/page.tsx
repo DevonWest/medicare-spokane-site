@@ -21,12 +21,12 @@ const pageUrl = `${siteConfig.url}${PROVIDER_NETWORK_GUIDE_PATH}`;
 export const metadata: Metadata = {
   title: "Spokane Medicare Provider Networks: 2026 Guide",
   description:
-    "Search 2026 Medicare Advantage network information for Providence, MultiCare, Rockwood, CHAS Health, Humana, SCAN, UnitedHealthcare, Aetna and more.",
+    "Search 2026 Medicare network information for Providence, MultiCare, Rockwood, Inland Imaging, CHAS Health, Humana, SCAN, UnitedHealthcare and more.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "Spokane Medicare Provider Networks: 2026 Local Guide",
     description:
-      "A source-backed Spokane crosswalk for Medicare Advantage carriers, health systems, product limits and network changes.",
+      "A source-backed Spokane crosswalk for Medicare carriers, health systems, imaging providers, product limits and network changes.",
     url: pageUrl,
     type: "website",
   },
@@ -82,12 +82,17 @@ const faqs: FAQItem[] = [
   {
     question: "Does Providence accept SCAN Medicare Advantage in Spokane?",
     answer:
-      "SCAN was not included on Providence's Washington Medicare Advantage carrier list when this guide was checked on August 24, 2026. That is best described as not listed, not as proof that every Providence-related provider is out of network. Verify the exact SCAN plan and provider.",
+      "SCAN was not included on Providence's Washington Medicare Advantage carrier list when this guide was checked on August 25, 2026. That is best described as not listed, not as proof that every Providence-related provider is out of network. Verify the exact SCAN plan and provider.",
   },
   {
     question: "Does SCAN include MultiCare and Rockwood in Spokane?",
     answer:
       "MultiCare lists SCAN Health Plan for Spokane County, and SCAN announced MultiCare network access in Spokane beginning January 1, 2026. Individual physicians, facilities, and the exact plan should still be confirmed.",
+  },
+  {
+    question: "Which Medicare plans does Inland Imaging accept in Spokane?",
+    answer:
+      "Inland Imaging lists Premera, Kaiser, Aetna, UnitedHealthcare, PacificSource, Asuris/Regence, and Health Net Medicare Advantage. It also lists Humana Medicare, CHPW Medicare, Molina Medicare/Special Needs, and participating Traditional Medicare. Amerigroup Medicare Advantage is marked pending, and exact product, location, service, and billing-entity participation should be confirmed.",
   },
   {
     question: "Is accepting an insurance card the same as being in network?",
@@ -127,7 +132,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
 
       <PageHero
         title="Spokane Medicare Advantage Provider Networks"
-        subtitle="Search source-backed 2026 information for Providence, MultiCare, Rockwood Clinic, CHAS Health, Kootenai Health and major Medicare Advantage carriers."
+        subtitle="Search source-backed 2026 information for Providence, MultiCare, Rockwood Clinic, Inland Imaging, CHAS Health, Kootenai Health and major Medicare carriers."
         crumbs={[
           { href: "/", label: "Home" },
           { href: "/resources", label: "Resources" },
@@ -238,6 +243,25 @@ export default function SpokaneMedicareProviderNetworksPage() {
                   same carrier.
                 </p>
               </article>
+              <article className="rounded-2xl border border-blue-200 bg-white p-7">
+                <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                  Inland Imaging
+                </p>
+                <h3 className="mt-2 text-2xl font-bold text-gray-900">
+                  The imaging location and radiologist may have separate contracts
+                </h3>
+                <p className="mt-4 leading-relaxed text-gray-700">
+                  Inland Imaging lists several Medicare Advantage products and participating
+                  Traditional Medicare. Amerigroup Medicare Advantage is marked pending, and some
+                  carrier listings need product-level confirmation.
+                </p>
+                <Link
+                  href="/inland-imaging-medicare-plans-spokane"
+                  className="mt-5 inline-block font-semibold text-blue-700 hover:underline"
+                >
+                  Read the Inland Imaging guide →
+                </Link>
+              </article>
             </div>
           </div>
         </section>
@@ -282,9 +306,9 @@ export default function SpokaneMedicareProviderNetworksPage() {
           <div className="mx-auto max-w-4xl">
             <h2 className="text-3xl font-bold text-gray-900">Coverage and maintenance limits</h2>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              This first Spokane crosswalk covers provider-published information for Providence,
-              MultiCare and Rockwood, CHAS Health, and selected Kootenai Health cross-border issues.
-              Cancer Care Northwest, Inland Imaging, independent physician groups, anesthesia
+              This Spokane crosswalk covers provider-published information for Providence,
+              MultiCare and Rockwood, Inland Imaging, CHAS Health, and selected Kootenai Health
+              cross-border issues. Cancer Care Northwest, independent physician groups, anesthesia
               groups, rehabilitation facilities, and other specialty providers may use separate
               contracts. We will add them only when reliable provider-level evidence is available.
             </p>

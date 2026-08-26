@@ -100,8 +100,9 @@ export default function ResourcesPage() {
                 </h3>
                 <p className="mt-3 text-lg leading-relaxed text-gray-700">
                   Search dated, source-linked carrier information for Providence, MultiCare,
-                  Rockwood Clinic, CHAS Health, and selected Inland Northwest providers. Product
-                  limits for HMO, PPO, group-retiree, and D-SNP plans are shown separately.
+                  Rockwood Clinic, Inland Imaging, CHAS Health, and selected Inland Northwest
+                  providers. Product limits for HMO, PPO, group-retiree, and D-SNP plans are shown
+                  separately.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
@@ -117,6 +118,9 @@ export default function ResourcesPage() {
                   </Link>
                   <Link href="/multicare-medicare-advantage-plans-spokane" className="hover:underline">
                     MultiCare / Rockwood
+                  </Link>
+                  <Link href="/inland-imaging-medicare-plans-spokane" className="hover:underline">
+                    Inland Imaging
                   </Link>
                 </div>
               </div>
