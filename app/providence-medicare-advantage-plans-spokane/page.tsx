@@ -40,7 +40,7 @@ const faqs: FAQItem[] = [
   {
     question: "Does Providence accept SCAN Medicare Advantage in Spokane?",
     answer:
-      "SCAN was not included on Providence's Washington Medicare Advantage carrier list when this page was checked on August 24, 2026. Because individual provider directories can differ, verify the exact SCAN plan and Providence provider before concluding that care is out of network.",
+      "SCAN was not included on Providence's Washington Medicare Advantage carrier list when this page was checked on August 25, 2026. Because individual provider directories can differ, verify the exact SCAN plan and Providence provider before concluding that care is out of network.",
   },
   {
     question: "Is Providence accepting new Medicare Advantage PPO primary-care patients?",

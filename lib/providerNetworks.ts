@@ -1,6 +1,7 @@
 export type ProviderNetworkStatus =
   | "listed"
   | "limited"
+  | "pending"
   | "not-listed"
   | "not-in-network";
 
@@ -34,8 +35,8 @@ export interface ProviderNetworkEntry {
 
 export const PROVIDER_NETWORK_GUIDE_PATH =
   "/spokane-medicare-provider-networks" as const;
-export const PROVIDER_NETWORK_CHECKED_AT = "2026-08-24" as const;
-export const PROVIDER_NETWORK_CHECKED_LABEL = "August 24, 2026";
+export const PROVIDER_NETWORK_CHECKED_AT = "2026-08-25" as const;
+export const PROVIDER_NETWORK_CHECKED_LABEL = "August 25, 2026";
 
 export const providerNetworkSources: readonly ProviderNetworkSource[] = [
   {
@@ -87,6 +88,20 @@ export const providerNetworkSources: readonly ProviderNetworkSource[] = [
     url: "https://www.kh.org/regence-faq/",
     checkedAt: PROVIDER_NETWORK_CHECKED_AT,
   },
+  {
+    id: "inland-imaging-contracted-payers",
+    title: "Medical Providers and Contracted Payers",
+    publisher: "Inland Imaging",
+    url: "https://www.inlandimaging.com/medical-providers-and-contracted-payers",
+    checkedAt: PROVIDER_NETWORK_CHECKED_AT,
+  },
+  {
+    id: "inland-imaging-billing",
+    title: "Billing and Insurance Guidance",
+    publisher: "Inland Imaging",
+    url: "https://www.inlandimaging.com/billing",
+    checkedAt: PROVIDER_NETWORK_CHECKED_AT,
+  },
 ] as const;
 
 export const providerSystems: readonly ProviderSystem[] = [
@@ -125,6 +140,17 @@ export const providerSystems: readonly ProviderSystem[] = [
     area: "Coeur d'Alene and North Idaho",
     summary:
       "A cross-border reference for Spokane-area residents who receive care in North Idaho. Washington plan networks may treat Idaho providers differently, so the exact plan must be checked.",
+  },
+  {
+    id: "inland-imaging",
+    name: "Inland Imaging",
+    shortName: "Inland Imaging",
+    area: "Spokane and the Inland Northwest",
+    summary:
+      "Inland Imaging's official contracted-payer page lists Medicare products for its LLC and Integra professional-services contracts. Facility, radiologist, product, and location contracts can differ.",
+    detailPath: "/inland-imaging-medicare-plans-spokane",
+    note:
+      "Inland Imaging operates multiple entities and publishes separate LLC/Integra professional-services and PS-only contract sections. Confirm the exact imaging location, billing entity, service, and plan before care.",
   },
 ] as const;
 
@@ -494,6 +520,156 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
       "Kootenai Health says its providers and Kootenai Clinic physicians remain in network for Regence members. Confirm that a Washington Medicare Advantage product includes North Idaho care.",
     sourceIds: ["kootenai-regence-update"],
   },
+  {
+    id: "inland-imaging-original-medicare",
+    systemId: "inland-imaging",
+    carrier: "Original Medicare",
+    status: "listed",
+    productScope: "Traditional Medicare — participating, Jurisdiction F",
+    detail:
+      "Inland Imaging lists participating Traditional Medicare for Jurisdiction F, including Washington. Confirm the exact service, location, and billing entity before care.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-aetna",
+    systemId: "inland-imaging",
+    carrier: "Aetna",
+    status: "listed",
+    productScope: "Aetna Medicare Advantage",
+    detail:
+      "Inland Imaging lists Aetna Medicare Advantage under its LLC/Integra professional-services contracts. Confirm the exact plan and imaging location.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-asuris-regence",
+    systemId: "inland-imaging",
+    carrier: "Asuris Northwest Health / Regence",
+    status: "listed",
+    productScope: "Asuris/Regence Medicare Advantage",
+    detail:
+      "Inland Imaging lists Asuris/Regence Medicare Advantage. Confirm the member's exact Asuris or Regence product and the imaging location.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-chpw",
+    systemId: "inland-imaging",
+    carrier: "Community Health Plan of Washington",
+    status: "limited",
+    productScope: "CHPW Medicare",
+    detail:
+      "Inland Imaging lists CHPW Medicare without naming a narrower Medicare product. Verify the exact plan and service instead of assuming every CHPW Medicare plan is included.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-humana",
+    systemId: "inland-imaging",
+    carrier: "Humana",
+    status: "limited",
+    productScope: "Humana Medicare",
+    detail:
+      "Inland Imaging lists Humana Medicare but does not specify HMO, PPO, special-needs, individual, or group-retiree products. Confirm the complete plan name.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-kaiser",
+    systemId: "inland-imaging",
+    carrier: "Kaiser",
+    status: "listed",
+    productScope: "Kaiser Medicare Advantage",
+    detail:
+      "Inland Imaging lists Kaiser Medicare Advantage. Confirm Spokane service-area eligibility, the exact plan, and the imaging provider.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-molina",
+    systemId: "inland-imaging",
+    carrier: "Molina Healthcare",
+    status: "limited",
+    productScope: "Molina Medicare / Special Needs",
+    detail:
+      "Inland Imaging lists Molina Medicare/Special Needs. Confirm the exact Molina plan, service, location, and billing entity.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-pacificsource",
+    systemId: "inland-imaging",
+    carrier: "PacificSource",
+    status: "listed",
+    productScope: "PacificSource Medicare Advantage",
+    detail:
+      "Inland Imaging lists PacificSource Medicare Advantage. County availability and exact provider participation still need confirmation.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-premera",
+    systemId: "inland-imaging",
+    carrier: "Premera Blue Cross",
+    status: "listed",
+    productScope: "Premera Medicare Advantage",
+    detail:
+      "Inland Imaging lists Premera Medicare Advantage under its LLC/Integra professional-services contracts. Verify the complete plan name and imaging location.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-uhc",
+    systemId: "inland-imaging",
+    carrier: "UnitedHealthcare",
+    status: "listed",
+    productScope: "UnitedHealthcare Medicare Advantage",
+    detail:
+      "Inland Imaging lists UnitedHealthcare Medicare Advantage. Confirm the exact HMO, PPO, or special-needs product and imaging provider.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-healthnet",
+    systemId: "inland-imaging",
+    carrier: "Health Net / TRICARE West",
+    status: "limited",
+    productScope: "Health Net Medicare Advantage",
+    detail:
+      "Inland Imaging lists Health Net Medicare Advantage under a Health Net–TRICARE West heading. Verify the exact plan, Spokane location, and billing entity.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-amerigroup",
+    systemId: "inland-imaging",
+    carrier: "Wellpoint (listed as Amerigroup)",
+    status: "pending",
+    productScope: "Amerigroup Medicare Advantage — pending",
+    detail:
+      "Inland Imaging marks Amerigroup Medicare Advantage as pending. Do not treat it as in network unless Inland Imaging and the plan confirm the current contract.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-wellcare",
+    systemId: "inland-imaging",
+    carrier: "Wellcare",
+    status: "limited",
+    productScope: "Product type not specified",
+    detail:
+      "Inland Imaging lists Wellcare but does not identify a Medicare or Medicare Advantage product on the contracted-payer page. Verify the exact Wellcare plan before service.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-scan",
+    systemId: "inland-imaging",
+    carrier: "SCAN Health Plan",
+    status: "not-listed",
+    productScope: "Medicare Advantage",
+    detail:
+      "SCAN was not included on Inland Imaging's contracted-payer page at the source check. That means not listed—not proof that every Inland Imaging service is out of network.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
+  {
+    id: "inland-imaging-providence-plan",
+    systemId: "inland-imaging",
+    carrier: "Providence Medicare Advantage",
+    status: "not-listed",
+    productScope: "Medicare Advantage",
+    detail:
+      "Providence Medicare Advantage was not named on Inland Imaging's contracted-payer page. Inland Imaging's relationship with Providence does not establish health-plan participation, so verify directly.",
+    sourceIds: ["inland-imaging-contracted-payers"],
+  },
 ] as const;
 
 const providerSystemById = new Map(
@@ -536,6 +712,8 @@ export function getProviderNetworkStatusLabel(
       return "Listed by provider";
     case "limited":
       return "Listed products — see details below";
+    case "pending":
+      return "Pending — verify before service";
     case "not-listed":
       return "Not listed";
     case "not-in-network":
