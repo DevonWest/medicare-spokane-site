@@ -89,7 +89,7 @@ test("news sitemap automatically includes only updates from the latest two days"
     /<loc>https:\/\/www\.medicareinspokane\.com\/providence-health-plan-ending-2027-washington<\/loc>/,
   );
   assert.match(current, /<news:publication_date>2026-08-19<\/news:publication_date>/);
-  assert.match(current, /<news:title>Providence Health Plan Ending Most Coverage/);
+  assert.match(current, /<news:title>Providence Health Plan 2027 Changes in Washington/);
 
   const expired = buildMarketUpdatesNewsSitemap(
     new Date("2026-08-21T00:00:00Z"),
@@ -126,6 +126,10 @@ test("Costco and SCAN article preserves the Spokane confirmation guardrail", () 
 });
 
 test("Providence article separates confirmed Washington changes from pending Medicare details", () => {
+  assert.match(
+    providenceArticle,
+    /title: "Providence Health Plan 2027 Changes in Washington"/,
+  );
   assert.match(providenceArticle, /Washington status: confirmed for individual coverage/);
   assert.match(providenceArticle, /will not offer individual and family health insurance/);
   assert.match(providenceArticle, /Medicare Advantage and Medicare Supplement details remain pending/);
@@ -136,6 +140,7 @@ test("Providence article separates confirmed Washington changes from pending Med
   assert.match(providenceArticle, /"@type": "NewsArticle"/);
   assert.match(providenceArticle, /datePublished: marketUpdate\.publishedDate/);
   assert.match(providenceArticle, /more\s+details\s+will\s+be\s+shared/);
+  assert.match(providenceArticle, /Providence Medicare Advantage network guide/);
   assert.doesNotMatch(providenceArticle, /potential agreement with another carrier/);
 });
 

@@ -52,7 +52,8 @@ export const marketUpdates: readonly MarketUpdate[] = [
   {
     path: "/providence-health-plan-ending-2027-washington",
     category: "2027-market",
-    title: "Providence Health Plan Ending Most Coverage in 2027: What Spokane and Washington Members Should Know",
+    title:
+      "Providence Health Plan 2027 Changes in Washington: What Spokane Members Should Know",
     shortTitle: "Providence Health Plan 2027 Changes in Washington",
     summary:
       "Providence individual and family coverage is ending, while Medicare Advantage and Medicare Supplement details are still pending.",

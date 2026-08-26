@@ -147,6 +147,11 @@ export const KNOWLEDGE_CMS_SEO_INTERVENTIONS: ReadonlyArray<KnowledgeCmsSeoInter
     effectiveDate: "2026-08-10",
     evaluateAfter: "2026-08-24",
   },
+  {
+    path: "/providence-health-plan-ending-2027-washington",
+    effectiveDate: "2026-08-25",
+    evaluateAfter: "2026-09-08",
+  },
 ];
 
 export function getKnowledgeCmsSeoObservationHolds(
@@ -194,21 +199,76 @@ function finitePosition(value: number): number {
   return Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
+export function normalizeKnowledgeCmsSearchPage(page: string): string {
+  try {
+    const parsed = new URL(page);
+    for (const key of Array.from(parsed.searchParams.keys())) {
+      if (key.toLowerCase().startsWith("utm_")) {
+        parsed.searchParams.delete(key);
+      }
+    }
+    return parsed.toString();
+  } catch {
+    return page;
+  }
+}
+
 function comparisonKey(
   row: Pick<KnowledgeCmsSearchMetricRow, "page" | "query">,
 ): string {
-  return `${row.page}\u0000${row.query}`;
+  return `${normalizeKnowledgeCmsSearchPage(row.page)}\u0000${row.query}`;
+}
+
+function aggregateKnowledgeCmsSearchMetricRows(
+  rows: ReadonlyArray<KnowledgeCmsSearchMetricRow>,
+): KnowledgeCmsSearchMetricRow[] {
+  const aggregates = new Map<
+    string,
+    KnowledgeCmsSearchMetricRow & { weightedPosition: number }
+  >();
+
+  for (const row of rows) {
+    const page = normalizeKnowledgeCmsSearchPage(row.page);
+    const key = comparisonKey({ page, query: row.query });
+    const clicks = finiteNonNegative(row.clicks);
+    const impressions = finiteNonNegative(row.impressions);
+    const position = finitePosition(row.position);
+    const current = aggregates.get(key);
+    if (current) {
+      current.clicks += clicks;
+      current.impressions += impressions;
+      current.weightedPosition += position * impressions;
+      continue;
+    }
+    aggregates.set(key, {
+      page,
+      query: row.query,
+      clicks,
+      impressions,
+      ctr: 0,
+      position: 0,
+      weightedPosition: position * impressions,
+    });
+  }
+
+  return Array.from(aggregates.values(), ({ weightedPosition, ...row }) => ({
+    ...row,
+    ctr: row.impressions > 0 ? row.clicks / row.impressions : 0,
+    position: row.impressions > 0 ? weightedPosition / row.impressions : 0,
+  }));
 }
 
 export function compareKnowledgeCmsSearchMetrics(
   currentRows: ReadonlyArray<KnowledgeCmsSearchMetricRow>,
   previousRows: ReadonlyArray<KnowledgeCmsSearchMetricRow>,
 ): KnowledgeCmsSearchMetricComparison[] {
+  const currentAggregates = aggregateKnowledgeCmsSearchMetricRows(currentRows);
+  const previousAggregates = aggregateKnowledgeCmsSearchMetricRows(previousRows);
   const previousByKey = new Map(
-    previousRows.map((row) => [comparisonKey(row), row]),
+    previousAggregates.map((row) => [comparisonKey(row), row]),
   );
 
-  return currentRows.map((row) => {
+  return currentAggregates.map((row) => {
     const previous = previousByKey.get(comparisonKey(row));
     return {
       page: row.page,
@@ -314,9 +374,9 @@ export function summarizeKnowledgeCmsSearchTotals(
   };
 }
 
-function pagePath(page: string): string {
+export function knowledgeCmsSearchPagePath(page: string): string {
   try {
-    const parsed = new URL(page);
+    const parsed = new URL(normalizeKnowledgeCmsSearchPage(page));
     return `${parsed.pathname}${parsed.search}`;
   } catch {
     return page;
@@ -345,7 +405,8 @@ export function buildKnowledgeCmsSearchOpportunities(
   );
 
   for (const row of comparisons) {
-    const path = pagePath(row.page);
+    const normalizedPage = normalizeKnowledgeCmsSearchPage(row.page);
+    const path = knowledgeCmsSearchPagePath(normalizedPage);
     if (/\bfmo\b/i.test(row.query)) {
       continue;
     }
@@ -368,7 +429,7 @@ export function buildKnowledgeCmsSearchOpportunities(
 
     if (lowCtr) {
       opportunities.push({
-        id: opportunityId("low_click_through_rate", row.page, row.query),
+        id: opportunityId("low_click_through_rate", normalizedPage, row.query),
         kind: "low_click_through_rate",
         priority:
           row.impressions >= 250 || row.position <= 10 ? "high" : "medium",
@@ -377,7 +438,7 @@ export function buildKnowledgeCmsSearchOpportunities(
         recommendation:
           "Align the title and description with the query's intent, make the local value clearer, and verify that the page answers the query immediately.",
         score: score + 500,
-        page: row.page,
+        page: normalizedPage,
         query: row.query,
         metrics: {
           clicks: row.clicks,
@@ -396,7 +457,7 @@ export function buildKnowledgeCmsSearchOpportunities(
       row.position <= 20
     ) {
       opportunities.push({
-        id: opportunityId("striking_distance", row.page, row.query),
+        id: opportunityId("striking_distance", normalizedPage, row.query),
         kind: "striking_distance",
         priority:
           row.impressions >= 200 && row.position <= 12 ? "high" : "medium",
@@ -405,7 +466,7 @@ export function buildKnowledgeCmsSearchOpportunities(
         recommendation:
           "Strengthen the relevant section, add useful Spokane-specific expertise, improve internal links to this page, and keep the answer focused on visitor needs.",
         score: score + 300,
-        page: row.page,
+        page: normalizedPage,
         query: row.query,
         metrics: {
           clicks: row.clicks,
@@ -432,7 +493,7 @@ export function buildKnowledgeCmsSearchOpportunities(
       hasActionableImpressionSignal;
     if (clicksDeclined || impressionsDeclined) {
       opportunities.push({
-        id: opportunityId("declining_performance", row.page, row.query),
+        id: opportunityId("declining_performance", normalizedPage, row.query),
         kind: "declining_performance",
         priority:
           row.previousClicks >= 20 || row.previousImpressions >= 500
@@ -443,7 +504,7 @@ export function buildKnowledgeCmsSearchOpportunities(
         recommendation:
           "Check whether search intent, competing results, page content, or technical visibility changed before editing. Preserve content that still serves visitors well.",
         score: score + 700,
-        page: row.page,
+        page: normalizedPage,
         query: row.query,
         metrics: {
           clicks: row.clicks,
