@@ -156,10 +156,21 @@ function escapeXml(value: string): string {
 }
 
 export function buildMarketUpdatesNewsSitemap(now = new Date()): string {
-  const urls = getCurrentNewsUpdates(now)
-    .map(
-      (update) => `  <url>
-    <loc>${escapeXml(`${siteConfig.url}${update.path}`)}</loc>
+  const currentNewsPaths = new Set(
+    getCurrentNewsUpdates(now).map((update) => update.path),
+  );
+  const nowMilliseconds = now.getTime();
+  const publishedUpdates = Number.isNaN(nowMilliseconds)
+    ? []
+    : getMarketUpdatesNewestFirst().filter(
+        (update) =>
+          Date.parse(`${update.publishedDate}T00:00:00Z`) <= nowMilliseconds,
+      );
+
+  const urls = publishedUpdates
+    .map((update) => {
+      const newsMetadata = currentNewsPaths.has(update.path)
+        ? `
     <news:news>
       <news:publication>
         <news:name>${escapeXml(siteConfig.name)}</news:name>
@@ -167,9 +178,13 @@ export function buildMarketUpdatesNewsSitemap(now = new Date()): string {
       </news:publication>
       <news:publication_date>${update.publishedDate}</news:publication_date>
       <news:title>${escapeXml(update.title)}</news:title>
-    </news:news>
-  </url>`,
-    )
+    </news:news>`
+        : "";
+
+      return `  <url>
+    <loc>${escapeXml(`${siteConfig.url}${update.path}`)}</loc>${newsMetadata}
+  </url>`;
+    })
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
