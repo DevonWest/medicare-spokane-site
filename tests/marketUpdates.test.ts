@@ -83,7 +83,7 @@ test("news sitemap automatically includes only updates from the latest two days"
   assert.match(current, /xmlns:news="http:\/\/www\.google\.com\/schemas\/sitemap-news\/0\.9"/);
   assert.match(current, /<loc>https:\/\/www\.medicareinspokane\.com\/costco-scan-medicare-spokane<\/loc>/);
   assert.match(current, /<news:publication_date>2026-08-18<\/news:publication_date>/);
-  assert.match(current, /<news:title>Costco and SCAN Medicare Partnership/);
+  assert.match(current, /<news:title>SCAN Medicare Supplement in Washington/);
   assert.match(
     current,
     /<loc>https:\/\/www\.medicareinspokane\.com\/providence-health-plan-ending-2027-washington<\/loc>/,
