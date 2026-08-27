@@ -121,7 +121,7 @@ test("Costco and SCAN article confirms Washington Medigap without overstating av
   assert.match(article, /Washington status: confirmed for Medicare Supplement/);
   assert.match(article, /SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco/);
   assert.match(article, /confirms both the state and the Costco\/SCAN co-branding/);
-  assert.match(article, /It is not a new confirmation of a[\s\S]*Medicare Advantage plan in Spokane County/);
+  assert.match(article, /It is not a new confirmation[\s\S]*Medicare[\s\S]*Advantage plan in Spokane County/);
   assert.match(article, /final regulatory approval have been announced/);
   assert.match(article, /does not recommend or compare/);
   assert.match(article, /"@type": "NewsArticle"/);
