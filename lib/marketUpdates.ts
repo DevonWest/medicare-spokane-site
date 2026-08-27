@@ -67,16 +67,16 @@ export const marketUpdates: readonly MarketUpdate[] = [
   {
     path: "/costco-scan-medicare-spokane",
     category: "2027-market",
-    title: "SCAN Medicare Supplement in Washington: Costco Partnership Update for Spokane",
-    shortTitle: "SCAN Medicare Supplement Washington: Spokane Update",
+    title: "Costco and SCAN Medicare Supplement in Washington: Spokane Update",
+    shortTitle: "Costco and SCAN Medicare Supplement Washington",
     summary:
-      "Washington has been identified for the planned SCAN Medicare Supplement rollout; rates, plan details, timing, and final availability remain pending.",
+      "Washington has been identified for the planned co-branded Costco and SCAN Medicare Supplement rollout; rates, plan details, timing, and final availability remain pending.",
     publishedDate: "2026-08-18",
     publishedLabel: "August 18, 2026",
     modifiedDate: "2026-08-27",
     modifiedLabel: "August 27, 2026",
     spokaneStatus: "confirmed",
-    spokaneStatusLabel: "Washington Medicare Supplement market confirmed",
+    spokaneStatusLabel: "Costco/SCAN Medicare Supplement market confirmed",
   },
 ] as const;
 
