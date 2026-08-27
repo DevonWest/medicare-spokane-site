@@ -76,7 +76,7 @@ test("one market-update registry drives discovery, monitoring, and internal link
   assert.match(wildfireArticle, /MarketUpdateLinks/);
 });
 
-test("news sitemap automatically includes only updates from the latest two days", () => {
+test("news sitemap keeps published URLs and limits news metadata to the latest two days", () => {
   const current = buildMarketUpdatesNewsSitemap(
     new Date("2026-08-19T12:00:00Z"),
   );
@@ -90,13 +90,15 @@ test("news sitemap automatically includes only updates from the latest two days"
   );
   assert.match(current, /<news:publication_date>2026-08-19<\/news:publication_date>/);
   assert.match(current, /<news:title>Providence Health Plan 2027 Changes in Washington/);
+  assert.doesNotMatch(current, /spokane-wildfire-medicare-help-2026/);
 
   const expired = buildMarketUpdatesNewsSitemap(
     new Date("2026-08-21T00:00:00Z"),
   );
-  assert.doesNotMatch(expired, /costco-scan-medicare-spokane/);
-  assert.doesNotMatch(expired, /providence-health-plan-ending-2027-washington/);
-  assert.match(expired, /<urlset[^>]*>[\s\S]*<\/urlset>/);
+  assert.match(expired, /costco-scan-medicare-spokane/);
+  assert.match(expired, /providence-health-plan-ending-2027-washington/);
+  assert.doesNotMatch(expired, /<news:news>/);
+  assert.match(expired, /<urlset[^>]*>[\s\S]*<url>[\s\S]*<\/urlset>/);
 
   const wildfireCurrent = buildMarketUpdatesNewsSitemap(
     new Date("2026-08-22T12:00:00Z"),
@@ -106,8 +108,10 @@ test("news sitemap automatically includes only updates from the latest two days"
     /<loc>https:\/\/www\.medicareinspokane\.com\/spokane-wildfire-medicare-help-2026<\/loc>/,
   );
   assert.match(wildfireCurrent, /<news:publication_date>2026-08-22<\/news:publication_date>/);
-  assert.doesNotMatch(wildfireCurrent, /costco-scan-medicare-spokane/);
-  assert.doesNotMatch(wildfireCurrent, /providence-health-plan-ending-2027-washington/);
+  assert.match(wildfireCurrent, /costco-scan-medicare-spokane/);
+  assert.match(wildfireCurrent, /providence-health-plan-ending-2027-washington/);
+  assert.doesNotMatch(wildfireCurrent, /<news:publication_date>2026-08-18/);
+  assert.doesNotMatch(wildfireCurrent, /<news:publication_date>2026-08-19/);
 });
 
 test("robots advertises both standard and news sitemaps", () => {
