@@ -22,7 +22,7 @@ const partnershipUrl =
 export const metadata: Metadata = {
   title: marketUpdate.shortTitle,
   description:
-    "Costco and SCAN have identified Washington for their planned co-branded Medicare Supplement rollout. See what is confirmed for Spokane and what remains pending.",
+    "SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco. See what is confirmed for Spokane and what remains pending.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: marketUpdate.title,
@@ -41,7 +41,7 @@ const articleSchema = {
   "@id": `${pageUrl}#article`,
   headline: marketUpdate.title,
   description:
-    "Costco and SCAN have identified Washington for their planned co-branded Medicare Supplement rollout. See what is confirmed for Spokane and what remains pending.",
+    "SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco. See what is confirmed for Spokane and what remains pending.",
   datePublished: publishedDate,
   dateModified: marketUpdate.modifiedDate,
   mainEntityOfPage: pageUrl,
@@ -69,7 +69,7 @@ const articleSchema = {
 };
 
 const knownItems = [
-  "Costco and SCAN have identified Washington for the co-branded Medicare Supplement portion of their planned rollout.",
+  "SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco.",
   "The Washington Medicare Supplement offering will be Costco- and SCAN-co-branded; this is not a new Medicare Advantage service-area announcement for Spokane County.",
   "The planned offering remains subject to applicable regulatory approval and final product availability.",
 ];
@@ -120,7 +120,7 @@ export default function CostcoScanMedicareSpokanePage() {
                 Washington status: confirmed for Medicare Supplement
               </p>
               <p className="mt-3 text-xl font-bold">
-                Costco and SCAN have identified Washington for their co-branded Medicare Supplement rollout.
+                SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco.
               </p>
               <p className="mt-3 leading-relaxed">
                 This confirms both the state and the Costco/SCAN co-branding for the Medicare
@@ -138,8 +138,8 @@ export default function CostcoScanMedicareSpokanePage() {
                 Medicare Supplement product in a third.
               </p>
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                Costco and SCAN have since identified Washington for the co-branded Medicare
-                Supplement portion of that planned rollout. For Spokane residents, that replaces
+                SCAN has since identified Washington for the co-branded Medicare Supplement
+                portion of its planned rollout with Costco. For Spokane residents, that replaces
                 our earlier &quot;state not disclosed&quot; status with a confirmed Washington
                 market and confirms that the Medicare Supplement product is part of the Costco
                 partnership. It is not a new confirmation of a Costco- and SCAN-branded Medicare
@@ -284,8 +284,8 @@ export default function CostcoScanMedicareSpokanePage() {
               <div className="mt-3 space-y-2 leading-relaxed text-gray-700">
                 <p>
                   <time dateTime={marketUpdate.modifiedDate}>{marketUpdate.modifiedLabel}</time> —
-                  Updated after Costco and SCAN identified Washington for their co-branded Medicare
-                  Supplement rollout.
+                  Updated after SCAN identified Washington for its planned co-branded Medicare
+                  Supplement rollout with Costco.
                 </p>
                 <p>
                   <time dateTime={publishedDate}>{marketUpdate.publishedLabel}</time> — Published
