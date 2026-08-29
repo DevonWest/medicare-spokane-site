@@ -83,7 +83,7 @@ test("news sitemap keeps published URLs and limits news metadata to the latest t
   assert.match(current, /xmlns:news="http:\/\/www\.google\.com\/schemas\/sitemap-news\/0\.9"/);
   assert.match(current, /<loc>https:\/\/www\.medicareinspokane\.com\/costco-scan-medicare-spokane<\/loc>/);
   assert.match(current, /<news:publication_date>2026-08-18<\/news:publication_date>/);
-  assert.match(current, /<news:title>Costco and SCAN Medicare Supplement in Washington/);
+  assert.match(current, /<news:title>Costco and SCAN Medicare Supplement Washington Filing/);
   assert.match(
     current,
     /<loc>https:\/\/www\.medicareinspokane\.com\/providence-health-plan-ending-2027-washington<\/loc>/,
@@ -122,12 +122,16 @@ test("robots advertises both standard and news sitemaps", () => {
 });
 
 test("Costco and SCAN article confirms Washington Medigap without overstating availability", () => {
-  assert.match(article, /Washington status: confirmed for Medicare Supplement/);
-  assert.match(article, /SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco/);
-  assert.match(article, /confirms both the state and the Costco\/SCAN co-branding/);
+  assert.match(article, /Washington filing status: review pending/);
+  assert.match(article, /IASL-135055285/);
+  assert.match(article, /Plans A, G and N/);
+  assert.match(article, /7% for eligible members residing with a spouse/);
+  assert.match(article, /\$2 per month for payment by automatic bank withdrawal/);
+  assert.match(article, /Up to \$300 annually[\s\S]*up to \$400 annually/);
   assert.match(article, /It is not a new confirmation[\s\S]*Medicare[\s\S]*Advantage plan in Spokane County/);
-  assert.match(article, /final regulatory approval have been announced/);
-  assert.match(article, /does not recommend or compare/);
+  assert.match(article, /My take on the SCAN and Costco Medicare Supplement proposal/);
+  assert.match(article, /nobody can know yet/);
+  assert.match(article, /not a recommendation to enroll/);
   assert.match(article, /"@type": "NewsArticle"/);
   assert.match(article, /datePublished: publishedDate/);
 });
