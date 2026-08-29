@@ -21,7 +21,7 @@ export const marketUpdatesHub = {
   shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
     "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
-  modifiedDate: "2026-08-27",
+  modifiedDate: "2026-08-28",
 };
 
 /**
@@ -67,16 +67,16 @@ export const marketUpdates: readonly MarketUpdate[] = [
   {
     path: "/costco-scan-medicare-spokane",
     category: "2027-market",
-    title: "Costco and SCAN Medicare Supplement in Washington: Spokane Update",
-    shortTitle: "Costco and SCAN Medicare Supplement Washington",
+    title: "Costco and SCAN Medicare Supplement Washington Filing: Plans and Benefits",
+    shortTitle: "Costco and SCAN Medicare Supplement Filing",
     summary:
-      "Washington has been identified for the planned co-branded Costco and SCAN Medicare Supplement rollout; rates, plan details, timing, and final availability remain pending.",
+      "A public Washington filing proposes Plans A, G and N, discounts and Costco-only benefits for 2027; regulatory approval and final rates remain pending.",
     publishedDate: "2026-08-18",
     publishedLabel: "August 18, 2026",
-    modifiedDate: "2026-08-27",
-    modifiedLabel: "August 27, 2026",
+    modifiedDate: "2026-08-28",
+    modifiedLabel: "August 28, 2026",
     spokaneStatus: "confirmed",
-    spokaneStatusLabel: "Costco/SCAN Medicare Supplement market confirmed",
+    spokaneStatusLabel: "Washington filing under regulatory review",
   },
 ] as const;
 
