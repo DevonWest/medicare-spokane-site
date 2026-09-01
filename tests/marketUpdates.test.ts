@@ -129,6 +129,18 @@ test("Costco and SCAN article confirms Washington Medigap without overstating av
   assert.match(article, /\$2 per month for payment by automatic bank withdrawal/);
   assert.match(article, /Up to \$300 annually[\s\S]*up to \$400 annually/);
   assert.match(article, /It is not a new confirmation[\s\S]*Medicare[\s\S]*Advantage plan in Spokane County/);
+  assert.match(article, /Do not mix Medicare Advantage benefits with this Medicare Supplement filing/);
+  assert.match(article, /Preferred Pharmacy network[\s\S]*grocery benefits/);
+  assert.match(
+    article,
+    /Medicare Advantage rollout; they do not appear as[\s\S]*Washington Medicare Supplement filing/,
+  );
+  assert.match(article, /Do not assume pharmacy, grocery, rewards or[\s\S]*features apply/);
+  assert.equal(
+    marketUpdates.find((update) => update.path === "/costco-scan-medicare-spokane")
+      ?.modifiedDate,
+    "2026-09-01",
+  );
   assert.match(article, /My take on the SCAN and Costco Medicare Supplement proposal/);
   assert.match(article, /nobody can know yet/);
   assert.match(article, /not a recommendation to enroll/);

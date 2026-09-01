@@ -76,7 +76,7 @@ const articleSchema = {
 
 const knownItems = [
   "SCAN has identified Washington for its planned co-branded Medicare Supplement rollout with Costco.",
-  "The public rate filing, SERFF tracking number IASL-135055285, was submitted August 14, 2026 and remained under review as of August 28, 2026.",
+  "The public rate filing, SERFF tracking number IASL-135055285, was submitted August 14, 2026 and remained under review as of September 1, 2026.",
   "The filing proposes standardized Plans A, G and N with a target effective date of January 1, 2027.",
   "The filing proposes household and automatic-payment discounts plus Costco membership, vision and hearing benefits.",
 ];
@@ -159,7 +159,7 @@ export default function CostcoScanMedicareSpokanePage() {
                 not yet approved or open for enrollment.
               </p>
               <p className="mt-3 leading-relaxed">
-                The rate filing was submitted on August 14, 2026. As of August 28, the Washington
+                The rate filing was submitted on August 14, 2026. As of September 1, the Washington
                 filing record still showed <strong>Review Pending</strong>. Every premium, discount,
                 benefit and date below should be read as proposed and subject to change.
               </p>
@@ -220,6 +220,25 @@ export default function CostcoScanMedicareSpokanePage() {
               review. We will post and compare the final approved rates when the filing receives a
               disposition.
             </p>
+            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-6 text-blue-950">
+              <h3 className="text-xl font-bold">
+                Do not mix Medicare Advantage benefits with this Medicare Supplement filing
+              </h3>
+              <p className="mt-3 leading-relaxed">
+                Separate SCAN rollout materials for the broader Costco partnership mention a Costco
+                Preferred Pharmacy network, rewards and incentive programs, grocery benefits for
+                some chronically ill members, and a retail presence during Annual Enrollment. Those
+                features are described with the Medicare Advantage rollout; they do not appear as
+                benefits in the Washington Medicare Supplement filing reviewed for this article.
+              </p>
+              <p className="mt-3 leading-relaxed">
+                For the proposed Washington Medigap product, rely on the public filing: Plans A, G
+                and N, the filed discounts, Costco membership, and the Costco-only vision and
+                hearing allowances summarized above. Do not assume pharmacy, grocery, rewards or
+                in-store enrollment features apply unless they appear in final Washington-approved
+                documents.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -439,9 +458,14 @@ export default function CostcoScanMedicareSpokanePage() {
               <div className="mt-3 space-y-2 leading-relaxed text-gray-700">
                 <p>
                   <time dateTime={marketUpdate.modifiedDate}>{marketUpdate.modifiedLabel}</time> —
-                  Added the public filing status, proposed Plans A, G and N, proposed discounts and
-                  Costco-only benefits, plus independent client-focused commentary. Regulatory
-                  review remains pending.
+                  Verified that the Washington filing remains under review and clarified that
+                  broader Costco and SCAN Medicare Advantage features are not confirmed benefits of
+                  the proposed Washington Medicare Supplement product.
+                </p>
+                <p>
+                  <time dateTime="2026-08-28">August 28, 2026</time> — Added the public filing
+                  status, proposed Plans A, G and N, proposed discounts and Costco-only benefits,
+                  plus independent client-focused commentary.
                 </p>
                 <p>
                   <time dateTime="2026-08-27">August 27, 2026</time> — Updated after SCAN identified
