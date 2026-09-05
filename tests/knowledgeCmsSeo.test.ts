@@ -567,3 +567,50 @@ test("Google URL inspection flags exclusions, crawl blockers, and canonical conf
     ),
   );
 });
+
+test("uncrawled URLs need indexing without a spurious missing-canonical warning", () => {
+  for (const coverageState of [
+    "URL is unknown to Google",
+    "Discovered - currently not indexed",
+  ]) {
+    const opportunities = buildKnowledgeCmsUrlInspectionOpportunities([{
+      path: "/new-page",
+      url: "https://www.medicareinspokane.com/new-page",
+      status: "available",
+      verdict: "NEUTRAL",
+      coverageState,
+      pageFetchState: "PAGE_FETCH_STATE_UNSPECIFIED",
+      sitemaps: [],
+      referringUrls: [],
+    }]);
+    assert.equal(opportunities.length, 1);
+    assert.match(opportunities[0].title, /^Get .* into Google's index$/);
+  }
+});
+
+test("canonical warnings remain actionable when Google has crawl or conflicting canonical evidence", () => {
+  const base = {
+    path: "/service-page",
+    url: "https://www.medicareinspokane.com/service-page",
+    status: "available" as const,
+    verdict: "NEUTRAL",
+    sitemaps: [],
+    referringUrls: [],
+  };
+  for (const evidence of [
+    { lastCrawlTime: "2026-09-01T00:00:00Z" },
+    { pageFetchState: "SUCCESSFUL" },
+    { verdict: "PASS" },
+    { userCanonical: "https://www.medicareinspokane.com/wrong-page" },
+  ]) {
+    const opportunities = buildKnowledgeCmsUrlInspectionOpportunities([{ ...base, ...evidence }]);
+    assert.ok(opportunities.some((item) => item.title.startsWith("Correct the indexed canonical")));
+  }
+  assert.equal(buildKnowledgeCmsUrlInspectionOpportunities([{
+    ...base,
+    verdict: "PASS",
+    pageFetchState: "SUCCESSFUL",
+    userCanonical: base.url,
+    googleCanonical: base.url,
+  }]).length, 0);
+});

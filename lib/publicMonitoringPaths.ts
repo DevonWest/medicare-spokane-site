@@ -2,12 +2,21 @@ import { getMarketUpdateMonitoringPaths } from "./marketUpdates";
 import { getProviderNetworkMonitoringPaths } from "./providerNetworks";
 
 /**
- * Public pages that live outside the governed Knowledge CMS but still need the
- * same recurring technical checks as CMS canonical routes.
+ * Public pages that need recurring technical checks and exact Google index
+ * evidence, including service pages awaiting indexing after the September audit.
  */
 export const publicMonitoringPaths = [
   ...new Set([
     ...getMarketUpdateMonitoringPaths(),
     ...getProviderNetworkMonitoringPaths(),
+    "/medicare-advantage",
+    "/medicare-part-d",
+    "/medicare-annual-enrollment-spokane",
+    "/medicare-savings-program-extra-help-washington",
+    "/moving-to-spokane-medicare",
+    "/individual-family-health-insurance-spokane",
+    "/self-employed-health-insurance-spokane",
+    "/supplemental-insurance",
+    "/topics/medicare-for-seniors",
   ]),
 ] as readonly `/${string}`[];
