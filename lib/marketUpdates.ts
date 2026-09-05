@@ -35,6 +35,20 @@ export const marketUpdatesHub = {
  */
 export const marketUpdates: readonly MarketUpdate[] = [
   {
+    path: "/multicare-rockwood-clinic-closures-spokane",
+    category: "local-medicare-news",
+    title: "MultiCare Rockwood Clinic Closures in Spokane: What Patients Should Know",
+    shortTitle: "MultiCare Rockwood Clinic Closures in Spokane",
+    summary:
+      "Five Rockwood clinics and services are scheduled to close in late 2026. See the dates, the downtown retina-care exception and practical steps for patients.",
+    publishedDate: "2026-09-05",
+    publishedLabel: "September 5, 2026",
+    modifiedDate: "2026-09-05",
+    modifiedLabel: "September 5, 2026",
+    spokaneStatus: "confirmed",
+    spokaneStatusLabel: "Specific Spokane County clinic closures announced",
+  },
+  {
     path: "/spokane-wildfire-medicare-help-2026",
     category: "local-medicare-news",
     title:

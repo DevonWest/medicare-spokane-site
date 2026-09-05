@@ -78,6 +78,21 @@ export default function MultiCareMedicareAdvantagePlansSpokanePage() {
       />
 
       <main>
+        <section aria-labelledby="rockwood-closure-update" className="border-b border-blue-200 bg-blue-50 px-4 py-8">
+          <div className="mx-auto max-w-5xl">
+            <h2 id="rockwood-closure-update" className="text-2xl font-bold text-gray-900">
+              New: selected Rockwood clinics closing in late 2026
+            </h2>
+            <p className="mt-3 text-lg leading-relaxed text-gray-700">
+              MultiCare has announced closures affecting the Primary Care Access Clinic,
+              Dermatology Center and three eye-care locations. This is a clinic-service change,
+              not an announcement that MultiCare is leaving a Medicare plan network.
+            </p>
+            <Link href="/multicare-rockwood-clinic-closures-spokane" className="mt-4 inline-block font-semibold text-blue-700 underline hover:text-blue-900">
+              See closure dates and what patients should do next →
+            </Link>
+          </div>
+        </section>
         <section className="bg-white px-4 py-12">
           <div className="mx-auto max-w-5xl">
             <p className="text-sm text-gray-500">

@@ -48,7 +48,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/multicare-medicare-advantage-plans-spokane`,
-      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      lastModified: "2026-09-05",
       changeFrequency: "weekly",
       priority: 0.85,
     },
