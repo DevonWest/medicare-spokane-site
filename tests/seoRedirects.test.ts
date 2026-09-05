@@ -418,15 +418,17 @@ test("proxy allows canonical supported directory URLs to render", () => {
   assert.equal(response.headers.get("location"), null);
 });
 
-test("directory page metadata uses a self-referencing canonical URL", async () => {
-  const metadata = await generateDirectoryMetadata({
-    params: Promise.resolve({ location: "deer-park-wa" }),
-  });
-
-  assert.equal(
-    metadata.alternates?.canonical,
-    "https://www.medicareinspokane.com/directory/deer-park-wa",
-  );
+test("directory copies consolidate with the main city guides in the sitemap", async () => {
+  const sitemapUrls = new Set(sitemap().map((entry) => entry.url));
+  for (const city of ["spokane", "spokane-valley", "cheney", "airway-heights", "liberty-lake", "medical-lake", "mead", "deer-park"]) {
+    const metadata = await generateDirectoryMetadata({
+      params: Promise.resolve({ location: `${city}-wa` }),
+    });
+    const preferredUrl = `https://www.medicareinspokane.com/medicare-${city}`;
+    assert.equal(metadata.alternates?.canonical, preferredUrl);
+    assert.equal(metadata.openGraph?.url, preferredUrl);
+    assert.ok(sitemapUrls.has(preferredUrl));
+  }
 });
 
 test("proxy permanently redirects the apex root host to canonical www without any port", () => {
@@ -534,6 +536,14 @@ test("site metadata, sitemap, and robots use the canonical www production URL", 
 
   assert.ok(sitemapUrls.has("https://www.medicareinspokane.com"));
   assert.ok(sitemapUrls.has("https://www.medicareinspokane.com/contact"));
+});
+
+test("unrelated deployment dates do not refresh sitemap content dates", (context) => {
+  context.mock.timers.enable({ apis: ["Date"], now: new Date("2026-09-05T00:00:00Z") });
+  const firstBuild = sitemap();
+  context.mock.timers.setTime(new Date("2026-10-01T00:00:00Z").getTime());
+  assert.deepEqual(sitemap(), firstBuild);
+  assert.equal(firstBuild.find((entry) => entry.url.endsWith("/multicare-rockwood-clinic-closures-spokane"))?.lastModified, "2026-09-05");
 });
 
 test("sitemap only includes canonical request, team, and prescription URLs", () => {

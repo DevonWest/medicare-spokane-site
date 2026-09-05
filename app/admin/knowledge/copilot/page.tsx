@@ -293,7 +293,7 @@ function ScanDashboard({
       {scan.watchedPages ? (
         <section className="overflow-hidden rounded-xl border border-slate-200">
           <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <h3 className="font-bold text-slate-950">Watched market pages</h3>
+            <h3 className="font-bold text-slate-950">Watched pages</h3>
             <p className="mt-1 text-xs text-slate-600">
               Exact Google index evidence and attributed 28-day search performance.
               Index inspection: {scan.urlInspectionStatus?.replaceAll("_", " ") ?? "not collected"}.

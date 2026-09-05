@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import test from "node:test";
 import type { KnowledgeCmsArticle } from "../lib/knowledgeCms";
+import { publicMonitoringPaths } from "../lib/publicMonitoringPaths";
 
 const require = createRequire(import.meta.url);
 
@@ -167,6 +168,30 @@ test("Search Console uses two stable 28-day periods and normalizes rows", async 
   assert.equal(snapshot.currentQueryRows[0].page, "");
   assert.equal(snapshot.currentQueryRows[0].query, "part d spokane");
   assert.equal(snapshot.currentRows[0].query, "part d spokane");
+});
+
+test("the default monitoring registry is accepted and every watched URL is inspected", async () => {
+  mockServerOnlyModule();
+  const searchConsole = await import("../lib/knowledgeCmsSearchConsole");
+  const inspectedUrls: string[] = [];
+  const snapshot = await searchConsole.loadKnowledgeCmsSearchConsoleSnapshot({
+    enabled: "true",
+    siteUrl: "sc-domain:medicareinspokane.com",
+    origin: "https://www.medicareinspokane.com",
+    now: new Date("2026-09-05T12:00:00Z"),
+    client: { async query() { return { data: { rows: [] } }; } },
+    inspectionClient: {
+      async inspect(input) {
+        inspectedUrls.push(input.requestBody.inspectionUrl);
+        return { data: { inspectionResult: { indexStatusResult: { verdict: "NEUTRAL" } } } };
+      },
+    },
+  });
+  assert.equal(snapshot.urlInspectionStatus, "available");
+  assert.ok(inspectedUrls.length > 0);
+  assert.deepEqual(new Set(inspectedUrls), new Set(publicMonitoringPaths.map(
+    (path) => `https://www.medicareinspokane.com${path}`,
+  )));
 });
 
 test("URL inspection retains exact watched routes and reports partial API failures", async () => {

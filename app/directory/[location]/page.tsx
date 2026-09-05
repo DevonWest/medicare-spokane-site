@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import LocalMedicarePage, { getLocalMedicareMetadata } from "@/components/LocalMedicarePage";
-import { getAllDirectorySlugs, getCityByDirectorySlug, getDirectoryPath } from "@/lib/cities";
+import { getAllDirectorySlugs, getCityByDirectorySlug } from "@/lib/cities";
 
 interface Props {
   params: Promise<{ location: string }>;
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props) {
     return { title: "Not Found" };
   }
 
-  return getLocalMedicareMetadata(city.slug, getDirectoryPath(location));
+  return getLocalMedicareMetadata(city.slug);
 }
 
 export default async function DirectoryPage({ params }: Props) {
@@ -29,5 +29,5 @@ export default async function DirectoryPage({ params }: Props) {
     notFound();
   }
 
-  return <LocalMedicarePage citySlug={city.slug} canonicalPath={getDirectoryPath(location)} />;
+  return <LocalMedicarePage citySlug={city.slug} />;
 }

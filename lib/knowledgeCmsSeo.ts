@@ -1072,9 +1072,17 @@ export function buildKnowledgeCmsUrlInspectionOpportunities(
       continue;
     }
 
+    // An uncrawled URL has no declared canonical in Google's evidence yet.
+    // Keep its indexing opportunity without inventing a canonical defect.
+    const hasCrawlEvidence = Boolean(
+      observation.lastCrawlTime ||
+        observation.pageFetchState === "SUCCESSFUL" ||
+        observation.verdict === "PASS",
+    );
     if (
-      !observation.userCanonical ||
-      !sameCanonicalUrl(observation.userCanonical, observation.url)
+      observation.userCanonical
+        ? !sameCanonicalUrl(observation.userCanonical, observation.url)
+        : hasCrawlEvidence
     ) {
       opportunities.push(
         technicalOpportunity({
