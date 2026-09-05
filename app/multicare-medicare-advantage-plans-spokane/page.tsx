@@ -6,6 +6,7 @@ import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import PageHero from "@/components/PageHero";
+import MedicarePlanNavigation from "@/components/MedicarePlanNavigation";
 import ProviderNetworkDirectory from "@/components/ProviderNetworkDirectory";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
@@ -188,6 +189,7 @@ export default function MultiCareMedicareAdvantagePlansSpokanePage() {
           </div>
         </section>
 
+        <MedicarePlanNavigation currentPath={pagePath} />
         <KnowledgePageEnhancements currentPath={pagePath} />
       </main>
 

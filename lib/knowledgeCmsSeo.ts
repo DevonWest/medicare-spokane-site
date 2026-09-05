@@ -134,8 +134,13 @@ export const KNOWLEDGE_CMS_SEO_INTERVENTIONS: ReadonlyArray<KnowledgeCmsSeoInter
   },
   {
     path: "/medicare-spokane",
-    effectiveDate: "2026-08-10",
-    evaluateAfter: "2026-08-24",
+    effectiveDate: "2026-09-05",
+    evaluateAfter: "2026-09-19",
+  },
+  {
+    path: "/medicare-stevens-county",
+    effectiveDate: "2026-09-05",
+    evaluateAfter: "2026-09-19",
   },
   {
     path: "/our-team",

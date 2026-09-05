@@ -85,9 +85,12 @@ export default function ResourcesPage() {
             Helping Spokane-area residents review Medicare with large-text, easy-to-scan guides and
             clear next steps. If you want local plan-comparison help first, start with our{" "}
             <Link href="/medicare-spokane" className="font-semibold text-blue-700 hover:underline">
-              Medicare help in Spokane guide
+              Medicare plans in Spokane guide
             </Link>
             .
+          </p>
+          <p className="mb-8 max-w-3xl text-lg leading-relaxed text-gray-700">
+            Live north of Spokane? Our <Link href="/medicare-stevens-county" className="font-semibold text-blue-700 underline">Stevens County Medicare guide</Link> covers Colville and Chewelah provider checks, trips to Spokane for care, and local pharmacy considerations.
           </p>
           <div className="mb-12 rounded-2xl border-2 border-blue-200 bg-blue-50 p-6 md:p-8">
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
