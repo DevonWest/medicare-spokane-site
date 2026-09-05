@@ -5,6 +5,7 @@ import FAQ, { type FAQItem } from "@/components/FAQ";
 import HomeTestimonials from "@/components/HomeTestimonials";
 import FriendlyIllustration from "@/components/FriendlyIllustration";
 import LeadForm from "@/components/LeadForm";
+import MedicarePlanNavigation from "@/components/MedicarePlanNavigation";
 import OfficeLocationTrust from "@/components/OfficeLocationTrust";
 import ProcessSection from "@/components/ProcessSection";
 import TeamPreviewGrid from "@/components/TeamPreviewGrid";
@@ -215,6 +216,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <MedicarePlanNavigation />
 
       {/* Timely market updates — direct homepage discovery path for crawlers and readers */}
       <section className="border-b border-amber-200 bg-amber-50 px-4 py-8">

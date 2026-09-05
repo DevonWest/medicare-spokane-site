@@ -5,6 +5,7 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import FAQ from "@/components/FAQ";
 import Disclaimer from "@/components/Disclaimer";
 import LeadForm from "@/components/LeadForm";
+import SpokanePlanComparison from "@/components/SpokanePlanComparison";
 import { getCityBySlug, getLocalMedicarePath } from "@/lib/cities";
 import type { LeadSource } from "@/lib/leadSources";
 import { siteConfig, telHref } from "@/lib/site";
@@ -73,9 +74,13 @@ export function getLocalMedicareMetadata(
     return { title: "Not Found" };
   }
 
-  const title = `Medicare Help in ${city.name}, ${city.stateCode}`;
+  const title = citySlug === "spokane"
+    ? "Medicare Plans in Spokane, WA | Compare Local Options"
+    : `Medicare Help in ${city.name}, ${city.stateCode}`;
   const { primary, secondary } = getPrimaryNearbyCommunities(city.nearbyCommunities, city.name);
-  const description = `Compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options in ${city.name}, ${city.stateCode} with no-cost help from a Spokane-based licensed independent insurance agency serving ${primary} and ${secondary}.`;
+  const description = citySlug === "spokane"
+    ? "Compare Medicare Advantage, Supplement (Medigap), and Part D plans in Spokane. Review doctors, prescriptions, costs, and AEP with no-cost local help."
+    : `Compare Medicare Advantage, Medicare Supplement, Part D, and supplemental insurance options in ${city.name}, ${city.stateCode} with no-cost help from a Spokane-based licensed independent insurance agency serving ${primary} and ${secondary}.`;
 
   return {
     title,
@@ -196,7 +201,7 @@ export default function LocalMedicarePage({
             <span>Medicare Help in {city.name}</span>
           </nav>
           <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-5xl">
-            Medicare Help in {city.name}, {city.stateCode}
+            {city.slug === "spokane" ? "Medicare Plans" : "Medicare Help"} in {city.name}, {city.stateCode}
           </h1>
           <p className="max-w-3xl text-xl text-blue-100">{city.heroSummary}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -219,6 +224,8 @@ export default function LocalMedicarePage({
         </div>
       </section>
 
+      {city.slug === "spokane" ? <SpokanePlanComparison /> : null}
+
       <section className="bg-white px-4 py-14">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.4fr_0.9fr]">
           <div>
@@ -227,6 +234,11 @@ export default function LocalMedicarePage({
             </h2>
             <p className="mb-4 text-lg leading-relaxed text-gray-700">{city.localIntro}</p>
             <p className="text-lg leading-relaxed text-gray-700">{city.serviceAreaContext}</p>
+            {["deer-park", "mead"].includes(city.slug) ? (
+              <p className="mt-4 text-lg leading-relaxed text-gray-700">
+                Live farther north in Stevens County? Use our <Link href="/medicare-stevens-county" className="font-semibold text-blue-700 underline">Colville and Chewelah Medicare guide</Link> to compare coverage around your home address and travel to Spokane for care.
+              </p>
+            ) : null}
           </div>
           <div className="rounded-3xl border border-blue-100 bg-blue-50 p-8 shadow-sm">
             <h2 className="mb-5 text-2xl font-bold text-gray-900">Local details we review</h2>

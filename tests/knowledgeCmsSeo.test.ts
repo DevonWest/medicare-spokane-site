@@ -248,9 +248,13 @@ test("query aggregates inherit their dominant page, deduplicate pair findings, a
     getKnowledgeCmsSeoObservationHolds("2026-08-24").map(
       (hold) => hold.path,
     ),
-    ["/providence-health-plan-ending-2027-washington"],
+    ["/medicare-spokane", "/medicare-stevens-county", "/providence-health-plan-ending-2027-washington"],
   );
-  assert.equal(getKnowledgeCmsSeoObservationHolds("2026-09-08").length, 0);
+  assert.deepEqual(
+    getKnowledgeCmsSeoObservationHolds("2026-09-08").map((hold) => hold.path),
+    ["/medicare-spokane", "/medicare-stevens-county"],
+  );
+  assert.equal(getKnowledgeCmsSeoObservationHolds("2026-09-19").length, 0);
 });
 
 test("search evidence finds low CTR, striking distance, and material declines", () => {

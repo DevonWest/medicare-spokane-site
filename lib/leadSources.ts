@@ -31,6 +31,7 @@ export const LEAD_SOURCES = [
   "medicare-medical-lake",
   "medicare-mead",
   "medicare-deer-park",
+  "medicare-stevens-county",
   "review-feedback",
   "health-insurance-spokane",
   "individual-family-health-insurance-spokane",

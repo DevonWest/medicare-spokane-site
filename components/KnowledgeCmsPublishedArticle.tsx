@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import Disclaimer from "@/components/Disclaimer";
 import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import LeadForm from "@/components/LeadForm";
+import MedicarePlanNavigation, { planNavigationPaths } from "@/components/MedicarePlanNavigation";
 import type { KnowledgeCmsArticle } from "@/lib/knowledgeCms";
 import { LEAD_SOURCES, type LeadSource } from "@/lib/leadSources";
 import { siteConfig, telHref } from "@/lib/site";
@@ -186,6 +187,10 @@ export default function KnowledgeCmsPublishedArticle({
           ) : null}
         </article>
       </main>
+
+      {(planNavigationPaths as readonly string[]).includes(path) ? (
+        <MedicarePlanNavigation currentPath={path} />
+      ) : null}
 
       <section id="cms-article-help" className="border-y border-blue-100 bg-blue-50 px-4 py-14">
         <div className="mx-auto max-w-3xl">

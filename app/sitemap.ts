@@ -26,6 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/medicare-advantage`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-supplements`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/medicare-part-d`, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${baseUrl}/medicare-stevens-county`, lastModified: "2026-09-05", changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/compare-medicare-options`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/rx-drug-review`, changeFrequency: "weekly", priority: 0.8 },
     {
@@ -137,6 +138,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const localPages: MetadataRoute.Sitemap = getAllLocalMedicarePaths().map((path) => ({
     url: `${baseUrl}${path}`,
+    ...(path === "/medicare-spokane" ? { lastModified: "2026-09-05" } : {}),
     changeFrequency: "monthly",
     priority: getLocalPagePriority(path),
   }));

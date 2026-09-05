@@ -147,6 +147,9 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/medicare-stevens-county" className="transition-colors hover:text-white">Stevens County, WA</Link>
+              </li>
             </ul>
           </div>
         </div>
