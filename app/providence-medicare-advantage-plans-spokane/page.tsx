@@ -158,6 +158,12 @@ export default function ProvidenceMedicareAdvantagePlansSpokanePage() {
               Providence insurance changes are a separate issue
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">
+              <strong>September 9, 2026 update:</strong> Providence confirms its Medicare Advantage
+              plans will end after December 31, 2026, following CMS approval. Existing Providence
+              Medicare Supplement policies remain active for members in good standing. The network
+              information above describes current coverage; verify replacement coverage for 2027.
+            </p>
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               Providence Health Plan&apos;s announced 2027 insurance transition does not mean
               Providence Sacred Heart Medical Center, Holy Family Hospital, or Providence clinics
               are closing. Someone choosing different 2027 coverage will still need to verify that

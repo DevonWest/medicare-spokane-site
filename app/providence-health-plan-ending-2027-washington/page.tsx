@@ -15,6 +15,7 @@ const marketUpdate = getMarketUpdateByPath(pagePath) ?? (() => {
 
 const providenceStatusUrl =
   "https://www.providencehealthplan.com/about-providence/providence-news/status-update";
+const medicareEnrollmentUrl = "https://www.medicare.gov/health-drug-plans/open-enrollment";
 const washingtonOicUrl =
   "https://www.insurance.wa.gov/about-us/news/2026/thirteen-health-insurers-request-average-224-rate-increase-2027-individual-market";
 const washingtonHealthplanfinderUrl =
@@ -23,12 +24,12 @@ const washingtonHealthplanfinderUrl =
 export const metadata: Metadata = {
   title: "Providence Health Plan 2027 Changes in Washington",
   description:
-    "Providence Health Plan is ending Washington individual coverage after 2026. See confirmed 2027 changes and what Medicare Advantage members should know.",
+    "Providence confirms Medicare Advantage ends December 31, 2026. Existing Medicare Supplement policies continue for members in good standing. Washington update.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: marketUpdate.title,
     description:
-      "Washington individual coverage is ending after 2026, while Providence Medicare Advantage and Medicare Supplement details remain pending.",
+      "Providence Medicare Advantage will not be offered in 2027. Existing Medicare Supplement policies remain active for members in good standing. Updated September 9, 2026.",
     url: pageUrl,
     type: "article",
     publishedTime: `${marketUpdate.publishedDate}T09:00:00-07:00`,
@@ -74,19 +75,29 @@ const articleSchema = {
     { "@type": "AdministrativeArea", name: "Eastern Washington" },
     { "@type": "City", name: "Spokane" },
   ],
-  citation: [providenceStatusUrl, washingtonOicUrl, washingtonHealthplanfinderUrl],
+  citation: [
+    {
+      "@type": "CreativeWork",
+      name: "Providence Health Plan producer communication received September 9, 2026",
+      publisher: { "@type": "Organization", name: "Providence Health Plan" },
+    },
+    providenceStatusUrl,
+    washingtonOicUrl,
+    washingtonHealthplanfinderUrl,
+    medicareEnrollmentUrl,
+  ],
 };
 
 const confirmedChanges = [
-  "Providence says current members will keep their existing coverage through the 2026 plan year.",
+  "Providence confirms CMS approved withdrawal of its 2027 Medicare Advantage bid. Medicare Advantage operations will end after 2026, and current member coverage remains in effect through December 31, 2026.",
+  "Existing Providence Medicare Supplement policies remain active for members in good standing. New Medicare Supplement sales have been closed since July 1, 2026.",
   "Individual and family policies will be discontinued effective January 1, 2027.",
   "Washington's insurance regulator confirms Providence Health Plan will not offer individual coverage in the state for 2027.",
   "Providence says small-group plans will end at the end of 2026, with advance notice to employer group sponsors.",
 ];
 
 const pendingDetails = [
-  "Providence says current Medicare Advantage coverage remains in effect through 2026 and that it will share 2027 details as they become available and regulations allow.",
-  "Providence says current Medicare Supplement coverage remains in effect, with individual notice to come before any 2027 change.",
+  "Providence will provide additional transition information, timelines, and resources. Members should keep their official notices for instructions that apply to their coverage.",
   "Some large-group or employer arrangements may continue into 2027, so employees should rely on information from their employer.",
   "A replacement plan's provider network, prescriptions, premium, deductible, and out-of-pocket costs cannot be assumed before 2027 options are released.",
 ];
@@ -111,7 +122,7 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
 
       <PageHero
         title="Providence Health Plan 2027 Changes in Washington: What Spokane Members Should Know"
-        subtitle="Providence will not offer individual and family plans in Washington for 2027. Current Medicare Advantage coverage continues through 2026, with 2027 details still pending."
+        subtitle="Providence confirms Medicare Advantage will end after 2026. Existing Medicare Supplement policies remain active for members in good standing. Washington individual and family coverage is also ending."
         crumbs={[
           { href: "/", label: "Home" },
           { href: "/resources", label: "Resources" },
@@ -132,21 +143,32 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
 
             <div className="mt-7 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-amber-950">
               <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
-                Washington status: confirmed for individual coverage
+                September 9 update: Medicare Advantage exit confirmed
               </p>
               <p className="mt-3 text-xl font-bold">
-                Providence Health Plan will not offer individual and family health insurance in
-                Washington for 2027.
+                Providence Medicare Advantage coverage continues through December 31, 2026,
+                and will not be offered in 2027.
               </p>
               <p className="mt-3 leading-relaxed">
-                Current 2026 coverage continues through the end of the plan year. This does not
-                mean every Providence insurance product is ending on the same terms, and it does
-                not mean Providence hospitals or clinics are closing.
+                Existing Medicare Supplement policies remain active for members in good standing.
+                This does not mean Providence hospitals or clinics are closing.
               </p>
             </div>
 
             <div className="mt-10 max-w-3xl space-y-5 text-lg leading-relaxed text-gray-700">
               <h2 className="text-3xl font-bold text-gray-900">What Providence announced</h2>
+              <p>
+                In a producer communication received September 9, 2026, Providence confirmed that
+                the Centers for Medicare &amp; Medicaid Services (CMS) approved withdrawal of its
+                2027 Medicare Advantage bid. Providence said it could not reach a sale agreement
+                with another carrier and will cease Medicare Advantage operations at the end of
+                2026. Current members retain coverage through December 31, 2026.
+              </p>
+              <p>
+                The same communication says existing Medicare Supplement policies remain active
+                for members in good standing. Those plans have been closed to new sales since
+                July 1, 2026. Providence reported no additional Supplement changes at this time.
+              </p>
               <p>
                 Providence Health Plan announced that it will transition out of most health
                 insurance lines beginning in 2027. The company&apos;s August 20 update says individual and
@@ -248,7 +270,10 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                 </li>
                 <li>
                   <strong className="text-gray-900">4. Use the correct enrollment window.</strong>{" "}
-                  Washington&apos;s 2027 individual-market open enrollment runs from November 1, 2026,
+                  Medicare Annual Enrollment runs October 15 through December 7, 2026, for
+                  coverage starting January 1, 2027. Follow your plan&apos;s notices for any additional
+                  enrollment rights and deadlines. Washington&apos;s 2027 individual-market open
+                  enrollment runs from November 1, 2026,
                   through January 15, 2027. Enrollment must be completed by December 31 for January
                   1 coverage.
                 </li>
@@ -277,9 +302,10 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
                 <h2 className="text-xl font-bold text-gray-900">Medicare coverage</h2>
                 <p className="mt-3 leading-relaxed text-gray-700">
-                  Review current Providence network information, wait for plan-specific 2027
-                  details, and then compare doctors, prescriptions, and total costs during the
-                  applicable Medicare enrollment period.
+                  If you have Providence Medicare Advantage, prepare to review replacement
+                  coverage for January 1, 2027. Gather your doctors, prescriptions, and pharmacies
+                  now, then compare available 2027 options during the applicable enrollment period.
+                  Existing Providence Supplement members should not assume their policies are ending.
                 </p>
                 <Link
                   href="/providence-medicare-advantage-plans-spokane"
@@ -306,7 +332,8 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                   <p className="mt-2 leading-relaxed text-gray-700">
                     Providence is leaving most insurance lines, but the timing and outcome differ
                     by coverage type. Individual and family coverage is confirmed to end after
-                    2026. Medicare and some employer arrangements have separate pending details.
+                    2026, as is Medicare Advantage. Existing Medicare Supplement policies remain
+                    active for members in good standing. Some employer arrangements have separate terms.
                   </p>
                 </div>
                 <div>
@@ -314,11 +341,20 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                     Are Providence Medicare Advantage plans ending in 2027?
                   </h3>
                   <p className="mt-2 leading-relaxed text-gray-700">
-                    Providence has not confirmed one blanket outcome for 2027. Its August 20 update
-                    says current Medicare Advantage coverage continues through 2026 and that more
-                    details will be shared as they become available and regulations allow. Members
-                    should use their official plan notices and Medicare.gov for plan-specific
-                    information.
+                    Yes. Providence&apos;s producer communication received September 9, 2026,
+                    confirms CMS approval of its withdrawal. Providence Medicare Advantage will
+                    cease operations at the end of 2026 and will not be offered in 2027. Current
+                    member coverage remains in effect through December 31, 2026.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Are existing Providence Medicare Supplement policies ending too?
+                  </h3>
+                  <p className="mt-2 leading-relaxed text-gray-700">
+                    Providence says existing policies remain active for members in good standing.
+                    Medicare Supplement plans closed to new sales on July 1, 2026. The September 9
+                    communication does not announce termination of existing Supplement policies.
                   </p>
                 </div>
                 <div>
@@ -338,6 +374,12 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
               <h2 className="text-xl font-bold text-gray-900">Sources reviewed</h2>
               <ul className="mt-4 space-y-3 text-gray-700">
                 <li>
+                  <strong>Providence Health Plan producer communication received September 9, 2026</strong>
+                  {" "}— reviewed by our agency for CMS approval, the December 31 Medicare Advantage
+                  coverage end date, and continuation of existing Medicare Supplement policies.
+                  This is newer than the August wording on the public status page reviewed for this update.
+                </li>
+                <li>
                   <a
                     href={providenceStatusUrl}
                     target="_blank"
@@ -347,6 +389,17 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                     Providence Health Plan&apos;s official coverage transition update
                   </a>{" "}
                   for the company&apos;s confirmed and pending changes by coverage type.
+                </li>
+                <li>
+                  <a
+                    href={medicareEnrollmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-blue-700 hover:underline"
+                  >
+                    Medicare.gov Open Enrollment
+                  </a>{" "}
+                  for the October 15 through December 7 enrollment period and January 1 effective date.
                 </li>
                 <li>
                   <a
@@ -385,6 +438,12 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
 
             <div>
               <h2 className="text-xl font-bold text-gray-900">Update log</h2>
+              <p className="mt-3 leading-relaxed text-gray-700">
+                <time dateTime="2026-09-09">September 9, 2026</time> — Updated from Providence&apos;s
+                producer communication confirming CMS approval and the end of Medicare Advantage
+                operations after 2026. Clarified that existing Medicare Supplement policies remain
+                active for members in good standing and new sales closed July 1, 2026.
+              </p>
               <p className="mt-3 leading-relaxed text-gray-700">
                 <time dateTime="2026-08-22">August 22, 2026</time> — Updated the Medicare Advantage
                 section to match Providence&apos;s August 20 status page and removed earlier wording

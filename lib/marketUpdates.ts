@@ -21,7 +21,7 @@ export const marketUpdatesHub = {
   shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
     "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
-  modifiedDate: "2026-09-01",
+  modifiedDate: "2026-09-09",
 };
 
 /**
@@ -70,13 +70,13 @@ export const marketUpdates: readonly MarketUpdate[] = [
       "Providence Health Plan 2027 Changes in Washington: What Spokane Members Should Know",
     shortTitle: "Providence Health Plan 2027 Changes in Washington",
     summary:
-      "Providence individual and family coverage is ending, while Medicare Advantage and Medicare Supplement details are still pending.",
+      "Providence confirms Medicare Advantage will end after 2026. Existing Medicare Supplement policies remain active for members in good standing; Washington individual coverage is also ending.",
     publishedDate: "2026-08-19",
     publishedLabel: "August 19, 2026",
-    modifiedDate: "2026-08-22",
-    modifiedLabel: "August 22, 2026",
+    modifiedDate: "2026-09-09",
+    modifiedLabel: "September 9, 2026",
     spokaneStatus: "confirmed",
-    spokaneStatusLabel: "Washington individual coverage ending",
+    spokaneStatusLabel: "Medicare Advantage exit confirmed; existing Supplements continue",
   },
   {
     path: "/costco-scan-medicare-spokane",

@@ -133,7 +133,7 @@ export default function MedicareChangesSpokane2027Page() {
                 className="block rounded-2xl border border-blue-200 bg-blue-50 p-6 transition-colors hover:border-blue-400 hover:bg-blue-100"
               >
                 <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-                  {update.publishedLabel} · {update.spokaneStatusLabel}
+                  Updated {update.modifiedLabel} · {update.spokaneStatusLabel}
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-gray-900">{update.shortTitle}</h3>
                 <p className="mt-3 leading-relaxed text-gray-700">{update.summary}</p>

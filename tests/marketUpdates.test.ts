@@ -148,21 +148,26 @@ test("Costco and SCAN article confirms Washington Medigap without overstating av
   assert.match(article, /datePublished: publishedDate/);
 });
 
-test("Providence article separates confirmed Washington changes from pending Medicare details", () => {
+test("Providence article confirms the Medicare Advantage exit and distinguishes existing Supplements", () => {
   assert.match(
     providenceArticle,
     /title: "Providence Health Plan 2027 Changes in Washington"/,
   );
-  assert.match(providenceArticle, /Washington status: confirmed for individual coverage/);
-  assert.match(providenceArticle, /will not offer individual and family health insurance/);
-  assert.match(providenceArticle, /Medicare Advantage and Medicare Supplement details remain pending/);
+  assert.match(providenceArticle, /September 9 update: Medicare Advantage exit confirmed/);
+  assert.match(providenceArticle, /CMS approved withdrawal of its 2027 Medicare Advantage bid/);
+  assert.match(providenceArticle, /December 31, 2026/);
+  assert.match(providenceArticle, /Existing Providence Medicare Supplement policies remain active for members in good standing/);
+  assert.match(providenceArticle, /July 1, 2026/);
+  assert.doesNotMatch(providenceArticle, /details remain pending|2027 details still pending|has not confirmed one blanket outcome/);
   assert.match(
     providenceArticle,
     /does\s+not\s+mean Providence hospitals or clinics are closing/,
   );
   assert.match(providenceArticle, /"@type": "NewsArticle"/);
   assert.match(providenceArticle, /datePublished: marketUpdate\.publishedDate/);
-  assert.match(providenceArticle, /more\s+details\s+will\s+be\s+shared/);
+  const update = marketUpdates.find((entry) => entry.path === "/providence-health-plan-ending-2027-washington");
+  assert.equal(update?.publishedDate, "2026-08-19");
+  assert.equal(update?.modifiedDate, "2026-09-09");
   assert.match(providenceArticle, /Providence Medicare Advantage network guide/);
   assert.doesNotMatch(providenceArticle, /potential agreement with another carrier/);
 });
