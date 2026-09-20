@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { telHref } from "@/lib/site";
 
 export default function MobileStickyCTA() {
+  const pathname = usePathname();
+  const isAepReviewPage = pathname === "/spokane-aep-review";
+
   return (
     <div className="mobile-sticky-cta fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm md:hidden print:hidden">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-2.5 px-3 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] pt-2.5">
@@ -28,11 +34,11 @@ export default function MobileStickyCTA() {
           <span>Call</span>
         </a>
         <Link
-          href="/contact"
+          href={isAepReviewPage ? "#aep-review-form" : "/contact"}
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-700 bg-white px-3 py-3 text-[15px] font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-          aria-label="Request Help with Medicare"
+          aria-label={isAepReviewPage ? "Request a Medicare review" : "Request Help with Medicare"}
         >
-          Request Help
+          {isAepReviewPage ? "Request Review" : "Request Help"}
         </Link>
       </div>
     </div>

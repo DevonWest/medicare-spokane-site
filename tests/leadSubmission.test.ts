@@ -219,6 +219,36 @@ test("POST returns 400 when request validation fails", async () => {
   assert.equal((await response.json()).ok, false);
 });
 
+test("POST preserves the paid AEP source and categorical CRM note", async () => {
+  const { handleLeadPost } = await loadLeadModules();
+  let receivedPayload: LeadPayload | undefined;
+  const lead = {
+    ...makeLeadPayload(),
+    source: "spokane-aep-review" as const,
+    sourcePath: "/spokane-aep-review",
+    message: [
+      "Annual Medicare review requested: Yes",
+      "Help requested: My current plan and upcoming changes",
+      "Preferred contact: Phone call",
+      "Best time: Morning",
+      "Contact consent confirmed: Yes",
+    ].join("\n"),
+  };
+
+  const response = await handleLeadPost(makeLeadRequest(lead), {
+    submitLead: async (payload) => {
+      receivedPayload = payload;
+      return { ok: true, id: "lead_aep_123", crmSyncStatus: "synced" };
+    },
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(receivedPayload?.source, "spokane-aep-review");
+  assert.equal(receivedPayload?.sourcePath, "/spokane-aep-review");
+  assert.equal(receivedPayload?.message, lead.message);
+  assert.deepEqual(receivedPayload?.utm, { source: "google", medium: "cpc" });
+});
+
 test("POST returns 200 with ok true when email notification fails after Firestore save", async () => {
   const { handleLeadPost } = await loadLeadModules();
   const response = await handleLeadPost(makeLeadRequest(makeLeadPayload()), {
