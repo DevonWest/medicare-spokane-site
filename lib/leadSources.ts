@@ -13,6 +13,7 @@ export const LEAD_SOURCES = [
   "medicare-savings-program-extra-help-washington",
   "moving-to-spokane-medicare",
   "medicare-annual-enrollment-spokane",
+  "spokane-aep-review",
   "medicare-advantage",
   "medicare-supplements",
   "medicare-part-d",
