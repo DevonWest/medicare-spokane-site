@@ -37,7 +37,7 @@ test("provider network registry preserves unique source-backed entries", () => {
 test("provider network sources use current HTTPS evidence", () => {
   for (const source of providerNetworkSources) {
     assert.match(source.url, /^https:\/\//);
-    assert.equal(source.checkedAt, PROVIDER_NETWORK_CHECKED_AT);
+    assert.equal(source.checkedAt, source.id === "uhc-providence-2027" ? "2026-09-21" : PROVIDER_NETWORK_CHECKED_AT);
   }
 });
 

@@ -21,7 +21,7 @@ export const marketUpdatesHub = {
   shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
     "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
-  modifiedDate: "2026-09-09",
+  modifiedDate: "2026-09-21",
 };
 
 /**
@@ -34,6 +34,20 @@ export const marketUpdatesHub = {
  * dedicated 2027 tracker.
  */
 export const marketUpdates: readonly MarketUpdate[] = [
+  {
+    path: "/unitedhealthcare-providence-medicare-advantage-2027-spokane",
+    category: "2027-market",
+    title: "UnitedHealthcare and Providence: 2027 Medicare Advantage Changes in Spokane",
+    shortTitle: "UHC–Providence Medicare Network Changes for 2027",
+    summary:
+      "UHC announces a January 1 Providence network change. Review the individual Medicare Advantage scope, Washington D-SNP exception and steps for your 2027 coverage review.",
+    publishedDate: "2026-09-21",
+    publishedLabel: "September 21, 2026",
+    modifiedDate: "2026-09-21",
+    modifiedLabel: "September 21, 2026",
+    spokaneStatus: "confirmed",
+    spokaneStatusLabel: "Spokane hospitals named; coverage exceptions apply",
+  },
   {
     path: "/multicare-rockwood-clinic-closures-spokane",
     category: "local-medicare-news",
@@ -73,8 +87,8 @@ export const marketUpdates: readonly MarketUpdate[] = [
       "Providence confirms Medicare Advantage will end after 2026. Existing Medicare Supplement policies remain active for members in good standing; Washington individual coverage is also ending.",
     publishedDate: "2026-08-19",
     publishedLabel: "August 19, 2026",
-    modifiedDate: "2026-09-09",
-    modifiedLabel: "September 9, 2026",
+    modifiedDate: "2026-09-21",
+    modifiedLabel: "September 21, 2026",
     spokaneStatus: "confirmed",
     spokaneStatusLabel: "Medicare Advantage exit confirmed; existing Supplements continue",
   },

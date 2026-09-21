@@ -194,6 +194,28 @@ test("the default monitoring registry is accepted and every watched URL is inspe
   )));
 });
 
+test("URL inspection still rejects oversized or unsafe target sets before requests", async () => {
+  mockServerOnlyModule();
+  const searchConsole = await import("../lib/knowledgeCmsSearchConsole");
+  let calls = 0;
+  for (const paths of [
+    Array.from({ length: 51 }, (_, index) => `/page-${index}`),
+    ["//outside.example/path"],
+    ["/../private"],
+  ]) {
+    const snapshot = await searchConsole.loadKnowledgeCmsSearchConsoleSnapshot({
+      enabled: "true",
+      siteUrl: "sc-domain:medicareinspokane.com",
+      origin: "https://www.medicareinspokane.com",
+      inspectionPaths: paths,
+      client: { async query() { return { data: { rows: [] } }; } },
+      inspectionClient: { async inspect() { calls += 1; return { data: {} }; } },
+    });
+    assert.equal(snapshot.urlInspectionStatus, "unconfigured");
+  }
+  assert.equal(calls, 0);
+});
+
 test("URL inspection retains exact watched routes and reports partial API failures", async () => {
   mockServerOnlyModule();
   const searchConsole = await import("../lib/knowledgeCmsSearchConsole");

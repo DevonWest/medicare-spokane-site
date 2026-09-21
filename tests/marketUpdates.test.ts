@@ -68,7 +68,7 @@ test("one market-update registry drives discovery, monitoring, and internal link
   assert.match(hub, /get2027MarketUpdatesNewestFirst/);
   assert.deepEqual(
     get2027MarketUpdatesNewestFirst().map((update) => update.category),
-    ["2027-market", "2027-market"],
+    ["2027-market", "2027-market", "2027-market"],
   );
   assert.match(article, /MarketUpdateLinks/);
   assert.match(relatedLinks, /relatedUpdates\.map/);
@@ -167,7 +167,7 @@ test("Providence article confirms the Medicare Advantage exit and distinguishes 
   assert.match(providenceArticle, /datePublished: marketUpdate\.publishedDate/);
   const update = marketUpdates.find((entry) => entry.path === "/providence-health-plan-ending-2027-washington");
   assert.equal(update?.publishedDate, "2026-08-19");
-  assert.equal(update?.modifiedDate, "2026-09-09");
+  assert.equal(update?.modifiedDate, "2026-09-21");
   assert.match(providenceArticle, /Providence Medicare Advantage network guide/);
   assert.doesNotMatch(providenceArticle, /potential agreement with another carrier/);
 });

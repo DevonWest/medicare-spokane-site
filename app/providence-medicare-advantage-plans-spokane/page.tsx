@@ -8,6 +8,7 @@ import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import PageHero from "@/components/PageHero";
 import MedicarePlanNavigation from "@/components/MedicarePlanNavigation";
 import ProviderNetworkDirectory from "@/components/ProviderNetworkDirectory";
+import UhcProvidenceUpdate from "@/components/UhcProvidenceUpdate";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
   PROVIDER_NETWORK_CHECKED_LABEL,
@@ -21,7 +22,7 @@ const pageUrl = `${siteConfig.url}${pagePath}`;
 export const metadata: Metadata = {
   title: "Providence Medicare Plans Accepted in Spokane",
   description:
-    "See Medicare Advantage carriers Providence lists in Washington, the Spokane PPO primary-care restriction, and whether SCAN is listed for Providence care.",
+    "Check Providence Medicare networks in Spokane, including UHC's announced 2027 change, D-SNP exceptions and exact-plan verification steps.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "Providence Medicare Advantage Networks in Spokane",
@@ -81,6 +82,7 @@ export default function ProvidenceMedicareAdvantagePlansSpokanePage() {
       <main>
         <section className="bg-white px-4 py-12">
           <div className="mx-auto max-w-5xl">
+            <UhcProvidenceUpdate />
             <p className="text-sm text-gray-500">
               Source checked{" "}
               <time dateTime={PROVIDER_NETWORK_CHECKED_AT}>{PROVIDER_NETWORK_CHECKED_LABEL}</time>

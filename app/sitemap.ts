@@ -36,13 +36,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}${PROVIDER_NETWORK_GUIDE_PATH}`,
-      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      lastModified: "2026-09-21",
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/providence-medicare-advantage-plans-spokane`,
-      lastModified: PROVIDER_NETWORK_CHECKED_AT,
+      lastModified: "2026-09-21",
       changeFrequency: "weekly",
       priority: 0.85,
     },

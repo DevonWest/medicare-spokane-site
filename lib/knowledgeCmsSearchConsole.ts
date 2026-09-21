@@ -308,7 +308,7 @@ function inspectionTargets(
     }
     const uniquePaths = [...new Set(paths)];
     if (
-      uniquePaths.length > 25 ||
+      uniquePaths.length > 50 ||
       uniquePaths.some(
         (path) =>
           !/^\/(?!\/)[A-Za-z0-9/_-]*$/.test(path) || path.includes(".."),
