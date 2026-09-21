@@ -294,7 +294,7 @@ test("team ItemList and sitemap expose the authority and standards destinations"
     item: Record<string, unknown>;
   }>;
 
-  assert.equal(items.length, 11);
+  assert.equal(items.length, 12);
   assert.equal(
     new Set(items.map((item) => item.item["@id"])).size,
     items.length,
