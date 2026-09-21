@@ -21,7 +21,15 @@ import { env } from "./runtimeValues";
 
 const APP_NAME = "medicareinspokane-admin";
 
-let cachedDb: Firestore | null = null;
+// Next.js can evaluate this module in separate route bundles while Firebase
+// shares the named app. Keep configured clients in the same process-wide cache
+// so a later route never calls settings() on an already initialized client.
+const FIRESTORE_CACHE_KEY = Symbol.for("medicareinspokane.firebaseAdmin.firestore");
+const firebaseGlobal = globalThis as typeof globalThis & {
+  [FIRESTORE_CACHE_KEY]?: WeakMap<App, Firestore>;
+};
+const firestoreClients = (firebaseGlobal[FIRESTORE_CACHE_KEY] ??= new WeakMap<App, Firestore>());
+
 let cachedAuth: Auth | null = null;
 
 function resolveProjectId(): string | undefined {
@@ -93,12 +101,17 @@ function buildApp(): App {
  * a hard server error and surface a generic message to users.
  */
 export function getFirestoreAdmin(): Firestore {
-  if (cachedDb) return cachedDb;
   // Will throw a clear message from the SDK if creds are missing.
   const app = buildApp();
-  cachedDb = getFirestore(app);
-  cachedDb.settings({ ignoreUndefinedProperties: true });
-  return cachedDb;
+  const existing = firestoreClients.get(app);
+  if (existing) return existing;
+
+  const db = getFirestore(app);
+  db.settings({ ignoreUndefinedProperties: true });
+  // Cache only after configuration succeeds. A failed attempt must not leave
+  // an unconfigured client that a subsequent request treats as ready.
+  firestoreClients.set(app, db);
+  return db;
 }
 
 /**

@@ -182,6 +182,7 @@ test("the default monitoring registry is accepted and every watched URL is inspe
     client: { async query() { return { data: { rows: [] } }; } },
     inspectionClient: {
       async inspect(input) {
+        assert.ok(input.requestBody.inspectionUrl);
         inspectedUrls.push(input.requestBody.inspectionUrl);
         return { data: { inspectionResult: { indexStatusResult: { verdict: "NEUTRAL" } } } };
       },
