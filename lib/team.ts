@@ -54,11 +54,11 @@ export type TeamMember = {
 export const teamMembers: TeamMember[] = [
   {
     name: "Lynn Wold",
-    title: "Founder & Licensed Insurance Agent",
+    title: "Founder & Licensed Insurance Agent (Retiring)",
     shortBio:
-      "Lynn began her insurance career in 2010 and formed Health Insurance Options in 2012. A Washington native, Lynn brings a caring, practical approach to helping Spokane-area residents understand their Medicare options.",
+      "Lynn began her insurance career in 2010 and founded Health Insurance Options in 2012. As she prepares for retirement, she has entrusted Aimee Heath and the Health Insurance Options team with helping her clients going forward. You can continue to reach our Spokane office for the caring, personal Medicare guidance you have come to expect.",
     longBio:
-      "Lynn’s background in volunteering helped shape her sincere appreciation and concern for seniors. She believes her career in Medicare insurance was “meant to be” and enjoys helping clients make sense of the information they receive from many different sources. Lynn and her husband raised five children and still live on the family farm in Mead.",
+      "Lynn’s background in volunteering helped shape her sincere appreciation and concern for seniors. After founding Health Insurance Options in 2012, she built lasting relationships by helping clients make sense of Medicare. As she prepares for retirement, Lynn has entrusted Aimee Heath and the Health Insurance Options team with continuing that care. Her clients can contact the same Spokane office for questions, coverage reviews, and ongoing support. Lynn and her husband raised five children and still live on the family farm in Mead.",
     specialties: [
       "Medicare Advantage",
       "Medicare Supplement (Medigap)",
@@ -72,6 +72,25 @@ export const teamMembers: TeamMember[] = [
     active: true,
     reviewable: true,
     sortOrder: 1,
+  },
+  {
+    name: "Aimee Heath",
+    title: "Licensed Insurance Agent",
+    shortBio:
+      "Aimee Heath is a licensed insurance agent with our Spokane team. She helps clients understand their Medicare options and works alongside the Health Insurance Options team to continue caring for Lynn Wold’s clients as Lynn prepares for retirement.",
+    specialties: [
+      "Medicare Advantage",
+      "Medicare Supplement (Medigap)",
+      "Medicare Part D",
+      "Client Support",
+    ],
+    phone: "509-353-0476",
+    email: "info@medicareinspokane.com",
+    image: "/team/aimee-heath.png",
+    licensed: true,
+    active: true,
+    reviewable: true,
+    sortOrder: 1.5,
   },
   {
     name: "Craig Lenhart",

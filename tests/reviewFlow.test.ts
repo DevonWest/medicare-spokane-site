@@ -34,6 +34,7 @@ test("reviewable team members include the active agents and exclude retired or n
 
   assert.deepEqual(names, [
     "Lynn Wold",
+    "Aimee Heath",
     "Craig Lenhart",
     "Meg Shumaker",
     "Rose Records",
@@ -57,6 +58,7 @@ test("homepage team preview includes all active licensed agents in neutral alpha
   assert.deepEqual(names, [
     "Denise Chan",
     "Cathy Franklin",
+    "Aimee Heath",
     "Craig Lenhart",
     "Sheryl Manchester",
     "Rose Records",
@@ -78,6 +80,7 @@ test("homepage team preview keeps all active licensed agents visible and places 
 
   assert.deepEqual(previewNames, [
     "Cathy Franklin",
+    "Aimee Heath",
     "Craig Lenhart",
     "Sheryl Manchester",
     "Rose Records",
