@@ -8,6 +8,7 @@ import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
 import PageHero from "@/components/PageHero";
 import MedicarePlanNavigation from "@/components/MedicarePlanNavigation";
 import ProviderNetworkDirectory from "@/components/ProviderNetworkDirectory";
+import UhcProvidenceUpdate from "@/components/UhcProvidenceUpdate";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
   PROVIDER_NETWORK_CHECKED_LABEL,
@@ -41,7 +42,7 @@ const collectionSchema = {
   name: "Spokane Medicare Advantage Provider Network Guide",
   description:
     "A locally maintained guide to Medicare Advantage carrier participation at major Spokane and Inland Northwest health systems.",
-  dateModified: PROVIDER_NETWORK_CHECKED_AT,
+  dateModified: "2026-09-21",
   isPartOf: {
     "@type": "WebSite",
     "@id": `${siteConfig.url}#website`,
@@ -144,6 +145,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
       <main>
         <section className="border-b border-blue-100 bg-blue-50 px-4 py-10">
           <div className="mx-auto max-w-5xl">
+            <UhcProvidenceUpdate />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">

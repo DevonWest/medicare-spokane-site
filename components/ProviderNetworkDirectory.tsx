@@ -82,8 +82,9 @@ export default function ProviderNetworkDirectory({
           </h2>
         </div>
         <p className="text-sm text-gray-600">
-          Sources checked{" "}
+          Base listings checked{" "}
           <time dateTime={PROVIDER_NETWORK_CHECKED_AT}>{PROVIDER_NETWORK_CHECKED_LABEL}</time>
+          <span className="block">Dated updates are identified in the details and sources.</span>
         </p>
       </div>
 
@@ -202,6 +203,7 @@ export default function ProviderNetworkDirectory({
                                 >
                                   {source.publisher} ↗
                                 </a>
+                                <span className="block text-xs text-gray-500">Checked <time dateTime={source.checkedAt}>{source.checkedAt}</time></span>
                               </li>
                             ) : null;
                           })}

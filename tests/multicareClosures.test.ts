@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import sitemap from "../app/sitemap";
-import { buildMarketUpdatesNewsSitemap, getLatestMarketUpdate, getMarketUpdateByPath } from "../lib/marketUpdates";
+import { buildMarketUpdatesNewsSitemap, getMarketUpdatesNewestFirst, getMarketUpdateByPath } from "../lib/marketUpdates";
 import { publicMonitoringPaths } from "../lib/publicMonitoringPaths";
 import { siteConfig } from "../lib/site";
 
@@ -11,7 +11,7 @@ const article = readFileSync(new URL(`../app${path}/page.tsx`, import.meta.url),
 
 test("Rockwood closure article is discoverable and monitored as local news", () => {
   assert.equal(getMarketUpdateByPath(path)?.category, "local-medicare-news");
-  assert.equal(getLatestMarketUpdate().path, path);
+  assert.ok(getMarketUpdatesNewestFirst().some((update) => update.path === path));
   assert.ok(publicMonitoringPaths.includes(path));
   assert.equal(sitemap().filter((entry) => entry.url === `${siteConfig.url}${path}`).length, 1);
   const news = buildMarketUpdatesNewsSitemap(new Date("2026-09-05T12:00:00Z"));

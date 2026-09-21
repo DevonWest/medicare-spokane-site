@@ -40,6 +40,13 @@ export const PROVIDER_NETWORK_CHECKED_LABEL = "August 25, 2026";
 
 export const providerNetworkSources: readonly ProviderNetworkSource[] = [
   {
+    id: "uhc-providence-2027",
+    title: "Providence Health in Oregon and Washington: 2027 network announcement",
+    publisher: "UnitedHealthcare",
+    url: "https://www.uhc.com/providencepnw",
+    checkedAt: "2026-09-21",
+  },
+  {
     id: "multicare-accepted-plans",
     title: "Accepted Health Insurance Plans",
     publisher: "MultiCare Health System",
@@ -259,11 +266,11 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
     id: "providence-uhc",
     systemId: "providence-spokane",
     carrier: "UnitedHealthcare",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "2026 listing; 2027 individual Medicare Advantage change announced",
     detail:
-      "Providence lists UnitedHealthcare. Confirm whether the member's exact HMO, PPO, or special-needs plan includes the provider.",
-    sourceIds: ["providence-washington-medicare"],
+      "Do not use the 2026 carrier listing to confirm 2027 coverage. UHC's September 17 notice announces a January 1, 2027 individual Medicare Advantage network change. It excludes Washington D-SNP plans from this announcement while renewal negotiations continue. Review the linked UHC notice and confirm your exact plan.",
+    sourceIds: ["uhc-providence-2027", "providence-washington-medicare"],
   },
   {
     id: "providence-wellcare",

@@ -4,6 +4,7 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
 import MarketUpdateLinks from "@/components/MarketUpdateLinks";
 import PageHero from "@/components/PageHero";
+import UhcProvidenceUpdate from "@/components/UhcProvidenceUpdate";
 import { getMarketUpdateByPath, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
 
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: marketUpdate.title,
     description:
-      "Providence Medicare Advantage will not be offered in 2027. Existing Medicare Supplement policies remain active for members in good standing. Updated September 9, 2026.",
+      "Providence Medicare Advantage will not be offered in 2027. Existing Medicare Supplement policies remain active for members in good standing. Includes a link to the separate UHC network announcement.",
     url: pageUrl,
     type: "article",
     publishedTime: `${marketUpdate.publishedDate}T09:00:00-07:00`,
@@ -140,6 +141,8 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
               updated{" "}
               <time dateTime={marketUpdate.modifiedDate}>{marketUpdate.modifiedLabel}</time>
             </p>
+
+            <UhcProvidenceUpdate />
 
             <div className="mt-7 rounded-2xl border-2 border-amber-300 bg-amber-50 p-6 text-amber-950">
               <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
