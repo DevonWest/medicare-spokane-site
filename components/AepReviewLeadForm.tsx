@@ -10,7 +10,7 @@ import {
   isAepContactPreference,
   isAepHelpType,
 } from "@/lib/aepLead";
-import { trackLeadConversion } from "@/lib/analytics";
+import { trackFormStart, trackLeadConversion } from "@/lib/analytics";
 import { buildLeadRequestPayload, type LeadFormFields } from "@/lib/leadPayload";
 import { submitLeadRequest } from "@/lib/leadSubmissionClient";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
@@ -47,6 +47,7 @@ export default function AepReviewLeadForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const formStarted = useRef(false);
   const successRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,6 +174,12 @@ export default function AepReviewLeadForm() {
   return (
     <form
       id="aep-review-form"
+      onFocusCapture={() => {
+        if (!formStarted.current) {
+          trackFormStart(source);
+          formStarted.current = true;
+        }
+      }}
       onSubmit={handleSubmit}
       noValidate
       className="scroll-mt-28 rounded-3xl border border-blue-100 bg-white p-5 shadow-xl shadow-blue-950/10 sm:p-7"

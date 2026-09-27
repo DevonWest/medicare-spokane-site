@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { GoogleTagManager } from "@next/third-parties/google";
+import SiteAnalytics from "@/components/SiteAnalytics";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LocalBusinessSchema from "@/components/LocalBusinessSchema";
 import MobileStickyCTA from "@/components/MobileStickyCTA";
 import { siteConfig } from "@/lib/site";
-import { getGtmId, isProduction } from "@/lib/env";
+import { getGaMeasurementId, getGtmId, isProduction } from "@/lib/env";
 
 const indexable = isProduction();
 const gtmId = getGtmId();
@@ -97,8 +98,9 @@ export default function RootLayout({
       <head>
         <LocalBusinessSchema />
       </head>
-      {gtmId ? <GoogleTagManager gtmId={gtmId} /> : null}
+      {gtmId && !getGaMeasurementId() ? <GoogleTagManager gtmId={gtmId} /> : null}
       <body className="flex min-h-screen flex-col bg-white font-sans text-gray-900 antialiased">
+        <SiteAnalytics />
         <Header />
         <main className="flex-1 pb-[calc(var(--mobile-sticky-cta-offset)-1rem)] md:pb-0">{children}</main>
         <Footer />

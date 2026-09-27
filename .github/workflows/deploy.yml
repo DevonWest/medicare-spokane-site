@@ -15,6 +15,7 @@
 #   GCP_WORKLOAD_IDENTITY_PROVIDER
 #   GCP_DEPLOY_SERVICE_ACCOUNT
 #   NEXT_PUBLIC_GTM_ID optional
+#   NEXT_PUBLIC_GA_MEASUREMENT_ID optional; defaults to the Spokane web stream
 #   NEXT_PUBLIC_FIREBASE_API_KEY required before enabling Knowledge CMS
 #   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN required before enabling Knowledge CMS
 #   KNOWLEDGE_CMS_ENABLED optional; defaults to false
@@ -82,6 +83,7 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://www.medicareinspokane.com
           NEXT_PUBLIC_SITE_ENV: production
           NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-N741GSXMB1' }}
 
   deploy:
     if: ${{ github.event_name != 'pull_request' }}
@@ -346,6 +348,7 @@ jobs:
             --build-arg NEXT_PUBLIC_SITE_URL='${{ steps.cfg.outputs.site_url }}' \
             --build-arg NEXT_PUBLIC_SITE_ENV='${{ steps.cfg.outputs.site_env }}' \
             --build-arg NEXT_PUBLIC_GTM_ID='${{ vars.NEXT_PUBLIC_GTM_ID }}' \
+            --build-arg NEXT_PUBLIC_GA_MEASUREMENT_ID='${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-N741GSXMB1' }}' \
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="$NEXT_PUBLIC_FIREBASE_API_KEY" \
             --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" \
             --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
