@@ -1,7 +1,7 @@
+import ArticleHelp from "@/components/ArticleHelp";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import MarketUpdateLinks from "@/components/MarketUpdateLinks";
@@ -112,6 +112,8 @@ export default function UnitedHealthcareProvidence2027Page() {
             <p className="mt-4">If your card says Dual Complete, ask UHC to confirm your exact Washington D-SNP. If it says AARP, also check whether the coverage is Medicare Advantage or Medicare Supplement; the brand name alone does not answer that question.</p>
           </section>
 
+          <ArticleHelp topic="network" compact />
+
           <section aria-labelledby="ongoing-treatment">
             <h2 id="ongoing-treatment" className="text-3xl font-bold text-gray-900">What if I am in ongoing treatment?</h2>
             <p className="mt-4">UHC describes temporary continuity-of-care protection for qualifying serious or complex treatment. Call the number on your member card about eligibility and approval. Its notice also confirms emergency care at the in-network benefit level. <a href={uhcNotice} className={linkClass}>Read the care provisions.</a></p>
@@ -138,7 +140,7 @@ export default function UnitedHealthcareProvidence2027Page() {
           <section aria-labelledby="local-help">
             <h2 id="local-help" className="text-3xl font-bold text-gray-900">We will help you work through it</h2>
             <p className="mt-4">You do not have to sort through the insurance questions alone. Whether you are already a client or reaching out for the first time, our Health Insurance Options team can help review the Medicare plans we represent and identify what needs direct confirmation.</p>
-            <p className="mt-4">Call <a href={`tel:${siteConfig.phone.replace(/\D/g, "")}`} className={linkClass}>{siteConfig.phone}</a> or <Link href="/contact" className={linkClass}>contact our Spokane team</Link>. Bring your provider list and notices so we can focus on what matters to you.</p>
+            <p className="mt-4">Call <a href={`tel:${siteConfig.phone.replace(/\D/g, "")}`} className={linkClass}>{siteConfig.phone}</a> or <Link href="/contact#contact-form" className={linkClass}>contact our Spokane team</Link>. Bring your provider list and notices so we can focus on what matters to you.</p>
           </section>
 
           <section aria-labelledby="sources">
@@ -154,7 +156,7 @@ export default function UnitedHealthcareProvidence2027Page() {
         </div>
       </article>
       <FAQ heading="Planning Your 2027 Medicare Review" items={faqs} />
-      <CTASection heading="Questions About Your Providence Care and Medicare?" subheading="Our Spokane team can help you review the plans we represent and the providers you want to keep." />
+      <div className="mx-auto max-w-4xl px-4"><ArticleHelp topic="network" /></div>
     </>
   );
 }

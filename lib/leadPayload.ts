@@ -1,5 +1,6 @@
 import type { LeadSource } from "./leadSources";
 import type { UtmParams } from "./utm";
+import { contactReason } from "./contactReasons";
 
 export interface LeadFormFields {
   fullName: string;
@@ -17,15 +18,18 @@ export interface LeadRequestPayload extends LeadFormFields {
   clientSubmittedAt: string;
 }
 
-export function buildLeadFormFields(formData: FormData, showMessage: boolean): LeadFormFields {
+export function buildLeadFormFields(formData: FormData, showMessage: boolean, showRequestReason = false): LeadFormFields {
   const zip = String(formData.get("zip") ?? "");
+  const message = showMessage ? String(formData.get("message") ?? "") : undefined;
+  const reason = showRequestReason ? contactReason(formData.get("requestReason")) : undefined;
 
   return {
     fullName: String(formData.get("fullName") ?? ""),
     email: String(formData.get("email") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     zip: zip.trim() ? zip : undefined,
-    message: showMessage ? String(formData.get("message") ?? "") : undefined,
+    // Keep the existing API/CRM contract: the selected reason accompanies the message.
+    message: reason ? [`Request reason: ${reason}`, message].filter(Boolean).join("\n\n") : message,
   };
 }
 

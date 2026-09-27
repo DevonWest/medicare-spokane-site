@@ -1,3 +1,4 @@
+import ArticleHelp from "@/components/ArticleHelp";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -189,6 +190,8 @@ export default function CostcoScanMedicareSpokanePage() {
                 is complete.
               </p>
             </div>
+
+            <ArticleHelp topic="supplement" compact />
           </div>
         </section>
 
@@ -380,6 +383,8 @@ export default function CostcoScanMedicareSpokanePage() {
                 .
               </p>
             </div>
+
+            <ArticleHelp topic="supplement" />
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
               <h2 className="text-xl font-bold text-gray-900">Sources reviewed</h2>

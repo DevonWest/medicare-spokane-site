@@ -180,12 +180,14 @@ export default function ContactPage() {
           </div>
 
           {/* Form */}
-          <div id="contact-form">
+          <div id="contact-form" className="scroll-mt-[calc(var(--mobile-header-offset)+0.75rem)]">
             <LeadForm
               source="contact"
               heading="Send Us a Message"
               subheading="Share a few details and a licensed agent will get back to you."
               showMessage
+              showRequestReason
+              disclosureText={`By submitting, you request contact from a licensed insurance professional at Health Insurance Options LLC about your insurance question. There is no obligation to enroll. ${siteConfig.disclaimer}`}
             />
           </div>
         </div>

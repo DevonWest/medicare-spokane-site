@@ -4,6 +4,7 @@ import { sendGTMEvent } from "@next/third-parties/google";
 import { getGaMeasurementId, getGtmId, getSiteEnv } from "./env";
 import { LEAD_SOURCES, type LeadSource } from "./leadSources";
 import type { UtmParams } from "./utm";
+import { lastArticlePath } from "./articleAttribution";
 
 declare global {
   interface Window {
@@ -77,16 +78,18 @@ function track(name: string, params: Record<string, string> = {}): void {
   if (!enabled()) return;
   // Tracking must never turn a successfully saved request into a UI error.
   try {
+    const articlePath = name === "page_view" ? undefined : lastArticlePath();
+    const eventParams = { ...params, ...(articlePath ? { article_path: articlePath } : {}) };
     if (initializeAnalytics()) {
       window.gtag!("event", name, {
-        ...params,
+        ...eventParams,
         send_to: getGaMeasurementId(),
         site_env: getSiteEnv(),
         page_location: analyticsUrl(window.location.href, true),
         page_referrer: analyticsUrl(document.referrer),
       });
     } else if (getGtmId()) {
-      sendGTMEvent({ event: name, ...params, site_env: getSiteEnv() });
+      sendGTMEvent({ event: name, ...eventParams, site_env: getSiteEnv() });
     }
   } catch {
     // An unavailable analytics service must not interrupt the website.
@@ -102,6 +105,10 @@ export function trackPageView(): void {
 
 export function trackContactClick(method: "phone" | "email"): void {
   track(method === "phone" ? "phone_click" : "email_click", { contact_method: method });
+}
+
+export function trackArticleHelpClick(): void {
+  track("article_help_click");
 }
 
 export function trackFormStart(source: LeadSource): void {
