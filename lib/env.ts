@@ -39,3 +39,9 @@ export function isProduction(): boolean {
 export function getGtmId(): string {
   return (process.env.NEXT_PUBLIC_GTM_ID || "").trim();
 }
+
+/** Public GA4 stream ID; an explicit empty value disables direct GA4. */
+export function getGaMeasurementId(): string {
+  const id = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-N741GSXMB1").trim();
+  return /^G-[A-Z0-9]+$/.test(id) ? id : "";
+}

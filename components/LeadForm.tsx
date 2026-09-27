@@ -7,7 +7,7 @@ import { submitLeadRequest } from "@/lib/leadSubmissionClient";
 import type { LeadSource } from "@/lib/leadSources";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
 import { captureUtmFromLocation } from "@/lib/utm";
-import { trackLeadConversion } from "@/lib/analytics";
+import { trackFormStart, trackLeadConversion } from "@/lib/analytics";
 
 interface LeadFormProps {
   source: LeadSource;
@@ -38,6 +38,7 @@ export default function LeadForm({
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const formStarted = useRef(false);
   const successRef = useRef<HTMLDivElement>(null);
 
   function getFieldClassName(hasError: boolean) {
@@ -143,6 +144,12 @@ export default function LeadForm({
       )}
 
         <form
+          onFocusCapture={() => {
+            if (!formStarted.current) {
+              trackFormStart(source);
+              formStarted.current = true;
+            }
+          }}
           onSubmit={handleSubmit}
           className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8"
           noValidate
