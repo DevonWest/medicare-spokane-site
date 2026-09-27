@@ -1,7 +1,7 @@
+import ArticleHelp from "@/components/ArticleHelp";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import FAQ, { type FAQItem } from "@/components/FAQ";
 import KnowledgePageEnhancements from "@/components/KnowledgePageEnhancements";
@@ -170,6 +170,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
 
         <section className="bg-white px-4 py-14">
           <div className="mx-auto max-w-6xl">
+            <ArticleHelp topic="network" compact />
             <ProviderNetworkDirectory />
           </div>
         </section>
@@ -335,10 +336,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
         <KnowledgePageEnhancements currentPath={PROVIDER_NETWORK_GUIDE_PATH} />
       </main>
 
-      <CTASection
-        heading="Want Us to Verify Your Doctors and Hospitals?"
-        subheading="Bring the exact plan name and your provider list. A local licensed insurance professional can help you check the details before you make a decision."
-      />
+      <div className="mx-auto max-w-4xl px-4"><ArticleHelp topic="network" /></div>
     </>
   );
 }

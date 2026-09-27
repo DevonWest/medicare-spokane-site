@@ -1,3 +1,4 @@
+import ArticleHelp from "@/components/ArticleHelp";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -192,6 +193,8 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                 cancellation.
               </p>
             </div>
+
+            <ArticleHelp topic="providence" compact />
           </div>
         </section>
 
@@ -372,6 +375,8 @@ export default function ProvidenceHealthPlanEnding2027WashingtonPage() {
                 </div>
               </div>
             </div>
+
+            <ArticleHelp topic="providence" />
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
               <h2 className="text-xl font-bold text-gray-900">Sources reviewed</h2>

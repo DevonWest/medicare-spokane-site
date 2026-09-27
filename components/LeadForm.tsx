@@ -8,12 +8,14 @@ import type { LeadSource } from "@/lib/leadSources";
 import { validateLead, validateLeadRequest } from "@/lib/leadValidation";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { trackFormStart, trackLeadConversion } from "@/lib/analytics";
+import { CONTACT_REASONS } from "@/lib/contactReasons";
 
 interface LeadFormProps {
   source: LeadSource;
   heading?: string;
   subheading?: string;
   showMessage?: boolean;
+  showRequestReason?: boolean;
   submitLabel?: string;
   successBody?: string;
   zipHelperText?: string;
@@ -29,6 +31,7 @@ export default function LeadForm({
   heading = "Request a Free Medicare Review",
   subheading = "Fill out the form and a licensed agent will contact you. There is no cost or obligation.",
   showMessage = false,
+  showRequestReason = false,
   submitLabel = "Request My No-Cost Medicare Review",
   successBody = "A licensed local Medicare agent will review your information and contact you soon. We typically respond the same business day during business hours.",
   zipHelperText = "Optional, but helpful because Medicare plan availability varies by ZIP code.",
@@ -69,7 +72,7 @@ export default function LeadForm({
     const form = event.currentTarget;
 
     const formData = new FormData(form);
-    const fields = buildLeadFormFields(formData, showMessage);
+    const fields = buildLeadFormFields(formData, showMessage, showRequestReason);
 
     const validation = validateLead(fields);
     if (!validation.ok) {
@@ -263,6 +266,18 @@ export default function LeadForm({
             )}
           </div>
 
+          {showRequestReason && (
+            <div className="sm:col-span-2">
+              <label htmlFor="lead-requestReason" className="mb-1 block text-sm font-medium text-gray-700">
+                What would you like help with? <span className="font-normal">(optional)</span>
+              </label>
+              <select id="lead-requestReason" name="requestReason" defaultValue="" className={getFieldClassName(false)}>
+                <option value="">Choose a reason, if you like</option>
+                {CONTACT_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+              </select>
+            </div>
+          )}
+
           {showMessage && (
             <div className="sm:col-span-2">
               <label htmlFor="lead-message" className="mb-1 block text-sm font-medium text-gray-700">
@@ -273,6 +288,7 @@ export default function LeadForm({
                 id="lead-message"
                 name="message"
                 rows={4}
+                maxLength={showRequestReason ? 1850 : undefined}
                 aria-invalid={fieldErrors.message ? "true" : "false"}
                 aria-describedby={fieldErrors.message ? "lead-message-error" : undefined}
                 className={getFieldClassName(Boolean(fieldErrors.message))}

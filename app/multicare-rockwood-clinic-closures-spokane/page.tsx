@@ -1,7 +1,7 @@
+import ArticleHelp from "@/components/ArticleHelp";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
 import MarketUpdateLinks from "@/components/MarketUpdateLinks";
 import PageHero from "@/components/PageHero";
@@ -98,6 +98,8 @@ export default function MultiCareRockwoodClosuresPage() {
             <p className="mt-4">MultiCare says it is contacting affected patients about care transitions. <a href={journalReport} className={linkClass}>The Journal of Business reports on the eye-clinic transition.</a></p>
           </section>
 
+          <ArticleHelp topic="network" compact />
+
           <section aria-labelledby="patient-steps">
             <h2 id="patient-steps" className="text-3xl font-bold text-gray-900">What should current patients do?</h2>
             <p className="mt-4">If you receive care at one of these locations, begin planning before its closure date. Questions to ask your care team include:</p>
@@ -130,7 +132,7 @@ export default function MultiCareRockwoodClosuresPage() {
             <h2 id="local-help" className="text-3xl font-bold text-gray-900">We are here to help with the insurance questions</h2>
             <p className="mt-4">Finding out that a familiar clinic is closing can be unsettling. Our advice is to start with the facts, make a plan with your care team and check coverage before making a decision.</p>
             <p className="mt-4">Whether you already work with us or are looking for help for the first time, Health Insurance Options is here year-round. We can help check provider participation for the Medicare plans we represent and identify questions that need confirmation from your insurer.</p>
-            <p className="mt-4">We cannot schedule medical appointments or transfer medical records, but you do not have to sort through the insurance questions alone. Call <a href={`tel:${siteConfig.phone.replace(/\D/g, "")}`} className={linkClass}>{siteConfig.phone}</a> or <Link href="/contact" className={linkClass}>contact our Spokane team</Link>.</p>
+            <p className="mt-4">We cannot schedule medical appointments or transfer medical records, but you do not have to sort through the insurance questions alone. Call <a href={`tel:${siteConfig.phone.replace(/\D/g, "")}`} className={linkClass}>{siteConfig.phone}</a> or <Link href="/contact#contact-form" className={linkClass}>contact our Spokane team</Link>.</p>
           </section>
 
           <section aria-labelledby="sources">
@@ -146,7 +148,7 @@ export default function MultiCareRockwoodClosuresPage() {
           <Disclaimer />
         </div>
       </article>
-      <CTASection heading="Questions About Medicare Provider Access?" subheading="Our Spokane team can help you check provider participation for the plans we represent. No cost, no pressure." />
+      <div className="mx-auto max-w-4xl px-4"><ArticleHelp topic="network" /></div>
     </>
   );
 }

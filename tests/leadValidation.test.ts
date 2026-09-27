@@ -15,6 +15,27 @@ import { CRM_PUBLIC_FORM_SUBMISSION_PATH } from "../lib/crmPaths";
 import { buildLeadFirestoreDocument } from "../lib/leadFirestore";
 import { buildLeadFormFields, buildLeadRequestPayload } from "../lib/leadPayload";
 import * as leadValidation from "../lib/leadValidation";
+import { CONTACT_REASONS } from "../lib/contactReasons";
+
+test("optional contact reason preserves the message and existing validation contract", () => {
+  const data = new FormData();
+  data.set("fullName", "Test Visitor");
+  data.set("email", "test@example.com");
+  data.set("requestReason", CONTACT_REASONS[3]);
+  data.set("message", "Please help me review my coverage.");
+  const fields = buildLeadFormFields(data, true, true);
+  assert.equal(fields.message, `Request reason: ${CONTACT_REASONS[3]}\n\nPlease help me review my coverage.`);
+  assert.equal(leadValidation.validateLead(fields).ok, true);
+  assert.equal(buildLeadFormFields(data, true).message, "Please help me review my coverage.");
+  data.set("requestReason", "unrecognized free text");
+  assert.equal(buildLeadFormFields(data, true, true).message, "Please help me review my coverage.");
+  data.set("requestReason", CONTACT_REASONS[0]);
+  data.set("message", "a".repeat(1850));
+  assert.equal(leadValidation.validateLead(buildLeadFormFields(data, true, true)).ok, true);
+  data.delete("requestReason");
+  data.delete("message");
+  assert.equal(leadValidation.validateLead(buildLeadFormFields(data, true, true)).ok, true);
+});
 
 function assertNoUndefinedDeep(value: unknown, path = "root") {
   assert.notEqual(value, undefined, `Unexpected undefined at ${path}`);

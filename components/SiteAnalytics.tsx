@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { getGaMeasurementId, getSiteEnv } from "@/lib/env";
-import { isPublicAnalyticsPath, trackContactClick, trackPageView } from "@/lib/analytics";
+import { isPublicAnalyticsPath, trackContactClick, trackPageView, trackArticleHelpClick } from "@/lib/analytics";
+import { rememberArticle } from "@/lib/articleAttribution";
 
 export default function SiteAnalytics() {
   const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function SiteAnalytics() {
       lastPath.current = null;
       return;
     }
+    rememberArticle(pathname);
     if (lastPath.current !== pathname) {
       trackPageView();
       lastPath.current = pathname;
@@ -28,6 +30,7 @@ export default function SiteAnalytics() {
       const href = link?.getAttribute("href") || "";
       if (href.startsWith("tel:")) trackContactClick("phone");
       if (href.startsWith("mailto:")) trackContactClick("email");
+      if (href === "/contact#contact-form" && link?.closest("[data-article-help]")) trackArticleHelpClick();
     }
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
