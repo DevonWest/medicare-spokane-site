@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getTopicBySlug, getAllTopicSlugs, medicareTopics } from "@/lib/topics";
 import { siteConfig } from "@/lib/site";
 import CTASection from "@/components/CTASection";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 interface Props {
   params: Promise<{ topic: string }>;
@@ -49,24 +50,10 @@ export default async function TopicPage({ params }: Props) {
 
   const otherTopics = medicareTopics.filter((t) => t.slug !== topic.slug);
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: topic.benefits.map((benefit) => ({
-      "@type": "Question",
-      name: `What is a benefit of ${topic.title}?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: benefit,
-      },
-    })),
-  };
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      <BreadcrumbSchema
+        items={[{ name: "Home", path: "/" }, { name: topic.title }]}
       />
 
       {/* Hero */}
