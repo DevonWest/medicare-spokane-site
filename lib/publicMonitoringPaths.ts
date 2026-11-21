@@ -9,6 +9,7 @@ export const publicMonitoringPaths = [
   ...new Set([
     ...getMarketUpdateMonitoringPaths(),
     ...getProviderNetworkMonitoringPaths(),
+    "/2027-medicare-costs",
     "/medicare-advantage",
     "/medicare-spokane",
     "/medicare-supplements",
