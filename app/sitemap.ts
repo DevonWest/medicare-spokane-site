@@ -107,6 +107,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    { url: `${baseUrl}/2027-medicare-costs`, lastModified: "2026-11-20", changeFrequency: "yearly", priority: 0.8 },
     { url: `${baseUrl}/resources`, changeFrequency: "monthly", priority: 0.8 },
     {
       url: `${baseUrl}/health-insurance-spokane`,

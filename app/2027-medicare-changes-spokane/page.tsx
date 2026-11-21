@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import Disclaimer from "@/components/Disclaimer";
+import MedicareCosts2027Guide from "@/components/MedicareCosts2027Guide";
 import PageHero from "@/components/PageHero";
 import { get2027MarketUpdatesNewestFirst, marketUpdatesHub } from "@/lib/marketUpdates";
 import { siteConfig } from "@/lib/site";
@@ -116,6 +117,8 @@ export default function MedicareChangesSpokane2027Page() {
               service area is identified by an official source.
             </p>
           </div>
+
+          <MedicareCosts2027Guide />
 
           <div className="mt-10 max-w-3xl">
             <h2 className="text-3xl font-bold text-gray-900">Latest Spokane market updates</h2>

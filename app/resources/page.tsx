@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import CTASection from "@/components/CTASection";
 import Disclaimer from "@/components/Disclaimer";
+import MedicareCosts2027Guide from "@/components/MedicareCosts2027Guide";
 import PageHero from "@/components/PageHero";
 import {
   getFeaturedKnowledgeSources,
@@ -55,6 +56,7 @@ export default function ResourcesPage() {
               >
                 View the complete 2027 changes tracker →
               </Link>
+              <MedicareCosts2027Guide />
             </div>
             <div className="grid grid-cols-1 gap-4">
               {marketUpdates.map((update) => (

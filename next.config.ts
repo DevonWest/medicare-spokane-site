@@ -36,6 +36,13 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
+        source: "/guides/2027-medicare-costs.pdf",
+        headers: [{
+          key: "Link",
+          value: '<https://www.medicareinspokane.com/2027-medicare-costs>; rel="canonical"',
+        }],
+      },
+      {
         source: "/admin/knowledge/:path*",
         headers: knowledgeAdminHeaders,
       },
