@@ -18,7 +18,7 @@ const pagePath = "/providence-medicare-advantage-plans-spokane";
 const pageUrl = `${siteConfig.url}${pagePath}`;
 const title = "Providence Medicare Advantage Plans in Spokane for 2027";
 const description = "Which Medicare Advantage plans does Providence accept in Spokane in 2027? Check Aetna PPO, the UHC Dual SNP exception, and options if your plan is ending.";
-const reviewPath = "/medicare-plan-review-spokane#cms-article-help";
+const reviewPath = "/medicare-plan-review-spokane#plan-review-form";
 const linkClass = "font-semibold text-blue-800 underline decoration-blue-300 underline-offset-4 hover:decoration-blue-800";
 const crumbs = [
   { name: "Home", path: "/" },

@@ -287,7 +287,7 @@ export default function MedicarePlanReviewSpokanePage() {
       </section>
 
       <section id="plan-review-form" className="bg-white px-4 py-16">
-        <div id="cms-article-help" className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">Request a Medicare plan review</h2>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">

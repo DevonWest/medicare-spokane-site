@@ -93,3 +93,11 @@ test("the production CMS renderer uses the approved Markdown body and preserves 
   assert.match(html, /"@type":"BreadcrumbList"/);
   assert.doesNotMatch(html, /<h1[^>]*>CMS body heading/);
 });
+
+test("the published plan review page preserves direct links to its form", () => {
+  const html = renderToStaticMarkup(
+    createElement(KnowledgeCmsPublishedArticle, { article, path: "/medicare-plan-review-spokane" }),
+  );
+  const helpSection = html.match(/<section id="cms-article-help"[^>]*>(.*?)<\/section>/s)?.[1];
+  assert.match(helpSection ?? "", /id="plan-review-form"[^>]*>.*?<form\b/s);
+});
