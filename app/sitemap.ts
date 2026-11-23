@@ -3,6 +3,7 @@ import { getAllLocalMedicarePaths } from "@/lib/cities";
 import { getMarketUpdateSitemapEntries } from "@/lib/marketUpdates";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
+  PROVIDENCE_CHECKED_AT,
   PROVIDER_NETWORK_GUIDE_PATH,
 } from "@/lib/providerNetworks";
 import { siteConfig } from "@/lib/site";
@@ -36,13 +37,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}${PROVIDER_NETWORK_GUIDE_PATH}`,
-      lastModified: "2026-09-21",
+      lastModified: PROVIDENCE_CHECKED_AT,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/providence-medicare-advantage-plans-spokane`,
-      lastModified: "2026-09-21",
+      lastModified: PROVIDENCE_CHECKED_AT,
       changeFrequency: "weekly",
       priority: 0.85,
     },

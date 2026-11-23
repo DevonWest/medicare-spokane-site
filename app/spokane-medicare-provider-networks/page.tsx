@@ -11,6 +11,7 @@ import ProviderNetworkDirectory from "@/components/ProviderNetworkDirectory";
 import UhcProvidenceUpdate from "@/components/UhcProvidenceUpdate";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
+  PROVIDENCE_CHECKED_AT,
   PROVIDER_NETWORK_CHECKED_LABEL,
   PROVIDER_NETWORK_GUIDE_PATH,
   providerNetworkSources,
@@ -21,12 +22,12 @@ import { siteConfig } from "@/lib/site";
 const pageUrl = `${siteConfig.url}${PROVIDER_NETWORK_GUIDE_PATH}`;
 
 export const metadata: Metadata = {
-  title: "Spokane Medicare Provider Networks: 2026 Guide",
+  title: "Spokane Medicare Provider Networks and 2027 Providence Plans",
   description:
-    "Search 2026 Medicare network information for Providence, MultiCare, Rockwood, Inland Imaging, CHAS Health, Humana, SCAN, UnitedHealthcare and more.",
+    "Check 2027 Providence Medicare plans and 2026 provider network listings for MultiCare, Rockwood, Inland Imaging and CHAS Health in Spokane.",
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Spokane Medicare Provider Networks: 2026 Local Guide",
+    title: "Spokane Medicare Provider Networks and 2027 Providence Plans",
     description:
       "A source-backed Spokane crosswalk for Medicare carriers, health systems, imaging providers, product limits and network changes.",
     url: pageUrl,
@@ -42,7 +43,7 @@ const collectionSchema = {
   name: "Spokane Medicare Advantage Provider Network Guide",
   description:
     "A locally maintained guide to Medicare Advantage carrier participation at major Spokane and Inland Northwest health systems.",
-  dateModified: "2026-09-21",
+  dateModified: PROVIDENCE_CHECKED_AT,
   isPartOf: {
     "@type": "WebSite",
     "@id": `${siteConfig.url}#website`,
@@ -84,7 +85,7 @@ const faqs: FAQItem[] = [
   {
     question: "Does Providence accept SCAN Medicare Advantage in Spokane?",
     answer:
-      "SCAN was not included on Providence's Washington Medicare Advantage carrier list when this guide was checked on August 25, 2026. That is best described as not listed, not as proof that every Providence-related provider is out of network. Verify the exact SCAN plan and provider.",
+      "Providence’s 2027 Eastern Washington list omits SCAN. Verify your specific SCAN plan and provider directly.",
   },
   {
     question: "Does SCAN include MultiCare and Rockwood in Spokane?",
@@ -134,7 +135,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
 
       <PageHero
         title="Spokane Medicare Advantage Provider Networks"
-        subtitle="Search source-backed 2026 information for Providence, MultiCare, Rockwood Clinic, Inland Imaging, CHAS Health, Kootenai Health and major Medicare carriers."
+        subtitle="Check Providence’s 2027 plan listings alongside 2026 network information for MultiCare, Rockwood Clinic, Inland Imaging, CHAS Health and Kootenai Health."
         crumbs={[
           { href: "/", label: "Home" },
           { href: "/resources", label: "Resources" },
@@ -149,7 +150,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-blue-700">
-                  Current-year reference
+                  Spokane network guide
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-gray-900">
                   Carrier name alone is not enough to confirm a network
@@ -161,7 +162,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
                 </p>
               </div>
               <div className="rounded-xl border border-blue-200 bg-white px-5 py-4 text-sm text-gray-700">
-                <p className="font-semibold text-gray-900">Last source check</p>
+                <p className="font-semibold text-gray-900">Base listings checked</p>
                 <time dateTime={PROVIDER_NETWORK_CHECKED_AT}>{PROVIDER_NETWORK_CHECKED_LABEL}</time>
               </div>
             </div>
@@ -208,7 +209,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
                   SCAN and Providence
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-gray-900">
-                  SCAN is not on Providence&apos;s Washington carrier list
+                  SCAN is absent from Providence’s 2027 regional list
                 </h3>
                 <p className="mt-4 leading-relaxed text-gray-700">
                   Providence did not list SCAN when this guide was checked. Because provider
@@ -317,9 +318,7 @@ export default function SpokaneMedicareProviderNetworksPage() {
               contracts. We will add them only when reliable provider-level evidence is available.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-gray-700">
-              The current guide is for 2026. We will keep these evergreen pages and add verified
-              2027 information after official plan-year directories and approved materials are
-              available.
+              Providence entries reflect its 2027 Eastern Washington list. Other health systems’ entries are dated 2026 references. Check the source date and coverage year before using a listing.
             </p>
           </div>
         </section>

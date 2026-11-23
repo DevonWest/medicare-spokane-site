@@ -16,6 +16,7 @@ const update = getMarketUpdateByPath(pagePath) ?? (() => {
 })();
 const description = "UHC announces a January 1, 2027 Providence network change. See affected Spokane hospitals, Washington D-SNP exceptions and next steps for your Medicare review.";
 const uhcNotice = "https://www.uhc.com/providencepnw";
+const providenceNotice = "https://blog.providence.org/eastern-washington/changes-to-unitedhealthcare-medicare-advantage-plans-in-washington";
 const enrollmentSource = "https://www.medicare.gov/health-drug-plans/open-enrollment";
 const linkClass = "font-semibold text-blue-700 underline hover:text-blue-900";
 
@@ -49,7 +50,7 @@ const articleSchema = {
     { "@type": "City", name: "Spokane, Washington" },
     { "@type": "AdministrativeArea", name: "Stevens County, Washington" },
   ],
-  citation: [uhcNotice, enrollmentSource],
+  citation: [uhcNotice, providenceNotice, enrollmentSource],
 };
 
 const faqs: FAQItem[] = [
@@ -79,11 +80,11 @@ export default function UnitedHealthcareProvidence2027Page() {
       <article className="bg-white px-4 py-12">
         <div className="mx-auto max-w-4xl space-y-10 text-lg leading-relaxed text-gray-700">
           <div>
-            <p className="text-base text-gray-600">By <Link href="/our-team" className={linkClass}>{siteConfig.legalName}</Link> · Published <time dateTime={update.publishedDate}>{update.publishedLabel}</time></p>
+            <p className="text-base text-gray-600">By <Link href="/our-team" className={linkClass}>{siteConfig.legalName}</Link> · Published <time dateTime={update.publishedDate}>{update.publishedLabel}</time> · Updated <time dateTime={update.modifiedDate}>{update.modifiedLabel}</time></p>
             <p className="mt-5">If you rely on Providence doctors or hospitals, your provider list deserves careful attention during this year&apos;s Medicare review. We know how much it matters to keep care with people you trust, and we are here to help you work through the details.</p>
             <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-6 text-gray-900">
               <h2 className="text-2xl font-bold">What UHC announced</h2>
-              <p className="mt-4">UnitedHealthcare says Providence hospitals and providers in Washington and Oregon will leave its <strong>individual Medicare Advantage network January 1, 2027</strong>. The notice, updated September 17, concerns next year&apos;s network. <a href={uhcNotice} className={linkClass}>Read UHC&apos;s official announcement.</a></p>
+              <p className="mt-4">Beginning <strong>January 1, 2027</strong>, Providence will be out of network for UHC individual Medicare Advantage PPO and HMO, group retiree, and Chronic Special Needs Plans. Washington Dual Eligible Special Needs Plans (D-SNP) are the exception. <a href={uhcNotice} className={linkClass}>Read UHC&apos;s official announcement.</a></p>
             </div>
           </div>
 
@@ -97,18 +98,16 @@ export default function UnitedHealthcareProvidence2027Page() {
             <h2 id="plan-types" className="text-3xl font-bold text-gray-900">Which UHC coverage is excluded from this announcement?</h2>
             <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-left text-base">
-                <caption className="sr-only">Coverage UHC excludes from the announced individual Medicare Advantage network change</caption>
+                <caption className="sr-only">Coverage UHC excludes from the announced network change</caption>
                 <thead className="bg-blue-50 text-gray-900"><tr><th scope="col" className="p-4">Coverage</th><th scope="col" className="p-4">UHC&apos;s stated scope</th></tr></thead>
                 <tbody>
                   <tr className="border-t border-slate-200"><th scope="row" className="p-4 font-semibold">Dual Special Needs Plans (D-SNP)</th><td className="p-4">Washington</td></tr>
                   <tr className="border-t border-slate-200"><th scope="row" className="p-4 font-semibold">Medicare Supplement</th><td className="p-4">Excluded</td></tr>
-                  <tr className="border-t border-slate-200"><th scope="row" className="p-4 font-semibold">Group retiree Medicare Advantage HMO/PPO</th><td className="p-4">Washington</td></tr>
-                  <tr className="border-t border-slate-200"><th scope="row" className="p-4 font-semibold">Chronic Special Needs Plans (C-SNP)</th><td className="p-4">Oregon</td></tr>
                   <tr className="border-t border-slate-200"><th scope="row" className="p-4 font-semibold">Employer commercial coverage</th><td className="p-4">Washington and Oregon; renewed</td></tr>
                 </tbody>
               </table>
             </div>
-            <p className="mt-5"><strong>Renewal negotiations continue for Washington D-SNP/group retiree plans and Oregon C-SNP plans.</strong> Being excluded from this announcement is not a final 2027 network guarantee. <a href={uhcNotice} className={linkClass}>Check UHC&apos;s current notice.</a></p>
+            <p className="mt-5"><strong>Providence lists Washington UHC D-SNP as the exception.</strong> UHC says D-SNP renewal discussions continue. Confirm the exact plan with UHC and your clinic. <a href={uhcNotice} className={linkClass}>Check UHC&apos;s current notice.</a></p>
             <p className="mt-4">If your card says Dual Complete, ask UHC to confirm your exact Washington D-SNP. If it says AARP, also check whether the coverage is Medicare Advantage or Medicare Supplement; the brand name alone does not answer that question.</p>
           </section>
 
@@ -145,8 +144,9 @@ export default function UnitedHealthcareProvidence2027Page() {
 
           <section aria-labelledby="sources">
             <h2 id="sources" className="text-2xl font-bold text-gray-900">Sources and last check</h2>
-            <p className="mt-4 text-base">Checked September 21, 2026, against UHC&apos;s notice dated September 17 and Medicare&apos;s enrollment guidance. Network information can change; rely on current plan documents and direct confirmation for your care.</p>
+            <p className="mt-4 text-base">Network details checked November 22, 2026, against UHC’s current notice and Providence’s November 13 Washington update. Confirm your exact plan and location before choosing coverage.</p>
             <ul className="mt-4 list-disc space-y-3 pl-6 text-base">
+              <li><a href={providenceNotice} className={linkClass}>Providence’s Washington Medicare Advantage network update</a></li>
               <li><a href={uhcNotice} className={linkClass}>UnitedHealthcare: Providence Health in Oregon and Washington</a></li>
               <li><a href={enrollmentSource} className={linkClass}>Medicare.gov: Open Enrollment</a></li>
             </ul>

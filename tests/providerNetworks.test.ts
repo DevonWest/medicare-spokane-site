@@ -3,6 +3,7 @@ import test from "node:test";
 import sitemap from "../app/sitemap";
 import {
   PROVIDER_NETWORK_CHECKED_AT,
+  PROVIDENCE_CHECKED_AT,
   PROVIDER_NETWORK_GUIDE_PATH,
   getProviderNetworkStatusLabel,
   getProviderNetworkMonitoringPaths,
@@ -35,9 +36,12 @@ test("provider network registry preserves unique source-backed entries", () => {
 });
 
 test("provider network sources use current HTTPS evidence", () => {
+  const providenceSources = new Set(providerNetworkEntries
+    .filter((entry) => entry.systemId === "providence-spokane")
+    .flatMap((entry) => entry.sourceIds));
   for (const source of providerNetworkSources) {
     assert.match(source.url, /^https:\/\//);
-    assert.equal(source.checkedAt, source.id === "uhc-providence-2027" ? "2026-09-21" : PROVIDER_NETWORK_CHECKED_AT);
+    assert.equal(source.checkedAt, providenceSources.has(source.id) ? PROVIDENCE_CHECKED_AT : PROVIDER_NETWORK_CHECKED_AT);
   }
 });
 
@@ -73,6 +77,17 @@ test("high-intent Spokane network answers retain product-level wording", () => {
   assert.equal(inlandImagingAmerigroup?.status, "pending");
   assert.match(inlandImagingAmerigroup?.productScope ?? "", /pending/i);
   assert.equal(inlandImagingScan?.status, "not-listed");
+});
+
+test("Spokane 2027 distinguishes plan exits from provider network changes", () => {
+  const entries = new Map(providerNetworkEntries.map((entry) => [entry.id, entry]));
+  assert.equal(entries.get("providence-aetna")?.productScope, "PPO only");
+  assert.equal(entries.get("providence-uhc")?.status, "limited");
+  assert.match(entries.get("providence-uhc")?.productScope ?? "", /except UHC D-SNP/);
+  assert.equal(entries.get("providence-providence-plan")?.status, "discontinued");
+  assert.match(entries.get("providence-providence-plan")?.productScope ?? "", /December 31, 2026/);
+  assert.equal(entries.get("providence-asuris")?.status, "discontinued");
+  assert.match(entries.get("providence-asuris")?.productScope ?? "", /December 31, 2025/);
 });
 
 test("product-specific provider listings use positive detail-forward wording", () => {

@@ -21,7 +21,7 @@ export const marketUpdatesHub = {
   shortTitle: "Spokane 2027 Coverage Market Updates",
   description:
     "Track confirmed 2027 Medicare and health insurance market announcements for Spokane County and Washington, with clear labels for what remains unconfirmed.",
-  modifiedDate: "2026-11-20",
+  modifiedDate: "2026-11-22",
 };
 
 /**
@@ -40,11 +40,11 @@ export const marketUpdates: readonly MarketUpdate[] = [
     title: "UnitedHealthcare and Providence: 2027 Medicare Advantage Changes in Spokane",
     shortTitle: "UHC–Providence Medicare Network Changes for 2027",
     summary:
-      "UHC announces a January 1 Providence network change. Review the individual Medicare Advantage scope, Washington D-SNP exception and steps for your 2027 coverage review.",
+      "Check the UHC Medicare Advantage plans affected by the January 1 network change at Providence and the exception for Washington Dual Eligible Special Needs Plans.",
     publishedDate: "2026-09-21",
     publishedLabel: "September 21, 2026",
-    modifiedDate: "2026-09-21",
-    modifiedLabel: "September 21, 2026",
+    modifiedDate: "2026-11-22",
+    modifiedLabel: "November 22, 2026",
     spokaneStatus: "confirmed",
     spokaneStatusLabel: "Spokane hospitals named; coverage exceptions apply",
   },
