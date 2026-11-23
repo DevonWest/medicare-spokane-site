@@ -193,7 +193,10 @@ export default function KnowledgeCmsPublishedArticle({
       ) : null}
 
       <section id="cms-article-help" className="border-y border-blue-100 bg-blue-50 px-4 py-14">
-        <div className="mx-auto max-w-3xl">
+        <div
+          id={path === "/medicare-plan-review-spokane" ? "plan-review-form" : undefined}
+          className="mx-auto max-w-3xl scroll-mt-4"
+        >
           <LeadForm
             source={leadSourceForPath(path)}
             heading="Request Local Help"
