@@ -1,6 +1,7 @@
 export type ProviderNetworkStatus =
   | "listed"
   | "limited"
+  | "discontinued"
   | "pending"
   | "not-listed"
   | "not-in-network";
@@ -38,13 +39,44 @@ export const PROVIDER_NETWORK_GUIDE_PATH =
 export const PROVIDER_NETWORK_CHECKED_AT = "2026-08-25" as const;
 export const PROVIDER_NETWORK_CHECKED_LABEL = "August 25, 2026";
 
+export const PROVIDENCE_CHECKED_AT = "2026-11-22" as const;
+export const PROVIDENCE_CHECKED_LABEL = "November 22, 2026";
+
 export const providerNetworkSources: readonly ProviderNetworkSource[] = [
   {
     id: "uhc-providence-2027",
     title: "Providence Health in Oregon and Washington: 2027 network announcement",
     publisher: "UnitedHealthcare",
     url: "https://www.uhc.com/providencepnw",
-    checkedAt: "2026-09-21",
+    checkedAt: PROVIDENCE_CHECKED_AT,
+  },
+  {
+    id: "providence-uhc-washington",
+    title: "2027 UnitedHealthcare network changes in Washington",
+    publisher: "Providence",
+    url: "https://blog.providence.org/eastern-washington/changes-to-unitedhealthcare-medicare-advantage-plans-in-washington",
+    checkedAt: PROVIDENCE_CHECKED_AT,
+  },
+  {
+    id: "providence-plan-exit",
+    title: "Providence Medicare Advantage coverage ends December 31, 2026",
+    publisher: "Providence Health Assurance",
+    url: "https://www.providencehealthplan.com/medicare/medicare-advantage-plans",
+    checkedAt: PROVIDENCE_CHECKED_AT,
+  },
+  {
+    id: "asuris-spokane-exit",
+    title: "January 2026 provider bulletin (PDF)",
+    publisher: "Asuris Northwest Health",
+    url: "https://beonbrand.getbynder.com/m/60612dbe0b8cc8e7/original/The-Bulletin-January-2026.pdf",
+    checkedAt: PROVIDENCE_CHECKED_AT,
+  },
+  {
+    id: "aetna-provider-directory",
+    title: "Find a provider by Medicare plan and year",
+    publisher: "Aetna Medicare",
+    url: "https://www.aetna.com/medicare/find-provider.html",
+    checkedAt: PROVIDENCE_CHECKED_AT,
   },
   {
     id: "multicare-accepted-plans",
@@ -69,10 +101,10 @@ export const providerNetworkSources: readonly ProviderNetworkSource[] = [
   },
   {
     id: "providence-washington-medicare",
-    title: "Medicare Resources: Washington and Montana",
+    title: "2027 Medicare plans in Eastern Washington",
     publisher: "Providence",
     url: "https://www.providence.org/lp/wamt-medicare",
-    checkedAt: PROVIDER_NETWORK_CHECKED_AT,
+    checkedAt: PROVIDENCE_CHECKED_AT,
   },
   {
     id: "chas-accepted-plans",
@@ -116,12 +148,12 @@ export const providerSystems: readonly ProviderSystem[] = [
     id: "providence-spokane",
     name: "Providence Spokane",
     shortName: "Providence",
-    area: "Spokane and Washington",
+    area: "Spokane · 2027 plan year",
     summary:
-      "Providence hospitals, clinics, and medical groups in the Spokane region. Providence publishes a Washington-wide Medicare Advantage carrier list, so each Spokane provider and exact plan still needs confirmation.",
+      "Check the 2027 plan for your Spokane clinic, specialist and hospital. Providence Sacred Heart Medical Center and Providence Holy Family Hospital are listed in Providence’s Eastern Washington guide.",
     detailPath: "/providence-medicare-advantage-plans-spokane",
     note:
-      "Providence stated at the source check that it was not accepting new primary-care patients with Medicare PPO plans. Existing-patient, specialist, hospital, and exact-plan participation can differ.",
+      "Providence says its primary-care clinics are currently closed to new patients with Medicare PPO plans. Existing patients can ask their clinic about continued care under their exact plan.",
   },
   {
     id: "multicare-spokane",
@@ -165,41 +197,41 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
   {
     id: "providence-aetna",
     systemId: "providence-spokane",
-    carrier: "Aetna",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    carrier: "Aetna Medicare Advantage",
+    status: "limited",
+    productScope: "PPO only",
     detail:
-      "Providence lists Aetna among the Medicare Advantage carriers it accepts in Washington. Confirm the exact plan and Spokane provider.",
-    sourceIds: ["providence-washington-medicare"],
+      "For Spokane, this guide lists Aetna PPO plans only. Select your exact 2027 plan in Aetna’s directory and look up your Providence doctor and hospital.",
+    sourceIds: ["providence-washington-medicare", "aetna-provider-directory"],
   },
   {
     id: "providence-asuris",
     systemId: "providence-spokane",
     carrier: "Asuris Northwest Health",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "discontinued",
+    productScope: "Spokane PPO plans ended December 31, 2025",
     detail:
-      "Providence lists Asuris Northwest Health in Washington. Confirm the exact plan, facility, and physician group.",
-    sourceIds: ["providence-washington-medicare"],
+      "Asuris discontinued its Spokane County Medicare Advantage PPO plans effective January 1, 2026. Those plans are unavailable for 2027.",
+    sourceIds: ["asuris-spokane-exit"],
   },
   {
     id: "providence-cigna",
     systemId: "providence-spokane",
-    carrier: "Cigna Healthcare",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    carrier: "HealthSpring (formerly Cigna)",
+    status: "limited",
+    productScope: "HMO",
     detail:
-      "Providence lists Cigna Healthcare in Washington. Carrier branding and exact plan networks can differ, so verify the member's plan.",
+      "Providence lists HealthSpring HMO for Eastern Washington. Check your Spokane doctor under the plan’s current name.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-chpw",
     systemId: "providence-spokane",
     carrier: "Community Health Plan of Washington",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "Dual Eligible Special Needs Plan (D-SNP)",
     detail:
-      "Providence lists Community Health Plan of Washington. Confirm Spokane County availability and the exact provider.",
+      "Check the CHPW D-SNP directory for your Providence clinic and medical group.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
@@ -207,9 +239,9 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
     systemId: "providence-spokane",
     carrier: "Humana",
     status: "listed",
-    productScope: "Medicare Advantage",
+    productScope: "Medicare Advantage, including D-SNP and C-SNP",
     detail:
-      "Providence lists Humana in Washington. This does not mean every Humana product or Providence clinician participates.",
+      "Check the exact Humana plan for your county, physician and hospital.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
@@ -219,77 +251,77 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
     status: "listed",
     productScope: "Medicare Advantage",
     detail:
-      "Providence lists Kaiser Foundation Health Plan of Washington. Confirm the exact Spokane service area and provider.",
+      "Confirm the Spokane facility and any referral requirements with Kaiser.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-molina",
     systemId: "providence-spokane",
     carrier: "Molina Healthcare of Washington",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "Dual Eligible Special Needs Plan (D-SNP)",
     detail:
-      "Providence lists Molina Healthcare of Washington. Verify the exact Molina plan and participating Providence provider.",
+      "Look up your Providence providers in the directory for your Molina D-SNP.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-pacificsource",
     systemId: "providence-spokane",
     carrier: "PacificSource",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "not-listed",
+    productScope: "Absent from the 2027 regional list",
     detail:
-      "Providence lists PacificSource in Washington. Plan availability and network participation can vary by county.",
+      "Contact PacificSource and the clinic if your plan directory names a Providence provider.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-providence-plan",
     systemId: "providence-spokane",
     carrier: "Providence Medicare Advantage",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "discontinued",
+    productScope: "Coverage ends December 31, 2026",
     detail:
-      "Providence lists Providence Medicare Advantage. The health system and insurance company are separate entities, and exact provider participation still matters.",
-    sourceIds: ["providence-washington-medicare"],
+      "Providence Health Assurance is ending its own Medicare Advantage plans. If you have one, review your nonrenewal letter and compare replacement coverage for 2027.",
+    sourceIds: ["providence-plan-exit"],
   },
   {
     id: "providence-regence",
     systemId: "providence-spokane",
     carrier: "Regence BlueShield",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "Medicare Advantage HMO",
     detail:
-      "Providence lists Regence BlueShield in Washington. Confirm the exact product and Spokane provider.",
+      "Providence lists Regence’s Medicare Advantage HMO in Eastern Washington. Check your specific plan.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-uhc",
     systemId: "providence-spokane",
-    carrier: "UnitedHealthcare",
+    carrier: "AARP Medicare Advantage from UnitedHealthcare (UHC)",
     status: "limited",
-    productScope: "2026 listing; 2027 individual Medicare Advantage change announced",
+    productScope: "Out of network January 1, 2027, except UHC D-SNP",
     detail:
-      "Do not use the 2026 carrier listing to confirm 2027 coverage. UHC's September 17 notice announces a January 1, 2027 individual Medicare Advantage network change. It excludes Washington D-SNP plans from this announcement while renewal negotiations continue. Review the linked UHC notice and confirm your exact plan.",
-    sourceIds: ["uhc-providence-2027", "providence-washington-medicare"],
+      "Providence is leaving the network for UHC Medicare Advantage PPO, HMO, group retiree and Chronic Special Needs Plans (C-SNP). Washington UHC Dual Eligible Special Needs Plans (D-SNP) are the exception.",
+    sourceIds: ["providence-uhc-washington", "uhc-providence-2027"],
   },
   {
     id: "providence-wellcare",
     systemId: "providence-spokane",
     carrier: "Wellcare",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "Dual Eligible Special Needs Plan (D-SNP)",
     detail:
-      "Providence lists Wellcare in Washington. Confirm the plan, location, and clinician before relying on the listing.",
+      "Check the Wellcare D-SNP directory for your Spokane care team.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
     id: "providence-wellpoint",
     systemId: "providence-spokane",
     carrier: "Wellpoint",
-    status: "listed",
-    productScope: "Medicare Advantage",
+    status: "limited",
+    productScope: "D-SNP for specialists and facilities only",
     detail:
-      "Providence lists Wellpoint in Washington. Exact Spokane participation requires plan-level confirmation.",
+      "Providence lists Wellpoint D-SNP for specialist and facility services only. Check primary care separately.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
@@ -297,9 +329,9 @@ export const providerNetworkEntries: readonly ProviderNetworkEntry[] = [
     systemId: "providence-spokane",
     carrier: "SCAN Health Plan",
     status: "not-listed",
-    productScope: "Medicare Advantage",
+    productScope: "Absent from the 2027 regional list",
     detail:
-      "SCAN was not included on Providence's Washington Medicare Advantage carrier list at the source check. Treat this as 'not listed,' not a guarantee that every Providence-related provider is out of network.",
+      "Check the SCAN directory and call your Providence clinic about the exact plan and location.",
     sourceIds: ["providence-washington-medicare"],
   },
   {
@@ -719,6 +751,8 @@ export function getProviderNetworkStatusLabel(
       return "Listed by provider";
     case "limited":
       return "Listed products — see details below";
+    case "discontinued":
+      return "Unavailable for 2027";
     case "pending":
       return "Pending — verify before service";
     case "not-listed":
