@@ -28,8 +28,7 @@ export default function SiteAnalytics() {
     function onClick(event: MouseEvent) {
       const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
       const href = link?.getAttribute("href") || "";
-      if (href.startsWith("tel:")) trackContactClick("phone");
-      if (href.startsWith("mailto:")) trackContactClick("email");
+      trackContactClick(href);
       if (href === "/contact#contact-form" && link?.closest("[data-article-help]")) trackArticleHelpClick();
     }
     document.addEventListener("click", onClick);

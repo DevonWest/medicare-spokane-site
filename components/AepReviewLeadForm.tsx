@@ -138,7 +138,7 @@ export default function AepReviewLeadForm() {
       return;
     }
 
-    trackLeadConversion({ source, utm: Object.keys(utm).length ? utm : undefined, hadMessage: true });
+    trackLeadConversion(result, { source, hadMessage: true });
     form.reset();
     setFieldErrors({});
     setErrorMessage("");

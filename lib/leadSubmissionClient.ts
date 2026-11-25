@@ -6,6 +6,7 @@ export const LEAD_NETWORK_ERROR_MESSAGE = "Network error. Please call us instead
 export interface LeadSubmissionApiResponse {
   ok?: boolean;
   id?: string;
+  duplicate?: boolean;
   error?: string;
   crmSyncStatus?: "synced" | "failed";
   emailStatus?: "sent" | "failed";
