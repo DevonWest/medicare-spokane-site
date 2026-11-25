@@ -112,10 +112,8 @@ export default function LeadForm({
     setStatus("success");
     setErrorMessage("");
     setFieldErrors({});
-    // Privacy-friendly request tracking — no PII/PHI sent to GTM.
-    trackLeadConversion({
+    trackLeadConversion(result, {
       source,
-      utm: Object.keys(utm).length ? utm : undefined,
       hadMessage: showMessage && Boolean(fields.message && fields.message.trim()),
     });
     form.reset();

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { siteConfig } from "../lib/site";
 import { analyticsUrl, isPublicAnalyticsPath, trackLeadConversion, trackPageView, trackContactClick } from "../lib/analytics";
 
 test("analytics strips personal URL fields and preserves safe campaign attribution", () => {
@@ -19,20 +20,27 @@ test("queues page, contact and saved-lead events once configured without form va
   Object.defineProperty(globalThis, "document", { value: { title: "Contact", referrer: "https://google.com/?q=private" }, configurable: true });
   try {
     trackPageView();
-    trackContactClick("phone");
-    trackLeadConversion({ source: "contact", hadMessage: true, utm: { source: "jane@example.com" } });
+    trackContactClick(`tel:+1 ${siteConfig.phone}`);
+    trackContactClick("tel:+18006334227");
+    trackContactClick("tel:+18887374455");
+    trackContactClick(`mailto:${siteConfig.email}?subject=private`);
+    trackContactClick("mailto:someone@example.com");
+    const saved = { kind: "success", data: { ok: true, id: "private-lead", crmSyncStatus: "failed" } } as const;
+    trackLeadConversion(saved, { source: "contact", hadMessage: true });
+    trackLeadConversion({ kind: "success", data: { ok: true, duplicate: true } }, { source: "contact" });
+    trackLeadConversion({ kind: "api-error", message: "private" }, { source: "contact" });
     const commands = win.dataLayer.map((entry) => Array.from(entry as ArrayLike<unknown>));
     assert.equal(commands.filter((entry) => entry[0] === "config").length, 1);
-    assert.deepEqual(commands.filter((entry) => entry[0] === "event").map((entry) => entry[1]), ["page_view", "phone_click", "generate_lead"]);
+    assert.deepEqual(commands.filter((entry) => entry[0] === "event").map((entry) => entry[1]), ["page_view", "phone_click", "email_click", "generate_lead"]);
     assert.equal(JSON.stringify(commands).includes("jane"), false);
     assert.equal(JSON.stringify(commands).includes("private"), false);
     win.location.pathname = "/admin/knowledge";
     const count = win.dataLayer.length;
-    trackLeadConversion({ source: "contact" });
+    trackLeadConversion(saved, { source: "contact" });
     assert.equal(win.dataLayer.length, count);
     win.location.pathname = "/contact";
     win.location.hostname = "localhost";
-    trackLeadConversion({ source: "contact" });
+    trackLeadConversion(saved, { source: "contact" });
     assert.equal(win.dataLayer.length, count);
   } finally {
     if (oldWindow) Object.defineProperty(globalThis, "window", oldWindow); else Reflect.deleteProperty(globalThis, "window");

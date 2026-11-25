@@ -3,7 +3,8 @@
 import { sendGTMEvent } from "@next/third-parties/google";
 import { getGaMeasurementId, getGtmId, getSiteEnv } from "./env";
 import { LEAD_SOURCES, type LeadSource } from "./leadSources";
-import type { UtmParams } from "./utm";
+import type { LeadSubmissionResult } from "./leadSubmissionClient";
+import { phoneDigits, siteConfig } from "./site";
 import { lastArticlePath } from "./articleAttribution";
 
 declare global {
@@ -15,7 +16,6 @@ declare global {
 
 export interface LeadConversionMeta {
   source: LeadSource;
-  utm?: UtmParams;
   hadMessage?: boolean;
 }
 
@@ -103,8 +103,16 @@ export function trackPageView(): void {
   track("page_view", { page_title: document.title });
 }
 
-export function trackContactClick(method: "phone" | "email"): void {
-  track(method === "phone" ? "phone_click" : "email_click", { contact_method: method });
+export function trackContactClick(href: string): void {
+  const destination = href.trim().toLowerCase().split("?", 1)[0];
+  if (destination.startsWith("tel:")) {
+    const digits = destination.slice(4).replace(/[+().\s-]/g, "");
+    if (digits === phoneDigits || digits === `1${phoneDigits}`) {
+      track("phone_click", { contact_method: "phone" });
+    }
+  } else if (destination === `mailto:${siteConfig.email.toLowerCase()}`) {
+    track("email_click", { contact_method: "email" });
+  }
 }
 
 export function trackArticleHelpClick(): void {
@@ -116,7 +124,7 @@ export function trackFormStart(source: LeadSource): void {
 }
 
 /** Only called after the server confirms the lead was saved. Never send form values. */
-export function trackLeadConversion(meta: LeadConversionMeta): void {
-  if (!LEAD_SOURCES.includes(meta.source)) return;
+export function trackLeadConversion(result: LeadSubmissionResult, meta: LeadConversionMeta): void {
+  if (result.kind !== "success" || result.data.duplicate || !LEAD_SOURCES.includes(meta.source)) return;
   track("generate_lead", { lead_source: meta.source, had_message: meta.hadMessage ? "yes" : "no" });
 }

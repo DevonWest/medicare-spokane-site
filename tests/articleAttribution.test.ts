@@ -20,7 +20,7 @@ test("article attribution survives navigation and never includes free-form field
     assert.equal(lastArticlePath(), ARTICLE_PATHS[0]);
     rememberArticle("/contact?email=private@example.com");
     assert.equal(lastArticlePath(), ARTICLE_PATHS[0]);
-    trackLeadConversion({ source: "contact", hadMessage: true });
+    trackLeadConversion({ kind: "success", data: { ok: true } }, { source: "contact", hadMessage: true });
     const event = win.dataLayer.map((entry) => Array.from(entry as ArrayLike<unknown>)).find((entry) => entry[1] === "generate_lead");
     assert.equal((event?.[2] as Record<string, string>).article_path, ARTICLE_PATHS[0]);
     assert.equal(JSON.stringify(win.dataLayer).includes("private"), false);
